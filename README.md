@@ -1,32 +1,5 @@
 # TigerType: Comprehensive Project Document
 
-## Table of Contents
-1. [Project Concept and Core Features](#project-concept-and-core-features)  
-   1.1. [TigerType Core Concept](#tigertype-core-concept)  
-   1.2. [Major Features](#major-features)  
-   1.3. [Far Stretch Goals (Puzzle Mode, Tournaments)](#far-stretch-goals-puzzle-mode-tournaments)  
-
-2. [General Implementation Tips](#general-implementation-tips)  
-   2.1. [Three-Tier Structure](#three-tier-structure)  
-   2.2. [Princeton-Data Integration](#princeton-data-integration)  
-   2.3. [Possible “Hook” for Grading](#possible-hook-for-grading)
-
-3. [Potential Names (Historical Brainstorm)](#potential-names-historical-brainstorm)  
-   3.1. [Long Thematic Name List (Princeton Puns)](#long-thematic-name-list-princeton-puns)  
-   3.2. [Additional Name List (Shorter Concepts)](#additional-name-list-shorter-concepts)  
-   3.3. [Tips for Selecting or Tweaking a Name](#tips-for-selecting-or-tweaking-a-name)
-
-4. [Detailed COS 333 Roadmap](#detailed-cos-333-roadmap)  
-   4.1. [Project Overview](#project-overview)  
-   4.2. [Deliverables Roadmap](#deliverables-roadmap)  
-   4.3. [MVP Breakdown (Lowest-Level Steps)](#mvp-breakdown-lowest-level-steps)  
-   4.4. [Team Roles & Responsibilities](#team-roles--responsibilities)
-
-5. [Mid-Range Stretch Goals](#mid-range-stretch-goals)
-
-
----
-
 ## 1. Project Concept and Core Features
 
 ### TigerType Core Concept
