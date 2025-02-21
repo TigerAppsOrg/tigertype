@@ -215,15 +215,6 @@ TigerType is a Princeton-themed typing race application where users can practice
    - Heroku/Render deployment, confirm CAS flow.  
    - Simple smoke test (login → type → see results).
 
-6. **Possible MVP Variations**  
-   - If comfortable with WebSockets early, implement a basic 2-person real-time race.  
-   - Multiple snippets or random selection for variety.
-
-### Team Roles & Responsibilities
-- **Team Lead / Back End**: Oversees architecture, APIs, DB integration, synergy with front end.  
-- **Front End / UI Specialist**: Wireframes, React components, handles race screen, scoreboard pages.  
-- **Database & Testing**: Designs schema, handles migrations, sets up automated tests for logic.  
-- **WebSocket / Real-Time Specialist**: Manages concurrency, socket protocol, typed progress broadcasting.
 
 All members share responsibility for documentation, weekly TA meetings, and consistent commits.
 
