@@ -138,19 +138,10 @@ router.get('/races/:code/results', requireAuth, async (req, res) => {
 // Get leaderboard
 router.get('/leaderboard', requireAuth, async (req, res) => {
   try {
-    // This is a simple implementation, could be expanded with filters
-    const db = require('../config/database');
-    const result = await db.query(
-      `SELECT u.netid, MAX(r.wpm) as max_wpm, AVG(r.wpm) as avg_wpm, 
-       AVG(r.accuracy) as avg_accuracy, COUNT(*) as race_count
-       FROM race_results r
-       JOIN users u ON r.user_id = u.id
-       GROUP BY u.netid
-       ORDER BY max_wpm DESC
-       LIMIT 10`
-    );
-    
-    res.json(result.rows);
+    const dbHelpers = require('../utils/db-helpers');
+    const limit = parseInt(req.query.limit) || 10;
+    const leaderboard = await dbHelpers.getLeaderboard(limit);
+    res.json(leaderboard);
   } catch (err) {
     console.error('Error fetching leaderboard:', err);
     res.status(500).json({ error: 'Server error' });

@@ -78,7 +78,8 @@ io.use((socket, next) => {
 // Initialize socket handlers
 socketHandler.initialize(io);
 
-// Initialize database
+// Import the database setup function
+const setupDatabase = require('./server/db/init-db');
 const PORT = process.env.PORT || 3000;
 
 // Start the server
@@ -98,16 +99,14 @@ const startServer = async () => {
     }
   });
   
-  // Now try to initialize the database
+  // Now try to initialize the database with enhanced schema
   try {
-    console.log('Initializing database...');
-    // Initialize database tables
-    await db.initDB();
-    console.log('Database tables created successfully');
+    console.log('Initializing and enhancing database schema...');
+    const success = await setupDatabase();
     
-    // Seed initial test data
-    await db.seedTestData();
-    console.log('Test data seeded successfully');
+    if (success) {
+      console.log('Database setup completed successfully');
+    }
   } catch (err) {
     console.error('WARNING: Database initialization failed:', err);
     console.log('Server is running, but database functionality may be limited.');

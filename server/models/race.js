@@ -107,15 +107,17 @@ const Race = {
   // Record a race result
   async recordResult(userId, lobbyId, snippetId, wpm, accuracy, completionTime) {
     try {
-      const result = await db.query(
-        `INSERT INTO race_results
-         (user_id, lobby_id, snippet_id, wpm, accuracy, completion_time)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING *`,
-        [userId, lobbyId, snippetId, wpm, accuracy, completionTime]
-      );
+      const dbHelpers = require('../utils/db-helpers');
       
-      return result.rows[0];
+      // Use the helper to record result and update user stats in a single transaction
+      return await dbHelpers.recordRaceResult({
+        userId,
+        lobbyId,
+        snippetId,
+        wpm,
+        accuracy,
+        completionTime
+      });
     } catch (err) {
       console.error('Error recording race result:', err);
       throw err;
