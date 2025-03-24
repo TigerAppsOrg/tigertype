@@ -1,16 +1,25 @@
+/**
+ * TigerType Server
+ * A Princeton-themed typing platform for speed typing practice and races
+ */
+
 const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const os = require('os');
 const session = require('express-session');
 const path = require('path');
+const http = require('http');
+const os = require('os');
+const socketIO = require('socket.io');
+const { isAuthenticated, logoutApp, logoutCAS } = require('./server/utils/auth');
+const routes = require('./server/routes');
 const socketHandler = require('./server/controllers/socket-handlers');
-const { casAuth, isAuthenticated, logoutApp, logoutCAS } = require('./server/utils/auth');
+const db = require('./server/db');
 
-const PORT = process.env.PORT || 3000;
+// Initialize Express app
+const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
 
-// configure session middleware
+// Configure session middleware
 const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'tigertype-session-secret',
   resave: false,
@@ -21,14 +30,14 @@ const sessionMiddleware = session({
   }
 });
 
-// use session middleware for Express
+// Use session middleware for Express
 app.use(sessionMiddleware);
 
-// parse JSON + URL-encoded bodies
+// Parse JSON + URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// auth routes
+// Auth routes
 app.get('/auth/status', (req, res) => {
   res.json({
     authenticated: isAuthenticated(req),
@@ -38,63 +47,64 @@ app.get('/auth/status', (req, res) => {
 app.get('/auth/logout', logoutApp);
 app.get('/auth/logoutcas', logoutCAS);
 
-// serve static assets (except index.html) from public
-app.use(express.static(path.join(__dirname, 'public'), {
-  index: false // Don't serve index.html automatically
-}));
+// Serve static assets from public
+app.use(express.static(path.join(__dirname, 'public')));
 
-// protected main route - require CAS
-app.get('/', casAuth, (req, res) => {
-  // after successful auth, serve the index.html
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Use main routes
+app.use(routes);
 
-// share session w Express and Socket.IO
+// Share session between Express and Socket.io
 io.use((socket, next) => {
-  // clone the Express session middleware for Socket.IO
   sessionMiddleware(socket.request, {}, next);
 });
 
-// add user info middleware for socket connections
+// Socket authentication middleware
 io.use((socket, next) => {
   const req = socket.request;
   
-  // if user isn't auth, reject the socket connection
+  // If user isn't authenticated, reject the socket connection
   if (!isAuthenticated(req)) {
     return next(new Error('Authentication required'));
   }
   
-  // add user info to socket for handlers
+  // Add user info to socket for handlers
   socket.userInfo = req.session.userInfo;
-  
-  // store original socket.emit function
-  const originalEmit = socket.emit;
-  
-  // ovveride emit to add CAS auth info to 'connected' events
-  socket.emit = function(event, ...args) {
-    if (event === 'connected') {
-      const data = args[0] || {};
-      data.casAuthenticated = true;
-      data.netid = socket.userInfo.user;
-      return originalEmit.call(this, event, data, ...args.slice(1));
-    }
-    return originalEmit.apply(this, [event, ...args]);
-  };
-  
   next();
 });
 
-// init socket handler with io instance
+// Initialize socket handlers
 socketHandler.initialize(io);
 
-http.listen(PORT, () => {
-  console.log('Server listening on *:' + PORT);
-  const networkInterfaces = os.networkInterfaces();
-  for (const name of Object.keys(networkInterfaces)) {
-    for (const iface of networkInterfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        console.log(`Accessible on: http://${iface.address}:${PORT}`);
+// Initialize database
+const PORT = process.env.PORT || 3000;
+
+// Start the server
+const startServer = async () => {
+  try {
+    // Initialize database tables
+    await db.initDB();
+    // Seed initial test data
+    await db.seedTestData();
+    
+    // Start listening
+    server.listen(PORT, () => {
+      console.log('TigerType server listening on *:' + PORT);
+      
+      // Print local network addresses for easy access during development
+      const networkInterfaces = os.networkInterfaces();
+      for (const name of Object.keys(networkInterfaces)) {
+        for (const iface of networkInterfaces[name]) {
+          if (iface.family === 'IPv4' && !iface.internal) {
+            console.log(`Accessible on: http://${iface.address}:${PORT}`);
+          }
+        }
       }
-    }
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
   }
-});
+};
+
+// Start the server
+startServer();
