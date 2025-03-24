@@ -62,7 +62,7 @@ io.use((socket, next) => {
 });
 
 // Socket authentication middleware
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const req = socket.request;
   
   // If user isn't authenticated, reject the socket connection
@@ -70,9 +70,41 @@ io.use((socket, next) => {
     return next(new Error('Authentication required'));
   }
   
-  // Add user info to socket for handlers
-  socket.userInfo = req.session.userInfo;
-  next();
+  try {
+    // Get the netid from session
+    const netid = req.session.userInfo.user;
+    
+    // Make sure we have a valid netid
+    if (!netid) {
+      return next(new Error('Invalid authentication: Missing netid'));
+    }
+    
+    // Ensure user exists in database
+    const UserModel = require('./server/models/user');
+    const user = await UserModel.findOrCreate(netid);
+    
+    // If we couldn't create a user, reject the connection
+    if (!user) {
+      return next(new Error('Failed to create or find user in database'));
+    }
+    
+    // Add user info to socket for handlers
+    socket.userInfo = {
+      ...req.session.userInfo,
+      userId: user.id // Ensure userId is available
+    };
+    
+    // Also update session with userId if not present
+    if (!req.session.userInfo.userId) {
+      req.session.userInfo.userId = user.id;
+    }
+    
+    console.log(`Socket auth success for netid: ${netid}, userId: ${user.id}`);
+    next();
+  } catch (err) {
+    console.error('Socket authentication error:', err);
+    return next(new Error('Authentication error'));
+  }
 });
 
 // Initialize socket handlers

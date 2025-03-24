@@ -94,8 +94,30 @@ function casAuth(req, res, next) {
         return res.redirect(loginUrl);
       }
       
-      // store user info in session and proceed
+      // store user info in session 
       req.session.userInfo = userInfo;
+      
+      // Create or update user in the database
+      try {
+        const UserModel = require('../models/user');
+        const netid = userInfo.user; // Extract netid from CAS response
+        
+        console.log('Creating or updating user in database for netid:', netid);
+        
+        // Create or update user asynchronously (don't wait for it to complete)
+        UserModel.findOrCreate(netid)
+          .then(user => {
+            console.log('User created/found in database:', user);
+            
+            // Store userId in session for easier access
+            req.session.userInfo.userId = user.id;
+          })
+          .catch(err => {
+            console.error('Error creating/finding user in database:', err);
+          });
+      } catch (err) {
+        console.error('Error importing user model or handling user creation:', err);
+      }
       
       // redirect to clean URL w/o the ticket parameter
       const cleanUrl = stripTicket(req.protocol + '://' + req.get('host') + req.originalUrl);

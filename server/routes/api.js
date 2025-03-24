@@ -21,17 +21,27 @@ const requireAuth = (req, res, next) => {
 router.get('/user/profile', requireAuth, async (req, res) => {
   try {
     const netid = req.session.userInfo.user;
-    const user = await UserModel.findByNetid(netid);
+    
+    // Find or create user to ensure they exist in the database
+    const user = await UserModel.findOrCreate(netid);
     
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User not found and could not be created' });
+    }
+    
+    // Update the userId in the session if it's not already there
+    if (!req.session.userInfo.userId) {
+      req.session.userInfo.userId = user.id;
     }
     
     res.json({
       netid,
       userId: user.id,
       created_at: user.created_at,
-      last_login: user.last_login
+      last_login: user.last_login,
+      avg_wpm: user.avg_wpm,
+      avg_accuracy: user.avg_accuracy,
+      races_completed: user.races_completed
     });
   } catch (err) {
     console.error('Error fetching user profile:', err);
@@ -42,10 +52,31 @@ router.get('/user/profile', requireAuth, async (req, res) => {
 // Get user stats
 router.get('/user/stats', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userInfo.userId;
+    // Get the netid from session
+    const netid = req.session.userInfo.user;
+    
+    // Ensure the user exists and get their ID
+    const user = await UserModel.findOrCreate(netid);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Update userId in session if missing
+    if (!req.session.userInfo.userId) {
+      req.session.userInfo.userId = user.id;
+    }
+    
+    const userId = user.id;
     const stats = await UserModel.getStats(userId);
     
-    res.json(stats);
+    // Return the stats, or empty stats if none are found
+    res.json(stats || {
+      total_races: 0,
+      avg_wpm: 0,
+      max_wpm: 0,
+      avg_accuracy: 0,
+      unique_snippets: 0
+    });
   } catch (err) {
     console.error('Error fetching user stats:', err);
     res.status(500).json({ error: 'Server error' });
@@ -55,12 +86,26 @@ router.get('/user/stats', requireAuth, async (req, res) => {
 // Get user recent results
 router.get('/user/results', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userInfo.userId;
+    // Get the netid from session
+    const netid = req.session.userInfo.user;
+    
+    // Ensure the user exists and get their ID
+    const user = await UserModel.findOrCreate(netid);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Update userId in session if missing
+    if (!req.session.userInfo.userId) {
+      req.session.userInfo.userId = user.id;
+    }
+    
+    const userId = user.id;
     const limit = parseInt(req.query.limit) || 10;
     
     const results = await UserModel.getRecentResults(userId, limit);
     
-    res.json(results);
+    res.json(results || []);
   } catch (err) {
     console.error('Error fetching user results:', err);
     res.status(500).json({ error: 'Server error' });
