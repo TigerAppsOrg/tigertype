@@ -1,0 +1,27 @@
+# IDE-Specific and Editor Files
+.idea
+*.iml
+.DS_Store
+
+
+# Environment and Configuration
+.env
+.venv
+
+# Dependencies
+node_modules
+*/node_modules
+package-lock.json
+
+# Build and Compilation Output
+out
+
+# Python Specific
+__pycache__
+*.pyc
+
+# Git Related
+.gitattributes
+
+# Miscellaneous
+.bak
