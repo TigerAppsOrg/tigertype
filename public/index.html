@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TigerType - Princeton Typing Practice</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>TigerType</h1>
+      <div class="user-info">
+        <span id="netid"></span>
+        <a href="/auth/logoutcas" class="logout-btn">Logout</a>
+      </div>
+    </header>
+
+    <main>
+      <div class="mode-selection">
+        <h2>Select a Typing Mode</h2>
+        <div class="modes">
+          <button id="practice-btn" class="mode-btn">
+            <h3>Solo Practice</h3>
+            <p>Practice on your own to improve speed and accuracy</p>
+          </button>
+          
+          <button id="public-btn" class="mode-btn">
+            <h3>Public Lobby</h3>
+            <p>Join a public race against other players</p>
+          </button>
+        </div>
+      </div>
+
+      <div id="race-container" class="hidden">
+        <div id="race-info">
+          <h2>Race</h2>
+          <div id="lobby-code"></div>
+          <div id="players-list"></div>
+          <div id="countdown" class="hidden"></div>
+        </div>
+
+        <div id="typing-area">
+          <div id="snippet-display"></div>
+          <div id="typing-input-container" class="hidden">
+            <input type="text" id="typing-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </div>
+        </div>
+
+        <div id="progress-container">
+          <div id="progress-display"></div>
+        </div>
+
+        <div id="results-container" class="hidden">
+          <h2>Results</h2>
+          <div id="results-list"></div>
+          <button id="back-btn">Back to Menu</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>
