@@ -24,8 +24,9 @@ const pool = new Pool({
 
 // Event listener for connection errors
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+  console.error('Database connection error:', err);
+  console.log('WARNING: Database connection issue detected.');
+  // Not exiting process so the server can continue running even with DB issues
 });
 
 // Helper to run a query with error handling
