@@ -3,6 +3,9 @@
  * A Princeton-themed typing platform for speed typing practice and races
  */
 
+// Load environment variables from .env file
+require('dotenv').config();
+
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
