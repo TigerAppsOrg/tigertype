@@ -80,29 +80,35 @@ const PORT = process.env.PORT || 3000;
 
 // Start the server
 const startServer = async () => {
-  try {
-    // Initialize database tables
-    await db.initDB();
-    // Seed initial test data
-    await db.seedTestData();
+  // Start listening first, so we can at least get the server running
+  server.listen(PORT, () => {
+    console.log('TigerType server listening on *:' + PORT);
     
-    // Start listening
-    server.listen(PORT, () => {
-      console.log('TigerType server listening on *:' + PORT);
-      
-      // Print local network addresses for easy access during development
-      const networkInterfaces = os.networkInterfaces();
-      for (const name of Object.keys(networkInterfaces)) {
-        for (const iface of networkInterfaces[name]) {
-          if (iface.family === 'IPv4' && !iface.internal) {
-            console.log(`Accessible on: http://${iface.address}:${PORT}`);
-          }
+    // Print local network addresses for easy access during development
+    const networkInterfaces = os.networkInterfaces();
+    for (const name of Object.keys(networkInterfaces)) {
+      for (const iface of networkInterfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          console.log(`Accessible on: http://${iface.address}:${PORT}`);
         }
       }
-    });
+    }
+  });
+  
+  // Now try to initialize the database
+  try {
+    console.log('Initializing database...');
+    // Initialize database tables
+    await db.initDB();
+    console.log('Database tables created successfully');
+    
+    // Seed initial test data
+    await db.seedTestData();
+    console.log('Test data seeded successfully');
   } catch (err) {
-    console.error('Failed to start server:', err);
-    process.exit(1);
+    console.error('WARNING: Database initialization failed:', err);
+    console.log('Server is running, but database functionality may be limited.');
+    console.log('Please check your database connection settings in .env file.');
   }
 };
 
