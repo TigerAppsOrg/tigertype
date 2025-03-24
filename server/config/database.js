@@ -1,11 +1,18 @@
 const { Pool } = require('pg');
 
+// Log database connection details (excluding password)
+console.log('Connecting to database with settings:');
+console.log(`  User: ${process.env.DB_USER}`);
+console.log(`  Host: ${process.env.DB_HOST || 'localhost'}`);
+console.log(`  Database: ${process.env.DB_NAME || 'tigertype'}`);
+console.log(`  Port: ${process.env.DB_PORT || 5432}`);
+
 // Create a connection pool for Postgres
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'tigertype',
-  password: process.env.DB_PASSWORD || 'postgres',
+  password: process.env.DB_PASSWORD || '',
   port: process.env.DB_PORT || 5432,
   // Connection timeout of 30 seconds
   connectionTimeoutMillis: 30000,
