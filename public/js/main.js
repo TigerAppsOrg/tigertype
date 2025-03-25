@@ -241,6 +241,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Typing input event handler
   typingInputEl.addEventListener('input', handleTypingInput);
   
+  // Prevent paste to avoid cheating
+  typingInputEl.addEventListener('paste', function(e) {
+    if (raceState.type === 'practice' || raceState.inProgress) {
+      e.preventDefault();
+      return false;
+    }
+  });
+  
   // Handle keyboard events for practice mode (prevent backspace on correct characters)
   typingInputEl.addEventListener('keydown', function(e) {
     // Only apply this in practice mode
@@ -248,6 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const input = typingInputEl.value;
     const snippet = raceState.snippet.text;
+    
+    // Prevent Cmd+A, Cmd+Backspace, Ctrl+A combinations
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A' || e.key === 'Backspace')) {
+      e.preventDefault();
+      return false;
+    }
     
     // Check if the key is backspace and there's text to delete
     if (e.key === 'Backspace' && input.length > 0) {
@@ -418,6 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // If completed, calculate and send results
     if (isCompleted) {
       const endTime = Date.now();
+      raceState.completedTime = endTime; // Store completion time for fallback
       const durationInSeconds = (endTime - raceState.startTime) / 1000;
       
       // Calculate WPM and accuracy
@@ -473,11 +488,15 @@ document.addEventListener('DOMContentLoaded', () => {
     resultsContainerEl.classList.remove('hidden');
     resultsListEl.innerHTML = '';
     
+    console.log("Showing results for type:", raceState.type, "Results:", results);
+    
     if (raceState.type === 'practice') {
       // For practice mode, show detailed statistics for the current user
       const myResult = results.find(r => r.netid === netidEl.textContent);
       
       if (myResult) {
+        console.log("Found my result:", myResult);
+        
         // Calculate raw WPM vs adjusted WPM
         const snippet = raceState.snippet.text;
         const rawWpm = myResult.wpm; // WPM without accounting for errors
@@ -497,6 +516,43 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="stat-item">
               <div class="stat-label">Raw WPM:</div>
               <div class="stat-value">${rawWpm.toFixed(2)}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Adjusted WPM:</div>
+              <div class="stat-value">${adjustedWpm.toFixed(2)}</div>
+            </div>
+          </div>
+        `;
+        
+        resultsListEl.innerHTML = statsHtml;
+      } else {
+        // Fallback if result not found - create a simple result display based on raceState data
+        console.warn("Result not found for current user, using calculated fallback");
+        
+        const now = Date.now();
+        const durationInSeconds = ((raceState.completedTime || now) - raceState.startTime) / 1000;
+        const input = typingInputEl.value;
+        const snippet = raceState.snippet.text;
+        
+        // Calculate stats directly
+        const wpm = calculateWPM(input.length, durationInSeconds);
+        const accuracy = calculateAccuracy(input, snippet);
+        const adjustedWpm = wpm * (accuracy / 100);
+        
+        const statsHtml = `
+          <div class="practice-results">
+            <h3>Practice Results</h3>
+            <div class="stat-item">
+              <div class="stat-label">Time Completed:</div>
+              <div class="stat-value">${durationInSeconds.toFixed(2)}s</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Accuracy:</div>
+              <div class="stat-value">${accuracy.toFixed(2)}%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Raw WPM:</div>
+              <div class="stat-value">${wpm.toFixed(2)}</div>
             </div>
             <div class="stat-item">
               <div class="stat-label">Adjusted WPM:</div>
