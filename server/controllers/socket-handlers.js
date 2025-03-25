@@ -144,8 +144,8 @@ const initialize = (io) => {
           }
         });
         
-        // Start race countdown immediately for practice mode
-        startCountdown(io, lobby.code);
+        // Start practice countdown immediately for practice mode
+        startPracticeCountdown(io, lobby.code);
       } catch (err) {
         console.error('Error joining practice:', err);
         socket.emit('error', { message: 'Failed to join practice mode' });
@@ -530,7 +530,41 @@ const checkAndStartCountdown = (io, code) => {
   }
 };
 
-// Start the countdown for a race
+// Start countdown for practice mode
+const startPracticeCountdown = async (io, code) => {
+  try {
+    const race = activeRaces.get(code);
+    
+    if (!race || race.status !== 'waiting') {
+      console.warn(`Race ${code} is not in waiting status, cannot start countdown`);
+      return;
+    }
+    
+    console.log(`Starting practice countdown for race ${code}`);
+    
+    // Update race status to countdown
+    race.status = 'countdown';
+    activeRaces.set(code, race);
+    
+    // Update database status
+    try {
+      await RaceModel.updateStatus(race.id, 'countdown');
+      console.log(`Updated race ${code} status to countdown in database`);
+    } catch (dbErr) {
+      console.error(`Error updating race ${code} status in database:`, dbErr);
+    }
+    
+    // Broadcast countdown start - 3 seconds for practice mode
+    io.to(code).emit('race:countdown', { seconds: 3 });
+    
+    // Wait 3 seconds and start the race
+    setTimeout(() => startRace(io, code), 3000);
+  } catch (err) {
+    console.error('Error starting practice countdown:', err);
+  }
+};
+
+// Start the countdown for a multiplayer race
 const startCountdown = async (io, code) => {
   try {
     const race = activeRaces.get(code);
@@ -554,7 +588,7 @@ const startCountdown = async (io, code) => {
       console.error(`Error updating race ${code} status in database:`, dbErr);
     }
     
-    // Broadcast countdown start
+    // Broadcast countdown start - 5 seconds for multiplayer races
     io.to(code).emit('race:countdown', { seconds: 5 });
     
     // Wait 5 seconds and start the race

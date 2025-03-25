@@ -305,16 +305,18 @@ document.addEventListener('DOMContentLoaded', () => {
     countdownEl.classList.remove('hidden');
     
     let count = seconds;
+    countdownEl.textContent = count;
     
     const interval = setInterval(() => {
-      countdownEl.textContent = count;
+      count--;
       
       if (count <= 0) {
         clearInterval(interval);
         countdownEl.classList.add('hidden');
+        return;
       }
       
-      count--;
+      countdownEl.textContent = count;
     }, 1000);
   }
 
@@ -324,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
     typingInputContainer.classList.remove('hidden');
     typingInputEl.value = '';
     typingInputEl.focus();
+    typingInputEl.disabled = false; // Ensure input is enabled when race starts
     
     // Initialize the snippet with spans for each character
     updateSnippetHighlighting('');

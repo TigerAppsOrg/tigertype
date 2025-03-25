@@ -37,9 +37,9 @@ class CursorManager {
         const currentSpans = document.querySelectorAll('.current');
         currentSpans.forEach(span => {
           span.style.opacity = this.cursorVisible ? '0.3' : '1';
-          const accentColor = getComputedStyle(document.documentElement)
-            .getPropertyValue('--accent-primary').trim();
-          span.style.borderLeftColor = this.cursorVisible ? 'transparent' : accentColor;
+          const cursorColor = getComputedStyle(document.documentElement)
+            .getPropertyValue('--cursor-color').trim() || '#F58025';
+          span.style.borderLeftColor = this.cursorVisible ? 'transparent' : cursorColor;
         });
         this.cursorVisible = !this.cursorVisible;
       }, this.blinkSpeed);
