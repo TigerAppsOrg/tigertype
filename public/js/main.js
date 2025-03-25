@@ -240,6 +240,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Typing input event handler
   typingInputEl.addEventListener('input', handleTypingInput);
+  
+  // Handle keyboard events for practice mode (prevent backspace on correct characters)
+  typingInputEl.addEventListener('keydown', function(e) {
+    // Only apply this in practice mode
+    if (raceState.type !== 'practice') return;
+    
+    const input = typingInputEl.value;
+    const snippet = raceState.snippet.text;
+    
+    // Check if the key is backspace and there's text to delete
+    if (e.key === 'Backspace' && input.length > 0) {
+      // Find the last correctly typed character's position
+      let lastCorrectPos = 0;
+      for (let i = 0; i < input.length; i++) {
+        if (i >= snippet.length || input[i] !== snippet[i]) {
+          break;
+        }
+        lastCorrectPos = i + 1;
+      }
+      
+      // If attempting to delete a correct character, prevent it
+      if (input.length === lastCorrectPos && !e.ctrlKey) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // If using Ctrl+Backspace, jump to the last error position
+      if (e.ctrlKey && e.key === 'Backspace') {
+        e.preventDefault();
+        typingInputEl.value = input.substring(0, lastCorrectPos);
+        // Trigger the input event programmatically
+        typingInputEl.dispatchEvent(new Event('input'));
+        return false;
+      }
+    }
+  });
 
   // Function to show race screen
   function showRaceScreen() {
@@ -344,6 +380,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = e.target.value;
     const snippet = raceState.snippet.text;
     
+    // In practice mode, ensure we don't remove correctly typed characters
+    if (raceState.type === 'practice' && input.length > 0) {
+      const perfectInput = snippet.substring(0, input.length);
+      let correctPrefix = '';
+      
+      // Find the longest correct prefix
+      for (let i = 0; i < input.length; i++) {
+        if (input[i] === snippet[i]) {
+          correctPrefix += input[i];
+        } else {
+          break;
+        }
+      }
+      
+      // If the user somehow deleted correct characters, restore them
+      if (correctPrefix.length < input.length && correctPrefix !== input.substring(0, correctPrefix.length)) {
+        const newInput = correctPrefix + input.substring(correctPrefix.length);
+        e.target.value = newInput;
+      }
+    }
+    
     // Calculate progress
     const position = input.length;
     const isCompleted = position === snippet.length && input === snippet;
@@ -416,20 +473,57 @@ document.addEventListener('DOMContentLoaded', () => {
     resultsContainerEl.classList.remove('hidden');
     resultsListEl.innerHTML = '';
     
-    results.forEach((result, index) => {
-      const resultEl = document.createElement('div');
-      resultEl.className = 'result-item';
+    if (raceState.type === 'practice') {
+      // For practice mode, show detailed statistics for the current user
+      const myResult = results.find(r => r.netid === netidEl.textContent);
       
-      resultEl.innerHTML = `
-        <div class="result-rank">#${index + 1}</div>
-        <div class="result-netid">${result.netid}</div>
-        <div class="result-wpm">${result.wpm.toFixed(2)} WPM</div>
-        <div class="result-accuracy">${result.accuracy.toFixed(2)}%</div>
-        <div class="result-time">${result.completion_time.toFixed(2)}s</div>
-      `;
-      
-      resultsListEl.appendChild(resultEl);
-    });
+      if (myResult) {
+        // Calculate raw WPM vs adjusted WPM
+        const snippet = raceState.snippet.text;
+        const rawWpm = myResult.wpm; // WPM without accounting for errors
+        const adjustedWpm = rawWpm * (myResult.accuracy / 100); // Adjusted for accuracy
+        
+        const statsHtml = `
+          <div class="practice-results">
+            <h3>Practice Results</h3>
+            <div class="stat-item">
+              <div class="stat-label">Time Completed:</div>
+              <div class="stat-value">${myResult.completion_time.toFixed(2)}s</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Accuracy:</div>
+              <div class="stat-value">${myResult.accuracy.toFixed(2)}%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Raw WPM:</div>
+              <div class="stat-value">${rawWpm.toFixed(2)}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Adjusted WPM:</div>
+              <div class="stat-value">${adjustedWpm.toFixed(2)}</div>
+            </div>
+          </div>
+        `;
+        
+        resultsListEl.innerHTML = statsHtml;
+      }
+    } else {
+      // For multiplayer races, show all results in order
+      results.forEach((result, index) => {
+        const resultEl = document.createElement('div');
+        resultEl.className = 'result-item';
+        
+        resultEl.innerHTML = `
+          <div class="result-rank">#${index + 1}</div>
+          <div class="result-netid">${result.netid}</div>
+          <div class="result-wpm">${result.wpm.toFixed(2)} WPM</div>
+          <div class="result-accuracy">${result.accuracy.toFixed(2)}%</div>
+          <div class="result-time">${result.completion_time.toFixed(2)}s</div>
+        `;
+        
+        resultsListEl.appendChild(resultEl);
+      });
+    }
   }
 
   // Update snippet highlighting based on user input

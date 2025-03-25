@@ -297,3 +297,40 @@ h1 {
     width: 100%;
   }
 }
+
+/* Practice mode statistics styles */
+.practice-results {
+  background-color: var(--input-background);
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.practice-results h3 {
+  font-size: 1.5rem;
+  color: var(--princeton-orange);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  color: var(--princeton-orange);
+}
