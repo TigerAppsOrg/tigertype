@@ -4,6 +4,9 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Check authentication status first
+  checkAuthentication();
+  
   // DOM Elements
   const practiceBtn = document.getElementById('practice-btn');
   const publicBtn = document.getElementById('public-btn');
@@ -21,7 +24,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const backBtn = document.getElementById('back-btn');
   const netidEl = document.getElementById('netid');
 
-  // Socket connection
+  // Function to check if user is authenticated, redirect to login if not
+  function checkAuthentication() {
+    fetch('/auth/status')
+      .then(response => response.json())
+      .then(data => {
+        if (!data.authenticated || !data.user) {
+          console.log('User not authenticated, redirecting to login...');
+          // Redirect to login explicitly
+          window.location.href = '/auth/login';
+        } else {
+          console.log('User authenticated:', data.user);
+        }
+      })
+      .catch(error => {
+        console.error('Error checking authentication status:', error);
+      });
+  }
+
+  // Socket connection - only establish after we know authentication is okay
   const socket = io();
 
   // Game state

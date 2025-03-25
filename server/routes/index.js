@@ -19,6 +19,11 @@ router.get('/auth/status', (req, res) => {
   });
 });
 
+// Explicit login route - forces CAS authentication
+router.get('/auth/login', casAuth, (req, res) => {
+  res.redirect('/');
+});
+
 // Main application route - requires CAS authentication
 router.get('/', casAuth, (req, res) => {
   res.sendFile(path.join(__dirname, '../../public/index.html'));

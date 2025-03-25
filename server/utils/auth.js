@@ -71,8 +71,11 @@ async function validate(ticket, requestUrl) {
  * Redirects to CAS login if not authenticated
  */
 function casAuth(req, res, next) {
+  console.debug('CAS Auth middleware called, checking authentication...');
+  
   // if user already auth, proceed
   if (req.session && req.session.userInfo) {
+    console.debug('User already authenticated:', req.session.userInfo);
     return next();
   }
   
@@ -81,18 +84,25 @@ function casAuth(req, res, next) {
   
   if (!ticket) {
     // redirect to CAS login if no ticket is present
+    console.debug('No CAS ticket found, redirecting to CAS login...');
     const loginUrl = `${CAS_URL}login?service=${encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)}`;
+    console.debug('Redirecting to:', loginUrl);
     return res.redirect(loginUrl);
   }
+  
+  console.debug('CAS ticket found, validating ticket:', ticket);
   
   // validate the ticket
   validate(ticket, req.protocol + '://' + req.get('host') + req.originalUrl)
     .then(userInfo => {
       if (!userInfo) {
         // if ticket invalid, redirect to CAS login
+        console.debug('Invalid CAS ticket, redirecting to CAS login...');
         const loginUrl = `${CAS_URL}login?service=${encodeURIComponent(stripTicket(req.protocol + '://' + req.get('host') + req.originalUrl))}`;
         return res.redirect(loginUrl);
       }
+      
+      console.debug('CAS authentication successful, user info:', userInfo);
       
       // store user info in session 
       req.session.userInfo = userInfo;
@@ -121,6 +131,7 @@ function casAuth(req, res, next) {
       
       // redirect to clean URL w/o the ticket parameter
       const cleanUrl = stripTicket(req.protocol + '://' + req.get('host') + req.originalUrl);
+      console.debug('Redirecting to clean URL:', cleanUrl);
       res.redirect(cleanUrl);
     })
     .catch(error => {
@@ -135,7 +146,15 @@ function casAuth(req, res, next) {
  * @returns {boolean} True if authenticated, false otherwise
  */
 function isAuthenticated(req) {
-  return req.session && req.session.userInfo;
+  // Check that session exists with userInfo that has a valid CAS user field
+  if (req.session && 
+      req.session.userInfo && 
+      req.session.userInfo.user) {
+    console.debug('User authenticated:', req.session.userInfo.user);
+    return true;
+  }
+  console.debug('User not authenticated');
+  return false;
 }
 
 /**

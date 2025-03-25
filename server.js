@@ -40,15 +40,8 @@ app.use(sessionMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Auth routes
-app.get('/auth/status', (req, res) => {
-  res.json({
-    authenticated: isAuthenticated(req),
-    user: req.session.userInfo || null
-  });
-});
-app.get('/auth/logout', logoutApp);
-app.get('/auth/logoutcas', logoutCAS);
+// Remove duplicate auth routes since they're defined in the routes module
+// with proper CAS authentication
 
 // Serve static assets from public
 app.use(express.static(path.join(__dirname, 'public')));
