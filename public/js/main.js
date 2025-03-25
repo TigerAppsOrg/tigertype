@@ -70,16 +70,55 @@ document.addEventListener('DOMContentLoaded', () => {
   
   socket.on('connect_error', (error) => {
     console.error('Socket connection error:', error);
-    // Display error to user
-    alert('Connection error: ' + error.message + '. Please refresh the page.');
+    
+    // Check if it's an authentication error
+    if (error && (error.message || '').includes('Authentication')) {
+      console.log('Authentication required. Redirecting to login...');
+      window.location.href = '/auth/login';
+    } else {
+      console.error('Socket connection error:', error);
+      
+      // Only show alert for non-authentication errors
+      if (!error.message.includes('Authentication')) {
+        alert('Connection error. Please refresh the page to try again.');
+      }
+    }
   });
   
   socket.on('disconnect', (reason) => {
     console.log('Socket disconnected:', reason);
-    if (reason === 'io server disconnect') {
+    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
       // The server has disconnected us, we need to reconnect manually
       console.log('Server disconnected the socket, attempting to reconnect...');
       socket.connect();
+    } else if (reason === 'transport close' || reason === 'transport error') {
+      // Connection lost, will automatically try to reconnect
+      console.log('Connection lost, auto-reconnecting...');
+    } else if (reason === 'ping timeout') {
+      console.log('Ping timeout, the connection was lost.');
+      // Could add additional handling here
+    } else if (reason.includes('Authentication')) {
+      // Authentication issue
+      console.error('Authentication required. Redirecting to login...');
+      // Redirect to login page
+      window.location.href = '/auth/login';
+    }
+  });
+  
+  socket.on('connect_failed', (error) => {
+    console.error('Socket connection failed:', error);
+    // If it's an authentication error, redirect to login
+    if (error && (error.message || '').includes('Authentication')) {
+      console.log('Authentication required. Redirecting to login...');
+      window.location.href = '/auth/login';
+    }
+  });
+  
+  socket.on('error', (error) => {
+    console.error('Socket error:', error);
+    if (error && (error.message || '').includes('Authentication')) {
+      console.log('Authentication required. Redirecting to login...');
+      window.location.href = '/auth/login';
     }
   });
 

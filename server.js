@@ -27,9 +27,12 @@ const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'tigertype-session-secret',
   resave: false,
   saveUninitialized: true,
+  rolling: true, // Reset expiration on each request
   cookie: { 
     secure: process.env.NODE_ENV === 'production', 
-    maxAge: 24 * 60 * 60 * 1000 // 24h
+    maxAge: 24 * 60 * 60 * 1000, // 24h
+    httpOnly: true,
+    sameSite: 'lax'
   }
 });
 

@@ -22,34 +22,43 @@ const lastProgressUpdate = new Map();
 const initialize = (io) => {
   io.on('connection', (socket) => {
     // Store user info from session middleware
-    const socketInfo = socket.userInfo || socket.request.session?.userInfo || {};
-    const netid = socketInfo.user || socketInfo.netid || 'guest-user';
-    const userId = socketInfo.userId || 999;
+    const { user: netid, userId } = socket.userInfo;
     
     // Debug info
     console.log('Socket connection attempt with info:', { 
       netid, 
       userId, 
-      socketId: socket.id,
-      hasSession: !!socket.request.session,
-      hasUserInfo: !!socket.userInfo
+      socketId: socket.id
     });
     
-    // Temporary for debugging - don't reject any connections
-    /*
+    // If no netid, log error but try to continue
+    // This should not happen with auth middleware but we'll handle it gracefully
     if (!netid) {
-      console.error('Socket connection rejected - missing netid');
-      socket.disconnect(true);
-      return;
+      console.error('Socket connection has missing netid, this is unexpected');
+      console.error('Socket userInfo:', socket.userInfo);
+      
+      // Try to recover the netid from another place if possible
+      const sessionUserInfo = socket.request.session?.userInfo;
+      if (sessionUserInfo && sessionUserInfo.user) {
+        console.log('Found netid in session instead:', sessionUserInfo.user);
+        // Update socket.userInfo for later use
+        socket.userInfo = {
+          ...socket.userInfo,
+          user: sessionUserInfo.user
+        };
+      } else {
+        console.error('Cannot find netid anywhere, disconnecting socket');
+        socket.disconnect(true);
+        return;
+      }
     }
-    */
     
     console.log(`Socket connected: ${netid} (${socket.id})`);
     
     // Emit welcome event with user info
     socket.emit('connected', {
       id: socket.id,
-      netid
+      netid: netid || socket.userInfo?.user || 'unknown-user'
     });
     
     // Handle joining practice mode
