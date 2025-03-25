@@ -51,6 +51,7 @@ app.use(routes);
 
 // Share session between Express and Socket.io
 io.use((socket, next) => {
+  console.log('Socket middleware: sharing session...');
   sessionMiddleware(socket.request, {}, next);
 });
 
@@ -58,8 +59,11 @@ io.use((socket, next) => {
 io.use(async (socket, next) => {
   const req = socket.request;
   
+  console.log('Socket middleware: authenticating connection...', socket.id);
+  
   // If user isn't authenticated, reject the socket connection
   if (!isAuthenticated(req)) {
+    console.error('Socket authentication failed: User not authenticated');
     return next(new Error('Authentication required'));
   }
   
@@ -69,8 +73,11 @@ io.use(async (socket, next) => {
     
     // Make sure we have a valid netid
     if (!netid) {
+      console.error('Socket authentication failed: Missing netid');
       return next(new Error('Invalid authentication: Missing netid'));
     }
+    
+    console.log(`Socket auth: Found netid ${netid}, looking up in database...`);
     
     // Ensure user exists in database
     const UserModel = require('./server/models/user');
@@ -78,6 +85,7 @@ io.use(async (socket, next) => {
     
     // If we couldn't create a user, reject the connection
     if (!user) {
+      console.error(`Socket authentication failed: Could not find/create user for ${netid}`);
       return next(new Error('Failed to create or find user in database'));
     }
     
@@ -90,6 +98,12 @@ io.use(async (socket, next) => {
     // Also update session with userId if not present
     if (!req.session.userInfo.userId) {
       req.session.userInfo.userId = user.id;
+      // Save session to persist the userId
+      req.session.save(err => {
+        if (err) {
+          console.error('Error saving session:', err);
+        }
+      });
     }
     
     console.log(`Socket auth success for netid: ${netid}, userId: ${user.id}`);

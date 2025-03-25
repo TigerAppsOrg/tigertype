@@ -22,13 +22,27 @@ const lastProgressUpdate = new Map();
 const initialize = (io) => {
   io.on('connection', (socket) => {
     // Store user info from session middleware
-    const { netid, userId } = socket.request.session.userInfo || {};
+    const socketInfo = socket.userInfo || socket.request.session?.userInfo || {};
+    const netid = socketInfo.user || socketInfo.netid || 'guest-user';
+    const userId = socketInfo.userId || 999;
     
-    // If no netid, reject connection
+    // Debug info
+    console.log('Socket connection attempt with info:', { 
+      netid, 
+      userId, 
+      socketId: socket.id,
+      hasSession: !!socket.request.session,
+      hasUserInfo: !!socket.userInfo
+    });
+    
+    // Temporary for debugging - don't reject any connections
+    /*
     if (!netid) {
+      console.error('Socket connection rejected - missing netid');
       socket.disconnect(true);
       return;
     }
+    */
     
     console.log(`Socket connected: ${netid} (${socket.id})`);
     
@@ -41,16 +55,51 @@ const initialize = (io) => {
     // Handle joining practice mode
     socket.on('practice:join', async () => {
       try {
+        console.log(`User ${netid} joining practice mode`);
+        
+        // Check if player is already in a race
+        let alreadyInRace = false;
+        for (const [code, players] of racePlayers.entries()) {
+          if (players.some(p => p.id === socket.id)) {
+            alreadyInRace = true;
+            console.log(`User ${netid} is already in race ${code}, leaving that race first`);
+            
+            // Leave existing race rooms
+            socket.leave(code);
+            
+            // Clean up player from the race
+            const updatedPlayers = players.filter(p => p.id !== socket.id);
+            if (updatedPlayers.length === 0) {
+              racePlayers.delete(code);
+              activeRaces.delete(code);
+            } else {
+              racePlayers.set(code, updatedPlayers);
+              
+              // Notify other players
+              io.to(code).emit('race:playersUpdate', {
+                players: updatedPlayers.map(p => ({ netid: p.netid, ready: p.ready }))
+              });
+              
+              // Broadcast player left message
+              io.to(code).emit('race:playerLeft', { netid });
+            }
+          }
+        }
+        
         // Get a random snippet
         const snippet = await SnippetModel.getRandom();
         
         if (!snippet) {
+          console.error('Failed to load snippet for practice mode');
           socket.emit('error', { message: 'Failed to load snippet' });
           return;
         }
         
+        console.log(`Loaded snippet ID ${snippet.id} for practice mode`);
+        
         // Create a practice lobby
         const lobby = await RaceModel.create('practice', snippet.id);
+        console.log(`Created practice lobby with code ${lobby.code}`);
         
         // Join the socket room
         socket.join(lobby.code);
@@ -97,20 +146,48 @@ const initialize = (io) => {
     // Handle joining public lobby
     socket.on('public:join', async () => {
       try {
+        console.log(`User ${netid} joining public lobby`);
+        
         // Check if player is already in a race
         for (const [code, players] of racePlayers.entries()) {
           if (players.some(p => p.id === socket.id)) {
-            socket.emit('error', { message: 'Already in a race' });
-            return;
+            console.log(`User ${netid} is already in race ${code}, leaving that race first`);
+            
+            // Leave existing race rooms
+            socket.leave(code);
+            
+            // Clean up player from the race
+            const updatedPlayers = players.filter(p => p.id !== socket.id);
+            if (updatedPlayers.length === 0) {
+              racePlayers.delete(code);
+              activeRaces.delete(code);
+            } else {
+              racePlayers.set(code, updatedPlayers);
+              
+              // Notify other players
+              io.to(code).emit('race:playersUpdate', {
+                players: updatedPlayers.map(p => ({ netid: p.netid, ready: p.ready }))
+              });
+              
+              // Broadcast player left message
+              io.to(code).emit('race:playerLeft', { netid });
+            }
           }
         }
         
         // Try to find an existing public lobby
         let lobby = await RaceModel.findPublicLobby();
+        let snippet;
         
         // If no lobby exists, create a new one with a random snippet
         if (!lobby) {
-          const snippet = await SnippetModel.getRandom();
+          console.log('No existing public lobby found, creating a new one');
+          snippet = await SnippetModel.getRandom();
+          if (!snippet) {
+            console.error('Failed to load snippet for public lobby');
+            socket.emit('error', { message: 'Failed to load snippet' });
+            return;
+          }
           lobby = await RaceModel.create('public', snippet.id);
           
           // Initialize active race
@@ -128,6 +205,31 @@ const initialize = (io) => {
           
           // Initialize player list
           racePlayers.set(lobby.code, []);
+          console.log(`Created new public lobby with code ${lobby.code}`);
+        } else {
+          console.log(`Found existing public lobby with code ${lobby.code}`);
+          // Ensure active race exists for this lobby
+          if (!activeRaces.has(lobby.code)) {
+            // This is a safeguard against a race condition where the lobby exists in DB
+            // but not in memory (server restart, etc.)
+            console.log(`Lobby ${lobby.code} exists in database but not in memory, initializing...`);
+            activeRaces.set(lobby.code, {
+              id: lobby.id,
+              code: lobby.code,
+              snippet: {
+                id: lobby.snippet_id,
+                text: lobby.snippet_text
+              },
+              status: lobby.status || 'waiting',
+              type: lobby.type,
+              startTime: null
+            });
+            
+            // Initialize player list if needed
+            if (!racePlayers.has(lobby.code)) {
+              racePlayers.set(lobby.code, []);
+            }
+          }
         }
         
         // Join the socket room
@@ -144,12 +246,13 @@ const initialize = (io) => {
         racePlayers.set(lobby.code, players);
         
         // Send race info to player
+        const race = activeRaces.get(lobby.code);
         socket.emit('race:joined', {
           code: lobby.code,
           type: 'public',
           snippet: {
-            id: activeRaces.get(lobby.code).snippet.id,
-            text: activeRaces.get(lobby.code).snippet.text
+            id: race.snippet.id,
+            text: race.snippet.text
           },
           players: players.map(p => ({ netid: p.netid, ready: p.ready }))
         });
@@ -170,11 +273,15 @@ const initialize = (io) => {
     // Handle player ready status
     socket.on('player:ready', () => {
       try {
+        console.log(`User ${netid} is ready`);
+        
         // Find the race this player is in
         for (const [code, players] of racePlayers.entries()) {
           const playerIndex = players.findIndex(p => p.id === socket.id);
           
           if (playerIndex !== -1) {
+            console.log(`Found user ${netid} in race ${code}, marking as ready`);
+            
             // Mark player as ready
             players[playerIndex].ready = true;
             racePlayers.set(code, players);
@@ -207,6 +314,10 @@ const initialize = (io) => {
         
         // Find player in the race
         const players = racePlayers.get(code);
+        if (!players) {
+          return;
+        }
+        
         const playerIndex = players.findIndex(p => p.id === socket.id);
         
         if (playerIndex === -1) {
@@ -223,8 +334,11 @@ const initialize = (io) => {
         
         lastProgressUpdate.set(socket.id, now);
         
-        // Validate the progress if needed
-        // This is a simplified version - more validation could be added
+        // Validate the progress
+        if (position < 0 || position > race.snippet.text.length) {
+          console.warn(`Invalid position from ${netid}: ${position}`);
+          return;
+        }
         
         // Store player progress
         playerProgress.set(socket.id, {
@@ -246,6 +360,7 @@ const initialize = (io) => {
         
         // Handle race completion for this player
         if (completed) {
+          console.log(`User ${netid} has completed the race in lobby ${code}`);
           handlePlayerFinish(io, code, socket.id);
         }
       } catch (err) {
@@ -258,17 +373,26 @@ const initialize = (io) => {
       try {
         const { code, wpm, accuracy } = data;
         
+        console.log(`Received race result from ${netid}: ${wpm} WPM, ${accuracy}% accuracy`);
+        
         // Check if race exists
         const race = activeRaces.get(code);
         if (!race) {
+          console.warn(`Race ${code} not found for result submission`);
           return;
         }
         
         // Get player info
         const players = racePlayers.get(code);
+        if (!players) {
+          console.warn(`Players list not found for race ${code}`);
+          return;
+        }
+        
         const player = players.find(p => p.id === socket.id);
         
         if (!player) {
+          console.warn(`Player ${netid} not found in race ${code}`);
           return;
         }
         
@@ -276,21 +400,29 @@ const initialize = (io) => {
         const progress = playerProgress.get(socket.id);
         
         if (!progress || !progress.completed) {
+          console.warn(`Progress data missing or incomplete for player ${netid}`);
           return;
         }
         
         // Calculate completion time
         const completionTime = (progress.timestamp - race.startTime) / 1000;
         
+        console.log(`User ${netid} completed race in ${completionTime.toFixed(2)} seconds`);
+        
         // Record race result in database
-        await RaceModel.recordResult(
-          player.userId,
-          race.id,
-          race.snippet.id,
-          wpm,
-          accuracy,
-          completionTime
-        );
+        try {
+          await RaceModel.recordResult(
+            player.userId,
+            race.id,
+            race.snippet.id,
+            wpm,
+            accuracy,
+            completionTime
+          );
+          console.log(`Recorded race result for ${netid} in database`);
+        } catch (dbErr) {
+          console.error('Error recording race result in database:', dbErr);
+        }
         
         // Broadcast result to all players
         io.to(code).emit('race:playerResult', {
@@ -313,11 +445,14 @@ const initialize = (io) => {
         const playerIndex = players.findIndex(p => p.id === socket.id);
         
         if (playerIndex !== -1) {
+          console.log(`Removing user ${netid} from race ${code}`);
+          
           // Remove player from race
           players.splice(playerIndex, 1);
           
           // If no players left, clean up race
           if (players.length === 0) {
+            console.log(`No players left in race ${code}, cleaning up`);
             racePlayers.delete(code);
             activeRaces.delete(code);
             continue;
@@ -333,6 +468,22 @@ const initialize = (io) => {
           
           // Broadcast player left message
           io.to(code).emit('race:playerLeft', { netid });
+          
+          // Check if we should end the race early if all remaining players are finished
+          const race = activeRaces.get(code);
+          if (race && race.status === 'racing') {
+            const allCompleted = players.every(p => {
+              const progress = playerProgress.get(p.id);
+              return progress && progress.completed;
+            });
+            
+            if (allCompleted && players.length > 0) {
+              console.log(`All remaining players in race ${code} have finished, ending race`);
+              endRace(io, code).catch(err => {
+                console.error(`Error ending race ${code} after disconnect:`, err);
+              });
+            }
+          }
         }
       }
       
@@ -346,9 +497,16 @@ const initialize = (io) => {
 // Check if all players are ready and start countdown if appropriate
 const checkAndStartCountdown = (io, code) => {
   const players = racePlayers.get(code);
+  const race = activeRaces.get(code);
+  
+  if (!race || race.status !== 'waiting') {
+    console.log(`Race ${code} is not in waiting status, cannot start countdown`);
+    return;
+  }
   
   // Need at least 2 players for public races
-  if (!players || players.length < 2) {
+  if (race.type === 'public' && (!players || players.length < 2)) {
+    console.log(`Not enough players (${players ? players.length : 0}) in public race ${code} to start countdown`);
     return;
   }
   
@@ -356,7 +514,10 @@ const checkAndStartCountdown = (io, code) => {
   const allReady = players.every(p => p.ready);
   
   if (allReady) {
+    console.log(`All players in race ${code} are ready, starting countdown`);
     startCountdown(io, code);
+  } else {
+    console.log(`Not all players in race ${code} are ready, waiting`);
   }
 };
 
@@ -366,15 +527,23 @@ const startCountdown = async (io, code) => {
     const race = activeRaces.get(code);
     
     if (!race || race.status !== 'waiting') {
+      console.warn(`Race ${code} is not in waiting status, cannot start countdown`);
       return;
     }
+    
+    console.log(`Starting countdown for race ${code}`);
     
     // Update race status to countdown
     race.status = 'countdown';
     activeRaces.set(code, race);
     
     // Update database status
-    await RaceModel.updateStatus(race.id, 'countdown');
+    try {
+      await RaceModel.updateStatus(race.id, 'countdown');
+      console.log(`Updated race ${code} status to countdown in database`);
+    } catch (dbErr) {
+      console.error(`Error updating race ${code} status in database:`, dbErr);
+    }
     
     // Broadcast countdown start
     io.to(code).emit('race:countdown', { seconds: 5 });
@@ -392,8 +561,11 @@ const startRace = async (io, code) => {
     const race = activeRaces.get(code);
     
     if (!race || race.status !== 'countdown') {
+      console.warn(`Race ${code} is not in countdown status, cannot start race`);
       return;
     }
+    
+    console.log(`Starting race ${code}`);
     
     // Update race status to racing
     race.status = 'racing';
@@ -401,7 +573,12 @@ const startRace = async (io, code) => {
     activeRaces.set(code, race);
     
     // Update database status
-    await RaceModel.updateStatus(race.id, 'racing');
+    try {
+      await RaceModel.updateStatus(race.id, 'racing');
+      console.log(`Updated race ${code} status to racing in database`);
+    } catch (dbErr) {
+      console.error(`Error updating race ${code} status in database:`, dbErr);
+    }
     
     // Broadcast race start
     io.to(code).emit('race:start', { startTime: race.startTime });
@@ -416,15 +593,24 @@ const handlePlayerFinish = async (io, code, playerId) => {
     const race = activeRaces.get(code);
     
     if (!race || race.status !== 'racing') {
+      console.warn(`Race ${code} is not in racing status, cannot handle player finish`);
       return;
     }
     
     const players = racePlayers.get(code);
+    if (!players) {
+      console.warn(`Players list not found for race ${code}`);
+      return;
+    }
+    
     const player = players.find(p => p.id === playerId);
     
     if (!player) {
+      console.warn(`Player ${playerId} not found in race ${code}`);
       return;
     }
+    
+    console.log(`Player ${player.netid} has finished race ${code}`);
     
     // Check if all players have finished
     const allCompleted = players.every(p => {
@@ -434,7 +620,10 @@ const handlePlayerFinish = async (io, code, playerId) => {
     
     // If all players are done, end the race
     if (allCompleted) {
+      console.log(`All players in race ${code} have finished, ending race`);
       await endRace(io, code);
+    } else {
+      console.log(`Waiting for remaining players to finish race ${code}`);
     }
   } catch (err) {
     console.error('Error handling player finish:', err);
@@ -447,18 +636,32 @@ const endRace = async (io, code) => {
     const race = activeRaces.get(code);
     
     if (!race || race.status !== 'racing') {
+      console.warn(`Race ${code} is not in racing status, cannot end race`);
       return;
     }
+    
+    console.log(`Ending race ${code}`);
     
     // Update race status
     race.status = 'finished';
     activeRaces.set(code, race);
     
     // Update database
-    await RaceModel.updateStatus(race.id, 'finished');
+    try {
+      await RaceModel.updateStatus(race.id, 'finished');
+      console.log(`Updated race ${code} status to finished in database`);
+    } catch (dbErr) {
+      console.error(`Error updating race ${code} status in database:`, dbErr);
+    }
     
     // Get race results
-    const results = await RaceModel.getResults(race.id);
+    let results = [];
+    try {
+      results = await RaceModel.getResults(race.id);
+      console.log(`Retrieved ${results.length} results for race ${code}`);
+    } catch (dbErr) {
+      console.error(`Error getting results for race ${code}:`, dbErr);
+    }
     
     // Broadcast race end
     io.to(code).emit('race:end', { results });

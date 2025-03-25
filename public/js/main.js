@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check authentication status first
   checkAuthentication();
   
+  // Initialize cursor manager
+  const cursorManager = new CursorManager();
+  
   // DOM Elements
   const practiceBtn = document.getElementById('practice-btn');
   const publicBtn = document.getElementById('public-btn');
@@ -43,7 +46,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Socket connection - only establish after we know authentication is okay
-  const socket = io();
+  console.log('Initializing socket connection...');
+  
+  // Configure socket.io with reconnection options
+  const socket = io({
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000
+  });
+  
+  // Add socket connection event handlers
+  socket.on('connect', () => {
+    console.log('Socket connected successfully with ID:', socket.id);
+    
+    // Ensure UI is updated when reconnecting
+    if (raceState.code) {
+      console.log('Reconnected during active race, requesting state update...');
+      // Consider adding a rejoin mechanism here if needed
+    }
+  });
+  
+  socket.on('connect_error', (error) => {
+    console.error('Socket connection error:', error);
+    // Display error to user
+    alert('Connection error: ' + error.message + '. Please refresh the page.');
+  });
+  
+  socket.on('disconnect', (reason) => {
+    console.log('Socket disconnected:', reason);
+    if (reason === 'io server disconnect') {
+      // The server has disconnected us, we need to reconnect manually
+      console.log('Server disconnected the socket, attempting to reconnect...');
+      socket.connect();
+    }
+  });
 
   // Game state
   let raceState = {
@@ -147,10 +185,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners for buttons
   practiceBtn.addEventListener('click', () => {
+    console.log('Practice button clicked, joining practice mode...');
     socket.emit('practice:join');
   });
 
   publicBtn.addEventListener('click', () => {
+    console.log('Public button clicked, joining public lobby...');
     socket.emit('public:join');
   });
 
@@ -241,9 +281,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Start race
   function startRace() {
+    console.log("Starting race...");
     typingInputContainer.classList.remove('hidden');
     typingInputEl.value = '';
     typingInputEl.focus();
+    
+    // Initialize the snippet with spans for each character
+    updateSnippetHighlighting('');
+    
+    // Enable cursor manager
+    if (cursorManager) {
+      cursorManager.enable();
+      cursorManager.updateCursor(0, false);
+      cursorManager.startBlink();
+    }
   }
 
   // Handle typing input
@@ -344,6 +395,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const snippet = raceState.snippet.text;
     let html = '';
     
+    // Check if there's any input content
+    if (!snippet) {
+      console.error('Snippet is not available yet');
+      return;
+    }
+    
+    // Generate highlighted HTML for the snippet
     for (let i = 0; i < snippet.length; i++) {
       if (i < input.length) {
         if (input[i] === snippet[i]) {
@@ -354,11 +412,18 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (i === input.length) {
         html += `<span class="current">${snippet[i]}</span>`;
       } else {
-        html += snippet[i];
+        html += `<span>${snippet[i]}</span>`;
       }
     }
     
+    // Update snippet display with highlighted text
     snippetDisplayEl.innerHTML = html;
+    
+    // Update cursor position
+    if (cursorManager) {
+      const isError = input.length > 0 && input[input.length - 1] !== snippet[input.length - 1];
+      cursorManager.updateCursor(input.length, isError);
+    }
   }
 
   // Calculate words per minute
@@ -402,5 +467,14 @@ document.addEventListener('DOMContentLoaded', () => {
     typingInputContainer.classList.add('hidden');
     countdownEl.classList.add('hidden');
     progressDisplayEl.innerHTML = '';
+    
+    // Reset cursor manager
+    if (cursorManager) {
+      cursorManager.stopBlink();
+      cursorManager.disable();
+    }
+    
+    // Reset snippet display
+    snippetDisplayEl.textContent = '';
   }
 });
