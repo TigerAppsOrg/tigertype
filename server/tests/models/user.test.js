@@ -1,3 +1,5 @@
+/* ENTIRELY AI-GENERATED FILE */
+
 const UserModel = require('../../models/user');
 
 // Create a properly mocked User model

@@ -1,3 +1,5 @@
+/* ENTIRELY AI-GENERATED FILE */
+
 const RaceModel = require('../../models/race');
 
 // Create a properly mocked Race model
