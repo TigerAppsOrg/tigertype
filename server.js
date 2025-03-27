@@ -155,14 +155,15 @@ const PORT = process.env.PORT || 3000;
 const startServer = async () => {
   // Start listening first, so we can at least get the server running
   server.listen(PORT, () => {
-    console.log('TigerType server listening on *:' + PORT);
+    console.log('TigerType backend server listening on *:' + PORT);
+    console.log('NOTE: Frontend server should be running separately on port 5174');
     
     // Print local network addresses for easy access during development
     const networkInterfaces = os.networkInterfaces();
     for (const name of Object.keys(networkInterfaces)) {
       for (const iface of networkInterfaces[name]) {
         if (iface.family === 'IPv4' && !iface.internal) {
-          console.log(`Accessible on: http://${iface.address}:${PORT}`);
+          console.log(`Backend accessible on: http://${iface.address}:${PORT}`);
         }
       }
     }
