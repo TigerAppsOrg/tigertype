@@ -12,6 +12,11 @@ const path = require('path');
 // CAS URL for Princeton authentication
 const CAS_URL = 'https://fed.princeton.edu/cas/';
 
+// Frontend URL for redirects
+const FRONTEND_URL = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:5174'  // Development frontend URL
+  : process.env.FRONTEND_URL || ''; // Production frontend URL
+
 /**
  * strip ticket parameter from URL
  * @param {string} urlStr - URL to strip the ticket from
@@ -85,7 +90,8 @@ function casAuth(req, res, next) {
   if (!ticket) {
     // redirect to CAS login if no ticket is present
     console.debug('No CAS ticket found, redirecting to CAS login...');
-    const loginUrl = `${CAS_URL}login?service=${encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)}`;
+    const serviceUrl = `${FRONTEND_URL}/auth/login`;
+    const loginUrl = `${CAS_URL}login?service=${encodeURIComponent(serviceUrl)}`;
     console.debug('Redirecting to:', loginUrl);
     return res.redirect(loginUrl);
   }
@@ -93,12 +99,13 @@ function casAuth(req, res, next) {
   console.debug('CAS ticket found, validating ticket:', ticket);
   
   // validate the ticket
-  validate(ticket, req.protocol + '://' + req.get('host') + req.originalUrl)
+  validate(ticket, FRONTEND_URL + req.originalUrl)
     .then(userInfo => {
       if (!userInfo) {
         // if ticket invalid, redirect to CAS login
         console.debug('Invalid CAS ticket, redirecting to CAS login...');
-        const loginUrl = `${CAS_URL}login?service=${encodeURIComponent(stripTicket(req.protocol + '://' + req.get('host') + req.originalUrl))}`;
+        const serviceUrl = `${FRONTEND_URL}/auth/login`;
+        const loginUrl = `${CAS_URL}login?service=${encodeURIComponent(serviceUrl)}`;
         return res.redirect(loginUrl);
       }
       
@@ -121,18 +128,20 @@ function casAuth(req, res, next) {
             
             // Store userId in session for easier access
             req.session.userInfo.userId = user.id;
+            
+            // Redirect to frontend home page after successful authentication
+            res.redirect(`${FRONTEND_URL}/home`);
           })
           .catch(err => {
             console.error('Error creating/finding user in database:', err);
+            // Still redirect to home page even if database operation fails
+            res.redirect(`${FRONTEND_URL}/home`);
           });
       } catch (err) {
         console.error('Error importing user model or handling user creation:', err);
+        // Still redirect to home page even if there's an error
+        res.redirect(`${FRONTEND_URL}/home`);
       }
-      
-      // redirect to clean URL w/o the ticket parameter
-      const cleanUrl = stripTicket(req.protocol + '://' + req.get('host') + req.originalUrl);
-      console.debug('Redirecting to clean URL:', cleanUrl);
-      res.redirect(cleanUrl);
     })
     .catch(error => {
       console.error('Error during CAS authentication:', error);

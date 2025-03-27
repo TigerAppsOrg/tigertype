@@ -28,7 +28,7 @@ Ultimately, TigerType will provide a fun, campus-themed environment with potenti
    - Visual progress bars or snippet highlighting to show each racer's position.
 
 4. **Achievements & Analytics (Optional)**  
-   - Milestone achievements: “100 WPM Club,” “Flawless Accuracy,” etc.  
+   - Milestone achievements: "100 WPM Club," "Flawless Accuracy," etc.  
    - Track improvement over time, display graphs of WPM or accuracy progression.
 
 ### Far Stretch Goals (Puzzle Mode, Tournaments)
@@ -40,9 +40,8 @@ These are beyond the primary or mid-range scope and would only be considered aft
 ## 2. Development Environment Setup
 
 ### Prerequisites
-- Node.js (v14 or higher)
+- Node.js (v18 or higher)
 - npm (v6 or higher)
-- Python 3.8 or higher
 - PostgreSQL
 
 ### Setup Instructions
@@ -64,38 +63,34 @@ These are beyond the primary or mid-range scope and would only be considered aft
      - Set any other required environment variables
 
 3. **Install Dependencies**
-   - Install server dependencies (from root directory):
-     ```bash
-     npm install
-     ```
-   - Install client dependencies:
-     ```bash
-     cd client
-     npm install
-     ```
+   ```bash
+   npm run install:all
+   ```
+   This will install both server and client dependencies.
 
 4. **Running the Application**
-   You'll need two terminal windows:
-   
-   Terminal 1 (Server - from root directory):
+   From the root directory, run:
    ```bash
    npm run dev
    ```
-   
-   Terminal 2 (Client - from client directory):
-   ```bash
-   cd client
-   npm run dev
-   ```
-
-   The application should now be running at:
-   - Frontend: http://localhost:5173
+   This single command will start both:
+   - Frontend: http://localhost:5174
    - Backend: http://localhost:3000
 
+   Note: You only need to run the command from the root directory. Do not run any commands in the client directory separately.
+
+### Development Notes
+- The backend API server runs on port 3000
+- The frontend development server runs on port 5174
+- All API requests from the frontend are automatically proxied to the backend
+- During development, always access the application through http://localhost:5174
+- The backend port (3000) is for API requests only and should not be accessed directly in the browser
+
 ### Common Issues
-- If you encounter dependency issues, try deleting `node_modules` and `package-lock.json` in both root and client directories, then run `npm install` again
+- If you encounter dependency issues, try deleting `node_modules` and `package-lock.json` in both root and client directories, then run `npm run install:all` again
 - Ensure all environment variables are properly set in your `.env` file
-- Make sure both server and client are running simultaneously
+- If you see port conflicts, make sure you don't have any other development servers running
+- Make sure you're accessing the application through port 5174, not port 3000
 
 ---
 
@@ -120,7 +115,7 @@ These are beyond the primary or mid-range scope and would only be considered aft
 - **PrincetonInfo** or **Art Museum** data (optional) for theming text snippets.  
 - Must request a **service account** and CAS whitelisting for any non-localhost domain.
 
-### Possible “Hook” for Grading
+### Possible "Hook" for Grading
 - Non-trivial concurrency or real-time features.  
 - Substantial database schema (users, race results, achievements).  
 - Weekly demos showing iterative progress.  
@@ -135,7 +130,7 @@ These are beyond the primary or mid-range scope and would only be considered aft
 ### Long Thematic Name List (Princeton Puns)
 - Clack & Bicker  
 - Precept Prowl  
-- Dean’s Date Dash  
+- Dean's Date Dash  
 - Firestone Frenzy  
 - Orange Bubble Bash  
 - Street Speed Showdown  
@@ -163,7 +158,7 @@ These are beyond the primary or mid-range scope and would only be considered aft
 - TigerKeys  
 - Roaring Typist  
 - Stripes & Keys  
-- Paws ‘n’ Claws Typing  
+- Paws 'n' Claws Typing  
 - Clack & Roar  
 - TigerDash  
 - OrangeLightning  
@@ -176,7 +171,7 @@ These are beyond the primary or mid-range scope and would only be considered aft
 - RapidRoar  
 - Prowl & Type  
 - Quill & Paw  
-- Type ’n’ Stripe  
+- Type 'n' Stripe  
 - TigerHype  
 - PawBoard  
 - FlashFur  
@@ -208,16 +203,16 @@ TigerType is a Princeton-themed typing race application where users can practice
 ### Deliverables Roadmap
 
 1. **Row in the ProjectFinder**  
-   - Each team member adds a row with project name “TigerType” and a short description.
+   - Each team member adds a row with project name "TigerType" and a short description.
 
 2. **Project Approval Meeting**  
    - Bring this roadmap, possibly a minimal proof-of-concept.
 
 3. **Version Control Repository**  
-   - Create a private GitHub repo named “TigerType,” grant instructors read access.
+   - Create a private GitHub repo named "TigerType," grant instructors read access.
 
 4. **Team Directory**  
-   - A private Google Drive folder named “TigerType” containing docs like ProjectOverview, Timeline, wireframes, etc.
+   - A private Google Drive folder named "TigerType" containing docs like ProjectOverview, Timeline, wireframes, etc.
 
 5. **Project Overview Document**  
    - ~3–7 pages detailing identification, elevator speech, overview, requirements, functionality, design, milestones, risks.
@@ -238,7 +233,7 @@ TigerType is a Princeton-themed typing race application where users can practice
 10. **Presentation & Slides**  
     - 20-minute public demonstration during reading period, plus Q&A on architecture and lessons learned.
 
-11. **Grader’s Guide**  
+11. **Grader's Guide**  
     - Step-by-step instructions for each use case: logging in, creating/joining a race, viewing leaderboards, etc.
 
 12. **Product Evaluation**  
@@ -248,10 +243,10 @@ TigerType is a Princeton-themed typing race application where users can practice
     - Reflection on planning, technical issues, what worked well, acknowledgments.
 
 14. **Source Code**  
-    - Final code snapshot stored in a `src/` directory in the team’s Google Drive, ignoring compiled artifacts.
+    - Final code snapshot stored in a `src/` directory in the team's Google Drive, ignoring compiled artifacts.
 
 15. **Final Product**  
-    - Deployed “TigerType” site, live for ~two weeks post Dean’s Date.
+    - Deployed "TigerType" site, live for ~two weeks post Dean's Date.
 
 ### MVP Breakdown (Lowest-Level Steps)
 
@@ -290,14 +285,14 @@ Below are mid-range goals to enhance TigerType before exploring puzzle modes or 
 
 2. **Departmental/Class-Year Leaderboards**  
    - Use ActiveDirectory or user-submitted profile data to segment boards.  
-   - Let users filter between “Global,” “My Department,” and “My Class Year.”
+   - Let users filter between "Global," "My Department," and "My Class Year."
 
 3. **Async Challenges & Friend Invites**  
-   - “Challenge a friend by netid” to beat your score in a snippet.  
-   - Store “challenge” in the DB; friend sees “Pending Challenge” on next login.
+   - "Challenge a friend by netid" to beat your score in a snippet.  
+   - Store "challenge" in the DB; friend sees "Pending Challenge" on next login.
 
 4. **Achievements & Basic Analytics**  
-   - Badges for hitting milestones: “10 Races,” “100 WPM,” “1,000 typed words.”  
+   - Badges for hitting milestones: "10 Races," "100 WPM," "1,000 typed words."  
    - Track WPM or accuracy over time in simple data visualizations.
 
 5. **Small Real-Time Quick Race (Lobby)**  

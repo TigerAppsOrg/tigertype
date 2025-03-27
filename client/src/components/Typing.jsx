@@ -17,6 +17,22 @@ function Typing() {
   // Handle typing input
   const handleInput = (e) => {
     const newInput = e.target.value;
+    
+    // For multiplayer races, require 100% accuracy
+    if (raceState.type !== 'practice' && raceState.inProgress) {
+      const text = raceState.snippet.text;
+      // Only allow input if it matches the text exactly up to the current position
+      if (newInput.length > input.length) {
+        // Check if the new character matches
+        const newChar = newInput[newInput.length - 1];
+        const expectedChar = text[newInput.length - 1];
+        if (newChar !== expectedChar) {
+          // If it doesn't match, don't update the input
+          return;
+        }
+      }
+    }
+    
     setInput(newInput);
     
     if (raceState.inProgress) {

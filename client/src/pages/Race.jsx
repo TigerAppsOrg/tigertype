@@ -35,6 +35,7 @@ function Race() {
         setCountdown(prev => {
           if (prev <= 1) {
             clearInterval(countdownRef.current);
+            countdownRef.current = null;
             return null;
           }
           return prev - 1;
@@ -59,6 +60,7 @@ function Race() {
           console.log('Countdown tick:', prev);
           if (prev <= 1) {
             clearInterval(countdownRef.current);
+            countdownRef.current = null;
             return null;
           }
           return prev - 1;
@@ -70,6 +72,7 @@ function Race() {
       socket.off('race:countdown', handleCountdown);
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
+        countdownRef.current = null;
       }
     };
   }, [socket, raceState.type, raceState.inProgress, raceState.completed]);
@@ -132,7 +135,7 @@ function Race() {
               </div>
             )}
             
-            {countdown !== null && !raceState.completed && (
+            {countdown !== null && !raceState.completed && !raceState.inProgress && (
               <div className="countdown">{countdown}</div>
             )}
           </div>
