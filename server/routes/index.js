@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const apiRoutes = require('./api');
-const { casAuth, isAuthenticated } = require('../utils/auth');
+const { casAuth, isAuthenticated, logoutApp, logoutCAS } = require('../utils/auth');
 const path = require('path');
 
 // API routes
@@ -21,8 +21,14 @@ router.get('/auth/status', (req, res) => {
 
 // Explicit login route - forces CAS authentication
 router.get('/auth/login', casAuth, (req, res) => {
-  res.redirect('/');
+  res.redirect('/home');
 });
+
+// Regular logout route - just logs out from the app
+router.get('/auth/logout', logoutApp);
+
+// CAS logout route - logs out from CAS and then the app
+router.get('/auth/logoutcas', logoutCAS);
 
 // Main application route - requires CAS authentication
 router.get('/', casAuth, (req, res) => {
