@@ -5,7 +5,7 @@ import './Results.css';
 
 function Results() {
   const navigate = useNavigate();
-  const { raceState, resetRace } = useRace();
+  const { raceState, typingState, resetRace } = useRace();
   const { user } = useAuth();
   
   // Handle back button
