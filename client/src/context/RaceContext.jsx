@@ -190,15 +190,16 @@ export const RaceProvider = ({ children }) => {
     // Calculate WPM and accuracy
     const words = correctChars / 5; // standard definition: 1 word = 5 chars
     const wpm = (words / elapsedSeconds) * 60;
-    const accuracy = ((correctChars / (correctChars + errors)) * 100) || 0;
+    // Calculate accuracy based on total input length, not just correct characters
+    const accuracy = input.length > 0 ? (correctChars / input.length) * 100 : 0;
     
     // Update the typing state
     setTypingState({
       input,
-      position: correctChars,
+      position: input.length, // Use actual input length instead of correct chars
       correctChars,
       errors,
-      completed: correctChars === text.length,
+      completed: input.length >= text.length, // Consider race complete when input length matches or exceeds text length
       wpm,
       accuracy
     });
@@ -208,13 +209,13 @@ export const RaceProvider = ({ children }) => {
       // Emit progress to the server
       if (socket && connected) {
         socket.emit('race:progress', {
-          position: correctChars,
+          position: input.length,
           total: text.length
         });
       }
       
-      // Check if race is completed
-      if (correctChars === text.length) {
+      // Check if race is completed (input length matches or exceeds text length)
+      if (input.length >= text.length) {
         // Mark as completed locally
         setRaceState(prev => ({
           ...prev,
@@ -224,6 +225,7 @@ export const RaceProvider = ({ children }) => {
         // Send completion to server
         if (socket && connected) {
           socket.emit('race:result', {
+            code: raceState.code,
             wpm,
             accuracy,
             completion_time: elapsedSeconds
