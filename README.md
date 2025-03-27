@@ -37,6 +37,66 @@ Ultimately, TigerType will provide a fun, campus-themed environment with potenti
 
 These are beyond the primary or mid-range scope and would only be considered after core development is complete.
 
+## 2. Development Environment Setup
+
+### Prerequisites
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+- Python 3.8 or higher
+- PostgreSQL
+
+### Setup Instructions
+
+1. **Clone the Repository**
+   ```bash
+   git clone [repository-url]
+   cd tigertype
+   ```
+
+2. **Environment Configuration**
+   - Copy the example environment file:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit the `.env` file with your configuration:
+     - Set up your database credentials
+     - Configure CAS authentication settings
+     - Set any other required environment variables
+
+3. **Install Dependencies**
+   - Install server dependencies (from root directory):
+     ```bash
+     npm install
+     ```
+   - Install client dependencies:
+     ```bash
+     cd client
+     npm install
+     ```
+
+4. **Running the Application**
+   You'll need two terminal windows:
+   
+   Terminal 1 (Server - from root directory):
+   ```bash
+   npm run dev
+   ```
+   
+   Terminal 2 (Client - from client directory):
+   ```bash
+   cd client
+   npm run dev
+   ```
+
+   The application should now be running at:
+   - Frontend: http://localhost:5173
+   - Backend: http://localhost:3000
+
+### Common Issues
+- If you encounter dependency issues, try deleting `node_modules` and `package-lock.json` in both root and client directories, then run `npm install` again
+- Ensure all environment variables are properly set in your `.env` file
+- Make sure both server and client are running simultaneously
+
 ---
 
 ## 2. General Implementation Tips
