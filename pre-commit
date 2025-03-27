@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# TigerType Pre-Commit Hook
+# This hook will run tests before allowing a commit
+
+# Source the user's shell environment
+if [ -f "$HOME/.bashrc" ]; then
+  source "$HOME/.bashrc"
+fi
+if [ -f "$HOME/.bash_profile" ]; then
+  source "$HOME/.bash_profile"
+fi
+
+# Get the directory where the pre-commit hook is located
+HOOK_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get the project root directory (parent of .git)
+PROJECT_ROOT="$( cd "$HOOK_DIR/../.." && pwd )"
+
+# Change to the project root directory
+cd "$PROJECT_ROOT"
+
+echo -e "\033[1;33mRunning TigerType tests before commit...\033[0m"
+
+# Ensure dependencies are installed
+echo -e "\033[1;36mEnsuring dependencies are installed...\033[0m"
+npm install --silent
+
+# Save current changes so tests run on the actual code being committed
+git stash -q --keep-index
+
+# Run server tests using jest directly
+echo -e "\033[1;36mRunning server tests...\033[0m"
+./node_modules/.bin/jest --detectOpenHandles --verbose --testPathPattern=server
+
+# Store the server test exit code
+SERVER_EXIT_CODE=$?
+
+# If running in CI, also run client tests
+if [ -n "$CI" ]; then
+  echo -e "\033[1;36mRunning client tests in CI environment...\033[0m"
+  cd client && npm run test:progress
+  CLIENT_EXIT_CODE=$?
+else
+  # In local environment, make client tests optional
+  echo -e "\033[1;36mSkipping client tests in local environment.\033[0m"
+  CLIENT_EXIT_CODE=0
+fi
+
+# Restore stashed changes
+git stash pop -q
+
+# Check if any tests failed
+if [ $SERVER_EXIT_CODE -ne 0 ]; then
+  echo -e "\033[1;31m❌ Server tests failed. Please fix the issues before committing.\033[0m"
+  exit 1
+fi
+
+if [ $CLIENT_EXIT_CODE -ne 0 ]; then
+  echo -e "\033[1;31m❌ Client tests failed. Please fix the issues before committing.\033[0m"
+  exit 1
+fi
+
+echo -e "\033[1;32m✅ All tests passed! Proceeding with commit...\033[0m"
+exit 0 
