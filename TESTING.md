@@ -1,6 +1,6 @@
 # TigerType Testing Guide
 **[ALL TESTS ARE ENTIRELY AI-GENERATED]**
-*(THIS INCLUDES ALL TEST RELATED FILES: this `TESTING.md` file, all files in the `testing/` directory, and the run-tests.sh script)*
+*(THIS INCLUDES ALL TEST RELATED FILES: this `TESTING.md` file, all files in the `testing/` directory, `run-tests.sh` script)*
 
 This document provides instructions for running and writing tests for the TigerType application.
 
