@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRace } from '../context/RaceContext';
+import { useSocket } from '../context/SocketContext';
 import Typing from '../components/Typing';
 import Results from '../components/Results';
 import './Race.css';
 
 function Race() {
   const navigate = useNavigate();
+  const { socket } = useSocket();
   const { 
     raceState, 
     typingState,
@@ -19,10 +21,10 @@ function Race() {
   
   // Handle race countdown
   useEffect(() => {
-    const socket = window.socket;
     if (!socket) return;
     
     const handleCountdown = (data) => {
+      console.log('Countdown received:', data);
       setCountdown(data.seconds);
       
       if (countdownRef.current) {
@@ -42,13 +44,34 @@ function Race() {
     
     socket.on('race:countdown', handleCountdown);
     
+    // For practice mode, manually trigger countdown when game type is practice
+    if (raceState.type === 'practice' && !raceState.inProgress && !countdown) {
+      console.log('Setting up practice countdown');
+      setCountdown(3);
+      
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+      
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          console.log('Countdown tick:', prev);
+          if (prev <= 1) {
+            clearInterval(countdownRef.current);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
     return () => {
       socket.off('race:countdown', handleCountdown);
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
       }
     };
-  }, []);
+  }, [socket, raceState.type, raceState.inProgress]);
   
   // Clean up on unmount
   useEffect(() => {

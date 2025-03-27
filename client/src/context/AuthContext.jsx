@@ -20,9 +20,13 @@ export const AuthProvider = ({ children }) => {
         if (response.data.authenticated && response.data.user) {
           setUser(response.data.user);
           setAuthenticated(true);
+          
+          // Store user in window object for socket.io access
+          window.user = response.data.user;
         } else {
           setUser(null);
           setAuthenticated(false);
+          window.user = null;
         }
         
         setError(null);
@@ -30,6 +34,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Error checking authentication status:', err);
         setUser(null);
         setAuthenticated(false);
+        window.user = null;
         setError('Failed to check authentication status');
       } finally {
         setLoading(false);
@@ -60,6 +65,8 @@ export const AuthProvider = ({ children }) => {
       if (response.data) {
         setUser(response.data);
         setAuthenticated(true);
+        // Store user in window object for socket.io access
+        window.user = response.data;
         return response.data;
       }
       
