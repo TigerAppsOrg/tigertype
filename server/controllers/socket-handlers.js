@@ -380,7 +380,7 @@ const initialize = (io) => {
     // Handle race result
     socket.on('race:result', async (data) => {
       try {
-        const { code, wpm, accuracy } = data;
+        const { code, wpm, accuracy, completion_time } = data;
         
         console.log(`Received race result from ${netid}: ${wpm} WPM, ${accuracy}% accuracy`);
         
@@ -405,16 +405,19 @@ const initialize = (io) => {
           return;
         }
         
-        // Get player progress
-        const progress = playerProgress.get(socket.id);
-        
-        if (!progress || !progress.completed) {
-          console.warn(`Progress data missing or incomplete for player ${netid}`);
-          return;
+        // For practice mode, use the completion_time from the client
+        // For regular races, use the progress data
+        let completionTime;
+        if (race.type === 'practice') {
+          completionTime = completion_time;
+        } else {
+          const progress = playerProgress.get(socket.id);
+          if (!progress || !progress.completed) {
+            console.warn(`Progress data missing or incomplete for player ${netid}`);
+            return;
+          }
+          completionTime = (progress.timestamp - race.startTime) / 1000;
         }
-        
-        // Calculate completion time
-        const completionTime = (progress.timestamp - race.startTime) / 1000;
         
         console.log(`User ${netid} completed race in ${completionTime.toFixed(2)} seconds`);
         
@@ -438,7 +441,7 @@ const initialize = (io) => {
           netid: player.netid,
           wpm,
           accuracy,
-          completionTime
+          completion_time: completionTime
         });
       } catch (err) {
         console.error('Error recording race result:', err);
