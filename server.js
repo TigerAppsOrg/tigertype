@@ -50,16 +50,27 @@ app.use(sessionMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Serve the React app's static files in production
+// Only serve static files in production
 if (process.env.NODE_ENV === 'production') {
+  // Serve static files from public directory
+  app.use(express.static(path.join(__dirname, 'public')));
+  // Serve the React app's static files
   app.use(express.static(path.join(__dirname, 'public/dist')));
 }
 
 // Use API and auth routes
 app.use(routes);
+
+// Development mode - return API message for root route
+if (process.env.NODE_ENV === 'development') {
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'TigerType API Server',
+      note: 'Please access the frontend at http://localhost:5173',
+      environment: 'development'
+    });
+  });
+}
 
 // For any other routes in production, serve the React app
 if (process.env.NODE_ENV === 'production') {
