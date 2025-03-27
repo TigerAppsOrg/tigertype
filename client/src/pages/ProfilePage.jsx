@@ -1,12 +1,16 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './ProfilePage.css';
+import defaultProfileImage from '../assets/default-profile.svg'
+import userEdit from '../assets/edit.png'
 import defaultProfileImage from '../assets/default-profile.svg'
 import userEdit from '../assets/edit.png'
 
 function ProfilePage() {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const navigate = useNavigate();
 
   // Parse numeric values to ensure they're numbers
@@ -19,12 +23,21 @@ function ProfilePage() {
     navigate('/home');
   };
 
+  const handleBack = () => {
+    navigate('/home');
+  };
+
   if (loading) {
     return <div className="loading-container">Loading profile...</div>;
   }
 
   return (
     <div className="profile-container">
+      <div className="back-button-container">
+        <button className="back-button" onClick={handleBack}>
+          <span>⟵</span> Back
+        </button>
+      </div>
       <div className="back-button-container">
         <button className="back-button" onClick={handleBack}>
           <span>⟵</span> Back

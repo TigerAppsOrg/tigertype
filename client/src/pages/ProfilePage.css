@@ -5,7 +5,11 @@
   margin: 2rem auto;
   padding: 2rem;
   background-color: #1e1e1e;
+  background-color: #1e1e1e;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-style: solid;
+  border-radius: 30px;
+  border-color: #F58025;
   border-style: solid;
   border-radius: 30px;
   border-color: #F58025;
@@ -49,9 +53,42 @@
   margin-bottom: 3rem;
 }
 
+.back-button-container {
+  margin-bottom: 2rem;
+}
+
+.back-button {
+  background-color: transparent;
+  border: 1px solid #F58025;
+  color: #F58025;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background-color: rgba(245, 128, 37, 0.1);
+}
+
 .profile-header h1 {
   color: #F58025;
+  color: #F58025;
   margin-bottom: 1rem;
+}
+
+.profile-page-image {
+  border-radius: 30px;
+  border: solid;
+  border-color: #f8f9fa;
+  width: 160px;
+  height: 160px;
+}
+
+.profile-user-edit {
+  display: inline;
+  width: 1.875rem;
+  height: 1.875rem;
 }
 
 .profile-page-info {
@@ -110,6 +147,7 @@
 }
 
 .profile-stats h2 {
+  color: #F58025;
   color: #F58025;
   margin-bottom: 1.5rem;
 }
