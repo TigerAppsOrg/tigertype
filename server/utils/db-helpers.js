@@ -117,22 +117,25 @@ const dbHelpers = {
           RETURNING *
         `, [userId, lobbyId, snippetId, wpm, accuracy, completionTime]);
         
-        // Update user stats
+        // Update user stats using a subquery to calculate averages
         await client.query(`
-          WITH stats AS (
-            SELECT 
-              COUNT(*) as races_completed,
-              AVG(wpm) as avg_wpm,
-              AVG(accuracy) as avg_accuracy
-            FROM race_results
-            WHERE user_id = $1
-          )
           UPDATE users
           SET 
-            races_completed = stats.races_completed,
-            avg_wpm = stats.avg_wpm,
-            avg_accuracy = stats.avg_accuracy
-          FROM stats
+            races_completed = (
+              SELECT COUNT(*)
+              FROM race_results
+              WHERE user_id = $1
+            ),
+            avg_wpm = (
+              SELECT AVG(wpm)
+              FROM race_results
+              WHERE user_id = $1
+            ),
+            avg_accuracy = (
+              SELECT AVG(accuracy)
+              FROM race_results
+              WHERE user_id = $1
+            )
           WHERE id = $1
         `, [userId]);
         
