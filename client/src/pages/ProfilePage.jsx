@@ -7,17 +7,30 @@ function ProfilePage() {
   const [stats, setStats] = useState({
     racesCompleted: 0,
     averageWPM: 0,
-    bestWPM: 0
+    averageAccuracy: 0
   });
 
-  // TODO: Fetch user stats from backend
+  // Fetch user stats from backend
   useEffect(() => {
-    // This would be replaced with an actual API call
-    setStats({
-      racesCompleted: 0,
-      averageWPM: 0,
-      bestWPM: 0
-    });
+    const fetchUserStats = async () => {
+      try {
+        const response = await fetch('/api/users/stats', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setStats({
+            racesCompleted: data.races_completed,
+            averageWPM: data.avg_wpm,
+            averageAccuracy: data.avg_accuracy
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      }
+    };
+
+    fetchUserStats();
   }, []);
 
   return (
@@ -25,8 +38,7 @@ function ProfilePage() {
       <div className="profile-header">
         <h1>Profile</h1>
         <div className="profile-info">
-          <h2>{user?.username || 'Username'}</h2>
-          <p>{user?.email || 'email@example.com'}</p>
+          <h2>{user?.netid || 'Loading...'}</h2>
         </div>
       </div>
 
@@ -39,37 +51,12 @@ function ProfilePage() {
           </div>
           <div className="stat-card">
             <h3>Average WPM</h3>
-            <p>{stats.averageWPM}</p>
+            <p>{stats.averageWPM.toFixed(2)}</p>
           </div>
           <div className="stat-card">
-            <h3>Best WPM</h3>
-            <p>{stats.bestWPM}</p>
+            <h3>Average Accuracy</h3>
+            <p>{stats.averageAccuracy.toFixed(2)}%</p>
           </div>
-        </div>
-      </div>
-
-      <div className="profile-settings">
-        <h2>Settings</h2>
-        <div className="settings-form">
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              defaultValue={user?.username || ''}
-              placeholder="Enter new username"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              defaultValue={user?.email || ''}
-              placeholder="Enter new email"
-            />
-          </div>
-          <button className="save-button">Save Changes</button>
         </div>
       </div>
     </div>
