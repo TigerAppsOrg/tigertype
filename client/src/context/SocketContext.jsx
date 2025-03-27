@@ -1,176 +1,95 @@
-/**
- * TigerType Server
- * A Princeton-themed typing platform for speed typing practice and races
- */
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 
-// Load environment variables from .env file
-require('dotenv').config();
+// Craete context
+const SocketContext = createContext(null);
 
-const express = require('express');
-const session = require('express-session');
-const path = require('path');
-const http = require('http');
-const os = require('os');
-const socketIO = require('socket.io');
-const { isAuthenticated, logoutApp, logoutCAS } = require('./server/utils/auth');
-const routes = require('./server/routes');
-const socketHandler = require('./server/controllers/socket-handlers');
-const db = require('./server/db');
-
-// Initialize Express app
-const app = express();
-const server = http.createServer(app);
-const io = socketIO(server, {
-  cors: {
-    origin: process.env.NODE_ENV === 'development' 
-      ? ['http://localhost:5173'] 
-      : false,
-    credentials: true
-  }
-});
-
-// Configure session middleware
-const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET || 'tigertype-session-secret',
-  resave: false,
-  saveUninitialized: true,
-  rolling: true, // Reset expiration on each request
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
-    maxAge: 24 * 60 * 60 * 1000, // 24h
-    httpOnly: true,
-    sameSite: 'lax'
-  }
-});
-
-// Use session middleware for Express
-app.use(sessionMiddleware);
-
-// Parse JSON + URL-encoded bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Serve static files from public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Serve the React app's static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'public/dist')));
-}
-
-// Use API and auth routes
-app.use(routes);
-
-// For any other routes in production, serve the React app
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/dist/index.html'));
-  });
-}
-
-// Share session between Express and Socket.io
-io.use((socket, next) => {
-  console.log('Socket middleware: sharing session...');
-  sessionMiddleware(socket.request, {}, next);
-});
-
-// Socket authentication middleware
-io.use(async (socket, next) => {
-  const req = socket.request;
-  
-  console.log('Socket middleware: authenticating connection...', socket.id);
-  
-  // If user isn't authenticated, reject the socket connection
-  if (!isAuthenticated(req)) {
-    console.error('Socket authentication failed: User not authenticated');
-    return next(new Error('Authentication required'));
-  }
-  
-  try {
-    // Get the netid from session
-    const netid = req.session.userInfo.user;
-    
-    // Make sure we have a valid netid
-    if (!netid) {
-      console.error('Socket authentication failed: Missing netid');
-      return next(new Error('Invalid authentication: Missing netid'));
-    }
-    
-    console.log(`Socket auth: Found netid ${netid}, looking up in database...`);
-    
-    // Ensure user exists in database
-    const UserModel = require('./server/models/user');
-    const user = await UserModel.findOrCreate(netid);
-    
-    // If we couldn't create a user, reject the connection
-    if (!user) {
-      console.error(`Socket authentication failed: Could not find/create user for ${netid}`);
-      return next(new Error('Failed to create or find user in database'));
-    }
-    
-    // Add user info to socket for handlers
-    socket.userInfo = {
-      ...req.session.userInfo,
-      userId: user.id // Ensure userId is available
-    };
-    
-    // Also update session with userId if not present
-    if (!req.session.userInfo.userId) {
-      req.session.userInfo.userId = user.id;
-      // Save session to persist the userId
-      req.session.save(err => {
-        if (err) {
-          console.error('Error saving session:', err);
-        }
-      });
-    }
-    
-    console.log(`Socket auth success for netid: ${netid}, userId: ${user.id}`);
-    next();
-  } catch (err) {
-    console.error('Socket authentication error:', err);
-    return next(new Error('Authentication error'));
-  }
-});
-
-// Initialize socket handlers
-socketHandler.initialize(io);
-
-// Import the database setup function
-const setupDatabase = require('./server/db/init-db');
-const PORT = process.env.PORT || 3000;
-
-// Start the server
-const startServer = async () => {
-  // Start listening first, so we can at least get the server running
-  server.listen(PORT, () => {
-    console.log('TigerType server listening on *:' + PORT);
-    
-    // Print local network addresses for easy access during development
-    const networkInterfaces = os.networkInterfaces();
-    for (const name of Object.keys(networkInterfaces)) {
-      for (const iface of networkInterfaces[name]) {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          console.log(`Accessible on: http://${iface.address}:${PORT}`);
-        }
-      }
-    }
-  });
-  
-  // Now try to initialize the database with enhanced schema
-  try {
-    console.log('Initializing and enhancing database schema...');
-    const success = await setupDatabase();
-    
-    if (success) {
-      console.log('Database setup completed successfully');
-    }
-  } catch (err) {
-    console.error('WARNING: Database initialization failed:', err);
-    console.log('Server is running, but database functionality may be limited.');
-    console.log('Please check your database connection settings in .env file.');
-  }
+// Socket options
+const socketOptions = {
+  withCredentials: true,
+  autoConnect: false, // Don't connect immediately to allow auth to be set up
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000
 };
 
-// Start the server
-startServer();
+export const SocketProvider = ({ children }) => {
+  const [socket, setSocket] = useState(null);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState(null);
+  const [socketLoaded, setSocketLoaded] = useState(false);
+
+  useEffect(() => {
+    // Initialize Socket.IO connection
+    const socketInstance = io(socketOptions);
+    
+    // Set up event listeners
+    socketInstance.on('connect', () => {
+      console.log('Socket connected successfully with ID:', socketInstance.id);
+      setConnected(true);
+      setError(null);
+    });
+    
+    socketInstance.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
+      setConnected(false);
+      
+      if (err && err.message && err.message.includes('Authentication')) {
+        setError('Authentication required');
+      } else {
+        setError(err.message || 'Connection failed');
+      }
+    });
+    
+    socketInstance.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+      setConnected(false);
+      
+      if (reason === 'io server disconnect') {
+        // The server has disconnected us, attempt to reconnect
+        socketInstance.connect();
+      }
+    });
+    
+    // Store socket instance in state
+    setSocket(socketInstance);
+    setSocketLoaded(true);
+    
+    // Connect after initialization
+    socketInstance.connect();
+    
+    // Clean up on unmount
+    return () => {
+      socketInstance.disconnect();
+      socketInstance.off('connect');
+      socketInstance.off('disconnect');
+      socketInstance.off('connect_error');
+    };
+  }, []);
+
+  // Reconnect function
+  const reconnect = () => {
+    if (socket && !connected) {
+      socket.connect();
+    }
+  };
+
+  return (
+    <SocketContext.Provider value={{ socket, connected, error, reconnect, socketLoaded }}>
+      {children}
+    </SocketContext.Provider>
+  );
+};
+
+// Custom hook to use the socket context
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  if (!context) {
+    throw new Error('useSocket must be used within a SocketProvider');
+  }
+  return context;
+};
+
+export default SocketContext;

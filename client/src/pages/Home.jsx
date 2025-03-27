@@ -1,127 +1,68 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useRace } from '../context/RaceContext';
-import Typing from '../components/Typing';
-import Results from '../components/Results';
-import './Race.css';
+import Modes from '../components/Modes';
+import ProfileWidget from '../components/ProfileWidget';
+import './Home.css';
 
-function Race() {
+function Home() {
+  const { user, authenticated, loading } = useAuth();
+  const { joinPracticeMode, joinPublicRace, raceState } = useRace();
   const navigate = useNavigate();
-  const { 
-    raceState, 
-    typingState,
-    setPlayerReady, 
-    resetRace 
-  } = useRace();
   
-  const [countdown, setCountdown] = useState(null);
-  const countdownRef = useRef(null);
-  
-  // Handle race countdown
+  // Handle race joining
   useEffect(() => {
-    const socket = window.socket;
-    if (!socket) return;
-    
-    const handleCountdown = (data) => {
-      setCountdown(data.seconds);
-      
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-      
-      countdownRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownRef.current);
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    };
-    
-    socket.on('race:countdown', handleCountdown);
-    
-    return () => {
-      socket.off('race:countdown', handleCountdown);
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-    };
-  }, []);
+    // If race is joined, navigate to race page
+    if (raceState.code) {
+      navigate('/race');
+    }
+  }, [raceState.code, navigate]);
   
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-    };
-  }, []);
-  
-  // Handle back button
-  const handleBack = () => {
-    resetRace();
-    navigate('/home');
-  };
+  // Define game modes
+  const gameModes = [
+    { 
+      id: 1, 
+      name: 'Solo Practice', 
+      description: 'Improve your typing skills at your own pace', 
+      action: joinPracticeMode 
+    },
+    { 
+      id: 2, 
+      name: 'Quick Match', 
+      description: 'Race against other Princeton students', 
+      action: joinPublicRace 
+    },
+    { 
+      id: 3, 
+      name: 'Custom Lobby', 
+      description: 'Coming soon! Create a private lobby with friends', 
+      action: null,
+      disabled: true
+    }
+  ];
   
   return (
-    <div className="race-page">
-      <div className="race-container">
-        <div className="back-button-container">
-          <button className="back-button" onClick={handleBack}>
-            <span>⟵</span> Back
-          </button>
+    <div className="home-page">
+      <div className="home-container">
+        <div className="home-header">
+          <h1>Start Your Game</h1>
+          
+          <div className="user-section">
+            <ProfileWidget user={user} />
+          </div>
         </div>
         
-        <div className="race-content">
-          <div className="race-info">
-            <h2>{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h2>
-            
-            {raceState.code && (
-              <div className="lobby-code">Lobby Code: {raceState.code}</div>
-            )}
-            
-            {raceState.players && raceState.players.length > 0 && (
-              <div className="players-list">
-                <h3>Players:</h3>
-                <div className="players-grid">
-                  {raceState.players.map((player, index) => (
-                    <div 
-                      key={index} 
-                      className={`player-item ${player.ready ? 'player-ready' : ''}`}
-                    >
-                      {player.netid} {player.ready ? '(Ready)' : ''}
-                    </div>
-                  ))}
-                </div>
-                
-                {!raceState.inProgress && !raceState.completed && raceState.type !== 'practice' && (
-                  <button 
-                    className="ready-button" 
-                    onClick={setPlayerReady}
-                    disabled={raceState.players.some(p => p.netid === (window.user?.netid) && p.ready)}
-                  >
-                    Ready
-                  </button>
-                )}
-              </div>
-            )}
-            
-            {countdown !== null && (
-              <div className="countdown">{countdown}</div>
-            )}
-          </div>
-          
-          {!raceState.completed ? (
-            <Typing />
-          ) : (
-            <Results />
-          )}
+        <div className="modes-section">
+          <Modes modes={gameModes} />
+        </div>
+        
+        <div className="home-footer">
+          <p>Select a mode to get started!</p>
         </div>
       </div>
     </div>
   );
 }
 
-export default Race;
+export default Home;
