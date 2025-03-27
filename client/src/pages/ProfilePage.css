@@ -5,11 +5,7 @@
   margin: 2rem auto;
   padding: 2rem;
   background-color: #1e1e1e;
-  background-color: #1e1e1e;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-style: solid;
-  border-radius: 30px;
-  border-color: #F58025;
   border-style: solid;
   border-radius: 30px;
   border-color: #F58025;
@@ -55,7 +51,6 @@
 
 .profile-header h1 {
   color: #F58025;
-  color: #F58025;
   margin-bottom: 1rem;
 }
 
@@ -93,10 +88,6 @@
   justify-content: space-between;
 }
 
-.username-info h2 {
-  grid-area: a;
-}
-
 .profile-user-edit {
   width: 1.875rem;
   height: 1.875rem;
@@ -115,7 +106,6 @@
 }
 
 .profile-stats h2 {
-  color: #F58025;
   color: #F58025;
   margin-bottom: 1.5rem;
 }
