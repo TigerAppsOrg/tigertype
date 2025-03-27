@@ -20,7 +20,14 @@ const db = require('./server/db');
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+const io = socketIO(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'development' 
+      ? ['http://localhost:5173'] 
+      : false,
+    credentials: true
+  }
+});
 
 // Configure session middleware
 const sessionMiddleware = session({
@@ -43,14 +50,23 @@ app.use(sessionMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Remove duplicate auth routes since they're defined in the routes module
-// with proper CAS authentication
-
-// Serve static assets from public
+// Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Use main routes
+// Serve the React app's static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'public/dist')));
+}
+
+// Use API and auth routes
 app.use(routes);
+
+// For any other routes in production, serve the React app
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/dist/index.html'));
+  });
+}
 
 // Share session between Express and Socket.io
 io.use((socket, next) => {

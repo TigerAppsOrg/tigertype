@@ -1,0 +1,33 @@
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import './Navbar.css';
+
+function Navbar() {
+  const { authenticated, user, logout } = useAuth();
+
+  return (
+    <header className="navbar">
+      <div className="navbar-logo">
+        <Link to={authenticated ? '/home' : '/'}>TigerType</Link>
+      </div>
+      
+      <nav className="navbar-links">
+        {authenticated ? (
+          <>
+            <Link to="/home">Home</Link>
+            <Link to="/profile">Profile</Link>
+            <button onClick={logout} className="logout-button">Logout</button>
+            <span className="user-info">{user?.netid || ''}</span>
+          </>
+        ) : (
+          <>
+            <a href="#">About</a>
+            <a href="#">Features</a>
+          </>
+        )}
+      </nav>
+    </header>
+  );
+}
+
+export default Navbar;

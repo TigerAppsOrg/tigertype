@@ -1,0 +1,41 @@
+.home-page {
+    padding-top: 80px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .home-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .home-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(245, 128, 37, 0.3);
+  }
+  
+  .home-header h1 {
+    color: #F58025;
+    font-size: 2.5rem;
+    margin: 0;
+  }
+  
+  .user-section {
+    display: flex;
+    align-items: center;
+  }
+  
+  .modes-section {
+    margin: 2rem 0;
+  }
+  
+  .home-footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: #888;
+    font-size: 1.1rem;
+  }
