@@ -1,44 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import './ProfilePage.css';
 
 function ProfilePage() {
   const { user, loading } = useAuth();
-  const [stats, setStats] = useState({
-    racesCompleted: 0,
-    averageWPM: 0,
-    averageAccuracy: 0
-  });
-  const [statsLoading, setStatsLoading] = useState(true);
 
-  // Fetch user stats from backend
-  useEffect(() => {
-    // Only fetch stats when we have a user
-    if (!user) return;
-    
-    const fetchUserStats = async () => {
-      try {
-        setStatsLoading(true);
-        const response = await fetch('/api/users/stats', {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setStats({
-            racesCompleted: data.races_completed || 0,
-            averageWPM: data.avg_wpm || 0,
-            averageAccuracy: data.avg_accuracy || 0
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching user stats:', error);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-
-    fetchUserStats();
-  }, [user]); // Depend on user so stats are fetched when user is loaded
+  // Parse numeric values to ensure they're numbers
+  const parseNumericValue = (value) => {
+    if (value === null || value === undefined) return 0;
+    return typeof value === 'string' ? parseFloat(value) : value;
+  };
 
   if (loading) {
     return <div className="loading-container">Loading profile...</div>;
@@ -55,21 +26,21 @@ function ProfilePage() {
 
       <div className="profile-stats">
         <h2>Your Stats</h2>
-        {statsLoading ? (
-          <div className="stats-loading">Loading stats...</div>
+        {!user ? (
+          <div className="stats-loading">No stats available</div>
         ) : (
           <div className="stats-grid">
             <div className="stat-card">
               <h3>Races Completed</h3>
-              <p>{stats.racesCompleted}</p>
+              <p>{parseNumericValue(user.races_completed) || 0}</p>
             </div>
             <div className="stat-card">
               <h3>Average WPM</h3>
-              <p>{stats.averageWPM.toFixed(2)}</p>
+              <p>{parseNumericValue(user.avg_wpm).toFixed(2)}</p>
             </div>
             <div className="stat-card">
               <h3>Average Accuracy</h3>
-              <p>{stats.averageAccuracy.toFixed(2)}%</p>
+              <p>{parseNumericValue(user.avg_accuracy).toFixed(2)}%</p>
             </div>
           </div>
         )}
