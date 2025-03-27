@@ -184,7 +184,8 @@ function logoutApp(req, res) {
   if (req.session) {
     req.session.destroy();
   }
-  res.sendFile(path.join(__dirname, '../../public/logged-out.html'));
+  // Always redirect to frontend landing page
+  res.redirect(`${FRONTEND_URL}/`);
 }
 
 /**

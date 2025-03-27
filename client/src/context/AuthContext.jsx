@@ -68,8 +68,8 @@ export const AuthProvider = ({ children }) => {
 
   // Function to handle logout
   const logout = () => {
-    // Redirect to the CAS logout
-    window.location.href = '/auth/logoutcas';
+    // Redirect to the app logout endpoint
+    window.location.href = '/auth/logout';
   };
 
   // Function to fetch user profile after login

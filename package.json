@@ -11,7 +11,12 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install:all": "npm install && cd client && npm install",
     "build": "npm run client:build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --detectOpenHandles --verbose",
+    "test:server": "jest --detectOpenHandles --verbose --testPathPattern=server",
+    "test:client": "cd client && npm test",
+    "test:client:progress": "cd client && npm run test:progress",
+    "test:all": "npm run test:server && npm run test:client",
+    "test:all:pretty": "npm run test:server && npm run test:client:progress"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -23,11 +28,26 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1",
-    "concurrently": "^8.2.1"
+    "concurrently": "^8.2.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "mock-socket": "^9.3.1",
+    "socket.io-client": "^4.7.2",
+    "pg-mem": "^2.8.1"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "author": "TigerType Team",
-  "license": "MIT"
+  "license": "MIT",
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["./server/tests/setup.js"],
+    "testPathIgnorePatterns": ["/node_modules/", "/client/"],
+    "verbose": true,
+    "collectCoverageFrom": [
+      "server/**/*.js",
+      "!server/tests/**/*.js"
+    ]
+  }
 }
