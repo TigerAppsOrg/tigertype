@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { useAuth } from './AuthContext';
 
-// Craete context
+// Create context
 const SocketContext = createContext(null);
 
 // Socket options
@@ -16,14 +17,21 @@ const socketOptions = {
 };
 
 export const SocketProvider = ({ children }) => {
+  const { user, authenticated } = useAuth();
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState(null);
   const [socketLoaded, setSocketLoaded] = useState(false);
 
+  // Initialize socket when auth is confirmed
   useEffect(() => {
+    if (!authenticated || !user) return;
+    
     // Initialize Socket.IO connection
     const socketInstance = io(socketOptions);
+    
+    // Make socket accessible globally for components that need it directly
+    window.socket = socketInstance;
     
     // Set up event listeners
     socketInstance.on('connect', () => {
@@ -62,12 +70,16 @@ export const SocketProvider = ({ children }) => {
     
     // Clean up on unmount
     return () => {
+      if (window.socket) {
+        window.socket = null;
+      }
+      
       socketInstance.disconnect();
       socketInstance.off('connect');
       socketInstance.off('disconnect');
       socketInstance.off('connect_error');
     };
-  }, []);
+  }, [authenticated, user]);
 
   // Reconnect function
   const reconnect = () => {
