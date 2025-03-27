@@ -167,63 +167,69 @@ export const RaceProvider = ({ children }) => {
     socket.emit('player:ready');
   };
 
-  const updateProgress = (input, snippet) => {
-    if (!socket || !connected || !raceState.inProgress) return;
+  const updateProgress = (input) => {
+    const now = Date.now();
+    const elapsedSeconds = (now - raceState.startTime) / 1000;
     
-    const position = input.length;
-    const completed = position === snippet.length && input === snippet;
-    
-    // Calculate correct characters
+    // Calculate current position in the snippet
+    const text = raceState.snippet?.text || '';
     let correctChars = 0;
-    for (let i = 0; i < input.length && i < snippet.length; i++) {
-      if (input[i] === snippet[i]) {
-        correctChars++;
+    let errors = 0;
+    
+    // Count correct characters and errors
+    for (let i = 0; i < input.length; i++) {
+      if (i < text.length) {
+        if (input[i] === text[i]) {
+          correctChars++;
+        } else {
+          errors++;
+        }
       }
     }
     
-    // Calculate errors
-    const errors = input.length - correctChars;
-    
     // Calculate WPM and accuracy
-    let wpm = 0;
-    let accuracy = 0;
+    const words = correctChars / 5; // standard definition: 1 word = 5 chars
+    const wpm = (words / elapsedSeconds) * 60;
+    const accuracy = ((correctChars / (correctChars + errors)) * 100) || 0;
     
-    if (raceState.startTime) {
-      const elapsedSeconds = (Date.now() - raceState.startTime) / 1000;
-      const minutes = elapsedSeconds / 60;
-      wpm = (input.length / 5) / minutes; // standard: 5 chars = 1 word
-      accuracy = snippet.length > 0 ? (correctChars / position) * 100 : 0;
-    }
-    
-    // Update local typing state
+    // Update the typing state
     setTypingState({
       input,
-      position,
+      position: correctChars,
       correctChars,
       errors,
-      completed,
+      completed: correctChars === text.length,
       wpm,
-      accuracy: position > 0 ? (correctChars / position) * 100 : 100
+      accuracy
     });
     
-    // Calculate progress percentage
-    const percentage = Math.floor((position / snippet.length) * 100);
-    
-    // Send progress to server
-    socket.emit('race:progress', {
-      code: raceState.code,
-      position,
-      percentage,
-      completed
-    });
-    
-    // If completed, send final result
-    if (completed) {
-      socket.emit('race:result', {
-        code: raceState.code,
-        wpm,
-        accuracy: position > 0 ? (correctChars / position) * 100 : 100
-      });
+    // If the race is still in progress, update progress
+    if (raceState.inProgress && !raceState.completed) {
+      // Emit progress to the server
+      if (socket && connected) {
+        socket.emit('race:progress', {
+          position: correctChars,
+          total: text.length
+        });
+      }
+      
+      // Check if race is completed
+      if (correctChars === text.length) {
+        // Mark as completed locally
+        setRaceState(prev => ({
+          ...prev,
+          completed: true
+        }));
+        
+        // Send completion to server
+        if (socket && connected) {
+          socket.emit('race:result', {
+            wpm,
+            accuracy,
+            completion_time: elapsedSeconds
+          });
+        }
+      }
     }
   };
 

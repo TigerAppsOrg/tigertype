@@ -18,11 +18,27 @@ export const AuthProvider = ({ children }) => {
         const response = await axios.get('/auth/status');
         
         if (response.data.authenticated && response.data.user) {
-          setUser(response.data.user);
-          setAuthenticated(true);
-          
-          // Store user in window object for socket.io access
-          window.user = response.data.user;
+          // We're authenticated through CAS, but need to fetch full user profile
+          try {
+            const profileResponse = await axios.get('/api/user/profile');
+            if (profileResponse.data) {
+              setUser(profileResponse.data);
+              setAuthenticated(true);
+              
+              // Store user in window object for socket.io access
+              window.user = profileResponse.data;
+            } else {
+              setUser(response.data.user);
+              setAuthenticated(true);
+              window.user = response.data.user;
+            }
+          } catch (profileErr) {
+            console.error('Error fetching user profile:', profileErr);
+            // Still set the basic user info from auth status
+            setUser(response.data.user);
+            setAuthenticated(true);
+            window.user = response.data.user;
+          }
         } else {
           setUser(null);
           setAuthenticated(false);

@@ -19,8 +19,8 @@ function Typing() {
     const newInput = e.target.value;
     setInput(newInput);
     
-    if (raceState.snippet) {
-      updateProgress(newInput, raceState.snippet.text);
+    if (raceState.inProgress) {
+      updateProgress(newInput);
     }
   };
   

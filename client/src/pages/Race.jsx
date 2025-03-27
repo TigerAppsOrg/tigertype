@@ -45,7 +45,8 @@ function Race() {
     socket.on('race:countdown', handleCountdown);
     
     // For practice mode, manually trigger countdown when game type is practice
-    if (raceState.type === 'practice' && !raceState.inProgress && !countdown) {
+    // Only start countdown if the race is not in progress or completed
+    if (raceState.type === 'practice' && !raceState.inProgress && !raceState.completed && !countdown) {
       console.log('Setting up practice countdown');
       setCountdown(3);
       
@@ -71,7 +72,7 @@ function Race() {
         clearInterval(countdownRef.current);
       }
     };
-  }, [socket, raceState.type, raceState.inProgress]);
+  }, [socket, raceState.type, raceState.inProgress, raceState.completed]);
   
   // Clean up on unmount
   useEffect(() => {
@@ -131,7 +132,7 @@ function Race() {
               </div>
             )}
             
-            {countdown !== null && (
+            {countdown !== null && !raceState.completed && (
               <div className="countdown">{countdown}</div>
             )}
           </div>
