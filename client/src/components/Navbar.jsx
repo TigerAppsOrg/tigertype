@@ -14,8 +14,6 @@ function Navbar() {
       <nav className="navbar-links">
         {authenticated ? (
           <>
-            <Link to="/home">Home</Link>
-            <Link to="/profile">Profile</Link>
             <button onClick={logout} className="logout-button">Logout</button>
             <span className="user-info">{user?.netid || ''}</span>
           </>
