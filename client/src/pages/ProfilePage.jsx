@@ -25,17 +25,21 @@ function ProfilePage() {
 
   return (
     <div className="profile-container">
+
       <div className="back-button-container">
         <button className="back-button" onClick={handleBack}>
           <span>⟵</span> Back
         </button>
       </div>
+
       <div className="profile-header">
         <h1>Profile</h1>
+
         <div className="profile-page-info">
           <div className="profile-page-image">
             <input type="image" src={defaultProfileImage} alt="Profile" />
           </div>
+
           <div className="written-info">
             <div className="username-info">
               <h2>{user?.netid || 'Guest'}</h2>
