@@ -6,6 +6,12 @@ import './ProfileWidget.css';
 import defaultProfileImage from '../assets/default-profile.svg';
 
 function ProfileWidget({ user }) {
+  // Parse numeric value to handle string or number
+  const parseNumericValue = (value) => {
+    if (value === null || value === undefined) return 0;
+    return typeof value === 'string' ? parseFloat(value) : value;
+  };
+  
   return (
     <Link to="/profile" className="profile-widget-link">
       <div className="profile-widget">
@@ -15,7 +21,7 @@ function ProfileWidget({ user }) {
         <div className="profile-info">
           <div className="profile-name">{user?.netid || 'Guest'}</div>
           <div className="profile-details">
-            {user?.avg_wpm ? `${Math.round(user.avg_wpm)} WPM` : 'No stats yet'}
+            {user?.avg_wpm ? `${Math.round(parseNumericValue(user.avg_wpm))} WPM` : 'No stats yet'}
           </div>
         </div>
       </div>
@@ -26,9 +32,9 @@ function ProfileWidget({ user }) {
 ProfileWidget.propTypes = {
   user: PropTypes.shape({
     netid: PropTypes.string,
-    avg_wpm: PropTypes.number,
-    avg_accuracy: PropTypes.number,
-    races_completed: PropTypes.number
+    avg_wpm: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    avg_accuracy: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    races_completed: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
   })
 };
 
