@@ -1,3 +1,5 @@
+/* ENTIRELY AI-GENERATED FILE */
+
 const SnippetModel = require('../../models/snippet');
 
 // Create a properly mocked Snippet model

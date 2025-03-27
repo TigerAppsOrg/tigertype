@@ -1,7 +1,50 @@
 # TigerType Testing Guide
-[ALL TESTS ARE ENTIRELY AI-GENERATED; THIS INCLUDES ALL TEST RELATED FILES: this `TESTING.md` file, all files in the `testing/` directory, and the run-tests.sh script]
+**[ALL TESTS ARE ENTIRELY AI-GENERATED]**
+*(THIS INCLUDES ALL TEST RELATED FILES: this `TESTING.md` file, all files in the `testing/` directory, `run-tests.sh` script)*
 
 This document provides instructions for running and writing tests for the TigerType application.
+
+## Setting Up Pre-Commit Tests
+
+Before you can commit changes, you need to set up the pre-commit hook that runs tests automatically:
+
+### For New Developers
+1. Clone the repository
+2. Make the pre-commit hook executable:
+   ```bash
+   # On macOS/Linux:
+   chmod +x .git/hooks/pre-commit
+   
+   # On Windows (using Git Bash):
+   chmod +x .git/hooks/pre-commit
+   
+   # On Windows (using PowerShell):
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### For Existing Developers
+1. Pull the latest changes from master
+2. Make the pre-commit hook executable:
+   ```bash
+   # On macOS/Linux:
+   chmod +x .git/hooks/pre-commit
+   
+   # On Windows (using Git Bash):
+   chmod +x .git/hooks/pre-commit
+   
+   # On Windows (using PowerShell):
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+   ```
+3. Install any new dependencies:
+   ```bash
+   npm install
+   ```
+
+After setup, the pre-commit hook will automatically run server tests before each commit. Client tests are skipped in the local environment but will run in CI.
 
 ## Running Tests
 
