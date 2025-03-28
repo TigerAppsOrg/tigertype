@@ -38,6 +38,13 @@
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;     
+  align-items: center;
+}
+
+.back-button span {
+  margin-right: 0.5rem;
+  height: 2.1vh
 }
 
 .back-button:hover {
@@ -91,6 +98,7 @@
 .profile-user-edit {
   width: 1.875rem;
   height: 1.875rem;
+  mix-blend-mode: screen;
 }
 
 .biography {
