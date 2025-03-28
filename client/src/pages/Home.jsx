@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useRace } from '../context/RaceContext';
 import Modes from '../components/Modes';
@@ -7,8 +7,9 @@ import ProfileWidget from '../components/ProfileWidget';
 import './Home.css';
 
 function Home() {
-  const { user, authenticated, loading } = useAuth();
+  const { user, authenticated, loading, fetchUserProfile } = useAuth();
   const { joinPracticeMode, joinPublicRace, raceState } = useRace();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   
   // Handle race joining
@@ -18,6 +19,16 @@ function Home() {
       navigate('/race');
     }
   }, [raceState.code, navigate]);
+
+  useEffect(() => {
+    if (searchParams.get('refreshUser') === 'true') {
+      fetchUserProfile?.().then(() => {
+        // Remove the query parameter after refreshing
+        searchParams.delete('refreshUser');
+        setSearchParams(searchParams, { replace: true });
+      });
+    }
+  }, [searchParams, fetchUserProfile, setSearchParams]);
   
   // Define game modes
   const gameModes = [

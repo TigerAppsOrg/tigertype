@@ -11,7 +11,7 @@ function Results() {
   // Handle back button
   const handleBack = () => {
     resetRace();
-    navigate('/home');
+    navigate('/home?refreshUser=true');
   };
   
   // Render practice mode results

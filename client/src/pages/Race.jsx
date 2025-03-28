@@ -105,7 +105,7 @@ function Race() {
           <div className="race-info">
             <h2>{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h2>
             
-            {raceState.code && (
+            {raceState.type !== 'practice' && raceState.code && (
               <div className="lobby-code">Lobby Code: {raceState.code}</div>
             )}
             
