@@ -6,13 +6,61 @@ function Typing() {
   const { raceState, typingState, updateProgress } = useRace();
   const [input, setInput] = useState('');
   const inputRef = useRef(null);
-  
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [wpm, setWpm] = useState(0);
+
+  // Always have the latest typingState.position
+  const positionRef = useRef(typingState.position);
+  useEffect(() => {
+    positionRef.current = typingState.position;
+  }, [typingState.position]);
+
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Fira+Code&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }, []);
+
   // Focus input when race starts
   useEffect(() => {
     if (raceState.inProgress && inputRef.current) {
       inputRef.current.focus();
     }
   }, [raceState.inProgress]);
+
+  const getElapsedTime = () =>
+    raceState.startTime ? (Date.now() - raceState.startTime) / 1000 : 0;
+
+  // Update elapsed time and wpm every ms and 500ms respectively
+  useEffect(() => {
+    let interval;
+    let wpmInterval;
+    if (raceState.inProgress && raceState.startTime) {
+      interval = setInterval(() => {
+        setElapsedTime(getElapsedTime());
+      }, 1);
+
+      wpmInterval = setInterval(() => {
+        const currentElapsed = (getElapsedTime());
+        const minutes = currentElapsed / 60;
+        const calculatedWpm =
+          positionRef.current > 0
+            ? Math.round((positionRef.current / 5) / minutes)
+            : 0;
+        setWpm(calculatedWpm);
+      }, 500);
+  
+    } else {
+      setElapsedTime(0); 
+      setWpm(0);
+    }
+  
+    return () => {
+      clearInterval(interval);
+      clearInterval(wpmInterval);
+    };
+  }, [raceState.inProgress, raceState.startTime]);
   
   // Handle typing input
   const handleInput = (e) => {
@@ -92,13 +140,6 @@ function Typing() {
   const getStats = () => {
     if (!raceState.startTime) return null;
     
-    // Calculate elapsed time
-    const elapsed = (Date.now() - raceState.startTime) / 1000;
-    const minutes = elapsed / 60;
-    
-    // Calculate WPM
-    const wpm = typingState.position > 0 ? Math.round((typingState.position / 5) / minutes) : 0;
-    
     // Calculate accuracy
     const accuracy = typingState.position > 0 
       ? Math.round((typingState.correctChars / typingState.position) * 100) 
@@ -116,7 +157,7 @@ function Typing() {
         </div>
         <div className="stat-item">
           <span className="stat-label">Time:</span>
-          <span className="stat-value">{elapsed.toFixed(1)}s</span>
+          <span className="stat-value">{elapsedTime.toFixed(2)}s</span>
         </div>
       </div>
     );
@@ -126,7 +167,7 @@ function Typing() {
     <div className="typing-area">
       {raceState.inProgress && getStats()}
       
-      <div className="snippet-display">
+      <div className="snippet-display" >
         {getHighlightedText()}
       </div>
       
