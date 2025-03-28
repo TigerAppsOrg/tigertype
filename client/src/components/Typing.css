@@ -45,6 +45,7 @@
     letter-spacing: 0.5px;
     border-left: 4px solid #F58025;
     margin-bottom: 1rem;
+    font-family: 'Fira Code', monospace;
   }
   
   .typing-input-container {
@@ -59,7 +60,8 @@
     border-radius: 8px;
     color: white;
     font-size: 1.2rem;
-  }
+    font-family: 'Fira Code', monospace;
+}
   
   .progress-container {
     margin-top: 2rem;
