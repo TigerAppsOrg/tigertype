@@ -9,7 +9,7 @@ function Typing() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [wpm, setWpm] = useState(0);
 
-  // Always have the latest typingState.position
+  // Gets latest typingState.position
   const positionRef = useRef(typingState.position);
   useEffect(() => {
     positionRef.current = typingState.position;
@@ -44,10 +44,12 @@ function Typing() {
       wpmInterval = setInterval(() => {
         const currentElapsed = (getElapsedTime());
         const minutes = currentElapsed / 60;
-        const calculatedWpm =
-          positionRef.current > 0
-            ? Math.round((positionRef.current / 5) / minutes)
-            : 0;
+        const calculatedWpm = 0;
+          
+        if (positionRef.current > 0) {
+          calculatedWpm = Math.round((positionRef.current / 5) / minutes);
+        }
+
         setWpm(calculatedWpm);
       }, 500);
   
