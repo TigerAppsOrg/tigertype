@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
       error, 
       login, 
       logout,
-      fetchUserProfile
+      fetchUserProfile,
     }}>
       {children}
     </AuthContext.Provider>
