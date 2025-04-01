@@ -27,7 +27,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      // Make sure Vite treats index.html as the entry point
+      input: 'index.html'
+    }
   },
   test: {
     globals: true,
