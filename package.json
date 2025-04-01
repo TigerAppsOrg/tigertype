@@ -11,8 +11,8 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install:all": "npm install && cd client && npm install",
     "build": "npm run client:build",
-    "test": "jest --detectOpenHandles --verbose",
-    "test:server": "jest --detectOpenHandles --verbose --testPathPattern=server",
+    "test": "jest --config jest.config.js --detectOpenHandles --verbose",
+    "test:server": "jest --config jest.config.js --detectOpenHandles --verbose --testPathPattern=server",
     "test:client": "cd client && npm test",
     "test:client:progress": "cd client && npm run test:progress",
     "test:all": "npm run test:server && npm run test:client",
@@ -39,15 +39,5 @@
     "node": ">=18.0.0"
   },
   "author": "TigerType Team",
-  "license": "MIT",
-  "jest": {
-    "testEnvironment": "node",
-    "setupFilesAfterEnv": ["./server/tests/setup.js"],
-    "testPathIgnorePatterns": ["/node_modules/", "/client/"],
-    "verbose": true,
-    "collectCoverageFrom": [
-      "server/**/*.js",
-      "!server/tests/**/*.js"
-    ]
-  }
+  "license": "MIT"
 }
