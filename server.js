@@ -58,7 +58,7 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static files from public directory
   app.use(express.static(path.join(__dirname, 'public')));
   // Serve the React app's static files
-  app.use(express.static(path.join(__dirname, 'public/dist')));
+  app.use(express.static(path.join(__dirname, 'client/dist')));
 }
 
 // Use API and auth routes
@@ -78,7 +78,7 @@ if (process.env.NODE_ENV === 'development') {
 // For any other routes in production, serve the React app
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/dist/index.html'));
+    res.sendFile(path.join(__dirname, 'client/dist/index.html'));
   });
 }
 
