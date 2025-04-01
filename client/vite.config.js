@@ -28,11 +28,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true,
-    rollupOptions: {
-      // Use path.resolve for robustness
-      input: path.resolve(__dirname, 'index.html')
-    }
+    sourcemap: true
   },
   test: {
     globals: true,
