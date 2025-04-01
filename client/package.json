@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build --emptyOutDir",
+        "build": "vite build",
         "lint": "eslint .",
         "preview": "vite preview",
         "test": "vitest run --reporter=verbose",
@@ -22,7 +22,7 @@
         "react-router-dom": "^6.30.0",
         "regenerator-runtime": "^0.14.1",
         "socket.io-client": "^4.8.1",
-        "vite": "^4.4.5"
+        "vite": "4.3.9"
     },
     "devDependencies": {
         "@testing-library/jest-dom": "^6.1.5",
