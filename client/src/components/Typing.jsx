@@ -7,7 +7,6 @@ function Typing() {
   const [input, setInput] = useState('');
   const inputRef = useRef(null);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [wpm, setWpm] = useState(0);
 
   // Gets latest typingState.position
   const positionRef = useRef(typingState.position);
@@ -32,35 +31,19 @@ function Typing() {
   const getElapsedTime = () =>
     raceState.startTime ? (Date.now() - raceState.startTime) / 1000 : 0;
 
-  // Update elapsed time and wpm every ms and 500ms respectively
+  // Update elapsed time every ms
   useEffect(() => {
     let interval;
-    let wpmInterval;
     if (raceState.inProgress && raceState.startTime) {
       interval = setInterval(() => {
         setElapsedTime(getElapsedTime());
       }, 1);
-
-      wpmInterval = setInterval(() => {
-        const currentElapsed = (getElapsedTime());
-        const minutes = currentElapsed / 60;
-        const calculatedWpm = 0;
-          
-        if (positionRef.current > 0) {
-          calculatedWpm = Math.round((positionRef.current / 5) / minutes);
-        }
-
-        setWpm(calculatedWpm);
-      }, 500);
-  
     } else {
-      setElapsedTime(0); 
-      setWpm(0);
+      setElapsedTime(0);
     }
   
     return () => {
       clearInterval(interval);
-      clearInterval(wpmInterval);
     };
   }, [raceState.inProgress, raceState.startTime]);
   
@@ -142,20 +125,15 @@ function Typing() {
   const getStats = () => {
     if (!raceState.startTime) return null;
     
-    // Calculate accuracy
-    const accuracy = typingState.position > 0 
-      ? Math.round((typingState.correctChars / typingState.position) * 100) 
-      : 100;
-    
     return (
       <div className="stats">
         <div className="stat-item">
           <span className="stat-label">WPM:</span>
-          <span className="stat-value">{wpm}</span>
+          <span className="stat-value">{Math.round(typingState.wpm)}</span>
         </div>
         <div className="stat-item">
           <span className="stat-label">Accuracy:</span>
-          <span className="stat-value">{accuracy}%</span>
+          <span className="stat-value">{Math.round(typingState.accuracy)}%</span>
         </div>
         <div className="stat-item">
           <span className="stat-label">Time:</span>
