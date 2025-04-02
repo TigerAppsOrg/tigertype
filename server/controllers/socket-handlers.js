@@ -448,8 +448,6 @@ const initialize = (io) => {
           currentResults = await RaceModel.getResults(race.id);
           console.log(`Fetched ${currentResults.length} current results for race ${code}`);
           
-<<<<<<< Updated upstream
-=======
           // <<< START: Convert decimal strings to numbers >>>
           const processedResults = currentResults.map(result => ({
             ...result,
@@ -459,20 +457,14 @@ const initialize = (io) => {
           }));
           // <<< END: Convert decimal strings to numbers >>>
           
->>>>>>> Stashed changes
         } catch (dbErr) {
           console.error('Error processing race result or fetching updated results:', dbErr);
           // Consider not broadcasting if DB operations failed
           return; 
         }
         
-<<<<<<< Updated upstream
-        // Broadcast updated results list to all players
-        io.to(code).emit('race:resultsUpdate', { results: currentResults });
-=======
         // Broadcast updated results list to all players (using processed results)
         io.to(code).emit('race:resultsUpdate', { results: processedResults }); 
->>>>>>> Stashed changes
         console.log(`Broadcasted results update for race ${code} to ${io.sockets.adapter.rooms.get(code)?.size || 0} clients`);
 
       } catch (err) {
