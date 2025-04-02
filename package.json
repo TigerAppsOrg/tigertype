@@ -38,7 +38,7 @@
     "vite": "^6.2.4"
   },
   "engines": {
-    "node": "18.x"
+    "node": "20.11.1"
   },
   "author": "TigerType Team",
   "license": "MIT"
