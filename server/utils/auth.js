@@ -15,7 +15,7 @@ const CAS_URL = 'https://fed.princeton.edu/cas/';
 // Frontend URL for redirects
 const FRONTEND_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:5174'  // Development frontend URL
-  : process.env.FRONTEND_URL || ''; // Production frontend URL
+  : process.env.SERVICE_URL; // Production frontend URL
 
 /**
  * strip ticket parameter from URL
