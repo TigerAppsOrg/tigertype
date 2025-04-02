@@ -33,6 +33,10 @@ const io = socketIO(server, {
   }
 });
 
+// --- Trust Proxy --- 
+// Required for secure cookies to work correctly behind Heroku's proxy
+app.set('trust proxy', 1); 
+
 // Configure CORS
 const corsOptions = {
   origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL,
@@ -52,7 +56,8 @@ const sessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'
   }
 });
 
