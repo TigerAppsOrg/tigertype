@@ -421,7 +421,6 @@ const initialize = (io) => {
         }
         
         // Use the completion_time sent by the client directly
-        // This is calculated reliably on the client side when the race finishes
         const completionTime = completion_time;
 
         // Basic validation for completion time
@@ -433,31 +432,51 @@ const initialize = (io) => {
         console.log(`User ${netid} completed race ${code} in ${completionTime.toFixed(2)} seconds (client-reported)`);
         
         // Record race result in database
+        let currentResults = [];
         try {
           await RaceModel.recordResult(
-            player.userId, // Ensure player.userId is available
-            race.id,       // Ensure race.id is available
-            race.snippet.id, // Ensure snippet id is available
+            player.userId,
+            race.id,
+            race.snippet.id,
             wpm,
             accuracy,
             completionTime
           );
           console.log(`Recorded race result for ${netid} in database`);
+          
+          // Fetch current results list immediately after recording
+          currentResults = await RaceModel.getResults(race.id);
+          console.log(`Fetched ${currentResults.length} current results for race ${code}`);
+          
+<<<<<<< Updated upstream
+=======
+          // <<< START: Convert decimal strings to numbers >>>
+          const processedResults = currentResults.map(result => ({
+            ...result,
+            wpm: typeof result.wpm === 'string' ? parseFloat(result.wpm) : result.wpm,
+            accuracy: typeof result.accuracy === 'string' ? parseFloat(result.accuracy) : result.accuracy,
+            completion_time: typeof result.completion_time === 'string' ? parseFloat(result.completion_time) : result.completion_time,
+          }));
+          // <<< END: Convert decimal strings to numbers >>>
+          
+>>>>>>> Stashed changes
         } catch (dbErr) {
-          console.error('Error recording race result in database:', dbErr);
-          // Consider emitting an error back to the client or logging more details
+          console.error('Error processing race result or fetching updated results:', dbErr);
+          // Consider not broadcasting if DB operations failed
+          return; 
         }
         
-        // Broadcast result to all players
-        io.to(code).emit('race:playerResult', {
-          netid: player.netid,
-          wpm,
-          accuracy,
-          completion_time: completionTime
-        });
+<<<<<<< Updated upstream
+        // Broadcast updated results list to all players
+        io.to(code).emit('race:resultsUpdate', { results: currentResults });
+=======
+        // Broadcast updated results list to all players (using processed results)
+        io.to(code).emit('race:resultsUpdate', { results: processedResults }); 
+>>>>>>> Stashed changes
+        console.log(`Broadcasted results update for race ${code} to ${io.sockets.adapter.rooms.get(code)?.size || 0} clients`);
 
       } catch (err) {
-        console.error('Error recording race result:', err);
+        console.error('Error handling race:result event:', err);
       }
     });
     
@@ -713,17 +732,19 @@ const endRace = async (io, code) => {
       console.error(`Error updating race ${code} status in database:`, dbErr);
     }
     
-    // Get race results
-    let results = [];
+    // Get final race results (optional, mainly for logging or final checks)
+    let finalResults = [];
     try {
-      results = await RaceModel.getResults(race.id);
-      console.log(`Retrieved ${results.length} results for race ${code}`);
+      finalResults = await RaceModel.getResults(race.id);
+      console.log(`Retrieved ${finalResults.length} final results for ended race ${code}`);
     } catch (dbErr) {
-      console.error(`Error getting results for race ${code}:`, dbErr);
+      console.error(`Error getting final results for race ${code}:`, dbErr);
     }
     
-    // Broadcast race end
-    io.to(code).emit('race:end', { results });
+    // Broadcast race end signal (without results payload)
+    io.to(code).emit('race:end'); 
+    console.log(`Broadcasted race end signal for ${code}`);
+
   } catch (err) {
     console.error('Error ending race:', err);
   }

@@ -96,36 +96,19 @@ export const RaceProvider = ({ children }) => {
       });
     };
 
-    const handlePlayerResult = (data) => {
-      setRaceState(prev => {
-        // Find if this player is already in results
-        const resultIndex = prev.results.findIndex(r => r.netid === data.netid);
-        let newResults = [...prev.results];
-        
-        if (resultIndex !== -1) {
-          // Update existing result
-          newResults[resultIndex] = data;
-        } else {
-          // Add new result
-          newResults.push(data);
-        }
-        
-        // Sort by WPM
-        newResults.sort((a, b) => b.wpm - a.wpm);
-        
-        return {
-          ...prev,
-          results: newResults
-        };
-      });
+    const handleResultsUpdate = (data) => {
+      setRaceState(prev => ({
+        ...prev,
+        // Sort results by completion time (ascending)
+        results: data.results.sort((a, b) => a.completion_time - b.completion_time) 
+      }));
     };
 
-    const handleRaceEnd = (data) => {
+    const handleRaceEnd = () => {
       setRaceState(prev => ({
         ...prev,
         inProgress: false,
-        completed: true,
-        results: data.results
+        completed: true
       }));
     };
 
@@ -134,7 +117,7 @@ export const RaceProvider = ({ children }) => {
     socket.on('race:playersUpdate', handlePlayersUpdate);
     socket.on('race:start', handleRaceStart);
     socket.on('race:playerProgress', handlePlayerProgress);
-    socket.on('race:playerResult', handlePlayerResult);
+    socket.on('race:resultsUpdate', handleResultsUpdate);
     socket.on('race:end', handleRaceEnd);
     
     // Clean up on unmount
@@ -143,7 +126,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('race:playersUpdate', handlePlayersUpdate);
       socket.off('race:start', handleRaceStart);
       socket.off('race:playerProgress', handlePlayerProgress);
-      socket.off('race:playerResult', handlePlayerResult);
+      socket.off('race:resultsUpdate', handleResultsUpdate);
       socket.off('race:end', handleRaceEnd);
     };
   }, [socket, connected]);
@@ -209,6 +192,7 @@ export const RaceProvider = ({ children }) => {
       // Emit progress to the server
       if (socket && connected) {
         socket.emit('race:progress', {
+          code: raceState.code,
           position: input.length,
           total: text.length
         });
