@@ -118,7 +118,9 @@ const initialize = (io) => {
           id: socket.id,
           netid,
           userId,
-          ready: true
+          ready: true,
+          lobbyId: lobby.id,
+          snippetId: snippet.id
         }]);
         
         // Active race info
@@ -138,6 +140,7 @@ const initialize = (io) => {
         socket.emit('race:joined', {
           code: lobby.code,
           type: 'practice',
+          lobbyId: lobby.id,
           snippet: {
             id: snippet.id,
             text: snippet.text
@@ -246,11 +249,19 @@ const initialize = (io) => {
         
         // Add player to race
         const players = racePlayers.get(lobby.code) || [];
+        const raceInfo = activeRaces.get(lobby.code);
+        if (!raceInfo || !raceInfo.id || !raceInfo.snippet?.id) {
+            console.error(`Cannot find essential race info (lobbyId, snippetId) for ${lobby.code} when adding player ${netid}`);
+            socket.emit('error', { message: 'Internal server error joining race.' });
+            return;
+        }
         players.push({
           id: socket.id,
           netid,
           userId,
-          ready: false
+          ready: false,
+          lobbyId: raceInfo.id,
+          snippetId: raceInfo.snippet.id
         });
         racePlayers.set(lobby.code, players);
         
@@ -259,6 +270,7 @@ const initialize = (io) => {
         socket.emit('race:joined', {
           code: lobby.code,
           type: 'public',
+          lobbyId: lobby.id,
           snippet: {
             id: race.snippet.id,
             text: race.snippet.text
@@ -394,31 +406,18 @@ const initialize = (io) => {
     // Handle race result
     socket.on('race:result', async (data) => {
       try {
-        // Client sends { code, wpm, accuracy, completion_time }
-        const { code, wpm, accuracy, completion_time } = data;
+        // Client sends { code, lobbyId, snippetId, wpm, accuracy, completion_time }
+        const { code, lobbyId, snippetId, wpm, accuracy, completion_time } = data;
+        const userIdFromSocket = socket.userInfo?.userId; // Get authenticated userId
+
+        // Validate required data
+        if (!lobbyId || !snippetId || !userIdFromSocket) {
+            console.error(`Missing required data for race result processing: lobbyId=${lobbyId}, snippetId=${snippetId}, userId=${userIdFromSocket}`);
+            socket.emit('error', { message: 'Failed to record result due to missing identifiers.' });
+            return;
+        }
         
         console.log(`Received race result from ${netid}: ${wpm} WPM, ${accuracy}% accuracy, time: ${completion_time}`);
-        
-        // Check if race exists
-        const race = activeRaces.get(code);
-        if (!race) {
-          console.warn(`Race ${code} not found for result submission`);
-          return;
-        }
-        
-        // Get player info
-        const players = racePlayers.get(code);
-        if (!players) {
-          console.warn(`Players list not found for race ${code}`);
-          return;
-        }
-        
-        const player = players.find(p => p.id === socket.id);
-        
-        if (!player) {
-          console.warn(`Player ${netid} not found in race ${code}`);
-          return;
-        }
         
         // Use the completion_time sent by the client directly
         const completionTime = completion_time;
@@ -433,11 +432,12 @@ const initialize = (io) => {
         
         // Record race result in database
         let currentResults = [];
+        let processedResults = [];
         try {
           await RaceModel.recordResult(
-            player.userId,
-            race.id,
-            race.snippet.id,
+            userIdFromSocket, 
+            lobbyId,          
+            snippetId,        
             wpm,
             accuracy,
             completionTime
@@ -445,11 +445,11 @@ const initialize = (io) => {
           console.log(`Recorded race result for ${netid} in database`);
           
           // Fetch current results list immediately after recording
-          currentResults = await RaceModel.getResults(race.id);
+          currentResults = await RaceModel.getResults(lobbyId);
           console.log(`Fetched ${currentResults.length} current results for race ${code}`);
           
           // <<< START: Convert decimal strings to numbers >>>
-          const processedResults = currentResults.map(result => ({
+          processedResults = currentResults.map(result => ({ 
             ...result,
             wpm: typeof result.wpm === 'string' ? parseFloat(result.wpm) : result.wpm,
             accuracy: typeof result.accuracy === 'string' ? parseFloat(result.accuracy) : result.accuracy,

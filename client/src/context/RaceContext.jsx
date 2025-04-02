@@ -43,6 +43,7 @@ export const RaceProvider = ({ children }) => {
         ...prev,
         code: data.code,
         type: data.type,
+        lobbyId: data.lobbyId,
         snippet: data.snippet,
         players: data.players || []
       }));
@@ -210,6 +211,8 @@ export const RaceProvider = ({ children }) => {
         if (socket && connected) {
           socket.emit('race:result', {
             code: raceState.code,
+            lobbyId: raceState.lobbyId,
+            snippetId: raceState.snippet?.id,
             wpm,
             accuracy,
             completion_time: elapsedSeconds

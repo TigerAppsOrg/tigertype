@@ -61,9 +61,6 @@ const initDB = async () => {
         "expire" timestamp(6) NOT NULL
       ) WITH (OIDS=FALSE);
     `);
-    await pool.query(`
-      ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-    `);
 
     console.log('Database tables initialized successfully');
   } catch (err) {
