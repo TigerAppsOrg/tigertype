@@ -28,7 +28,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: false,
-    sourcemap: true
+    sourcemap: false
   },
   test: {
     globals: true,
