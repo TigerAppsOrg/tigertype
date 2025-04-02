@@ -59,6 +59,15 @@ CREATE TABLE IF NOT EXISTS lobby_players (
   PRIMARY KEY (lobby_id, user_id)
 );
 
+-- User sessions table for storing session data
+CREATE TABLE IF NOT EXISTS "user_sessions" (
+  "sid" varchar NOT NULL COLLATE "default",
+  "sess" json NOT NULL,
+  "expire" timestamp(6) NOT NULL
+) WITH (OIDS=FALSE);
+
+ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+
 -- Indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_race_results_user_id ON race_results(user_id);
 CREATE INDEX IF NOT EXISTS idx_race_results_lobby_id ON race_results(lobby_id);
