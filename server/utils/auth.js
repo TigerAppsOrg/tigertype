@@ -99,7 +99,7 @@ function casAuth(req, res, next) {
   console.debug('CAS ticket found, validating ticket:', ticket);
   
   // validate the ticket
-  validate(ticket, FRONTEND_URL + req.originalUrl)
+  validate(ticket, `${FRONTEND_URL}${req.originalUrl}`)
     .then(userInfo => {
       if (!userInfo) {
         // if ticket invalid, redirect to CAS login
