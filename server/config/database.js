@@ -1,26 +1,57 @@
 const { Pool } = require('pg');
 
-// Log database connection details (excluding password)
-console.log('Connecting to database with settings:');
-console.log(`  User: ${process.env.DB_USER}`);
-console.log(`  Host: ${process.env.DB_HOST || 'localhost'}`);
-console.log(`  Database: ${process.env.DB_NAME || 'tigertype'}`);
-console.log(`  Port: ${process.env.DB_PORT || 5432}`);
+// Check for database URL (used in production)
+const isProduction = process.env.NODE_ENV === 'production';
+const connectionString = process.env.DATABASE_URL;
+
+// Log database connection details
+console.log('Connecting to database in', isProduction ? 'PRODUCTION' : 'DEVELOPMENT', 'mode');
+
+if (isProduction && connectionString) {
+  console.log('Using database connection string from DATABASE_URL');
+} else {
+  console.log(`  User: ${process.env.DB_USER}`);
+  console.log(`  Host: ${process.env.DB_HOST || 'localhost'}`);
+  console.log(`  Database: ${process.env.DB_NAME || 'tigertype'}`);
+  console.log(`  Port: ${process.env.DB_PORT || 5432}`);
+}
+
+// Configure database pool
+let poolConfig;
+
+if (isProduction && connectionString) {
+  // Production configuration using connection string
+  poolConfig = {
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false // Required for Heroku PostgreSQL
+    },
+    // Connection timeout of.30 seconds
+    connectionTimeoutMillis: 30000,
+    // Idle timeout of 10 seconds
+    idleTimeoutMillis: 10000,
+    // Max clients in the pool
+    max: 20
+  };
+} else {
+  // Development configuration using individual parameters
+  poolConfig = {
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'tigertype',
+    password: process.env.DB_PASSWORD || '',
+    port: process.env.DB_PORT || 5432,
+    // Connection timeout of 30 seconds
+    connectionTimeoutMillis: 30000,
+    // Idle timeout of 10 seconds
+    idleTimeoutMillis: 10000,
+    // Max clients in the pool
+    max: 20
+  };
+}
 
 // Create a connection pool for Postgres
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'tigertype',
-  password: process.env.DB_PASSWORD || '',
-  port: process.env.DB_PORT || 5432,
-  // Connection timeout of 30 seconds
-  connectionTimeoutMillis: 30000,
-  // Idle timeout of 10 seconds
-  idleTimeoutMillis: 10000,
-  // Max clients in the pool
-  max: 20
-});
+const pool = new Pool(poolConfig);
 
 // Event listener for connection errors
 pool.on('error', (err) => {
