@@ -6,6 +6,7 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   server: {
+    root: '.', // use process.cwd() if still not working
     port: 5174,
     proxy: {
       // Proxy API requests to backend server
@@ -27,8 +28,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    emptyOutDir: false,
-    sourcemap: false
+    // emptyOutDir: false,
+    sourcemap: process.env.NODE_ENV !== 'production', // enable sourcemaps for dev, disable for prod
   },
   test: {
     globals: true,
