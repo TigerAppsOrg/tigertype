@@ -30,9 +30,26 @@ router.get('/auth/logout', logoutApp);
 // CAS logout route - logs out from CAS and then the app
 router.get('/auth/logoutcas', logoutCAS);
 
+// Determine the correct path for index.html based on environment
+const getIndexPath = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // In production, use the client/dist directory (consistent with server.js)
+    return path.join(__dirname, '../../client/dist/index.html');
+  } else {
+    // In development, use the public directory
+    return path.join(__dirname, '../../public/index.html');
+  }
+};
+
 // Main application route - requires CAS authentication
 router.get('/', casAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '../../public/index.html'));
+  const indexPath = getIndexPath();
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error(`Error sending file ${indexPath}:`, err);
+      res.status(500).send('Error serving application.');
+    }
+  });
 });
 
 // Fallback route for single-page application
@@ -40,7 +57,13 @@ router.get('*', (req, res) => {
   // If authenticated, serve index.html for client-side routing
   // If not, redirect to CAS login
   if (isAuthenticated(req)) {
-    res.sendFile(path.join(__dirname, '../../public/index.html'));
+    const indexPath = getIndexPath();
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error(`Error sending file ${indexPath}:`, err);
+        res.status(500).send('Error serving application.');
+      }
+    });
   } else {
     res.redirect('/');
   }
