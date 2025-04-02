@@ -64,48 +64,53 @@ const sessionMiddleware = session({
 // Use session middleware for Express
 app.use(sessionMiddleware);
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Parse JSON + URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Only serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files from public directory
-  app.use(express.static(path.join(__dirname, 'public')));
-  // Serve the React app's static files
-  app.use(express.static(path.join(__dirname, 'client/dist')));
-  
-  // Log directory contents for debugging
-  console.log('Client directory contents:');
-  try {
-    console.log('Client dir exists:', require('fs').existsSync(path.join(__dirname, 'client')));
-    console.log('Client/dist dir exists:', require('fs').existsSync(path.join(__dirname, 'client/dist')));
-  } catch (err) {
-    console.error('Error checking directories:', err);
-  }
-}
-
-// Use API and auth routes
+// --- API and Auth Routes --- 
+// These should come before the static file/SPA fallback
 app.use(routes);
 
-// Development mode - return API message for root route
-if (process.env.NODE_ENV === 'development') {
+// --- Static Files & SPA Fallback (Production) --- 
+if (process.env.NODE_ENV === 'production') {
+  const clientDistPath = path.join(__dirname, 'client', 'dist');
+  
+  // Log directory contents for debugging
+  console.log('Checking for production frontend build...');
+  try {
+    const clientDistExists = fs.existsSync(clientDistPath);
+    console.log(`Client/dist dir exists: ${clientDistExists}`);
+    
+    if (clientDistExists) {
+      // Serve static assets from client/dist
+      app.use(express.static(clientDistPath));
+      
+      // SPA Fallback: For any GET request that doesn't match an API route or a static file,
+      // serve the index.html file.
+      app.get('*)', (req, res) => {
+        console.log(`SPA fallback triggered for: ${req.originalUrl}`);
+        res.sendFile(path.resolve(clientDistPath, 'index.html'));
+      });
+    } else {
+       console.error('PRODUCTION ERROR: client/dist directory not found!');
+       app.get('*', (req, res) => {
+         res.status(500).send('Frontend build missing.');
+       });
+    }
+  } catch (err) {
+    console.error('Error setting up production static file serving:', err);
+    app.get('*', (req, res) => {
+       res.status(500).send('Server configuration error.');
+    });
+  }
+} else {
+  // Development mode - just indicate API is running
   app.get('/', (req, res) => {
     res.json({
-      message: 'TigerType API Server',
-      note: 'Please access the frontend at http://localhost:5173',
-      environment: 'development'
+      message: 'TigerType API Server (Development)',
+      note: 'Access frontend via Vite dev server (e.g., http://localhost:5174)'
     });
-  });
-}
-
-// For any other routes in production, serve the React app
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/dist/index.html'));
   });
 }
 
