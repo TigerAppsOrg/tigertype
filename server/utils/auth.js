@@ -137,46 +137,50 @@ function casAuth(req, res, next) {
       
       console.debug('CAS authentication successful, user info:', userInfo);
       
-      // store user info in session 
+      // 1. Store user info in session immediately
       req.session.userInfo = userInfo;
-      
-      // Create or update user in the database
-      const UserModel = require('../models/user');
-      const netid = userInfo.user; // Extract netid from CAS response
-      
-      console.log('Creating or updating user in database for netid:', netid);
-      
-      UserModel.findOrCreate(netid)
-        .then(user => {
-          console.log('User created/found in database:', user);
-          req.session.userInfo.userId = user.id;
-          
-          // Explicitly save the session before redirecting
-          req.session.save((err) => {
-            if (err) {
-              console.error('Error saving session before redirect:', err);
-              // Handle error appropriately, maybe redirect to an error page or login
-              return res.status(500).send('Error saving session'); 
-            }
+      const netid = userInfo.user; // Extract netid earlier
+
+      // 2. Save the session *before* database operations
+      req.session.save((err) => {
+        if (err) {
+          console.error('Error saving session after validation:', err);
+          // If session fails to save, something is wrong, redirect to login
+          try {
+            const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
+            const loginUrl = new URL('login', CAS_URL);
+            loginUrl.searchParams.set('service', serviceUrl);
+            return res.redirect(loginUrl.toString());
+          } catch (error) {
+            return res.status(500).send('Authentication configuration error');
+          }
+        }
+
+        console.debug('Session saved successfully after validation.');
+
+        // 3. Perform database operation (user creation/update) *after* session is saved
+        const UserModel = require('../models/user');
+        console.log('(Post-session save) Creating or updating user in database for netid:', netid);
+        
+        UserModel.findOrCreate(netid)
+          .then(user => {
+            console.log('User created/found in database:', user);
+            // Optionally update session with userId if needed later, but session is already saved
+            // req.session.userInfo.userId = user.id; // This would require another save()
             
-            // Ensure redirect URL is correct
+            // 4. Redirect to home page
             const homeUrl = new URL('/home', FRONTEND_URL).toString();
-            console.debug('Session saved, redirecting to home:', homeUrl);
+            console.debug('Redirecting to home after DB operation:', homeUrl);
+            res.redirect(homeUrl);
+          })
+          .catch(dbErr => {
+            console.error('Error creating/finding user in database (session already saved):', dbErr);
+            // Session is saved, so user is logged in. Redirect to home even on DB error.
+            const homeUrl = new URL('/home', FRONTEND_URL).toString();
+            console.debug('Redirecting to home despite DB error:', homeUrl);
             res.redirect(homeUrl);
           });
-        })
-        .catch(err => {
-          console.error('Error creating/finding user in database:', err);
-          // Still try to redirect to home page even if DB op fails, but save session first
-          req.session.save((saveErr) => {
-             if (saveErr) {
-               console.error('Error saving session on DB error path:', saveErr);
-               return res.status(500).send('Error saving session');
-             }
-             const homeUrl = new URL('/home', FRONTEND_URL).toString();
-             res.redirect(homeUrl);
-          });
-        });
+      }); // End of req.session.save()
     })
     .catch(error => {
       console.error('Error during CAS authentication process:', error);
