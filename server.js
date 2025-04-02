@@ -59,6 +59,15 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'public')));
   // Serve the React app's static files
   app.use(express.static(path.join(__dirname, 'client/dist')));
+  
+  // Log directory contents for debugging
+  console.log('Client directory contents:');
+  try {
+    console.log('Client dir exists:', require('fs').existsSync(path.join(__dirname, 'client')));
+    console.log('Client/dist dir exists:', require('fs').existsSync(path.join(__dirname, 'client/dist')));
+  } catch (err) {
+    console.error('Error checking directories:', err);
+  }
 }
 
 // Use API and auth routes

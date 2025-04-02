@@ -35,7 +35,7 @@
     "pg-mem": "^2.8.1",
     "socket.io-client": "^4.7.2",
     "supertest": "^6.3.3",
-    "vite": "^6.2.4"
+    "vite": "^4.5.2"
   },
   "engines": {
     "node": "20.11.1"
