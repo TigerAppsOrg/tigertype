@@ -313,7 +313,9 @@ const initialize = (io) => {
     // Handle progress updates
     socket.on('race:progress', (data) => {
       try {
-        const { code, position, completed } = data;
+        // Client sends { position, total }, but we only need position
+        // Server handler previously expected { position, completed }
+        const { code, position } = data; 
         
         // Check if race exists and is active
         const race = activeRaces.get(code);
@@ -337,40 +339,52 @@ const initialize = (io) => {
         const now = Date.now();
         const lastUpdate = lastProgressUpdate.get(socket.id) || 0;
         
-        if (now - lastUpdate < PROGRESS_THROTTLE && !completed) {
+        // Calculate completed status based on position
+        const snippetLength = race.snippet.text.length;
+        const isCompleted = position >= snippetLength;
+
+        // Allow immediate update if player just completed the race
+        if (now - lastUpdate < PROGRESS_THROTTLE && !isCompleted) {
           return;
         }
         
         lastProgressUpdate.set(socket.id, now);
         
-        // Validate the progress
-        if (position < 0 || position > race.snippet.text.length) {
-          console.warn(`Invalid position from ${netid}: ${position}`);
+        // Validate the progress (ensure position is not negative or excessively large)
+        // Allow position == snippetLength for completion
+        if (position < 0 || position > snippetLength) {
+          console.warn(`Invalid position from ${netid}: ${position}, snippet length: ${snippetLength}`);
           return;
         }
         
-        // Store player progress
+        // Store player progress, including the calculated completed status
         playerProgress.set(socket.id, {
           position,
-          completed,
+          completed: isCompleted, // Store calculated completion status
           timestamp: now
         });
         
         // Calculate completion percentage 
-        const percentage = Math.floor((position / race.snippet.text.length) * 100);
+        const percentage = Math.min(100, Math.floor((position / snippetLength) * 100));
         
         // Broadcast progress to all players in the race
         io.to(code).emit('race:playerProgress', {
           netid,
           position,
           percentage,
-          completed
+          completed: isCompleted // Broadcast calculated completion status
         });
         
-        // Handle race completion for this player
-        if (completed) {
-          console.log(`User ${netid} has completed the race in lobby ${code}`);
-          handlePlayerFinish(io, code, socket.id);
+        // Handle race completion for this player if they just completed
+        if (isCompleted) {
+          console.log(`User ${netid} has completed the race in lobby ${code} based on progress update`);
+          // Ensure finish handler isn't called multiple times if progress updates arrive late
+          const progressData = playerProgress.get(socket.id);
+          if (progressData && !progressData.finishHandled) {
+             progressData.finishHandled = true; // Mark finish as handled
+             playerProgress.set(socket.id, progressData);
+             handlePlayerFinish(io, code, socket.id);
+          }
         }
       } catch (err) {
         console.error('Error updating progress:', err);
@@ -380,9 +394,10 @@ const initialize = (io) => {
     // Handle race result
     socket.on('race:result', async (data) => {
       try {
+        // Client sends { code, wpm, accuracy, completion_time }
         const { code, wpm, accuracy, completion_time } = data;
         
-        console.log(`Received race result from ${netid}: ${wpm} WPM, ${accuracy}% accuracy`);
+        console.log(`Received race result from ${netid}: ${wpm} WPM, ${accuracy}% accuracy, time: ${completion_time}`);
         
         // Check if race exists
         const race = activeRaces.get(code);
@@ -405,28 +420,24 @@ const initialize = (io) => {
           return;
         }
         
-        // For practice mode, use the completion_time from the client
-        // For regular races, use the progress data
-        let completionTime;
-        if (race.type === 'practice') {
-          completionTime = completion_time;
-        } else {
-          const progress = playerProgress.get(socket.id);
-          if (!progress || !progress.completed) {
-            console.warn(`Progress data missing or incomplete for player ${netid}`);
-            return;
-          }
-          completionTime = (progress.timestamp - race.startTime) / 1000;
+        // Use the completion_time sent by the client directly
+        // This is calculated reliably on the client side when the race finishes
+        const completionTime = completion_time;
+
+        // Basic validation for completion time
+        if (typeof completionTime !== 'number' || completionTime < 0) {
+            console.warn(`Invalid completion_time received from ${netid}: ${completionTime}`);
+            return; // Or handle appropriately
         }
         
-        console.log(`User ${netid} completed race in ${completionTime.toFixed(2)} seconds`);
+        console.log(`User ${netid} completed race ${code} in ${completionTime.toFixed(2)} seconds (client-reported)`);
         
         // Record race result in database
         try {
           await RaceModel.recordResult(
-            player.userId,
-            race.id,
-            race.snippet.id,
+            player.userId, // Ensure player.userId is available
+            race.id,       // Ensure race.id is available
+            race.snippet.id, // Ensure snippet id is available
             wpm,
             accuracy,
             completionTime
@@ -434,6 +445,7 @@ const initialize = (io) => {
           console.log(`Recorded race result for ${netid} in database`);
         } catch (dbErr) {
           console.error('Error recording race result in database:', dbErr);
+          // Consider emitting an error back to the client or logging more details
         }
         
         // Broadcast result to all players
@@ -443,6 +455,7 @@ const initialize = (io) => {
           accuracy,
           completion_time: completionTime
         });
+
       } catch (err) {
         console.error('Error recording race result:', err);
       }
