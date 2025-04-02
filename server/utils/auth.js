@@ -151,16 +151,31 @@ function casAuth(req, res, next) {
           console.log('User created/found in database:', user);
           req.session.userInfo.userId = user.id;
           
-          // Ensure redirect URL is correct
-          const homeUrl = new URL('/home', FRONTEND_URL).toString();
-          console.debug('Redirecting to home:', homeUrl);
-          res.redirect(homeUrl);
+          // Explicitly save the session before redirecting
+          req.session.save((err) => {
+            if (err) {
+              console.error('Error saving session before redirect:', err);
+              // Handle error appropriately, maybe redirect to an error page or login
+              return res.status(500).send('Error saving session'); 
+            }
+            
+            // Ensure redirect URL is correct
+            const homeUrl = new URL('/home', FRONTEND_URL).toString();
+            console.debug('Session saved, redirecting to home:', homeUrl);
+            res.redirect(homeUrl);
+          });
         })
         .catch(err => {
           console.error('Error creating/finding user in database:', err);
-          // Still try to redirect to home page even if DB op fails
-          const homeUrl = new URL('/home', FRONTEND_URL).toString();
-          res.redirect(homeUrl);
+          // Still try to redirect to home page even if DB op fails, but save session first
+          req.session.save((saveErr) => {
+             if (saveErr) {
+               console.error('Error saving session on DB error path:', saveErr);
+               return res.status(500).send('Error saving session');
+             }
+             const homeUrl = new URL('/home', FRONTEND_URL).toString();
+             res.redirect(homeUrl);
+          });
         });
     })
     .catch(error => {
