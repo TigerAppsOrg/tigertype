@@ -64,48 +64,53 @@ const sessionMiddleware = session({
 // Use session middleware for Express
 app.use(sessionMiddleware);
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Parse JSON + URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Only serve static files in production
+// Static file serving and routing based on environment
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from public directory
-  app.use(express.static(path.join(__dirname, 'public')));
-  // Serve the React app's static files
+  // Serve the React app's static files FROM client/dist
   app.use(express.static(path.join(__dirname, 'client/dist')));
-  
-  // Log directory contents for debugging
-  console.log('Client directory contents:');
+
+  // Log directory contents for debugging (optional, can be removed after verification)
+  console.log('Production mode: Serving static files from client/dist');
   try {
-    console.log('Client dir exists:', require('fs').existsSync(path.join(__dirname, 'client')));
-    console.log('Client/dist dir exists:', require('fs').existsSync(path.join(__dirname, 'client/dist')));
+    const clientDistPath = path.join(__dirname, 'client/dist');
+    console.log(`Checking existence of: ${clientDistPath}`);
+    console.log('Client/dist dir exists:', require('fs').existsSync(clientDistPath));
+    const indexPath = path.join(clientDistPath, 'index.html');
+    console.log(`Checking existence of: ${indexPath}`);
+    console.log('Index.html exists:', require('fs').existsSync(indexPath));
   } catch (err) {
     console.error('Error checking directories:', err);
   }
-}
 
-// Use API and auth routes
-app.use(routes);
+  // API and auth routes should be defined before the catch-all
+  app.use(routes);
 
-// Development mode - return API message for root route
-if (process.env.NODE_ENV === 'development') {
+  // For any other routes in production, serve the React app's index.html
+  app.get('*', (req, res) => {
+    const indexPath = path.join(__dirname, 'client/dist/index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error(`Error sending file ${indexPath}:`, err);
+        res.status(500).send('Error serving application.');
+      }
+    });
+  });
+
+} else { // Development mode
+  // Use API and auth routes
+  app.use(routes);
+
+  // Development mode - return API message for root route
   app.get('/', (req, res) => {
     res.json({
       message: 'TigerType API Server',
-      note: 'Please access the frontend at http://localhost:5173',
+      note: `Please access the frontend at ${process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL}`, // Assuming 5174 for Vite dev server
       environment: 'development'
     });
-  });
-}
-
-// For any other routes in production, serve the React app
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/dist/index.html'));
   });
 }
 
