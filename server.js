@@ -16,6 +16,10 @@ const { isAuthenticated, logoutApp, logoutCAS } = require('./server/utils/auth')
 const routes = require('./server/routes');
 const socketHandler = require('./server/controllers/socket-handlers');
 const db = require('./server/db');
+const cors = require('cors');
+const fs = require('fs');
+const pgSession = require('connect-pg-simple')(session);
+const { pool } = require('./server/config/database');
 
 // Initialize Express app
 const app = express();
@@ -29,17 +33,26 @@ const io = socketIO(server, {
   }
 });
 
+// Configure CORS
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL,
+  credentials: true
+};
+app.use(cors(corsOptions));
+
 // Configure session middleware
 const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET || 'tigertype-session-secret',
+  store: new pgSession({
+    pool: pool,
+    tableName: 'user_sessions'
+  }),
+  secret: process.env.SESSION_SECRET || 'tigertype-fallback-secret',
   resave: false,
-  saveUninitialized: true,
-  rolling: true, // Reset expiration on each request
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
-    maxAge: 24 * 60 * 60 * 1000, // 24h
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax'
+    maxAge: 24 * 60 * 60 * 1000
   }
 });
 
