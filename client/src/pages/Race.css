@@ -99,6 +99,7 @@
 }
 
 .countdown {
+  position: relative;
   font-size: 5rem;
   font-weight: bold;
   text-align: center;
@@ -109,6 +110,7 @@
   justify-content: center;
   align-items: center;
   height: 120px;
+  top: 5rem;
 }
 
 @keyframes pulse {

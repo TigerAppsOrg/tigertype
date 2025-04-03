@@ -10,13 +10,14 @@
 }
 
 .stats {
+  position: relative;
   display: flex;
   justify-content: center;
   gap: 2rem;
   height: 120px;
   margin: 1rem 0;
-  background-color: #1e1e1e;
-  padding: 0.8rem 1.5rem;
+  top: 5rem;
+  padding: 2rem 2rem;
   border-radius: 8px;
 }
 
@@ -27,13 +28,13 @@
 }
 
 .stat-label {
-  font-size: 0.8rem;
+  font-size: 1.25rem;
   color: #aaa;
   margin-bottom: 0.2rem;
 }
 
 .stat-value {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: bold;
   color: #F58025;
 }
