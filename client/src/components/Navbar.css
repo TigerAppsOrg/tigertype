@@ -20,7 +20,8 @@
   left: 1%;
 }
   
-.navbar-logo a {
+.navbar-logo button {
+  background-color: #1e1e1e;
   color: #F58025; 
   text-decoration: none;
 }
