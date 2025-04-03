@@ -1,10 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ProfileWidget from './ProfileWidget'; 
+import Settings from './Settings';
 import './Navbar.css';
 import { useRace } from '../context/RaceContext';
 
 function Navbar() {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { authenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const {
@@ -23,7 +26,9 @@ function Navbar() {
     <header className="navbar">
       <div className="navbar-logo">
         <button type='text' onClick={handleLogo}>TigerType</button>
-        <span className="material-icons settings-icon">settings</span>
+        <span className="material-icons settings-icon"
+              onClick={() => setIsSettingsOpen(true)}
+        >settings</span>
       </div>
       
       <nav className="navbar-links">
@@ -39,6 +44,11 @@ function Navbar() {
           </>
         )}
       </nav>
+
+      <Settings 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </header>
   );
 }

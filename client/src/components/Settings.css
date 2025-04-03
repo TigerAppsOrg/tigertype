@@ -1,0 +1,51 @@
+.settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .settings-modal {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 1rem;
+    min-width: 300px;
+    max-width: 500px;
+    border: 1px solid #F58025;
+  }
+  
+  .settings-header {
+    max-height: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .settings-header h2 {
+    color: #F58025;
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #F58025;
+    cursor: pointer;
+  }
+  
+  .close-button:hover {
+    color: #fff;
+  }
+  
+  .settings-content {
+    padding-top: 10px;
+    color: #fff;
+  }

@@ -36,6 +36,7 @@
     color: #F58025; /* Princeton orange */
     background-color: #121212;
     text-decoration: none;
+    padding: 0;
   }
   
   .navbar-links {
@@ -44,10 +45,6 @@
     align-items: center;
     gap: 2rem;
     right: 5%;
-  }
-  
-  .navbar-links a:hover {
-    color: #F58025; /* Princeton orange */
   }
   
   .logout-button {
