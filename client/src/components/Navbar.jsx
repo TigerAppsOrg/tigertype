@@ -19,7 +19,6 @@ function Navbar() {
   };
 
   return (
-
     <header className="navbar">
       <div className="navbar-logo">
         <button type='text' onClick={handleLogo}>TigerType</button>

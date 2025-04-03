@@ -28,6 +28,13 @@ function Typing() {
     }
   }, [raceState.inProgress]);
 
+  // Prevents the user from unfocusing the input box
+  useEffect(() => {
+    document.body.addEventListener('click', () => {
+      inputRef.current.focus();
+    })
+  }, [raceState.inProgress])
+
   const getElapsedTime = () =>
     raceState.startTime ? (Date.now() - raceState.startTime) / 1000 : 0;
 

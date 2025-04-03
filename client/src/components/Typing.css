@@ -36,7 +36,6 @@
 }
 
 .snippet-display {
-  background-color: #1e1e1e;
   padding: 2rem;
   border-radius: 8px;
   font-size: 1.2rem;
@@ -45,7 +44,6 @@
   position: relative;
   min-height: 150px;
   letter-spacing: 0.5px;
-  border-left: 4px solid #F58025;
   margin-bottom: 1rem;
   font-family: 'Fira Code', monospace;
 }
