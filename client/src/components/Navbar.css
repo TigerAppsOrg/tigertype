@@ -12,11 +12,24 @@
   }
   
   .navbar-logo {
+    display: flex;
+    align-items: center;
     position: relative;
     font-size: 2.5rem;
     font-weight: bold;
     left: 7%;
-    font-family: var(--main-font);
+    gap: 1rem;
+  }
+
+  .settings-icon {
+    font-size: 32px;
+    color: #F58025;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .settings-icon:hover {
+      transform: rotate(90deg);
   }
   
   .navbar-logo a {

@@ -10,6 +10,7 @@ function Navbar() {
     <header className="navbar">
       <div className="navbar-logo">
         <Link to={authenticated ? '/home' : '/'}>TigerType</Link>
+        <span className="material-icons settings-icon">settings</span>
       </div>
       
       <nav className="navbar-links">
