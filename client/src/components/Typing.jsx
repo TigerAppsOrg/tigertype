@@ -98,7 +98,11 @@ function Typing() {
         if (input[i] === text[i]) {
           components.push(<span key={i} className="correct">{text[i]}</span>);
         } else {
-          components.push(<span key={i} className="incorrect">{text[i]}</span>);
+          if (text[i] !== ' ') {
+            components.push(<span key={i} className="incorrect">{text[i]}</span>);
+          } else {
+            components.push(<span key={i} className="incorrectSpace">{text[i]}</span>);
+          }
         }
       } else if (i === input.length) {
         components.push(<span key={i} className="current">{text[i]}</span>);
