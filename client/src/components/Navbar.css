@@ -1,23 +1,21 @@
 .navbar {
-    position: fixed;
+    position: relative;
     top: 0;
     left: 0;
     right: 0;
-    height: 80px;
-    background-color: #1e1e1e;
+    height: 90px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2rem;
     z-index: 1000;
-    box-shadow: 0 2px 5px rgba(245, 128, 37, 0.5); /* Princeton orange shadow */
+    padding-top: 1.5rem;
   }
   
   .navbar-logo {
     position: relative;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: bold;
-    left: 1%;
+    left: 7%;
   }
   
   .navbar-logo a {
@@ -30,15 +28,7 @@
     display: flex;
     align-items: center;
     gap: 2rem;
-    right: 1%;
-  }
-  
-  .navbar-links a {
-    color: #e0e0e0;
-    text-decoration: none;
-    font-size: 1.2rem;
-    transition: color 0.2s;
-
+    right: 5%;
   }
   
   .navbar-links a:hover {

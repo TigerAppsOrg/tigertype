@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ProfileWidget from './ProfileWidget'; 
 import './Navbar.css';
 
 function Navbar() {
@@ -15,7 +16,7 @@ function Navbar() {
         {authenticated ? (
           <>
             <button onClick={logout} className="logout-button">Logout</button>
-            <span className="user-info">{user?.netid || ''}</span>
+            <ProfileWidget user={user}/>
           </>
         ) : (
           <>
