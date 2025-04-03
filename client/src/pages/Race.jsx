@@ -42,7 +42,7 @@ function Race() {
         });
       }, 1000);
     };
-    
+
     socket.on('race:countdown', handleCountdown);
 
     // For practice mode, manually trigger countdown when game type is practice

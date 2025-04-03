@@ -46,6 +46,7 @@
   min-height: 150px;
   letter-spacing: 0.5px;
   margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.3);
   font-family: 'Fira Code', monospace;
 }
 
@@ -100,12 +101,12 @@
 }
 
 .correct {
-  color: #4caf50;
+  color: rgba(255, 255, 255, 0.70);
 }
 
 .incorrect {
-  color: rgba(255, 65, 47, 0.85);
-  text-decoration: underline wavy rgba(255, 65, 47, 0.85);;
+  color: rgba(255, 65, 47, 0.55);
+  text-decoration: underline wavy rgba(255, 65, 47, 0.55);;
 }
 
 .incorrectSpace {
@@ -116,5 +117,4 @@
 .current {
   background-color: #3a506b;
   border-radius: 2px;
-  color: white;
 }

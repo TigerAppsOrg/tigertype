@@ -78,7 +78,7 @@ function Typing() {
     if (raceState.inProgress) {
       updateProgress(newInput);
     }
-  };
+  }
   
   // Prevent paste
   const handlePaste = (e) => {
