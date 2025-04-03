@@ -1,8 +1,9 @@
 .typing-area {
-  position: fixed;
+  position: relative;
   inset: 0px;
-  width: 85%;
-  height: 12rem;
+  width: 100%;
+  min-height: 12rem;
+  height: fit-content;
   margin: auto;
   top: 6rem;
   gap: 1.5rem;
@@ -64,7 +65,6 @@
   border: none;
   border-radius: 8px;
   color: white;
-  font-size: 1.2rem;
   font-family: 'Fira Code', monospace;
 }
 
