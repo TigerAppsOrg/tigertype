@@ -32,8 +32,9 @@
       transform: rotate(90deg);
   }
   
-  .navbar-logo a {
+  .navbar-logo button {
     color: #F58025; /* Princeton orange */
+    background-color: #121212;
     text-decoration: none;
   }
   
