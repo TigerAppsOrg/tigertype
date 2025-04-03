@@ -45,7 +45,7 @@
     letter-spacing: 0.5px;
     border-left: 4px solid #F58025;
     margin-bottom: 1rem;
-    font-family: 'Fira Code', monospace;
+    font-family: var(--typing-font);
   }
   
   .typing-input-container {

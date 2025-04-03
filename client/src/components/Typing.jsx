@@ -14,13 +14,6 @@ function Typing() {
     positionRef.current = typingState.position;
   }, [typingState.position]);
 
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Fira+Code&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }, []);
-
   // Focus input when race starts
   useEffect(() => {
     if (raceState.inProgress && inputRef.current) {
