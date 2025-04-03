@@ -5,7 +5,7 @@
   width: fit-content;
   height: fit-content;
   margin: auto;
-  top: 3rem;
+  top: 5rem;
   gap: 1.5rem;
 }
 
@@ -43,15 +43,18 @@
   position: absolute;
   padding: 2rem;
   border-radius: 8px;
-  font-size: 2.0rem;
+  font-size: 1.5rem;
   line-height: 1.8;
   white-space: pre-wrap;
   position: relative;
   min-height: 150px;
   letter-spacing: 0.5px;
   margin-bottom: 1rem;
-  color: rgba(255, 255, 255, 0.3);
+  border-left: 4px solid #F58025;
+  background-color: #1e1e1e;
+  color: rgba(255, 255, 255, 0.325);
   font-family: 'Fira Code', monospace;
+  text-align: justify;
 }
 
 .typing-input-container {
@@ -104,20 +107,16 @@
 }
 
 .correct {
-  color: rgba(255, 255, 255, 0.70);
+  color: rgba(128, 239, 128, 0.55);
 }
 
 .incorrect {
   color: rgba(255, 65, 47, 0.55);
-  text-decoration: underline wavy rgba(255, 65, 47, 0.55);;
-}
-
-.incorrectSpace {
-  background-color: rgba(255,116,108, 0.25);;
-  text-decoration: underline wavy rgba(255,116,108, 0.25);;
+  background-color: rgba(255,116,108, 0.10);
+  text-decoration: underline wavy rgba(255, 65, 47, 0.55);
 }
 
 .current {
-  background-color: #3a506b;
+  background-color: rgba(60, 95, 137, 0.55);
   border-radius: 2px;
 }
