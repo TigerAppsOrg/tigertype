@@ -204,11 +204,18 @@ export const RaceProvider = ({ children }) => {
         // Mark as completed locally
         setRaceState(prev => ({
           ...prev,
-          completed: true
+          completed: true,
+          // For practice mode, store results directly in state
+          results: prev.type === 'practice' ? [{
+            netid: user?.netid,
+            wpm,
+            accuracy,
+            completion_time: elapsedSeconds
+          }] : prev.results
         }));
         
-        // Send completion to server
-        if (socket && connected) {
+        // Send completion to server only for multiplayer races
+        if (socket && connected && raceState.type !== 'practice') {
           socket.emit('race:result', {
             code: raceState.code,
             lobbyId: raceState.lobbyId,
