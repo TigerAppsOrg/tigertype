@@ -1,10 +1,11 @@
 .typing-area {
+  position: relative;
   inset: 0px;
-  width: 100%;
   min-height: 12rem;
+  width: fit-content;
   height: fit-content;
   margin: auto;
-  top: 8rem;
+  top: 3rem;
   gap: 1.5rem;
 }
 
