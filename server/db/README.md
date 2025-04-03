@@ -11,6 +11,7 @@ TigerType uses PostgreSQL to store user data, race results, and text snippets. T
 - `lobbies`: Race sessions (public or practice)
 - `race_results`: Performance data for completed races
 - `lobby_players`: Junction table for players in lobbies
+- `user_sessions`: Stores user session data (managed by `connect-pg-simple`)
 
 ## Setup Instructions
 
@@ -51,6 +52,9 @@ Records performance metrics for each race, including WPM, accuracy, and completi
 
 ### lobby_players
 Tracks which users are in which lobbies and their ready status.
+
+### user_sessions
+Stores server-side session data for logged-in users. This table is automatically managed by the `connect-pg-simple` session store middleware used by Express. It typically includes a session ID (`sid`), session data (`sess` in JSON format), and an expiration timestamp (`expire`).
 
 ## Working with Database Models
 

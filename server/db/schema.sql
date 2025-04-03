@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   avg_wpm NUMERIC(5,2) DEFAULT 0,
   avg_accuracy NUMERIC(5,2) DEFAULT 0,
-  races_completed INTEGER DEFAULT 0
+  races_completed INTEGER DEFAULT 0,
+  fastest_wpm NUMERIC(5,2) DEFAULT 0
 );
 
 -- Snippets table for storing text that users will type
@@ -58,6 +59,15 @@ CREATE TABLE IF NOT EXISTS lobby_players (
   join_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (lobby_id, user_id)
 );
+
+-- User sessions table for storing session data
+CREATE TABLE IF NOT EXISTS "user_sessions" (
+  "sid" varchar NOT NULL COLLATE "default",
+  "sess" json NOT NULL,
+  "expire" timestamp(6) NOT NULL
+) WITH (OIDS=FALSE);
+
+ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 -- Indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_race_results_user_id ON race_results(user_id);

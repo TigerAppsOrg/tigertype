@@ -1,3 +1,5 @@
+/* ENTIRELY AI-GENERATED FILE */
+
 /**
  * TigerType - Server Tests Setup
  * 

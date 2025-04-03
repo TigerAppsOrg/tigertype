@@ -1,33 +1,27 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
+import fs from 'fs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Simple basic configuration that should work
   server: {
     port: 5174,
     proxy: {
-      // Proxy API requests to backend server
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-      // Proxy WebSocket requests for Socket.IO
+      '/api': 'http://localhost:3000',
       '/socket.io': {
         target: 'http://localhost:3000',
         ws: true,
       },
-      // Proxy auth requests
-      '/auth': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      }
+      '/auth': 'http://localhost:3000'
     }
   },
   build: {
-    outDir: '../public/dist',
+    outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true
+    sourcemap: false
   },
   test: {
     globals: true,

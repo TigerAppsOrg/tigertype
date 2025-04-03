@@ -70,6 +70,10 @@ function ProfilePage() {
               <h3>Average Accuracy</h3>
               <p>{parseNumericValue(user.avg_accuracy).toFixed(2)}%</p>
             </div>
+            <div className="stat-card">
+              <h3>Fastest Speed</h3>
+              <p>{parseNumericValue(user.fastest_wpm).toFixed(2)} WPM</p>
+            </div>
           </div>
         )}
       </div>

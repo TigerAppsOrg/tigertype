@@ -21,7 +21,8 @@
         "react-dom": "^18.2.0",
         "react-router-dom": "^6.30.0",
         "regenerator-runtime": "^0.14.1",
-        "socket.io-client": "^4.8.1"
+        "socket.io-client": "^4.8.1",
+        "vite": "^4.5.2"
     },
     "devDependencies": {
         "@testing-library/jest-dom": "^6.1.5",
@@ -39,7 +40,6 @@
         "execa": "^8.0.1",
         "jsdom": "^23.0.1",
         "msw": "^2.0.9",
-        "vite": "^4.4.5",
         "vitest": "^1.0.1"
     }
 }

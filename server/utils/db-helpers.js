@@ -23,7 +23,8 @@ const dbHelpers = {
           SELECT 
             COUNT(*) as races_completed,
             AVG(wpm) as avg_wpm,
-            AVG(accuracy) as avg_accuracy
+            AVG(accuracy) as avg_accuracy,
+            MAX(wpm) as fastest_wpm
           FROM race_results
           WHERE user_id = $1
         `, [userId]);
@@ -36,13 +37,15 @@ const dbHelpers = {
           SET 
             races_completed = $1,
             avg_wpm = $2,
-            avg_accuracy = $3
-          WHERE id = $4
+            avg_accuracy = $3,
+            fastest_wpm = $4
+          WHERE id = $5
           RETURNING *
         `, [
           stats.races_completed,
           stats.avg_wpm,
           stats.avg_accuracy,
+          stats.fastest_wpm,
           userId
         ]);
         

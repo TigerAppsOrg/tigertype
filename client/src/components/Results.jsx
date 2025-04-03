@@ -16,13 +16,12 @@ function Results() {
   
   // Render practice mode results
   const renderPracticeResults = () => {
-    // First try to find user's result from server results
-    const myResult = raceState.results.find(r => r.netid === user?.netid);
+    // First try to get results from raceState
+    const result = raceState.results?.[0];
     
-    // If we have server results, use those
-    if (myResult) {
-      const rawWpm = myResult.wpm;
-      const adjustedWpm = rawWpm * (myResult.accuracy / 100);
+    if (result) {
+      const rawWpm = result.wpm;
+      const adjustedWpm = rawWpm * (result.accuracy / 100);
       
       return (
         <div className="practice-results">
@@ -30,55 +29,65 @@ function Results() {
           
           <div className="stat-item">
             <div className="stat-label">Time Completed:</div>
-            <div className="stat-value">{myResult.completion_time?.toFixed(2) || 0}s</div>
+            <div className="stat-value">{result.completion_time?.toFixed(2)}s</div>
           </div>
           
           <div className="stat-item">
             <div className="stat-label">Accuracy:</div>
-            <div className="stat-value">{myResult.accuracy?.toFixed(2) || 0}%</div>
+            <div className="stat-value">{result.accuracy?.toFixed(2)}%</div>
           </div>
           
           <div className="stat-item">
             <div className="stat-label">Raw WPM:</div>
-            <div className="stat-value">{rawWpm?.toFixed(2) || 0}</div>
+            <div className="stat-value">{rawWpm?.toFixed(2)}</div>
           </div>
           
           <div className="stat-item">
             <div className="stat-label">Adjusted WPM:</div>
-            <div className="stat-value">{adjustedWpm?.toFixed(2) || 0}</div>
+            <div className="stat-value">{adjustedWpm?.toFixed(2)}</div>
           </div>
         </div>
       );
     }
     
-    // If no server results, use the typing state for results
-    const elapsedSeconds = (Date.now() - raceState.startTime) / 1000;
-    const rawWpm = typingState.position > 0 ? Math.round((typingState.position / 5) / (elapsedSeconds / 60)) : 0;
-    const adjustedWpm = rawWpm * (typingState.accuracy / 100);
+    // If no results in state yet but typing is completed, use typing state
+    if (typingState.completed) {
+      const rawWpm = typingState.wpm;
+      const adjustedWpm = rawWpm * (typingState.accuracy / 100);
+      const elapsedSeconds = (Date.now() - raceState.startTime) / 1000;
+      
+      return (
+        <div className="practice-results">
+          <h3>Practice Results</h3>
+          
+          <div className="stat-item">
+            <div className="stat-label">Time Completed:</div>
+            <div className="stat-value">{elapsedSeconds.toFixed(2)}s</div>
+          </div>
+          
+          <div className="stat-item">
+            <div className="stat-label">Accuracy:</div>
+            <div className="stat-value">{typingState.accuracy.toFixed(2)}%</div>
+          </div>
+          
+          <div className="stat-item">
+            <div className="stat-label">Raw WPM:</div>
+            <div className="stat-value">{rawWpm.toFixed(2)}</div>
+          </div>
+          
+          <div className="stat-item">
+            <div className="stat-label">Adjusted WPM:</div>
+            <div className="stat-value">{adjustedWpm.toFixed(2)}</div>
+          </div>
+        </div>
+      );
+    }
     
+    // If no results yet
     return (
       <div className="practice-results">
         <h3>Practice Results</h3>
-        
-        <div className="stat-item">
-          <div className="stat-label">Time Completed:</div>
-          <div className="stat-value">{elapsedSeconds.toFixed(2)}s</div>
-        </div>
-        
-        <div className="stat-item">
-          <div className="stat-label">Accuracy:</div>
-          <div className="stat-value">{typingState.accuracy.toFixed(2)}%</div>
-        </div>
-        
-        <div className="stat-item">
-          <div className="stat-label">Raw WPM:</div>
-          <div className="stat-value">{rawWpm.toFixed(2)}</div>
-        </div>
-        
-        <div className="stat-item">
-          <div className="stat-label">Adjusted WPM:</div>
-          <div className="stat-value">{adjustedWpm.toFixed(2)}</div>
-        </div>
+        <p>Waiting for results or results not available...</p>
       </div>
     );
   };

@@ -16,69 +16,103 @@ const { isAuthenticated, logoutApp, logoutCAS } = require('./server/utils/auth')
 const routes = require('./server/routes');
 const socketHandler = require('./server/controllers/socket-handlers');
 const db = require('./server/db');
+const cors = require('cors');
+const fs = require('fs');
+const pgSession = require('connect-pg-simple')(session);
+const { pool } = require('./server/config/database');
 
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'development' 
-      ? ['http://localhost:5173'] 
-      : false,
+    origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5174',
+    methods: ['GET', 'POST'],
     credentials: true
-  }
+  },
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
+
+// --- Trust Proxy --- 
+// Required for secure cookies to work correctly behind Heroku's proxy
+app.set('trust proxy', 1); 
+
+// Configure CORS
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL,
+  credentials: true
+};
+app.use(cors(corsOptions));
 
 // Configure session middleware
 const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET || 'tigertype-session-secret',
+  store: new pgSession({
+    pool: pool,
+    tableName: 'user_sessions'
+  }),
+  secret: process.env.SESSION_SECRET || 'tigertype-fallback-secret',
   resave: false,
-  saveUninitialized: true,
-  rolling: true, // Reset expiration on each request
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
-    maxAge: 24 * 60 * 60 * 1000, // 24h
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax'
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'
   }
 });
 
 // Use session middleware for Express
 app.use(sessionMiddleware);
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Parse JSON + URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Only serve static files in production
+// Static file serving and routing based on environment
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from public directory
-  app.use(express.static(path.join(__dirname, 'public')));
-  // Serve the React app's static files
-  app.use(express.static(path.join(__dirname, 'public/dist')));
-}
+  // Serve the React app's static files FROM client/dist
+  app.use(express.static(path.join(__dirname, 'client/dist')));
 
-// Use API and auth routes
-app.use(routes);
+  // Log directory contents for debugging (optional, can be removed after verification)
+  console.log('Production mode: Serving static files from client/dist');
+  try {
+    const clientDistPath = path.join(__dirname, 'client/dist');
+    console.log(`Checking existence of: ${clientDistPath}`);
+    console.log('Client/dist dir exists:', require('fs').existsSync(clientDistPath));
+    const indexPath = path.join(clientDistPath, 'index.html');
+    console.log(`Checking existence of: ${indexPath}`);
+    console.log('Index.html exists:', require('fs').existsSync(indexPath));
+  } catch (err) {
+    console.error('Error checking directories:', err);
+  }
 
-// Development mode - return API message for root route
-if (process.env.NODE_ENV === 'development') {
+  // API and auth routes should be defined before the catch-all
+  app.use(routes);
+
+  // For any other routes in production, serve the React app's index.html
+  app.get('*', (req, res) => {
+    const indexPath = path.join(__dirname, 'client/dist/index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error(`Error sending file ${indexPath}:`, err);
+        res.status(500).send('Error serving application.');
+      }
+    });
+  });
+
+} else { // Development mode
+  // Use API and auth routes
+  app.use(routes);
+
+  // Development mode - return API message for root route
   app.get('/', (req, res) => {
     res.json({
       message: 'TigerType API Server',
-      note: 'Please access the frontend at http://localhost:5173',
+      note: `Please access the frontend at ${process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL}`, // Assuming 5174 for Vite dev server
       environment: 'development'
     });
-  });
-}
-
-// For any other routes in production, serve the React app
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/dist/index.html'));
   });
 }
 

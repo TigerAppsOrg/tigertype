@@ -118,7 +118,9 @@ const initialize = (io) => {
           id: socket.id,
           netid,
           userId,
-          ready: true
+          ready: true,
+          lobbyId: lobby.id,
+          snippetId: snippet.id
         }]);
         
         // Active race info
@@ -138,6 +140,7 @@ const initialize = (io) => {
         socket.emit('race:joined', {
           code: lobby.code,
           type: 'practice',
+          lobbyId: lobby.id,
           snippet: {
             id: snippet.id,
             text: snippet.text
@@ -246,11 +249,19 @@ const initialize = (io) => {
         
         // Add player to race
         const players = racePlayers.get(lobby.code) || [];
+        const raceInfo = activeRaces.get(lobby.code);
+        if (!raceInfo || !raceInfo.id || !raceInfo.snippet?.id) {
+            console.error(`Cannot find essential race info (lobbyId, snippetId) for ${lobby.code} when adding player ${netid}`);
+            socket.emit('error', { message: 'Internal server error joining race.' });
+            return;
+        }
         players.push({
           id: socket.id,
           netid,
           userId,
-          ready: false
+          ready: false,
+          lobbyId: raceInfo.id,
+          snippetId: raceInfo.snippet.id
         });
         racePlayers.set(lobby.code, players);
         
@@ -259,6 +270,7 @@ const initialize = (io) => {
         socket.emit('race:joined', {
           code: lobby.code,
           type: 'public',
+          lobbyId: lobby.id,
           snippet: {
             id: race.snippet.id,
             text: race.snippet.text
@@ -313,7 +325,9 @@ const initialize = (io) => {
     // Handle progress updates
     socket.on('race:progress', (data) => {
       try {
-        const { code, position, completed } = data;
+        // Client sends { position, total }, but we only need position
+        // Server handler previously expected { position, completed }
+        const { code, position } = data; 
         
         // Check if race exists and is active
         const race = activeRaces.get(code);
@@ -337,40 +351,52 @@ const initialize = (io) => {
         const now = Date.now();
         const lastUpdate = lastProgressUpdate.get(socket.id) || 0;
         
-        if (now - lastUpdate < PROGRESS_THROTTLE && !completed) {
+        // Calculate completed status based on position
+        const snippetLength = race.snippet.text.length;
+        const isCompleted = position >= snippetLength;
+
+        // Allow immediate update if player just completed the race
+        if (now - lastUpdate < PROGRESS_THROTTLE && !isCompleted) {
           return;
         }
         
         lastProgressUpdate.set(socket.id, now);
         
-        // Validate the progress
-        if (position < 0 || position > race.snippet.text.length) {
-          console.warn(`Invalid position from ${netid}: ${position}`);
+        // Validate the progress (ensure position is not negative or excessively large)
+        // Allow position == snippetLength for completion
+        if (position < 0 || position > snippetLength) {
+          console.warn(`Invalid position from ${netid}: ${position}, snippet length: ${snippetLength}`);
           return;
         }
         
-        // Store player progress
+        // Store player progress, including the calculated completed status
         playerProgress.set(socket.id, {
           position,
-          completed,
+          completed: isCompleted, // Store calculated completion status
           timestamp: now
         });
         
         // Calculate completion percentage 
-        const percentage = Math.floor((position / race.snippet.text.length) * 100);
+        const percentage = Math.min(100, Math.floor((position / snippetLength) * 100));
         
         // Broadcast progress to all players in the race
         io.to(code).emit('race:playerProgress', {
           netid,
           position,
           percentage,
-          completed
+          completed: isCompleted // Broadcast calculated completion status
         });
         
-        // Handle race completion for this player
-        if (completed) {
-          console.log(`User ${netid} has completed the race in lobby ${code}`);
-          handlePlayerFinish(io, code, socket.id);
+        // Handle race completion for this player if they just completed
+        if (isCompleted) {
+          console.log(`User ${netid} has completed the race in lobby ${code} based on progress update`);
+          // Ensure finish handler isn't called multiple times if progress updates arrive late
+          const progressData = playerProgress.get(socket.id);
+          if (progressData && !progressData.finishHandled) {
+             progressData.finishHandled = true; // Mark finish as handled
+             playerProgress.set(socket.id, progressData);
+             handlePlayerFinish(io, code, socket.id);
+          }
         }
       } catch (err) {
         console.error('Error updating progress:', err);
@@ -380,71 +406,69 @@ const initialize = (io) => {
     // Handle race result
     socket.on('race:result', async (data) => {
       try {
-        const { code, wpm, accuracy, completion_time } = data;
-        
-        console.log(`Received race result from ${netid}: ${wpm} WPM, ${accuracy}% accuracy`);
-        
-        // Check if race exists
-        const race = activeRaces.get(code);
-        if (!race) {
-          console.warn(`Race ${code} not found for result submission`);
-          return;
-        }
-        
-        // Get player info
-        const players = racePlayers.get(code);
-        if (!players) {
-          console.warn(`Players list not found for race ${code}`);
-          return;
-        }
-        
-        const player = players.find(p => p.id === socket.id);
-        
-        if (!player) {
-          console.warn(`Player ${netid} not found in race ${code}`);
-          return;
-        }
-        
-        // For practice mode, use the completion_time from the client
-        // For regular races, use the progress data
-        let completionTime;
-        if (race.type === 'practice') {
-          completionTime = completion_time;
-        } else {
-          const progress = playerProgress.get(socket.id);
-          if (!progress || !progress.completed) {
-            console.warn(`Progress data missing or incomplete for player ${netid}`);
+        // Client sends { code, lobbyId, snippetId, wpm, accuracy, completion_time }
+        const { code, lobbyId, snippetId, wpm, accuracy, completion_time } = data;
+        const userIdFromSocket = socket.userInfo?.userId; // Get authenticated userId
+
+        // Validate required data
+        if (!lobbyId || !snippetId || !userIdFromSocket) {
+            console.error(`Missing required data for race result processing: lobbyId=${lobbyId}, snippetId=${snippetId}, userId=${userIdFromSocket}`);
+            socket.emit('error', { message: 'Failed to record result due to missing identifiers.' });
             return;
-          }
-          completionTime = (progress.timestamp - race.startTime) / 1000;
         }
         
-        console.log(`User ${netid} completed race in ${completionTime.toFixed(2)} seconds`);
+        console.log(`Received race result from ${netid}: ${wpm} WPM, ${accuracy}% accuracy, time: ${completion_time}`);
+        
+        // Use the completion_time sent by the client directly
+        const completionTime = completion_time;
+
+        // Basic validation for completion time
+        if (typeof completionTime !== 'number' || completionTime < 0) {
+            console.warn(`Invalid completion_time received from ${netid}: ${completionTime}`);
+            return; // Or handle appropriately
+        }
+        
+        console.log(`User ${netid} completed race ${code} in ${completionTime.toFixed(2)} seconds (client-reported)`);
         
         // Record race result in database
+        let currentResults = [];
+        let processedResults = [];
         try {
           await RaceModel.recordResult(
-            player.userId,
-            race.id,
-            race.snippet.id,
+            userIdFromSocket, 
+            lobbyId,          
+            snippetId,        
             wpm,
             accuracy,
             completionTime
           );
           console.log(`Recorded race result for ${netid} in database`);
+          
+          // Fetch current results list immediately after recording
+          currentResults = await RaceModel.getResults(lobbyId);
+          console.log(`Fetched ${currentResults.length} current results for race ${code}`);
+          
+          // <<< START: Convert decimal strings to numbers >>>
+          processedResults = currentResults.map(result => ({ 
+            ...result,
+            wpm: typeof result.wpm === 'string' ? parseFloat(result.wpm) : result.wpm,
+            accuracy: typeof result.accuracy === 'string' ? parseFloat(result.accuracy) : result.accuracy,
+            completion_time: typeof result.completion_time === 'string' ? parseFloat(result.completion_time) : result.completion_time,
+          }));
+          // <<< END: Convert decimal strings to numbers >>>
+          
         } catch (dbErr) {
-          console.error('Error recording race result in database:', dbErr);
+          console.error('Error processing race result or fetching updated results:', dbErr);
+          // Consider not broadcasting if DB operations failed
+          return; 
         }
         
-        // Broadcast result to all players
-        io.to(code).emit('race:playerResult', {
-          netid: player.netid,
-          wpm,
-          accuracy,
-          completion_time: completionTime
-        });
+        // Broadcast updated results list to all players (using processed results)
+        io.to(code).emit('race:resultsUpdate', { results: processedResults }); 
+        console.log(`Broadcasted results update for race ${code} to ${io.sockets.adapter.rooms.get(code)?.size || 0} clients`);
+
       } catch (err) {
-        console.error('Error recording race result:', err);
+        console.error('Error handling race:result event:', err);
       }
     });
     
@@ -700,17 +724,19 @@ const endRace = async (io, code) => {
       console.error(`Error updating race ${code} status in database:`, dbErr);
     }
     
-    // Get race results
-    let results = [];
+    // Get final race results (optional, mainly for logging or final checks)
+    let finalResults = [];
     try {
-      results = await RaceModel.getResults(race.id);
-      console.log(`Retrieved ${results.length} results for race ${code}`);
+      finalResults = await RaceModel.getResults(race.id);
+      console.log(`Retrieved ${finalResults.length} final results for ended race ${code}`);
     } catch (dbErr) {
-      console.error(`Error getting results for race ${code}:`, dbErr);
+      console.error(`Error getting final results for race ${code}:`, dbErr);
     }
     
-    // Broadcast race end
-    io.to(code).emit('race:end', { results });
+    // Broadcast race end signal (without results payload)
+    io.to(code).emit('race:end'); 
+    console.log(`Broadcasted race end signal for ${code}`);
+
   } catch (err) {
     console.error('Error ending race:', err);
   }

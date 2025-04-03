@@ -6,7 +6,7 @@
 
 const axios = require('axios');
 const querystring = require('querystring');
-const url = require('url');
+const { URL } = require('url'); // Import URL constructor
 const path = require('path');
 
 // CAS URL for Princeton authentication
@@ -15,7 +15,7 @@ const CAS_URL = 'https://fed.princeton.edu/cas/';
 // Frontend URL for redirects
 const FRONTEND_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:5174'  // Development frontend URL
-  : process.env.FRONTEND_URL || ''; // Production frontend URL
+  : process.env.SERVICE_URL; // Production frontend URL
 
 /**
  * strip ticket parameter from URL
@@ -27,11 +27,14 @@ function stripTicket(urlStr) {
     return "something is badly wrong";
   }
   
-  const parsedUrl = new URL(urlStr);
-  parsedUrl.searchParams.delete('ticket');
-  
-  // if search params empty, remove ? char
-  return parsedUrl.toString();
+  try {
+    const parsedUrl = new URL(urlStr);
+    parsedUrl.searchParams.delete('ticket');
+    return parsedUrl.toString();
+  } catch (error) {
+    console.error("Error parsing URL in stripTicket:", urlStr, error);
+    return urlStr; // Return original string if parsing fails
+  }
 }
 
 /**
@@ -90,61 +93,97 @@ function casAuth(req, res, next) {
   if (!ticket) {
     // redirect to CAS login if no ticket is present
     console.debug('No CAS ticket found, redirecting to CAS login...');
-    const serviceUrl = `${FRONTEND_URL}/auth/login`;
-    const loginUrl = `${CAS_URL}login?service=${encodeURIComponent(serviceUrl)}`;
-    console.debug('Redirecting to:', loginUrl);
-    return res.redirect(loginUrl);
+    try {
+      const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString(); // Use URL constructor
+      const loginUrl = new URL('login', CAS_URL);
+      loginUrl.searchParams.set('service', serviceUrl);
+      console.debug('Redirecting to:', loginUrl.toString());
+      return res.redirect(loginUrl.toString());
+    } catch (error) {
+      console.error("Error constructing CAS login URL:", error);
+      return res.status(500).send('Authentication configuration error');
+    }
   }
   
   console.debug('CAS ticket found, validating ticket:', ticket);
   
+  // Construct the original request URL correctly for validation
+  let requestUrl;
+  try {
+    // req.originalUrl might contain leading slashes we need to handle
+    const pathName = req.originalUrl.startsWith('//') ? req.originalUrl.substring(1) : req.originalUrl;
+    requestUrl = new URL(pathName, FRONTEND_URL).toString();
+  } catch (error) {
+    console.error("Error constructing request URL for validation:", error);
+    return res.status(500).send('Authentication error');
+  }
+
   // validate the ticket
-  validate(ticket, FRONTEND_URL + req.originalUrl)
+  validate(ticket, requestUrl)
     .then(userInfo => {
       if (!userInfo) {
-        // if ticket invalid, redirect to CAS login
+        // if ticket invalid, redirect to CAS login again
         console.debug('Invalid CAS ticket, redirecting to CAS login...');
-        const serviceUrl = `${FRONTEND_URL}/auth/login`;
-        const loginUrl = `${CAS_URL}login?service=${encodeURIComponent(serviceUrl)}`;
-        return res.redirect(loginUrl);
+        try {
+          const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
+          const loginUrl = new URL('login', CAS_URL);
+          loginUrl.searchParams.set('service', serviceUrl);
+          return res.redirect(loginUrl.toString());
+        } catch (error) {
+          console.error("Error constructing CAS login URL on invalid ticket:", error);
+          return res.status(500).send('Authentication configuration error');
+        }
       }
       
       console.debug('CAS authentication successful, user info:', userInfo);
       
-      // store user info in session 
+      // 1. Store user info in session immediately
       req.session.userInfo = userInfo;
-      
-      // Create or update user in the database
-      try {
+      const netid = userInfo.user; // Extract netid earlier
+
+      // 2. Save the session *before* database operations
+      req.session.save((err) => {
+        if (err) {
+          console.error('Error saving session after validation:', err);
+          // If session fails to save, something is wrong, redirect to login
+          try {
+            const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
+            const loginUrl = new URL('login', CAS_URL);
+            loginUrl.searchParams.set('service', serviceUrl);
+            return res.redirect(loginUrl.toString());
+          } catch (error) {
+            return res.status(500).send('Authentication configuration error');
+          }
+        }
+
+        console.debug('Session saved successfully after validation.');
+
+        // 3. Perform database operation (user creation/update) *after* session is saved
         const UserModel = require('../models/user');
-        const netid = userInfo.user; // Extract netid from CAS response
+        console.log('(Post-session save) Creating or updating user in database for netid:', netid);
         
-        console.log('Creating or updating user in database for netid:', netid);
-        
-        // Create or update user asynchronously (don't wait for it to complete)
         UserModel.findOrCreate(netid)
           .then(user => {
             console.log('User created/found in database:', user);
+            // Optionally update session with userId if needed later, but session is already saved
+            // req.session.userInfo.userId = user.id; // This would require another save()
             
-            // Store userId in session for easier access
-            req.session.userInfo.userId = user.id;
-            
-            // Redirect to frontend home page after successful authentication
-            res.redirect(`${FRONTEND_URL}/home`);
+            // 4. Redirect to home page
+            const homeUrl = new URL('/home', FRONTEND_URL).toString();
+            console.debug('Redirecting to home after DB operation:', homeUrl);
+            res.redirect(homeUrl);
           })
-          .catch(err => {
-            console.error('Error creating/finding user in database:', err);
-            // Still redirect to home page even if database operation fails
-            res.redirect(`${FRONTEND_URL}/home`);
+          .catch(dbErr => {
+            console.error('Error creating/finding user in database (session already saved):', dbErr);
+            // Session is saved, so user is logged in. Redirect to home even on DB error.
+            const homeUrl = new URL('/home', FRONTEND_URL).toString();
+            console.debug('Redirecting to home despite DB error:', homeUrl);
+            res.redirect(homeUrl);
           });
-      } catch (err) {
-        console.error('Error importing user model or handling user creation:', err);
-        // Still redirect to home page even if there's an error
-        res.redirect(`${FRONTEND_URL}/home`);
-      }
+      }); // End of req.session.save()
     })
     .catch(error => {
-      console.error('Error during CAS authentication:', error);
+      console.error('Error during CAS authentication process:', error);
       res.status(500).send('Authentication error');
     });
 }

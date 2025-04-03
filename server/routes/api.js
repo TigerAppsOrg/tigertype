@@ -41,7 +41,8 @@ router.get('/user/profile', requireAuth, async (req, res) => {
       last_login: user.last_login,
       avg_wpm: user.avg_wpm,
       avg_accuracy: user.avg_accuracy,
-      races_completed: user.races_completed
+      races_completed: user.races_completed,
+      fastest_wpm: user.fastest_wpm
     });
   } catch (err) {
     console.error('Error fetching user profile:', err);
