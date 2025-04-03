@@ -144,13 +144,13 @@ function Typing() {
   };
   
   return (
+    <>
+    {raceState.inProgress && getStats()}
     <div className="typing-area">
-      {raceState.inProgress && getStats()}
       
       <div className="snippet-display" >
         {getHighlightedText()}
       </div>
-      
       <div className="typing-input-container">
         <input
           ref={inputRef}
@@ -165,11 +165,14 @@ function Typing() {
           spellCheck="false"
         />
       </div>
+
+     
       
       <div className="progress-container">
         {getProgressBars()}
       </div>
     </div>
+    </>
   );
 }
 

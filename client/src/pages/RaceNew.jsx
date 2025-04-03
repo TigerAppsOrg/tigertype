@@ -95,6 +95,51 @@ function Race() {
   return (
     <div className="race-page">
       <div className="race-container">
+        <div className="back-button-container">
+          <button className="back-button" onClick={handleBack}>
+            <span>⟵</span> Back
+          </button>
+        </div>
+        
+        <div className="race-content">
+          <div className="race-info">
+            <h2>{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h2>
+            
+            {raceState.type !== 'practice' && raceState.code && (
+              <div className="lobby-code">Lobby Code: {raceState.code}</div>
+            )}
+            
+            {raceState.players && raceState.players.length > 0 && (
+              <div className="players-list">
+                <h3>Players:</h3>
+                <div className="players-grid">
+                  {raceState.players.map((player, index) => (
+                    <div 
+                      key={index} 
+                      className={`player-item ${player.ready ? 'player-ready' : ''}`}
+                    >
+                      {player.netid} {player.ready ? '(Ready)' : ''}
+                    </div>
+                  ))}
+                </div>
+                
+                {!raceState.inProgress && !raceState.completed && raceState.type !== 'practice' && (
+                  <button 
+                    className="ready-button" 
+                    onClick={setPlayerReady}
+                    disabled={raceState.players.some(p => p.netid === (window.user?.netid) && p.ready)}
+                  >
+                    Ready
+                  </button>
+                )}
+              </div>
+            )}
+            
+            {countdown !== null && !raceState.completed && !raceState.inProgress && (
+              <div className="countdown">{countdown}</div>
+            )}
+          </div>
+          
           {!raceState.completed ? (
             <Typing />
           ) : (
@@ -102,6 +147,7 @@ function Race() {
           )}
         </div>
       </div>
+    </div>
   );
 }
 

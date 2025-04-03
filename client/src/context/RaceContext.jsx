@@ -215,7 +215,7 @@ export const RaceProvider = ({ children }) => {
         }));
         
         // Send completion to server only for multiplayer races
-        if (socket && connected && raceState.type !== 'practice') {
+        if (socket && connected) {
           socket.emit('race:result', {
             code: raceState.code,
             lobbyId: raceState.lobbyId,
