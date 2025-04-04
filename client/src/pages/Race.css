@@ -41,7 +41,6 @@
     position: absolute;
     z-index: 5;
     left: 0;
-    top: 100%;
     align-items: center;
     justify-content: center;
   }
@@ -78,7 +77,6 @@
     border-left: 2px solid #F58025;
     position: absolute;
     right: 0;
-    top: 100%;
     z-index: 5;
     margin: 0;
   }
