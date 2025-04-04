@@ -128,6 +128,7 @@ function Race() {
         </div>
       </div>
     </div>
+    </div>
   );
 }
 
