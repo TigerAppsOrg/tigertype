@@ -30,7 +30,6 @@
   .race-content {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
   }
   
   .race-info {
@@ -49,7 +48,7 @@
     padding: 0.5rem 1rem;
     border-radius: 4px;
     font-family: monospace;
-    margin: 1rem 0;
+    margin: 0.5rem 0;
   }
     
   .countdown {
