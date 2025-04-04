@@ -22,12 +22,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 80px;
 }
 
 .stat-label {
   font-size: 0.8rem;
   color: #aaa;
   margin-bottom: 0.2rem;
+  min-width: 4ch; 
+  text-align: center; 
+  display: inline-block;
 }
 
 .stat-value {
@@ -48,11 +52,10 @@
   letter-spacing: 0.5px;
   border-left: 4px solid #F58025;
   margin-bottom: 1rem;
-  font-family: 'Fira Code', monospace;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(245, 128, 37, 0.1);
   color: rgba(255, 255, 255, 0.325);
-  font-family: 'Fira Code', monospace;
+  font-family: var(--typing-font);
   text-align: justify;
 }
 
