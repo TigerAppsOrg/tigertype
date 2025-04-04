@@ -58,10 +58,6 @@ function Home() {
       <div className="home-container">
         <div className="home-header">
           <h1>Start Your Game</h1>
-          
-          <div className="user-section">
-            <ProfileWidget user={user} />
-          </div>
         </div>
         
         <div className="modes-section">
