@@ -16,9 +16,9 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
             <span className="player-name">{player.netid}</span>
             
             {!isRaceInProgress ? (
-              // Lobby mode => show ready status/button
+              // Lobby mode - show ready status/button
               player.netid === currentUser?.netid ? (
-                <button 
+                <button
                   className={`ready-button ${player.ready ? 'ready-active' : ''}`}
                   onClick={onReadyClick}
                   disabled={player.ready}
@@ -30,21 +30,22 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
                   {player.ready ? 'Ready' : 'Not Ready'}
                 </span>
               )
-            ) : (
-              // Race mode => show progress
-              <div className="progress-container">
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${player.progress || 0}%` }}
-                  ></div>
-                  <div className="progress-label">
-                    {player.netid}: {player.progress || 0}%
-                  </div>
+            ) : null}
+          </div>
+          
+          {isRaceInProgress && (
+            <div className="progress-container">
+              <div className="progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${player.progress || 0}%` }}
+                ></div>
+                <div className="progress-label">
+                  {player.progress || 0}%
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       ))}
     </div>
