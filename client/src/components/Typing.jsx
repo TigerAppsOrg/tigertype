@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
+import './Settings.css'
 import './Typing.css';
 
 function Typing() {
@@ -94,7 +95,11 @@ function Typing() {
   // Prevents the user from unfocusing the input box
   useEffect(() => {
     const handleBodyClick = () => {
-      if (inputRef.current) {
+      const isSettingsClick = e.target.closest('.settings-modal') || 
+      e.target.closest('.settings-icon') ||
+      e.target.closest('.font-select');
+
+      if (!isSettingsClick && inputRef.current) {
         inputRef.current.focus();
       }
     };

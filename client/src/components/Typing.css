@@ -55,8 +55,8 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(245, 128, 37, 0.1);
   color: rgba(255, 255, 255, 0.325);
-  font-family: var(--typing-font);
   text-align: justify;
+  font-family: var(--typing-font);
 }
 
 .typing-input-container {
@@ -71,7 +71,6 @@
   border: none;
   border-radius: 8px;
   color: white;
-  font-family: 'Fira Code', monospace;
 }
 
 .progress-container {

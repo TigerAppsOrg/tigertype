@@ -12,6 +12,8 @@
   }
   
   .settings-modal {
+    position: relative;
+    bottom: 30%;
     background-color: #1e1e1e;
     border-radius: 8px;
     padding: 1rem;
