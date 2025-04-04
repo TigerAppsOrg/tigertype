@@ -124,7 +124,7 @@ const seedPrincetonSnippets = async () => {
           ('The FitzRandolph Gate serves as the main entrance to Princeton''s campus. By tradition, students enter through the gate as freshmen during the Pre-rade ceremony and exit through it only after graduating.', 'Princeton Traditions', 'princeton', 2, TRUE, 33, 175),
           ('The Princeton University Art Museum houses over 112,000 works of art, from ancient to contemporary. Admission is free, and the collection is considered one of the finest university art collections in the United States.', 'Princeton Culture', 'princeton', 2, TRUE, 32, 179),
           ('The Senior Thesis is a hallmark of Princeton''s undergraduate education. Every Princeton senior writes a thesis, an independent research project that represents the culmination of their academic experience.', 'Princeton Academics', 'princeton', 2, TRUE, 25, 149)
-      `);
+      `);      
       console.log('Added Princeton-themed snippets.');
     } else {
       console.log('Princeton-themed snippets already exist, skipping seeding.');
