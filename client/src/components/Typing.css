@@ -62,39 +62,7 @@
     font-size: 1.2rem;
     font-family: 'Fira Code', monospace;
 }
-  
-  .progress-container {
-    margin-top: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-  }
-  
-  .progress-bar {
-    height: 30px;
-    background-color: #1e1e1e;
-    border-radius: 15px;
-    overflow: hidden;
-    position: relative;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-  
-  .progress-fill {
-    height: 100%;
-    background-color: #F58025;
-    border-radius: 15px;
-    transition: width 0.3s ease-out;
-  }
-  
-  .progress-label {
-    position: absolute;
-    right: 10px;
-    top: 5px;
-    color: white;
-    font-weight: bold;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  }
-  
+    
   .correct {
     color: #4caf50;
   }

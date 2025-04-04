@@ -1,0 +1,108 @@
+.player-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  background-color: #1e1e1e;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  flex-direction: column;
+}
+.player-card {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  margin-bottom: 0.5rem;
+  align-items: center;
+  padding: 0.8rem;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+
+.player-ready {
+  background-color: rgba(76, 175, 80, 0.15);
+  border-left: 3px solid #4caf50;
+}
+
+.player-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.player-name {
+  font-weight: 600;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.ready-button {
+  background-color: #F58025;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.ready-button:hover {
+  background-color: #e67321;
+  transform: translateY(-1px);
+}
+
+.ready-button.ready-active,
+.ready-button:disabled {
+  background-color: #4caf50;
+  cursor: default;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.ready-status {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #aaa;
+  background-color: rgba(170, 170, 170, 0.1);
+}
+
+.ready-status.ready-active {
+  color: #4caf50;
+  font-weight: 600;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.progress-container {
+  width: 100%;
+}
+
+.progress-bar {
+  height: 30px;
+  background-color: #1e1e1e;
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin-top: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #F58025;
+  border-radius: 15px;
+  transition: width 0.3s ease-out;
+}
+
+.progress-label {
+  position: absolute;
+  right: 10px;
+  top: 5px;
+  color: white;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}

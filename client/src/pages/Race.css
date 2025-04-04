@@ -34,7 +34,7 @@
   }
   
   .race-info {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
   
   .race-info h2 {
@@ -51,53 +51,7 @@
     font-family: monospace;
     margin: 1rem 0;
   }
-  
-  .players-list {
-    margin: 1.5rem 0;
-  }
-  
-  .players-list h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
-  
-  .players-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.8rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .player-item {
-    background-color: #1e1e1e;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-  }
-  
-  .player-ready {
-    background-color: rgba(76, 175, 80, 0.25);
-    border-left: 3px solid #4caf50;
-  }
-  
-  .ready-button {
-    background-color: #F58025;
-    color: white;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .ready-button:hover {
-    background-color: #d56a1a;
-  }
-  
-  .ready-button:disabled {
-    background-color: #666;
-    cursor: not-allowed;
-  }
-  
+    
   .countdown {
     font-size: 5rem;
     font-weight: bold;
