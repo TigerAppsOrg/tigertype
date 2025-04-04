@@ -116,25 +116,7 @@ function Typing() {
     
     return components;
   };
-  
-  // Get progress bars
-  const getProgressBars = () => {
-    if (!raceState.players) return null;
     
-    return raceState.players.map((player, index) => {
-      const progress = player.progress || 0;
-      
-      return (
-        <div key={index} className="progress-bar">
-          <div className="progress-fill" style={{ width: `${progress}%` }}></div>
-          <div className="progress-label">
-            {player.netid}: {progress}%
-          </div>
-        </div>
-      );
-    });
-  };
-  
   // Get real-time statistics
   const getStats = () => {
     if (!raceState.startTime) return null;
@@ -178,10 +160,6 @@ function Typing() {
           autoCapitalize="off"
           spellCheck="false"
         />
-      </div>
-      
-      <div className="progress-container">
-        {getProgressBars()}
       </div>
     </div>
   );

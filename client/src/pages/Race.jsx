@@ -4,6 +4,7 @@ import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
 import Typing from '../components/Typing';
 import Results from '../components/Results';
+import PlayerStatusBar from '../components/PlayerStatusBar';
 import './Race.css';
 
 function Race() {
@@ -91,49 +92,21 @@ function Race() {
     resetRace();
     navigate('/home');
   };
-  
   return (
     <div className="race-page">
       <div className="race-container">
-        <div className="back-button-container">
+        <div className="race-header-wrapper">
+          <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
           <button className="back-button" onClick={handleBack}>
             <span>⟵</span> Back
           </button>
+          {raceState.type !== 'practice' && raceState.code && (
+            <div className="lobby-code">Lobby Code: {raceState.code}</div>
+          )}
         </div>
         
         <div className="race-content">
           <div className="race-info">
-            <h2>{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h2>
-            
-            {raceState.type !== 'practice' && raceState.code && (
-              <div className="lobby-code">Lobby Code: {raceState.code}</div>
-            )}
-            
-            {raceState.players && raceState.players.length > 0 && (
-              <div className="players-list">
-                <h3>Players:</h3>
-                <div className="players-grid">
-                  {raceState.players.map((player, index) => (
-                    <div 
-                      key={index} 
-                      className={`player-item ${player.ready ? 'player-ready' : ''}`}
-                    >
-                      {player.netid} {player.ready ? '(Ready)' : ''}
-                    </div>
-                  ))}
-                </div>
-                
-                {!raceState.inProgress && !raceState.completed && raceState.type !== 'practice' && (
-                  <button 
-                    className="ready-button" 
-                    onClick={setPlayerReady}
-                    disabled={raceState.players.some(p => p.netid === (window.user?.netid) && p.ready)}
-                  >
-                    Ready
-                  </button>
-                )}
-              </div>
-            )}
             
             {countdown !== null && !raceState.completed && !raceState.inProgress && (
               <div className="countdown">{countdown}</div>
@@ -144,6 +117,15 @@ function Race() {
             <Typing />
           ) : (
             <Results />
+          )}
+          
+          {raceState.players && raceState.players.length > 0 && (
+            <PlayerStatusBar
+              players={raceState.players}
+              isRaceInProgress={raceState.inProgress}
+              currentUser={window.user}
+              onReadyClick={setPlayerReady}
+            />
           )}
         </div>
       </div>
