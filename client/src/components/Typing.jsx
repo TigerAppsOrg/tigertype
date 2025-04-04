@@ -93,13 +93,16 @@ function Typing() {
   }, [raceState.inProgress, typingState.completed, raceHandleInput, typingState.input]);
 
   // Prevents the user from unfocusing the input box
+  // Modify the unfocusing prevention effect so that you can click on settings,
+  // then autofocuses after closing the settings modal or clicking outside of it
   useEffect(() => {
-    const handleBodyClick = () => {
+    const handleBodyClick = (e) => {
       const isSettingsClick = e.target.closest('.settings-modal') || 
-      e.target.closest('.settings-icon') ||
-      e.target.closest('.font-select');
+                            e.target.closest('.settings-icon');
 
-      if (!isSettingsClick && inputRef.current) {
+      // Force focus back when clicking close button or outside settings
+      if (e.target.closest('.close-button') || 
+          (!isSettingsClick && inputRef.current)) {
         inputRef.current.focus();
       }
     };
