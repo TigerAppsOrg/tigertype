@@ -21,13 +21,6 @@ function Typing() {
     }
   }, [raceState.inProgress]);
 
-  // Prevents the user from unfocusing the input box
-  useEffect(() => {
-    document.body.addEventListener('click', () => {
-      inputRef.current.focus();
-    })
-  }, [raceState.inProgress])
-
   const getElapsedTime = () =>
     raceState.startTime ? (Date.now() - raceState.startTime) / 1000 : 0;
 
@@ -92,7 +85,7 @@ function Typing() {
     if (raceState.inProgress) {
       updateProgress(newInput);
     }
-  }
+  };
   
   // Prevent paste
   const handlePaste = (e) => {
@@ -147,13 +140,13 @@ function Typing() {
   };
   
   return (
-    <>
-    {raceState.inProgress && getStats()}
     <div className="typing-area">
+      {raceState.inProgress && getStats()}
       
       <div className="snippet-display" >
         {getHighlightedText()}
       </div>
+      
       <div className="typing-input-container">
         <input
           ref={inputRef}
@@ -169,7 +162,6 @@ function Typing() {
         />
       </div>
     </div>
-    </>
   );
 }
 
