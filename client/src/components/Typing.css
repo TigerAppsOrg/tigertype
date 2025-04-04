@@ -1,117 +1,184 @@
 .typing-area {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 1.5rem;
-    position: relative;
-  }
+  position: relative;
+  inset: 0px;
+  min-height: 12rem;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  background-color: #1e1e1e;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(245, 128, 37, 0.1);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-bottom: 0.2rem;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #F58025;
+}
+
+.snippet-display {
+  background-color: #1e1e1e;
+  padding: 2rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  position: relative;
+  min-height: 150px;
+  letter-spacing: 0.5px;
+  border-left: 4px solid #F58025;
+  margin-bottom: 1rem;
+  font-family: 'Fira Code', monospace;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(245, 128, 37, 0.1);
+  color: rgba(255, 255, 255, 0.325);
+  font-family: 'Fira Code', monospace;
+  text-align: justify;
+}
+
+.typing-input-container {
+  position: fixed;
+  inset: 0px;
+}
+
+.typing-input-container input {
+  width: 100%;
+  padding: 1rem;
+  background-color: #2a2a2a;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-family: 'Fira Code', monospace;
+}
+
+.progress-container {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.progress-bar {
+  height: 30px;
+  background-color: #1e1e1e;
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #F58025;
+  border-radius: 15px;
+  transition: width 0.3s ease-out;
+}
+
+.progress-label {
+  position: absolute;
+  right: 10px;
+  top: 5px;
+  color: white;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.correct {
+  color: rgba(128, 239, 128, 0.55);
+}
+
+.incorrect {
+  color: rgba(255, 65, 47, 0.55);
+  background-color: rgba(255,116,108, 0.10);
+  text-decoration: underline wavy rgba(255, 65, 47, 0.55);
+}
+
+.current {
+  background-color: #3a506b;
+  border-radius: 2px;
+  color: white;
+  animation: blink 1s infinite;
+}
   
-  .stats {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-bottom: 1rem;
-    background-color: #1e1e1e;
-    padding: 0.8rem 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(245, 128, 37, 0.1);
-  }
-  
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .stat-label {
-    font-size: 0.8rem;
-    color: #aaa;
-    margin-bottom: 0.2rem;
-  }
-  
-  .stat-value {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #F58025;
-  }
-  
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Practice mode tooltip */
+.practice-tooltip {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.tooltip-content {
+  background-color: rgba(30, 30, 30, 0.8);
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: #aaa;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(245, 128, 37, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.tooltip-content:hover {
+  opacity: 1;
+}
+
+.tooltip-content kbd {
+  background-color: #2a2a2a;
+  border-radius: 3px;
+  border: 1px solid #444;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  color: #F58025;
+  display: inline-block;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 2px 5px;
+  margin: 0 3px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
   .snippet-display {
-    background-color: #1e1e1e;
-    padding: 2rem;
-    border-radius: 8px;
-    font-size: 1.2rem;
-    line-height: 1.8;
-    white-space: pre-wrap;
-    position: relative;
-    min-height: 150px;
-    letter-spacing: 0.5px;
-    border-left: 4px solid #F58025;
-    margin-bottom: 1rem;
-    font-family: 'Fira Code', monospace;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(245, 128, 37, 0.1);
-  }
-  
-  .typing-input-container {
-    position: relative;
+    font-size: 1rem;
+    padding: 1.5rem;
   }
   
   .typing-input-container input {
-    width: 100%;
-    padding: 1rem;
-    background-color: #2a2a2a;
-    border: 1px solid rgba(245, 128, 37, 0.2);
-    border-radius: 8px;
-    color: white;
-    font-size: 1.2rem;
-    font-family: 'Fira Code', monospace;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    font-size: 1rem;
+    padding: 0.8rem;
+  }
+  
+  .stats {
+    padding: 0.6rem 1rem;
+    gap: 1.5rem;
+  }
 }
-
-.typing-input-container input:focus {
-    outline: none;
-    border-color: rgba(245, 128, 37, 0.5);
-    box-shadow: 0 0 0 2px rgba(245, 128, 37, 0.2);
-}
-    
-  .correct {
-    color: #4caf50;
-    text-shadow: 0 0 1px rgba(76, 175, 80, 0.3);
-  }
-  
-  .incorrect {
-    color: #f44336;
-    text-decoration: underline wavy #f44336;
-    text-shadow: 0 0 1px rgba(244, 67, 54, 0.3);
-  }
-  
-  .current {
-    background-color: #3a506b;
-    border-radius: 2px;
-    color: white;
-    animation: blink 1s infinite;
-  }
-  
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-  
-  /* Responsive styles */
-  @media (max-width: 768px) {
-    .snippet-display {
-      font-size: 1rem;
-      padding: 1.5rem;
-    }
-    
-    .typing-input-container input {
-      font-size: 1rem;
-      padding: 0.8rem;
-    }
-    
-    .stats {
-      padding: 0.6rem 1rem;
-      gap: 1.5rem;
-    }
-  }
