@@ -110,24 +110,26 @@ function Race() {
               <div className="lobby-code">Lobby Code: {raceState.code}</div>
             )}
             
-            {raceState.players && raceState.players.length > 0 && (
-              <PlayerStatusBar
-                players={raceState.players}
-                isRaceInProgress={raceState.inProgress}
-                currentUser={window.user}
-                onReadyClick={setPlayerReady}
-              />
-            )}
-            
             {countdown !== null && !raceState.completed && !raceState.inProgress && (
               <div className="countdown">{countdown}</div>
             )}
           </div>
           
+          {/* Typing component moved above PlayerStatusBar */}
           {!raceState.completed ? (
             <Typing />
           ) : (
             <Results />
+          )}
+          
+          {/* PlayerStatusBar moved below Typing */}
+          {raceState.players && raceState.players.length > 0 && (
+            <PlayerStatusBar
+              players={raceState.players}
+              isRaceInProgress={raceState.inProgress}
+              currentUser={window.user}
+              onReadyClick={setPlayerReady}
+            />
           )}
         </div>
       </div>
