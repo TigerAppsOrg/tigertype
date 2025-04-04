@@ -253,8 +253,9 @@ export const RaceProvider = ({ children }) => {
   };
 
   return (
-    <RaceContext.Provider value={{ 
-      raceState, 
+    <RaceContext.Provider value={{
+      raceState,
+      setRaceState,
       typingState,
       joinPracticeMode,
       joinPublicRace,

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRace } from '../context/RaceContext';
+import { useSocket } from '../context/SocketContext';
 import './Typing.css';
 
 function Typing() {
-  const { raceState, typingState, updateProgress } = useRace();
+  const { raceState, setRaceState, typingState, updateProgress } = useRace();
+  const { socket } = useSocket();
   const [input, setInput] = useState('');
   const inputRef = useRef(null);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -16,10 +18,17 @@ function Typing() {
 
   // Focus input when race starts
   useEffect(() => {
-    if (raceState.inProgress && inputRef.current) {
+    if ((raceState.inProgress || raceState.type === 'practice') && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [raceState.inProgress]);
+  }, [raceState.inProgress, raceState.type]);
+  
+  // Focus input immediately when component mounts in practice mode
+  useEffect(() => {
+    if (raceState.type === 'practice' && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   // Prevents the user from unfocusing the input box
   useEffect(() => {
@@ -71,6 +80,22 @@ function Typing() {
   // Handle typing input
   const handleInput = (e) => {
     const newInput = e.target.value;
+    
+    // For practice mode, start the race on first keypress
+    if (raceState.type === 'practice' && !raceState.inProgress && !raceState.completed && newInput.length === 1) {
+      // Update race state locally for practice mode
+      const startTime = Date.now();
+      setRaceState(prev => ({
+        ...prev,
+        startTime: startTime,
+        inProgress: true
+      }));
+      
+      // Emit race:start event to start the race
+      if (socket) {
+        socket.emit('race:start', { code: raceState.code });
+      }
+    }
     
     // For multiplayer races, require 100% accuracy
     if (raceState.type !== 'practice' && raceState.inProgress) {
@@ -161,7 +186,7 @@ function Typing() {
           value={input}
           onChange={handleInput}
           onPaste={handlePaste}
-          disabled={!raceState.inProgress || typingState.completed}
+          disabled={(raceState.type !== 'practice' && !raceState.inProgress) || typingState.completed}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
