@@ -4,17 +4,30 @@ import { useSocket } from '../context/SocketContext';
 import './Typing.css';
 
 function Typing() {
-  const { raceState, setRaceState, typingState, updateProgress } = useRace();
+  const { raceState, setRaceState, typingState, updateProgress, loadNewSnippet } = useRace();
   const { socket } = useSocket();
   const [input, setInput] = useState('');
   const inputRef = useRef(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [lastTabPress, setLastTabPress] = useState(0);
+  const [snippetId, setSnippetId] = useState(null);
 
   // Gets latest typingState.position
   const positionRef = useRef(typingState.position);
   useEffect(() => {
     positionRef.current = typingState.position;
   }, [typingState.position]);
+
+  // Track snippet changes to reset input
+  useEffect(() => {
+    if (raceState.snippet && raceState.snippet.id !== snippetId) {
+      setSnippetId(raceState.snippet.id);
+      setInput('');
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+    }
+  }, [raceState.snippet, snippetId]);
 
   // Focus input when race starts
   useEffect(() => {
@@ -44,6 +57,52 @@ function Typing() {
       document.body.removeEventListener('click', handleBodyClick);
     };
   }, [raceState.inProgress]);
+
+  // Handle keyboard shortcuts for practice mode
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (raceState.type !== 'practice') return;
+      
+      // Tab: Load new snippet (with rate limiting)
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        
+        // Rate limit to prevent spamming (1 second cooldown)
+        const now = Date.now();
+        if (now - lastTabPress > 1000) {
+          setLastTabPress(now);
+          // Clear input immediately to prevent visual artifacts
+          setInput('');
+          if (inputRef.current) {
+            inputRef.current.value = '';
+          }
+          loadNewSnippet();
+        }
+      }
+      
+      // Escape: Restart current snippet
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        // Reset the input and restart the current race
+        setInput('');
+        if (inputRef.current) {
+          inputRef.current.value = '';
+        }
+        setRaceState(prev => ({
+          ...prev,
+          startTime: null,
+          inProgress: false,
+          completed: false,
+          manuallyStarted: false
+        }));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [raceState.type, lastTabPress, loadNewSnippet, setRaceState]);
 
   const getElapsedTime = () =>
     raceState.startTime ? (Date.now() - raceState.startTime) / 1000 : 0;
@@ -181,6 +240,19 @@ function Typing() {
       </div>
     );
   };
+
+  // Render tooltip for keyboard shortcuts in practice mode
+  const renderPracticeTooltip = () => {
+    if (raceState.type !== 'practice') return null;
+
+    return (
+      <div className="practice-tooltip">
+        <div className="tooltip-content">
+          <span>Press <kbd>Tab</kbd> for new snippet • <kbd>Esc</kbd> to restart</span>
+        </div>
+      </div>
+    );
+  };
   
   return (
     <>
@@ -208,6 +280,7 @@ function Typing() {
         />
       </div>
     </div>
+    {renderPracticeTooltip()}
     </>
   );
 }

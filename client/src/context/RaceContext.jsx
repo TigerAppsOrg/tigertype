@@ -157,6 +157,34 @@ export const RaceProvider = ({ children }) => {
     socket.emit('player:ready');
   };
 
+  // Load a new snippet for practice mode
+  const loadNewSnippet = () => {
+    if (!socket || !connected || raceState.type !== 'practice') return;
+    console.log('Loading new practice snippet...');
+    
+    // Reset states
+    setTypingState({
+      input: '',
+      position: 0,
+      correctChars: 0,
+      errors: 0,
+      completed: false,
+      wpm: 0,
+      accuracy: 0
+    });
+    
+    setRaceState(prev => ({
+      ...prev,
+      startTime: null,
+      inProgress: false,
+      completed: false,
+      manuallyStarted: false
+    }));
+    
+    // Request a new practice snippet
+    socket.emit('practice:join');
+  };
+
   const updateProgress = (input) => {
     const now = Date.now();
     const elapsedSeconds = (now - raceState.startTime) / 1000;
@@ -272,7 +300,8 @@ export const RaceProvider = ({ children }) => {
       joinPublicRace,
       setPlayerReady,
       updateProgress,
-      resetRace
+      resetRace,
+      loadNewSnippet
     }}>
       {children}
     </RaceContext.Provider>
