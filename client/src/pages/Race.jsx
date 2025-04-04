@@ -22,7 +22,7 @@ function Race() {
   
   // Handle race countdown
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || raceState.type === 'practice') return;
     
     const handleCountdown = (data) => {
       console.log('Countdown received:', data);

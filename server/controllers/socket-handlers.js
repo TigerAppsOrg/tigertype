@@ -146,9 +146,6 @@ const initialize = (io) => {
             text: snippet.text
           }
         });
-        
-        // Start practice countdown immediately for practice mode
-        startPracticeCountdown(io, lobby.code);
       } catch (err) {
         console.error('Error joining practice:', err);
         socket.emit('error', { message: 'Failed to join practice mode' });

@@ -18,7 +18,8 @@ export const RaceProvider = ({ children }) => {
     startTime: null,
     inProgress: false,
     completed: false,
-    results: []
+    results: [],
+    manuallyStarted: false // Flag to track if practice mode was manually started
   });
   
   // Local typing state
@@ -57,22 +58,27 @@ export const RaceProvider = ({ children }) => {
     };
 
     const handleRaceStart = (data) => {
-      setRaceState(prev => ({
-        ...prev,
-        startTime: data.startTime,
-        inProgress: true
-      }));
-      
-      // Reset typing state
-      setTypingState({
-        input: '',
-        position: 0,
-        correctChars: 0,
-        errors: 0,
-        completed: false,
-        wpm: 0,
-        accuracy: 0
-      });
+      // Only process the race:start event if:
+      // 1. It's not practice mode, OR
+      // 2. It's practice mode but we haven't manually started it yet
+      if (raceState.type !== 'practice' || !raceState.manuallyStarted) {
+        setRaceState(prev => ({
+          ...prev,
+          startTime: data.startTime,
+          inProgress: true
+        }));
+        
+        // Reset typing state
+        setTypingState({
+          input: '',
+          position: 0,
+          correctChars: 0,
+          errors: 0,
+          completed: false,
+          wpm: 0,
+          accuracy: 0
+        });
+      }
     };
 
     const handlePlayerProgress = (data) => {
@@ -130,7 +136,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('race:resultsUpdate', handleResultsUpdate);
       socket.off('race:end', handleRaceEnd);
     };
-  }, [socket, connected]);
+  }, [socket, connected, raceState.type, raceState.manuallyStarted]);
 
   // Methods for race actions
   const joinPracticeMode = () => {
@@ -238,7 +244,8 @@ export const RaceProvider = ({ children }) => {
       startTime: null,
       inProgress: false,
       completed: false,
-      results: []
+      results: [],
+      manuallyStarted: false
     });
     
     setTypingState({
