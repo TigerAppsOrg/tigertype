@@ -334,12 +334,10 @@ function Typing() {
       (raceState.inProgress && getStats())
     }
     <div className="typing-area">
-      {raceState.inProgress && getStats()}
       
       <div className="snippet-display" >
         {getHighlightedText()}
       </div>
-      
       <div className="typing-input-container">
         <input
           ref={inputRef}
