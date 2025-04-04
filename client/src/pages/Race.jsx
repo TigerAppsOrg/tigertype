@@ -92,37 +92,33 @@ function Race() {
     resetRace();
     navigate('/home');
   };
-  
   return (
     <div className="race-page">
       <div className="race-container">
-        <div className="back-button-container">
+        <div className="race-header-wrapper">
+          <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
           <button className="back-button" onClick={handleBack}>
             <span>⟵</span> Back
           </button>
+          {raceState.type !== 'practice' && raceState.code && (
+            <div className="lobby-code">Lobby Code: {raceState.code}</div>
+          )}
         </div>
         
         <div className="race-content">
           <div className="race-info">
-            <h2>{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h2>
-            
-            {raceState.type !== 'practice' && raceState.code && (
-              <div className="lobby-code">Lobby Code: {raceState.code}</div>
-            )}
             
             {countdown !== null && !raceState.completed && !raceState.inProgress && (
               <div className="countdown">{countdown}</div>
             )}
           </div>
           
-          {/* Typing component moved above PlayerStatusBar */}
           {!raceState.completed ? (
             <Typing />
           ) : (
             <Results />
           )}
           
-          {/* PlayerStatusBar moved below Typing */}
           {raceState.players && raceState.players.length > 0 && (
             <PlayerStatusBar
               players={raceState.players}
