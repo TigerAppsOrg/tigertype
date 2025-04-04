@@ -95,21 +95,19 @@ function Race() {
   return (
     <div className="race-page">
       <div className="race-container">
-      {raceState.type !== 'practice' && raceState.code && (
-        <div className="back-button-container">
+      <div className="race-header-wrapper">
+        <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
           <button className="back-button" onClick={handleBack}>
             <span>⟵</span> Back
           </button>
+          {raceState.type !== 'practice' && raceState.code && (
+            <div className="lobby-code">Lobby Code: {raceState.code}</div>
+          )}
         </div>
-      )}
-      <h2>{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h2>
-            
-            <div className="multiplayer-info">
-            <div className="lobby-info-container">
+
             {raceState.type !== 'practice' && raceState.code && (
               <div className="lobby-code">Lobby Code: {raceState.code}</div>
             )}
-            </div>
             
             <div className="player-container">
               {raceState.players && raceState.players.length > 0 && (
@@ -137,7 +135,6 @@ function Race() {
                   )}
                 </div>
               )}
-            </div>
             </div>
 
             {countdown !== null && !raceState.completed && !raceState.inProgress && (

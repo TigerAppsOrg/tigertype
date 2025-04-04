@@ -172,9 +172,6 @@ function Typing() {
           spellCheck="false"
         />
       </div>
-      <div className="progress-container">
-        {getProgressBars()}
-      </div>
     </div>
     </>
   );
