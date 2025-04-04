@@ -121,12 +121,15 @@ function Typing() {
     
     const text = raceState.snippet.text;
     const components = [];
+    let hasEncounteredError = false;
     
     for (let i = 0; i < text.length; i++) {
       if (i < input.length) {
-        if (input[i] === text[i]) {
+        if (input[i] === text[i] && !hasEncounteredError) {
           components.push(<span key={i} className="correct">{text[i]}</span>);
         } else {
+          // Once an error is encountered, mark this and all subsequent typed chars as incorrect
+          hasEncounteredError = true;
           components.push(<span key={i} className="incorrect">{text[i]}</span>);
         }
       } else if (i === input.length) {

@@ -322,9 +322,8 @@ const initialize = (io) => {
     // Handle progress updates
     socket.on('race:progress', (data) => {
       try {
-        // Client sends { position, total }, but we only need position
-        // Server handler previously expected { position, completed }
-        const { code, position } = data; 
+        // Client sends { position, total, isCompleted }
+        const { code, position, isCompleted } = data; 
         
         // Check if race exists and is active
         const race = activeRaces.get(code);
@@ -347,10 +346,6 @@ const initialize = (io) => {
         // Throttle progress updates
         const now = Date.now();
         const lastUpdate = lastProgressUpdate.get(socket.id) || 0;
-        
-        // Calculate completed status based on position
-        const snippetLength = race.snippet.text.length;
-        const isCompleted = position >= snippetLength;
 
         // Allow immediate update if player just completed the race
         if (now - lastUpdate < PROGRESS_THROTTLE && !isCompleted) {
@@ -360,16 +355,16 @@ const initialize = (io) => {
         lastProgressUpdate.set(socket.id, now);
         
         // Validate the progress (ensure position is not negative or excessively large)
-        // Allow position == snippetLength for completion
+        const snippetLength = race.snippet.text.length;
         if (position < 0 || position > snippetLength) {
           console.warn(`Invalid position from ${netid}: ${position}, snippet length: ${snippetLength}`);
           return;
         }
         
-        // Store player progress, including the calculated completed status
+        // Store player progress, using the client-provided completion status
         playerProgress.set(socket.id, {
           position,
-          completed: isCompleted, // Store calculated completion status
+          completed: isCompleted, // Use the client-provided completion status
           timestamp: now
         });
         
@@ -381,7 +376,7 @@ const initialize = (io) => {
           netid,
           position,
           percentage,
-          completed: isCompleted // Broadcast calculated completion status
+          completed: isCompleted // Use the client-provided completion status
         });
         
         // Handle race completion for this player if they just completed
