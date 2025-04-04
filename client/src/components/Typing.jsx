@@ -14,13 +14,6 @@ function Typing() {
     positionRef.current = typingState.position;
   }, [typingState.position]);
 
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Fira+Code&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }, []);
-
   // Focus input when race starts
   useEffect(() => {
     if (raceState.inProgress && inputRef.current) {
@@ -46,6 +39,27 @@ function Typing() {
       clearInterval(interval);
     };
   }, [raceState.inProgress, raceState.startTime]);
+
+  // Update WPM continuously
+  useEffect(() => {
+  let interval;
+  if (raceState.inProgress && raceState.startTime) {
+    interval = setInterval(() => {
+      if (input.length > 0) {
+        const words = input.length / 5; // Standard word length
+        const minutes = getElapsedTime() / 60;
+        const wpm = words / minutes;
+        updateProgress(input); // This will update the WPM in race state
+      }
+    }, 300); // Update every 100ms for smoother display
+  } else {
+    setElapsedTime(0);
+  }
+
+  return () => {
+    clearInterval(interval);
+  };
+}, [raceState.inProgress, raceState.startTime, input]);
   
   // Handle typing input
   const handleInput = (e) => {
