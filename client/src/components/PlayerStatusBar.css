@@ -7,7 +7,7 @@
   border-radius: 8px;
   margin-top: 0.5rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  max-height: 180px;
+  max-height: 30vh;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #F58025 #1e1e1e;
@@ -51,7 +51,6 @@
   border-left: 4px solid transparent;
   margin-bottom: 0.25rem;
   position: relative;
-  overflow: hidden;
 }
 
 .player-card::after {
