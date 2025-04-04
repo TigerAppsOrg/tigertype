@@ -8,8 +8,8 @@
     align-items: center;
     justify-content: space-between;
     z-index: 1000;
-    background-color: #121212;
     padding-top: 1.5rem;
+    background-color: #121212;
   }
   
   .navbar-logo {
