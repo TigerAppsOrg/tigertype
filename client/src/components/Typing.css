@@ -84,14 +84,16 @@
 }
 
 .incorrect {
-  color: rgba(255, 65, 47, 0.55);
-  background-color: rgba(255,116,108, 0.10);
-  text-decoration: underline wavy rgba(255, 65, 47, 0.55);
+  color: #f44336;
+  text-decoration: underline wavy #f44336;
+  text-shadow: 0 0 1px rgba(244, 67, 54, 0.3);
 }
 
 .current {
-  background-color: rgba(60, 95, 137, 0.55);
+  background-color: #3a506b;
   border-radius: 2px;
+  color: white;
+  animation: blink 1s infinite;
 }
 
 @keyframes blink {
@@ -116,3 +118,16 @@
     gap: 1.5rem;
   }
 }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .snippet-display {
+    font-size: 1rem;
+    padding: 1.5rem;
+  }
+  

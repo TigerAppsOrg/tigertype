@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   avg_wpm NUMERIC(5,2) DEFAULT 0,
   avg_accuracy NUMERIC(5,2) DEFAULT 0,
-  races_completed INTEGER DEFAULT 0
+  races_completed INTEGER DEFAULT 0,
+  fastest_wpm NUMERIC(5,2) DEFAULT 0
 );
 
 -- Snippets table for storing text that users will type
