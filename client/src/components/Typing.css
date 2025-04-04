@@ -59,7 +59,6 @@
 .typing-input-container {
   position: fixed;
   inset: 0px;
-  width: 100%;
 }
 
 .typing-input-container input {
