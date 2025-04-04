@@ -43,9 +43,9 @@ function Race() {
         });
       }, 1000);
     };
-    
+
     socket.on('race:countdown', handleCountdown);
-    
+
     // For practice mode, manually trigger countdown when game type is practice
     // Only start countdown if the race is not in progress or completed
     if (raceState.type === 'practice' && !raceState.inProgress && !raceState.completed && !countdown) {
@@ -86,7 +86,7 @@ function Race() {
       }
     };
   }, []);
-  
+
   // Handle back button
   const handleBack = () => {
     resetRace();
@@ -111,8 +111,6 @@ function Race() {
             {countdown !== null && !raceState.completed && !raceState.inProgress && (
               <div className="countdown">{countdown}</div>
             )}
-          </div>
-          
           {!raceState.completed ? (
             <Typing />
           ) : (
@@ -129,6 +127,7 @@ function Race() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
