@@ -55,6 +55,7 @@
   color: rgba(255, 255, 255, 0.325);
   font-family: 'Fira Code', monospace;
   text-align: justify;
+  width: 100%;
 }
 
 .typing-input-container {
@@ -119,4 +120,8 @@
 .current {
   background-color: rgba(60, 95, 137, 0.55);
   border-radius: 2px;
-}
+  width: 0.15rem;
+  display: inline-block;
+  margin-right: 0.85rem;
+} 
+  
