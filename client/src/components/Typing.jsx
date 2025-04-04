@@ -97,23 +97,10 @@ function Typing() {
         inProgress: true,
         manuallyStarted: true // Set flag to indicate we manually started the race
       }));
-      
     }
     
-    // For multiplayer races, require 100% accuracy
-    if (raceState.type !== 'practice' && raceState.inProgress) {
-      const text = raceState.snippet.text;
-      // Only allow input if it matches the text exactly up to the current position
-      if (newInput.length > input.length) {
-        // Check if the new character matches
-        const newChar = newInput[newInput.length - 1];
-        const expectedChar = text[newInput.length - 1];
-        if (newChar !== expectedChar) {
-          // If it doesn't match, don't update the input
-          return;
-        }
-      }
-    }
+    // No longer block incorrect characters - allow them to be entered
+    // and highlighted as errors in the display
     
     setInput(newInput);
     

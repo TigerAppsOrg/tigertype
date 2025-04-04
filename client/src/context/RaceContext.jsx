@@ -183,13 +183,16 @@ export const RaceProvider = ({ children }) => {
     // Calculate accuracy based on total input length, not just correct characters
     const accuracy = input.length > 0 ? (correctChars / input.length) * 100 : 0;
     
+    // Check if all characters are typed correctly
+    const isCompleted = input.length === text.length && correctChars === text.length;
+    
     // Update the typing state
     setTypingState({
       input,
       position: input.length, // Use actual input length instead of correct chars
       correctChars,
       errors,
-      completed: input.length >= text.length, // Consider race complete when input length matches or exceeds text length
+      completed: isCompleted, // Only completed when all characters match exactly
       wpm,
       accuracy
     });
@@ -205,8 +208,8 @@ export const RaceProvider = ({ children }) => {
         });
       }
       
-      // Check if race is completed (input length matches or exceeds text length)
-      if (input.length >= text.length) {
+      // Check if race is completed (input exactly matches the text)
+      if (isCompleted) {
         // Mark as completed locally
         setRaceState(prev => ({
           ...prev,
