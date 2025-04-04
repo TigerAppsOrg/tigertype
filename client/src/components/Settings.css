@@ -21,7 +21,7 @@
   }
   
   .settings-header {
-    max-height: 20px;
+    max-height: 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -46,6 +46,9 @@
   }
   
   .settings-content {
-    padding-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding-top: 20px;
     color: #fff;
-  }
+}

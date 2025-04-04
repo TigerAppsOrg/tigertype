@@ -41,6 +41,8 @@ function Settings({ isOpen, onClose }) {
             <option value="'Roboto', sans-serif">Roboto</option>
             <option value="'Open Sans', sans-serif">Open Sans</option>
           </select>
+
+          <p className='fonts'>Addtional...</p>
         </div>
       </div>
     </div>
