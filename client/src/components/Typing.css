@@ -54,6 +54,9 @@
   color: rgba(255, 255, 255, 0.325);
   font-family: 'Fira Code', monospace;
   text-align: justify;
+  color: rgba(255, 255, 255, 0.325);
+  font-family: 'Fira Code', monospace;
+  text-align: justify;
 }
 
 .typing-input-container {
@@ -123,6 +126,46 @@
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* Practice mode tooltip */
+.practice-tooltip {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.tooltip-content {
+  background-color: rgba(30, 30, 30, 0.8);
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: #aaa;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(245, 128, 37, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.tooltip-content:hover {
+  opacity: 1;
+}
+
+.tooltip-content kbd {
+  background-color: #2a2a2a;
+  border-radius: 3px;
+  border: 1px solid #444;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  color: #F58025;
+  display: inline-block;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 2px 5px;
+  margin: 0 3px;
 }
 
 /* Practice mode tooltip */
