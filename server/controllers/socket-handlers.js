@@ -262,6 +262,15 @@ const initialize = (io) => {
         });
         racePlayers.set(lobby.code, players);
         
+        // Add the player to the lobby_players table for public matches
+        try {
+          await RaceModel.addPlayerToLobby(raceInfo.id, userId, false);
+          console.log(`Added user ${netid} to lobby_players table for lobby ${lobby.code}`);
+        } catch (dbErr) {
+          console.error(`Error adding user ${netid} to lobby_players table:`, dbErr);
+          // Continue anyway; in-memory state is already updated
+        }
+        
         // Send race info to player
         const race = activeRaces.get(lobby.code);
         socket.emit('race:joined', {
@@ -289,7 +298,7 @@ const initialize = (io) => {
     });
     
     // Handle player ready status
-    socket.on('player:ready', () => {
+    socket.on('player:ready', async () => {
       try {
         console.log(`User ${netid} is ready`);
         
@@ -303,6 +312,18 @@ const initialize = (io) => {
             // Mark player as ready
             players[playerIndex].ready = true;
             racePlayers.set(code, players);
+            
+            // Update player ready status in database for non-practice lobbies
+            const race = activeRaces.get(code);
+            if (race && race.type !== 'practice') {
+              try {
+                await RaceModel.updatePlayerReadyStatus(race.id, userId, true);
+                console.log(`Updated ready status in database for user ${netid} in lobby ${code}`);
+              } catch (dbErr) {
+                console.error(`Error updating ready status in database for user ${netid}:`, dbErr);
+                // Continue anyway as the in-memory state is already updated
+              }
+            }
             
             // Broadcast updated player list
             io.to(code).emit('race:playersUpdate', {
@@ -465,7 +486,7 @@ const initialize = (io) => {
     });
     
     // Handle disconnect
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       console.log(`Socket disconnected: ${netid} (${socket.id})`);
       
       // Remove player from all races
@@ -475,8 +496,22 @@ const initialize = (io) => {
         if (playerIndex !== -1) {
           console.log(`Removing user ${netid} from race ${code}`);
           
+          // Get player and race information before removing
+          const player = players[playerIndex];
+          const race = activeRaces.get(code);
+          
           // Remove player from race
           players.splice(playerIndex, 1);
+          
+          // If race exists and isn't practice mode, remove from db
+          if (race && race.type !== 'practice' && player.userId) {
+            try {
+              await RaceModel.removePlayerFromLobby(race.id, player.userId);
+              console.log(`Removed user ${netid} from lobby_players table for lobby ${code}`);
+            } catch (dbErr) {
+              console.error(`Error removing user ${netid} from lobby_players table:`, dbErr);
+            }
+          }
           
           // If no players left, clean up race
           if (players.length === 0) {
@@ -498,7 +533,6 @@ const initialize = (io) => {
           io.to(code).emit('race:playerLeft', { netid });
           
           // Check if we should end the race early if all remaining players are finished
-          const race = activeRaces.get(code);
           if (race && race.status === 'racing') {
             const allCompleted = players.every(p => {
               const progress = playerProgress.get(p.id);
