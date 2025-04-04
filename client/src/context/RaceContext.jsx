@@ -5,21 +5,41 @@ import { useAuth } from './AuthContext';
 // Create context
 const RaceContext = createContext(null);
 
+// Helper functions for session storage
+const saveInactivityState = (state) => {
+  try {
+    sessionStorage.setItem('inactivityState', JSON.stringify(state));
+  } catch (error) {
+    console.error('Error saving inactivity state to session storage:', error);
+  }
+};
+
+const loadInactivityState = () => {
+  try {
+    const savedState = sessionStorage.getItem('inactivityState');
+    return savedState ? JSON.parse(savedState) : null;
+  } catch (error) {
+    console.error('Error loading inactivity state from session storage:', error);
+    return null;
+  }
+};
+
 export const RaceProvider = ({ children }) => {
   const { socket, connected } = useSocket();
   const { user } = useAuth();
   
   // Race state
   const [raceState, setRaceState] = useState({
-    code: null,
-    type: null,
-    snippet: null,
-    players: [],
-    startTime: null,
-    inProgress: false,
-    completed: false,
-    results: [],
-    manuallyStarted: false // Flag to track if practice mode was manually started
+    code: null,             // Code of the race
+    type: null,             // Type of race (practice, public, custom)
+    lobbyId: null,          // ID of the lobby
+    snippet: null,          // Snippet of the race
+    players: [],            // Array of objects with netid, ready status  
+    startTime: null,        // Timestamp when the race started/is starting    
+    inProgress: false,      // Whether the race is currently in progress
+    completed: false,       // Whether the race has been completed
+    results: [],            // Array of objects with netid, wpm, accuracy, completion_time
+    manuallyStarted: false  // Flag to track if practice mode was manually started
   });
   
   // Local typing state
@@ -33,6 +53,36 @@ export const RaceProvider = ({ children }) => {
     accuracy: 0,
     lockedPosition: 0 // Pos up to which text is locked
   });
+
+  // Initialize inactivity state from session storage or default values
+  const savedInactivityState = loadInactivityState();
+  
+  // Inactivity state
+  const [inactivityState, setInactivityState] = useState(savedInactivityState || {
+    warning: false,
+    warningMessage: '',
+    kicked: false,
+    kickMessage: '',
+    redirectToHome: false
+  });
+
+  // Update session storage when inactivity state changes
+  useEffect(() => {
+    saveInactivityState(inactivityState);
+  }, [inactivityState]);
+
+  // Handle inactivity redirection
+  useEffect(() => {
+    if (inactivityState.redirectToHome) {
+      window.location.href = '/home?kicked=inactivity';
+      
+      // Reset the flag
+      setInactivityState(prev => ({
+        ...prev,
+        redirectToHome: false
+      }));
+    }
+  }, [inactivityState.redirectToHome]);
 
   // Initialize Socket.IO event listeners when socket is available
   useEffect(() => {
@@ -121,6 +171,40 @@ export const RaceProvider = ({ children }) => {
       }));
     };
 
+    // Inactivity event handlers
+    const handleInactivityWarning = (data) => {
+      console.log('Inactivity warning received:', data);
+      setInactivityState(prev => ({
+        ...prev,
+        warning: true,
+        warningMessage: data.message || 'You will be kicked for inactivity if you do not ready up soon.'
+      }));
+    };
+    
+    const handleInactivityKicked = () => {
+      console.log('Kicked for inactivity');
+      setInactivityState(prev => ({
+        ...prev,
+        kicked: true,
+        kickMessage: 'You have been removed from the lobby due to inactivity. Please ready up promptly when joining a race.',
+        redirectToHome: true 
+      }));
+      
+      // Reset race state
+      setRaceState({
+        code: null,
+        type: null,
+        lobbyId: null,
+        snippet: null,
+        players: [],
+        inProgress: false,
+        completed: false,
+        results: [],
+        startTime: null,
+        manuallyStarted: false
+      });
+    };
+
     // Register event listeners
     socket.on('race:joined', handleRaceJoined);
     socket.on('race:playersUpdate', handlePlayersUpdate);
@@ -128,6 +212,10 @@ export const RaceProvider = ({ children }) => {
     socket.on('race:playerProgress', handlePlayerProgress);
     socket.on('race:resultsUpdate', handleResultsUpdate);
     socket.on('race:end', handleRaceEnd);
+    
+    // Register inactivity event listeners
+    socket.on('inactivity:warning', handleInactivityWarning);
+    socket.on('inactivity:kicked', handleInactivityKicked);
     
     // Clean up on unmount
     return () => {
@@ -137,6 +225,10 @@ export const RaceProvider = ({ children }) => {
       socket.off('race:playerProgress', handlePlayerProgress);
       socket.off('race:resultsUpdate', handleResultsUpdate);
       socket.off('race:end', handleRaceEnd);
+      
+      // Clean up inactivity event listeners
+      socket.off('inactivity:warning', handleInactivityWarning);
+      socket.off('inactivity:kicked', handleInactivityKicked);
     };
   }, [socket, connected, raceState.type, raceState.manuallyStarted]);
 
@@ -365,6 +457,7 @@ export const RaceProvider = ({ children }) => {
     setRaceState({
       code: null,
       type: null,
+      lobbyId: null,
       snippet: null,
       players: [],
       startTime: null,
@@ -386,19 +479,45 @@ export const RaceProvider = ({ children }) => {
     });
   };
 
+  // Methods for inactivity
+  const dismissInactivityWarning = () => {
+    setInactivityState(prev => ({
+      ...prev,
+      warning: false,
+      warningMessage: ''
+    }));
+  };
+  
+  const dismissInactivityKick = () => {
+    setInactivityState(prev => ({
+      ...prev,
+      kicked: false,
+      kickMessage: ''
+    }));
+    
+    // Clear from session storage too
+    sessionStorage.removeItem('inactivityState');
+  };
+
   return (
-    <RaceContext.Provider value={{
-      raceState,
-      setRaceState,
-      typingState,
-      joinPracticeMode,
-      joinPublicRace,
-      setPlayerReady,
-      handleInput,
-      updateProgress,
-      resetRace,
-      loadNewSnippet
-    }}>
+    <RaceContext.Provider
+      value={{
+        raceState,
+        typingState,
+        inactivityState,
+        setTypingState,
+        setInactivityState,
+        joinPracticeMode,
+        joinPublicRace,
+        setPlayerReady,
+        handleInput,
+        updateProgress,
+        resetRace,
+        loadNewSnippet,
+        dismissInactivityWarning,
+        dismissInactivityKick
+      }}
+    >
       {children}
     </RaceContext.Provider>
   );

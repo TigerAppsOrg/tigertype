@@ -5,6 +5,7 @@ import { useSocket } from '../context/SocketContext';
 import Typing from '../components/Typing';
 import Results from '../components/Results';
 import PlayerStatusBar from '../components/PlayerStatusBar';
+import Modal from '../components/Modal';
 import './Race.css';
 
 function Race() {
@@ -13,8 +14,11 @@ function Race() {
   const { 
     raceState, 
     typingState,
-    setPlayerReady, 
-    resetRace 
+    inactivityState,
+    setPlayerReady,
+    resetRace,
+    dismissInactivityWarning,
+    dismissInactivityKick
   } = useRace();
   
   const [countdown, setCountdown] = useState(null);
@@ -69,8 +73,33 @@ function Race() {
     resetRace();
     navigate('/home');
   };
+  
+  // Handle ready button when there's an inactivity warning
+  const handleReadyFromWarning = () => {
+    dismissInactivityWarning();
+    setPlayerReady();
+  };
+
   return (
     <div className="race-page">
+      {/* Inactivity Warning Modal */}
+      <Modal
+        isOpen={inactivityState.warning}
+        title="Ready Up Required"
+        message={inactivityState.warningMessage || "Please ready up to continue in this lobby."}
+        buttonText="Ready Up Now"
+        onClose={handleReadyFromWarning}
+      />
+      
+      {/* Kicked for Inactivity Modal */}
+      <Modal
+        isOpen={inactivityState.kicked}
+        title="Removed for Inactivity"
+        message={inactivityState.kickMessage || "You have been removed from the lobby due to inactivity."}
+        buttonText="I Understand"
+        onClose={dismissInactivityKick}
+      />
+      
       <div className="race-container">
         <div className="race-header-wrapper">
           <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
@@ -88,23 +117,23 @@ function Race() {
             {countdown !== null && !raceState.completed && !raceState.inProgress && raceState.type !== 'practice' && (
               <div className="countdown">{countdown}</div>
             )}
-          {!raceState.completed ? (
-            <Typing />
-          ) : (
-            <Results />
-          )}
-          
-          {raceState.players && raceState.players.length > 0 && (
-            <PlayerStatusBar
-              players={raceState.players}
-              isRaceInProgress={raceState.inProgress}
-              currentUser={window.user}
-              onReadyClick={setPlayerReady}
-            />
-          )}
+            {!raceState.completed ? (
+              <Typing />
+            ) : (
+              <Results />
+            )}
+            
+            {raceState.players && raceState.players.length > 0 && (
+              <PlayerStatusBar
+                players={raceState.players}
+                isRaceInProgress={raceState.inProgress}
+                currentUser={window.user}
+                onReadyClick={setPlayerReady}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
