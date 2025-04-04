@@ -30,7 +30,8 @@ export const RaceProvider = ({ children }) => {
     errors: 0,
     completed: false,
     wpm: 0,
-    accuracy: 0
+    accuracy: 0,
+    lockedPosition: 0 // Pos up to which text is locked
   });
 
   // Initialize Socket.IO event listeners when socket is available
@@ -76,7 +77,8 @@ export const RaceProvider = ({ children }) => {
           errors: 0,
           completed: false,
           wpm: 0,
-          accuracy: 0
+          accuracy: 0,
+          lockedPosition: 0
         });
       }
     };
@@ -170,7 +172,8 @@ export const RaceProvider = ({ children }) => {
       errors: 0,
       completed: false,
       wpm: 0,
-      accuracy: 0
+      accuracy: 0,
+      lockedPosition: 0
     });
     
     setRaceState(prev => ({
@@ -185,6 +188,57 @@ export const RaceProvider = ({ children }) => {
     socket.emit('practice:join');
   };
 
+  // Handle text input, enforce word locking
+  const handleInput = (newInput) => {
+    if (!raceState.inProgress) {
+      setTypingState(prev => ({
+        ...prev,
+        input: newInput,
+        position: newInput.length
+      }));
+      return;
+    }
+    
+    const currentInput = typingState.input;
+    const lockedPosition = typingState.lockedPosition;
+    const text = raceState.snippet?.text || '';
+    
+    // Find the position of the first error in the current input
+    let firstErrorPosition = text.length; // Default to end of text (no errors)
+    for (let i = 0; i < Math.min(text.length, currentInput.length); i++) {
+      if (currentInput[i] !== text[i]) {
+        firstErrorPosition = i;
+        break;
+      }
+    }
+    
+    // If trying to delete locked text, only preserve correctly typed text before the first error
+    if (newInput.length < currentInput.length && lockedPosition > 0) {
+      // Only preserve text up to the last complete word before the first error
+      const lastWordBreakBeforeError = currentInput.lastIndexOf(' ', Math.max(0, firstErrorPosition - 1)) + 1;
+      
+      // Only enforce locking if trying to delete before the locked position
+      if (newInput.length < lastWordBreakBeforeError) {
+        const preservedPart = currentInput.substring(0, lastWordBreakBeforeError);
+        let newPart = '';
+        
+        // Keep the user's input after the preserved part
+        if (newInput.length >= preservedPart.length) {
+          newPart = newInput.substring(preservedPart.length);
+        } else {
+          // Deletion is attempting to erase preserved text
+          newPart = currentInput.substring(preservedPart.length);
+        }
+        
+        // This enforces that only correctly typed words before any error cannot be deleted
+        newInput = preservedPart + newPart;
+      }
+    }
+    
+    // Update progress with the potentially modified input
+    updateProgress(newInput);
+  };
+
   const updateProgress = (input) => {
     const now = Date.now();
     const elapsedSeconds = (now - raceState.startTime) / 1000;
@@ -194,6 +248,9 @@ export const RaceProvider = ({ children }) => {
     let correctChars = 0;
     let errors = 0;
     
+    // Find position of first error (if any)
+    let firstErrorPosition = text.length; // Default to end of text
+    
     // Count correct characters and errors
     for (let i = 0; i < input.length; i++) {
       if (i < text.length) {
@@ -201,6 +258,7 @@ export const RaceProvider = ({ children }) => {
           correctChars++;
         } else {
           errors++;
+          firstErrorPosition = Math.min(firstErrorPosition, i);
         }
       }
     }
@@ -214,6 +272,41 @@ export const RaceProvider = ({ children }) => {
     // Check if all characters are typed correctly
     const isCompleted = input.length === text.length && correctChars === text.length;
     
+    // Find the last completely correct word boundary before the first error
+    let newLockedPosition = 0;
+    
+    // Only lock text if there are no errors, or only lock up to the last word break before first error
+    if (firstErrorPosition > 0) {
+      let wordStart = 0;
+      
+      // Iterate through the input text word by word
+      // This was annoying asf to implement correctly im not even gonna lie; prolly not the most efficient
+      for (let i = 0; i <= Math.min(input.length, firstErrorPosition); i++) {
+        // We found a space or reached the first error
+        if (i === firstErrorPosition || input[i] === ' ') {
+          // Check if this entire word is correct
+          let isWordCorrect = true;
+          for (let j = wordStart; j < i; j++) {
+            if (j >= text.length || input[j] !== text[j]) {
+              isWordCorrect = false;
+              break;
+            }
+          }
+          
+          // If we reached a space in both input and text, and the word is correct
+          if (isWordCorrect && i < firstErrorPosition && input[i] === ' ' && i < text.length && input[i] === text[i]) {
+            // Lock position after this word (including space)
+            newLockedPosition = i + 1;
+          }
+          
+          // Start of next word is after the space
+          if (i < input.length && input[i] === ' ') {
+            wordStart = i + 1;
+          }
+        }
+      }
+    }
+    
     // Update the typing state
     setTypingState({
       input,
@@ -222,7 +315,8 @@ export const RaceProvider = ({ children }) => {
       errors,
       completed: isCompleted, // Only completed when all characters match exactly
       wpm,
-      accuracy
+      accuracy,
+      lockedPosition: newLockedPosition
     });
     
     // If the race is still in progress, update progress
@@ -287,7 +381,8 @@ export const RaceProvider = ({ children }) => {
       errors: 0,
       completed: false,
       wpm: 0,
-      accuracy: 0
+      accuracy: 0,
+      lockedPosition: 0
     });
   };
 
@@ -299,6 +394,7 @@ export const RaceProvider = ({ children }) => {
       joinPracticeMode,
       joinPublicRace,
       setPlayerReady,
+      handleInput,
       updateProgress,
       resetRace,
       loadNewSnippet

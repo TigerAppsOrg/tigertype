@@ -4,7 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import './Typing.css';
 
 function Typing() {
-  const { raceState, setRaceState, typingState, updateProgress, loadNewSnippet } = useRace();
+  const { raceState, setRaceState, typingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet } = useRace();
   const { socket } = useSocket();
   const [input, setInput] = useState('');
   const inputRef = useRef(null);
@@ -42,6 +42,54 @@ function Typing() {
       inputRef.current.focus();
     }
   }, []);
+
+  // Handle special key combinations like Command+Backspace on Mac
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Skip if race not in progress or input not focused
+      if (!raceState.inProgress || !inputRef.current || typingState.completed) return;
+      
+      // Handle Command+Backspace (Mac) - simulate normal backspace behavior for word locking
+      if (e.metaKey && e.key === 'Backspace') {
+        e.preventDefault(); // Prevent default to avoid browser/OS handling
+        
+        // Get current input value
+        const currentInput = inputRef.current.value;
+        
+        // Process what the result would be after Command+Backspace 
+        // (typically deletes to beginning of line or current word)
+        // We'll just delete  the current word or up to previous space
+        const cursorPosition = inputRef.current.selectionStart;
+        
+        if (cursorPosition > 0) {
+          // Find the previous word boundary
+          const lastSpace = currentInput.lastIndexOf(' ', cursorPosition - 1);
+          let newValue;
+          
+          if (lastSpace >= 0) {
+            // Delete from cursor to after last space
+            newValue = currentInput.substring(0, lastSpace + 1) + 
+                       currentInput.substring(cursorPosition);
+          } else {
+            // Delete from cursor to beginning if no space
+            newValue = currentInput.substring(cursorPosition);
+          }
+          
+          // Let our existing word locking handle this modified input
+          raceHandleInput(newValue);
+          setInput(typingState.input);
+        }
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [raceState.inProgress, typingState.completed, raceHandleInput, typingState.input]);
 
   // Prevents the user from unfocusing the input box
   useEffect(() => {
@@ -123,7 +171,7 @@ function Typing() {
     };
   }, [raceState.inProgress, raceState.startTime]);
 
-  // Update WPM continuously
+  // Update WPM continuously - using handleInput instead of updateProgress
   useEffect(() => {
     let interval;
     if (raceState.inProgress && raceState.startTime && input.length > 0) {
@@ -131,7 +179,7 @@ function Typing() {
         const words = input.length / 5; // Standard word length
         const minutes = getElapsedTime() / 60;
         const wpm = words / minutes;
-        updateProgress(input); // This will update the WPM in race state
+        raceHandleInput(input); // Use handleInput instead of updateProgress
       }, 300); // Update every 300ms for smoother display
     } else {
       setElapsedTime(0);
@@ -140,10 +188,10 @@ function Typing() {
     return () => {
       clearInterval(interval);
     };
-  }, [raceState.inProgress, raceState.startTime, input]);
+  }, [raceState.inProgress, raceState.startTime, input, raceHandleInput]);
   
-  // Handle typing input
-  const handleInput = (e) => {
+  // Handle typing input with word locking
+  const handleComponentInput = (e) => {
     const newInput = e.target.value;
     
     // For practice mode, start the race on first keypress
@@ -156,17 +204,42 @@ function Typing() {
         inProgress: true,
         manuallyStarted: true // Set flag to indicate we manually started the race
       }));
+      
+      // Continue processing this first character instead of ignoring it
+      if (raceState.inProgress) {
+        raceHandleInput(newInput);
+      } else {
+        // Since raceState.inProgress hasn't updated yet in this render cycle,
+        // we need to directly set the input so the character appears
+        setInput(newInput);
+        // Schedule an update after the state has changed
+        setTimeout(() => raceHandleInput(newInput), 0);
+      }
+      return;
     }
     
     // No longer block incorrect characters - allow them to be entered
     // and highlighted as errors in the display
     
-    setInput(newInput);
-    
+    // Use the input after processing by the word locking mechanism
     if (raceState.inProgress) {
-      updateProgress(newInput);
+      // Use the handleInput function from RaceContext instead of updateProgress
+      raceHandleInput(newInput);
+      
+      // Update local input state to match what's in the typing state
+      // This ensures the displayed input matches the processed input after word locking
+      setInput(typingState.input);
+    } else {
+      setInput(newInput);
     }
   }
+  
+  // Sync input with typingState.input to ensure locked words can't be deleted
+  useEffect(() => {
+    if (raceState.inProgress) {
+      setInput(typingState.input);
+    }
+  }, [typingState.input, raceState.inProgress]);
   
   // Prevent paste
   const handlePaste = (e) => {
@@ -270,7 +343,7 @@ function Typing() {
           ref={inputRef}
           type="text"
           value={input}
-          onChange={handleInput}
+          onChange={handleComponentInput}
           onPaste={handlePaste}
           disabled={(raceState.type !== 'practice' && !raceState.inProgress) || typingState.completed}
           autoComplete="off"
