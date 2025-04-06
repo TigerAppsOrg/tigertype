@@ -66,3 +66,25 @@
   .back-btn:hover {
     background-color: #d56a1a;
   }
+
+  .keyboard-shortcuts {
+    margin-top: 1.5rem;
+    text-align: center;
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .keyboard-shortcuts p {
+    color: #999;
+    margin: 0;
+  }
+
+  .keyboard-shortcuts kbd {
+    background-color: #333;
+    border: 1px solid #666;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #F58025;
+  }

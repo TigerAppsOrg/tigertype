@@ -46,6 +46,10 @@ function Results() {
             <div className="stat-label">Adjusted WPM:</div>
             <div className="stat-value">{adjustedWpm?.toFixed(2)}</div>
           </div>
+
+          <div className="keyboard-shortcuts">
+            <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
+          </div>
         </div>
       );
     }
@@ -78,6 +82,10 @@ function Results() {
           <div className="stat-item">
             <div className="stat-label">Adjusted WPM:</div>
             <div className="stat-value">{adjustedWpm.toFixed(2)}</div>
+          </div>
+
+          <div className="keyboard-shortcuts">
+            <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
           </div>
         </div>
       );

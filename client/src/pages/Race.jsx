@@ -117,18 +117,24 @@ function Race() {
             {countdown !== null && !raceState.completed && !raceState.inProgress && raceState.type !== 'practice' && (
               <div className="countdown">{countdown}</div>
             )}
-            {!raceState.completed ? (
-              <Typing />
-            ) : (
-              <Results />
-            )}
             
-            {raceState.players && raceState.players.length > 0 && (
+            {/* Conditionally render Typing */}
+            {/* Show Typing if:
+                - It's practice mode OR
+                - It's multiplayer AND not completed */}
+            {(raceState.type === 'practice' || !raceState.completed) && <Typing />}
+
+            {/* Conditionally render Results */}
+            {/* Show Results if race is completed */}
+            {raceState.completed && <Results />}
+            
+            {/* Player Status Bar (Only relevant for multiplayer) */}
+            {raceState.players && raceState.players.length > 0 && raceState.type !== 'practice' && (
               <PlayerStatusBar
                 players={raceState.players}
                 isRaceInProgress={raceState.inProgress}
-                currentUser={window.user}
-                onReadyClick={setPlayerReady}
+                currentUser={window.user} // Assuming window.user is available or replace with context user
+                onReadyClick={setPlayerReady} 
               />
             )}
           </div>

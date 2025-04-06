@@ -146,9 +146,10 @@ function Typing() {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    // Add event listener for capturing all events
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [raceState.type, lastTabPress, loadNewSnippet, setRaceState]);
 
@@ -158,37 +159,48 @@ function Typing() {
   // Update elapsed time every ms
   useEffect(() => {
     let interval;
-    if (raceState.inProgress && raceState.startTime) {
+    // Only run the interval if the race is in progress AND not completed
+    if (raceState.inProgress && raceState.startTime && !raceState.completed) {
       interval = setInterval(() => {
         setElapsedTime(getElapsedTime());
-      }, 1);
+      }, 1); // Update frequently for smoothness
     } else {
-      setElapsedTime(0);
+      // Clear interval if race stops or is completed
+      if (interval) clearInterval(interval);
+      // If completed, ensure final time is calculated once? 
+      // Results component handles displaying final time
+      // If not in progress and not completed, reset to 0
+      if (!raceState.inProgress && !raceState.completed) {
+         setElapsedTime(0);
+      }
     }
   
     return () => {
       clearInterval(interval);
     };
-  }, [raceState.inProgress, raceState.startTime]);
+  // Add raceState.completed to dependency array
+  }, [raceState.inProgress, raceState.startTime, raceState.completed]);
 
-  // Update WPM continuously - using handleInput instead of updateProgress
+  // Update WPM continuously - This useEffect might be redundant if WPM is calculated on completion
+  // Let's remove this or adjust it. The Results component displays final WPM.
+  // We'll keep the continuous WPM display logic but stop it on completion.
   useEffect(() => {
     let interval;
-    if (raceState.inProgress && raceState.startTime && input.length > 0) {
+    // Only run interval if in progress and not completed
+    if (raceState.inProgress && raceState.startTime && input.length > 0 && !raceState.completed) {
       interval = setInterval(() => {
-        const words = input.length / 5; // Standard word length
-        const minutes = getElapsedTime() / 60;
-        const wpm = words / minutes;
-        raceHandleInput(input); // Use handleInput instead of updateProgress
-      }, 300); // Update every 300ms for smoother display
+        // No need to call raceHandleInput here, just update local display WPM if needed
+        // Or perhaps remove this continuous WPM calculation entirely if stats bar updates it
+      }, 300); 
     } else {
-      setElapsedTime(0);
+       if (interval) clearInterval(interval); // Clear interval if race stops or completes
     }
 
     return () => {
       clearInterval(interval);
     };
-  }, [raceState.inProgress, raceState.startTime, input, raceHandleInput]);
+  // Add raceState.completed to dependency array
+  }, [raceState.inProgress, raceState.startTime, input, raceState.completed]);
   
   // Handle typing input with word locking
   const handleComponentInput = (e) => {
@@ -217,9 +229,6 @@ function Typing() {
       }
       return;
     }
-    
-    // No longer block incorrect characters - allow them to be entered
-    // and highlighted as errors in the display
     
     // Use the input after processing by the word locking mechanism
     if (raceState.inProgress) {
@@ -274,30 +283,11 @@ function Typing() {
     return components;
   };
     
-  // Get real-time statistics
-  const getStats = () => {
-    return (
-      <div className="stats">
-        <div className="stat-item">
-          <span className="stat-label">WPM:</span>
-          <span className="stat-value">{Math.round(typingState.wpm)}</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-label">Accuracy:</span>
-          <span className="stat-value">{Math.round(typingState.accuracy)}%</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-label">Time:</span>
-          <span className="stat-value">{elapsedTime.toFixed(2)}s</span>
-        </div>
-      </div>
-    );
-  };
-  
-  // Get placeholder for statistics before typing starts
+  // Render stats placeholder (before practice starts)
   const getStatsPlaceholder = () => {
+    // Restore original placeholder structure and class name
     return (
-      <div className="stats">
+      <div className="stats practice-placeholder">
         <div className="stat-item">
           <span className="stat-label">WPM</span>
           <span className="stat-value">--</span>
@@ -314,9 +304,34 @@ function Typing() {
     );
   };
 
+  // Render live stats during race
+  const getStats = () => {
+    const currentWpm = typingState.wpm || 0;
+    const currentAccuracy = typingState.accuracy || 100;
+    
+    // Restore original class name
+    return (
+      <div className="stats">
+        <div className="stat-item">
+          <span className="stat-label">WPM</span>
+          <span className="stat-value">{currentWpm.toFixed(0)}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Accuracy</span>
+          <span className="stat-value">{currentAccuracy.toFixed(0)}%</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Time</span>
+          <span className="stat-value">{elapsedTime.toFixed(2)}s</span>
+        </div>
+      </div>
+    );
+  };
+
   // Render tooltip for keyboard shortcuts in practice mode
   const renderPracticeTooltip = () => {
-    if (raceState.type !== 'practice') return null;
+    // Only show if in practice mode AND not completed
+    if (raceState.type !== 'practice' || raceState.completed) return null;
 
     return (
       <div className="practice-tooltip">
@@ -329,30 +344,40 @@ function Typing() {
   
   return (
     <>
-    {raceState.type === 'practice' && !raceState.inProgress ?
-      getStatsPlaceholder() :
-      (raceState.inProgress && getStats())
-    }
-    <div className="typing-area">
-      
-      <div className="snippet-display" >
-        {getHighlightedText()}
-      </div>
-      <div className="typing-input-container">
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={handleComponentInput}
-          onPaste={handlePaste}
-          disabled={(raceState.type !== 'practice' && !raceState.inProgress) || typingState.completed}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck="false"
-        />
-      </div>
-    </div>
+    {/* Only show stats display if race is NOT completed */}
+    {!raceState.completed && (
+        raceState.type === 'practice' && !raceState.inProgress ?
+        getStatsPlaceholder() :
+        (raceState.inProgress && getStats())
+    )}
+    
+    {/* Only show typing area (snippet + input) if race is NOT completed */}
+    {!raceState.completed && (
+        <div className="typing-area">
+          <div className="snippet-display" >
+            {getHighlightedText()}
+          </div>
+          <div className="typing-input-container">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={handleComponentInput}
+              onPaste={handlePaste}
+              // Input is disabled based on non-practice conditions OR if practice is completed (but still focusable)
+              // Idk a smarter way to do this, keeping it enabled  but visually hidden or styled differently when completed?
+              // Will just hide the container for now lol
+              disabled={(raceState.type !== 'practice' && !raceState.inProgress) || (raceState.type !== 'practice' && typingState.completed)}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+            />
+          </div>
+        </div>
+    )}
+
+    {/* Tooltip is rendered conditionally inside its function based on completion state */}
     {renderPracticeTooltip()}
     </>
   );
