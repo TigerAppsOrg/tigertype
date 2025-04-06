@@ -80,6 +80,64 @@
   border-color: #f8f9fa;
   width: 200px;
   height: 200px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-page-image:hover {
+  border-color: #F58025;
+  opacity: 0.9;
+}
+
+.profile-page-image input[type="image"] {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.profile-page-image input[type="image"].uploading {
+  opacity: 0.5;
+}
+
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-weight: bold;
+}
+
+.error-message {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+  padding: 5px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.success-message {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(40, 167, 69, 0.8);
+  color: white;
+  padding: 5px;
+  text-align: center;
+  font-size: 0.8rem;
 }
 
 .written-info {
@@ -107,6 +165,65 @@
   padding: 10px;
   width: 500px;
   height: 150px;
+  background-color: #2a2a2a;
+  color: #f8f9fa;
+  border: 1px solid #444;
+  font-family: inherit;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.biography::placeholder {
+  color: #aaa;
+}
+
+.biography:focus {
+  outline: none;
+  border-color: #F58025;
+  box-shadow: 0 0 0 0.2rem rgba(245, 128, 37, 0.25);
+}
+
+.bio-controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.save-bio-btn {
+  background-color: #F58025;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: bold;
+}
+
+.save-bio-btn:hover {
+  background-color: #e06800;
+}
+
+.save-bio-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.bio-success, .bio-error {
+  margin-left: 10px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.bio-success {
+  background-color: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+}
+
+.bio-error {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
 }
 
 .profile-stats {
