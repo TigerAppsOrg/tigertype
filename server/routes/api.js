@@ -85,9 +85,9 @@ router.get('/user/profile', requireAuth, async (req, res) => {
       last_login: user.last_login,
       bio: user.bio,
       avatar_url: user.avatar_url,
-      avg_wpm: user.avg_wpm, 
-      avg_accuracy: user.avg_accuracy,
       races_completed: user.races_completed,
+      avg_wpm: user.avg_wpm,
+      avg_accuracy: user.avg_accuracy,
       fastest_wpm: user.fastest_wpm
     });
   } catch (err) {
