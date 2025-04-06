@@ -31,23 +31,42 @@ function Typing() {
   const [tipIndex, setTipIndex] = useState(Math.floor(Math.random() * TYPING_TIPS.length));
   const [countdown, setCountdown] = useState(null);
   const countdownRef = useRef(null);
+  const [tipVisible, setTipVisible] = useState(true);
+  const tipContentRef = useRef(TYPING_TIPS[tipIndex]);
   
   // Rotate through random tips every 5 seconds before race starts
   useEffect(() => {
     if (raceState.type !== 'practice' && !raceState.inProgress && !countdown) {
       const tipInterval = setInterval(() => {
-        // Get a new random index (skipping same one again)
-        let newIndex;
-        do {
-          newIndex = Math.floor(Math.random() * TYPING_TIPS.length);
-        } while (newIndex === tipIndex);
+        // Step 1: Hide the current tip
+        setTipVisible(false);
         
-        setTipIndex(newIndex);
+        // Step 2: After fade out completes, change the content
+        setTimeout(() => {
+          // Get a new random index (skipping same one again)
+          let newIndex;
+          do {
+            newIndex = Math.floor(Math.random() * TYPING_TIPS.length);
+          } while (newIndex === tipIndex);
+          
+          // Update the tip index
+          setTipIndex(newIndex);
+          tipContentRef.current = TYPING_TIPS[newIndex];
+          
+          // Step 3: Show the new tip
+          setTipVisible(true);
+        }, 600); // Give enough time for fade out to complete
+        
       }, 5000);
       
       return () => clearInterval(tipInterval);
     }
   }, [raceState.type, raceState.inProgress, countdown, tipIndex]);
+  
+  // Update tip content ref when tipIndex changes
+  useEffect(() => {
+    tipContentRef.current = TYPING_TIPS[tipIndex];
+  }, [tipIndex]);
   
   // Handle race countdown
   useEffect(() => {
@@ -438,7 +457,9 @@ function Typing() {
     return (
       <div className="stats tips-stats">
         <div className="stat-item tip-item">
-          <span className="tip-text">{TYPING_TIPS[tipIndex]}</span>
+          <span className={`tip-text ${tipVisible ? 'tip-visible tip-pulsing' : 'tip-hidden'}`}>
+            {tipContentRef.current}
+          </span>
         </div>
       </div>
     );

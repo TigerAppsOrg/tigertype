@@ -70,15 +70,37 @@
 .tip-text {
   font-style: italic;
   color: var(--princeton-orange);
-  animation: fadeInOut 5s ease-in-out infinite;
   font-weight: lighter;
   transform: skewX(-10deg); /* manually making italics since css font-style isn't working idk why*/
+  opacity: 0.7;
+}
+
+/* Tip visibility states */
+.tip-visible {
+  opacity: 0.5;
+  transition: opacity 0.5s ease;
+}
+
+.tip-hidden {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Static pulsing for visible tips */
+.tip-pulsing {
+  animation: tipPulseShadow 2.5s ease-in-out infinite;
+}
+
+@keyframes tipPulseShadow {
+  0% { text-shadow: 0 0 1px rgba(245, 128, 37, 0.0); }
+  50% { text-shadow: 0 0 5px rgba(245, 128, 37, 0.8); }
+  100% { text-shadow: 0 0 1px rgba(245, 128, 37, 0.0); }
 }
 
 @keyframes fadeInOut {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  0% { opacity: 0.5; }
+  50% { opacity: 1.0; }
+  100% { opacity: 0.5; }
 }
 
 .stat-item {
