@@ -11,7 +11,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install:all": "npm install && cd client && npm install",
     "build": "npm run client:build",
-    "heroku-postbuild": "cd client && npm install && npm run build && node server/db/migrations/run_migrations.js",
+    "heroku-postbuild": "cd client && npm install && npm run build && cd .. && node server/db/migrations/run_migrations.js",
     "migrate": "node server/db/migrations/run_migrations.js",
     "test": "jest --config jest.config.js --detectOpenHandles --verbose",
     "test:server": "jest --config jest.config.js --detectOpenHandles --verbose --testPathPattern=server",

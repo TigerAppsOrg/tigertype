@@ -20,7 +20,7 @@ const cors = require('cors');
 const fs = require('fs');
 const pgSession = require('connect-pg-simple')(session);
 const { pool } = require('./server/config/database');
-const runMigrations = require('./server/db/migrations/run_migrations');
+const setupDatabase = require('./server/db/init-db');
 
 // Initialize Express app
 const app = express();
@@ -217,16 +217,13 @@ io.use(async (socket, next) => {
 // Initialize socket handlers
 socketHandler.initialize(io);
 
-// Import the database setup function
-const setupDatabase = require('./server/db/init-db');
-
 // Start the server
 const startServer = async () => {
   try {
     // In development mode, run migrations on startup
     if (process.env.NODE_ENV === 'development') {
       console.log('Development mode detected - running database migrations...');
-      await runMigrations();
+      await setupDatabase();
     }
     
     const PORT = process.env.PORT || 3000;
