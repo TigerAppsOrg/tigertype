@@ -32,16 +32,22 @@ function Typing() {
   const [countdown, setCountdown] = useState(null);
   const countdownRef = useRef(null);
   
-  // Rotate through tips every 5 seconds before race starts
+  // Rotate through random tips every 5 seconds before race starts
   useEffect(() => {
     if (raceState.type !== 'practice' && !raceState.inProgress && !countdown) {
       const tipInterval = setInterval(() => {
-        setTipIndex(prev => (prev + 1) % TYPING_TIPS.length);
+        // Get a new random index (skipping same one again)
+        let newIndex;
+        do {
+          newIndex = Math.floor(Math.random() * TYPING_TIPS.length);
+        } while (newIndex === tipIndex);
+        
+        setTipIndex(newIndex);
       }, 5000);
       
       return () => clearInterval(tipInterval);
     }
-  }, [raceState.type, raceState.inProgress, countdown]);
+  }, [raceState.type, raceState.inProgress, countdown, tipIndex]);
   
   // Handle race countdown
   useEffect(() => {
