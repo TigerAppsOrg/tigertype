@@ -21,53 +21,6 @@ function Race() {
     dismissInactivityKick
   } = useRace();
   
-  const [countdown, setCountdown] = useState(null);
-  const countdownRef = useRef(null);
-  
-  // Handle race countdown
-  useEffect(() => {
-    if (!socket || raceState.type === 'practice') return;
-    
-    const handleCountdown = (data) => {
-      console.log('Countdown received:', data);
-      setCountdown(data.seconds);
-      
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-      
-      countdownRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownRef.current);
-            countdownRef.current = null;
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    };
-
-    socket.on('race:countdown', handleCountdown);
-    
-    return () => {
-      socket.off('race:countdown', handleCountdown);
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-      }
-    };
-  }, [socket, raceState.type, raceState.inProgress, raceState.completed]);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-    };
-  }, []);
-
   // Handle back button
   const handleBack = () => {
     resetRace();
@@ -113,30 +66,29 @@ function Race() {
         
         <div className="race-content">
           <div className="race-info">
-            
-            {countdown !== null && !raceState.completed && !raceState.inProgress && raceState.type !== 'practice' && (
-              <div className="countdown">{countdown}</div>
-            )}
-            
-            {/* Conditionally render Typing */}
-            {/* Show Typing if:
-                - It's practice mode OR
-                - It's multiplayer AND not completed */}
-            {(raceState.type === 'practice' || !raceState.completed) && <Typing />}
+            <div className="race-content-container">
+              {/* Conditionally render Typing */}
+              {/* Show Typing if:
+                  - It's practice mode OR
+                  - It's multiplayer AND not completed */}
+              {(raceState.type === 'practice' || !raceState.completed) && <Typing />}
 
-            {/* Conditionally render Results */}
-            {/* Show Results if race is completed */}
-            {raceState.completed && <Results />}
+              {/* Conditionally render Results */}
+              {/* Show Results if race is completed */}
+              {raceState.completed && <Results />}
+            </div>
             
-            {/* Player Status Bar (Only relevant for multiplayer) */}
-            {raceState.players && raceState.players.length > 0 && raceState.type !== 'practice' && (
-              <PlayerStatusBar
-                players={raceState.players}
-                isRaceInProgress={raceState.inProgress}
-                currentUser={window.user} // Assuming window.user is available or replace with context user
-                onReadyClick={setPlayerReady} 
-              />
-            )}
+            <div className="player-status-container">
+              {/* Player Status Bar (Only relevant for multiplayer) */}
+              {raceState.players && raceState.players.length > 0 && raceState.type !== 'practice' && (
+                <PlayerStatusBar
+                  players={raceState.players}
+                  isRaceInProgress={raceState.inProgress}
+                  currentUser={window.user}
+                  onReadyClick={setPlayerReady} 
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>

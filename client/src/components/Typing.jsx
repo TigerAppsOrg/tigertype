@@ -3,6 +3,23 @@ import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
 import './Typing.css';
 
+// Typing Tips shown before race countdown start
+const TYPING_TIPS = [
+  "Keep your wrists neutral and fingers curved",
+  "Use all ten fingers for faster typing (touch typing)",
+  "Learn to look at the screen, not your keyboard",
+  "Take regular breaks to avoid strain",
+  "Practice regularly to build muscle memory",
+  "Correct posture improves typing speed",
+  "Don't rush - accuracy is more important than speed",
+  "Learn keyboard shortcuts to save time",
+  "CTRL + BACKSPACE will delete the entire word",
+  "Also try TigerSpot :)",
+  "Practicing just 10-minutes of typing daily can significantly improve your speed",
+  "Two players are needed to start a race",
+  "If you are the last player unreadied, you will be kicked for inactivity"
+];
+
 function Typing() {
   const { raceState, setRaceState, typingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet } = useRace();
   const { socket } = useSocket();
@@ -11,6 +28,64 @@ function Typing() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [lastTabPress, setLastTabPress] = useState(0);
   const [snippetId, setSnippetId] = useState(null);
+  const [tipIndex, setTipIndex] = useState(Math.floor(Math.random() * TYPING_TIPS.length));
+  const [countdown, setCountdown] = useState(null);
+  const countdownRef = useRef(null);
+  
+  // Rotate through tips every 5 seconds before race starts
+  useEffect(() => {
+    if (raceState.type !== 'practice' && !raceState.inProgress && !countdown) {
+      const tipInterval = setInterval(() => {
+        setTipIndex(prev => (prev + 1) % TYPING_TIPS.length);
+      }, 5000);
+      
+      return () => clearInterval(tipInterval);
+    }
+  }, [raceState.type, raceState.inProgress, countdown]);
+  
+  // Handle race countdown
+  useEffect(() => {
+    if (!socket || raceState.type === 'practice') return;
+    
+    const handleCountdown = (data) => {
+      console.log('Countdown received:', data);
+      setCountdown(data.seconds);
+      
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+      
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownRef.current);
+            countdownRef.current = null;
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    };
+
+    socket.on('race:countdown', handleCountdown);
+    
+    return () => {
+      socket.off('race:countdown', handleCountdown);
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    };
+  }, [socket, raceState.type, raceState.inProgress, raceState.completed]);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+    };
+  }, []);
 
   // Gets latest typingState.position
   const positionRef = useRef(typingState.position);
@@ -306,23 +381,58 @@ function Typing() {
 
   // Render live stats during race
   const getStats = () => {
-    const currentWpm = typingState.wpm || 0;
-    const currentAccuracy = typingState.accuracy || 100;
+    // Don't show stats if race is completed 
+    //(Results component will show final stats)
+    if (raceState.completed) return null;
     
-    // Restore original class name
+    // Calculate live WPM
+    const time = elapsedTime || getElapsedTime();
+    const minutes = time / 60;
+    const charCount = typingState.position;
+    const words = charCount / 5;
+    const wpm = minutes > 0 ? words / minutes : 0;
+    
+    // Calculate accuracy 
+    const totalChars = typingState.position;
+    const accuracy = totalChars > 0 
+      ? ((totalChars - typingState.errors) / totalChars) * 100
+      : 100;
+      
     return (
       <div className="stats">
         <div className="stat-item">
           <span className="stat-label">WPM</span>
-          <span className="stat-value">{currentWpm.toFixed(0)}</span>
+          <span className="stat-value">{wpm.toFixed(0)}</span>
         </div>
         <div className="stat-item">
           <span className="stat-label">Accuracy</span>
-          <span className="stat-value">{currentAccuracy.toFixed(0)}%</span>
+          <span className="stat-value">{accuracy.toFixed(0)}%</span>
         </div>
         <div className="stat-item">
           <span className="stat-label">Time</span>
           <span className="stat-value">{elapsedTime.toFixed(2)}s</span>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render countdown in the stats area
+  const getCountdown = () => {
+    return (
+      <div className="stats countdown-stats">
+        <div className="stat-item countdown-item">
+          <span className="countdown-value">{countdown}</span>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render tips before race starts
+  const getTips = () => {
+    return (
+      <div className="stats tips-stats">
+        <div className="stat-item tip-item">
+          <span className="tip-text">{TYPING_TIPS[tipIndex]}</span>
         </div>
       </div>
     );
@@ -342,14 +452,33 @@ function Typing() {
     );
   };
   
+  // Determine what content to show in the stats container
+  const getStatsContent = () => {
+    // For practice mode
+    if (raceState.type === 'practice') {
+      if (!raceState.inProgress) {
+        return getStatsPlaceholder();
+      } else {
+        return getStats();
+      }
+    } 
+    // For race mode
+    else {
+      if (countdown !== null) {
+        return getCountdown();
+      } else if (!raceState.inProgress) {
+        return getTips();
+      } else {
+        return getStats();
+      }
+    }
+  };
+  
   return (
     <>
-    {/* Only show stats display if race is NOT completed */}
-    {!raceState.completed && (
-        raceState.type === 'practice' && !raceState.inProgress ?
-        getStatsPlaceholder() :
-        (raceState.inProgress && getStats())
-    )}
+    <div className="stats-container">
+      {getStatsContent()}
+    </div>
     
     {/* Only show typing area (snippet + input) if race is NOT completed */}
     {!raceState.completed && (
