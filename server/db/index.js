@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const fs = require('fs');
 
 // Initialize database tables
 const initDB = async () => {
@@ -54,21 +55,39 @@ const initDB = async () => {
     `);
 
     // Create user_sessions table for session storage
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS "user_sessions" (
-        "sid" varchar NOT NULL COLLATE "default",
-        "sess" json NOT NULL,
-        "expire" timestamp(6) NOT NULL
-      ) WITH (OIDS=FALSE);
-    `);
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS "user_sessions" (
+          "sid" varchar NOT NULL COLLATE "default",
+          "sess" json NOT NULL,
+          "expire" timestamp(6) NOT NULL
+        ) WITH (OIDS=FALSE);
+      `);
 
-    // Add primary key constraint to user_sessions table
-    await pool.query(`
-      ALTER TABLE "user_sessions" 
-      ADD CONSTRAINT "user_sessions_pkey" 
-      PRIMARY KEY ("sid") 
-      NOT DEFERRABLE INITIALLY IMMEDIATE;
-    `);
+      // Try to add primary key constraint to user_sessions table
+      try {
+        await pool.query(`
+          ALTER TABLE "user_sessions" 
+          ADD CONSTRAINT "user_sessions_pkey" 
+          PRIMARY KEY ("sid") 
+          NOT DEFERRABLE INITIALLY IMMEDIATE;
+        `);
+      } catch (err) {
+        // If the error is about primary key already existing, just log and continue
+        if (err.code === '42P16') {
+          console.log('Primary key for user_sessions already exists, skipping');
+        } else {
+          throw err;
+        }
+      }
+    } catch (err) {
+      // If the error is about table already existing, just log and continue
+      if (err.code === '42P07') {
+        console.log('user_sessions table already exists, skipping');
+      } else {
+        throw err;
+      }
+    }
 
     console.log('Database tables initialized successfully');
   } catch (err) {
