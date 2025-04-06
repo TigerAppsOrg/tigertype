@@ -61,13 +61,21 @@ CREATE TABLE IF NOT EXISTS lobby_players (
 );
 
 -- User sessions table for storing session data
-CREATE TABLE IF NOT EXISTS "user_sessions" (
-  "sid" varchar NOT NULL COLLATE "default",
-  "sess" json NOT NULL,
-  "expire" timestamp(6) NOT NULL
-) WITH (OIDS=FALSE);
+DO $$
+BEGIN
+    -- Check if the table exists
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'user_sessions') THEN
+        -- Create the table if it doesn't exist
+        CREATE TABLE "user_sessions" (
+            "sid" varchar NOT NULL COLLATE "default",
+            "sess" json NOT NULL,
+            "expire" timestamp(6) NOT NULL
+        ) WITH (OIDS=FALSE);
 
-ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+        -- Add primary key constraint
+        ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+    END IF;
+END $$;
 
 -- Indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_race_results_user_id ON race_results(user_id);

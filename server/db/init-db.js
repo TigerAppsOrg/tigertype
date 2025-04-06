@@ -15,7 +15,16 @@ const setupDatabase = async () => {
     
     // Create base tables if they don't exist
     console.log('Creating base tables...');
-    await initDB();
+    try {
+      await initDB();
+    } catch (err) {
+      // If the error is about existing tables, we can continue
+      if (err.code === '42P16' || err.code === '42P07') {
+        console.log('Some tables already exist, continuing with migrations...');
+      } else {
+        throw err;
+      }
+    }
     
     // Add test snippets if needed
     console.log('Adding test snippets if needed...');
