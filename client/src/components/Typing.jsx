@@ -6,7 +6,7 @@ import './Typing.css';
 // Typing Tips shown before race countdown start
 const TYPING_TIPS = [
   "Keep your wrists neutral and fingers curved",
-  "Use all ten fingers for faster typing (touch typing)",
+  "Learn touch typing, using all ten fingers, for faster typing",
   "Learn to look at the screen, not your keyboard",
   "Take regular breaks to avoid strain",
   "Practice regularly to build muscle memory",
@@ -17,7 +17,11 @@ const TYPING_TIPS = [
   "Also try TigerSpot :)",
   "Practicing just 10-minutes of typing daily can significantly improve your speed",
   "Two players are needed to start a race",
-  "If you are the last player unreadied, you will be kicked for inactivity"
+  "If you are the last player unreadied, you will be kicked for inactivity",
+  "For feedback or suggestions, contact us at: it.admin@tigerapps.org",
+  // if either of these tooltips are removed i am resigning and dropping the class
+  "Hoagie Club is irrelevant and should be restructured",
+  "Seriously, Hoagie Club is just a den of rejected TigerApps"
 ];
 
 function Typing() {
