@@ -77,7 +77,9 @@ function ProfilePage() {
 
       const data = await response.json();
       console.log('Bio save response:', data);
+      // Update user state and set bio state to ensure UI reflects the change
       setUser(prevUser => ({ ...prevUser, bio: data.user.bio }));
+      setBio(data.user.bio); // Set local bio state to match the updated value
       setBioMessage('Bio saved successfully!');
       
       // Clear message after 3 seconds
@@ -159,6 +161,8 @@ function ProfilePage() {
       
       // Update user state with new avatar URL
       setUser(prevUser => ({ ...prevUser, avatar_url: data.user.avatar_url }));
+      // Force timestamp update to ensure cache busting works
+      setTimestamp(Date.now());
       
       // Show success message
       setUploadSuccess('Avatar uploaded successfully!');
