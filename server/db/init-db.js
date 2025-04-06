@@ -3,6 +3,7 @@
  */
 const { initDB, seedTestData } = require('./index');
 const { enhanceSchema, updateExistingSnippets, seedPrincetonSnippets } = require('./migrations/01_schema_enhancements');
+const { profileEnhancements } = require('./migrations/02_profile_enhancements');
 
 /**
  * Initialize the database for the TigerType application
@@ -30,6 +31,10 @@ const setupDatabase = async () => {
     // Add Princeton-themed snippets
     console.log('Adding Princeton-themed snippets...');
     await seedPrincetonSnippets();
+    
+    // Add profile enhancements (bio and avatar_url)
+    console.log('Adding profile enhancements...');
+    await profileEnhancements();
     
     console.log('Database setup complete!');
     return true;
