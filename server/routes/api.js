@@ -8,38 +8,84 @@ const { isAuthenticated } = require('../utils/auth');
 const UserModel = require('../models/user');
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
+const profileRoutes = require('./profileRoutes'); // Import profile routes
 
 // Middleware to ensure API requests are authenticated
 const requireAuth = (req, res, next) => {
   if (!isAuthenticated(req)) {
     return res.status(401).json({ error: 'Authentication required' });
   }
+  // Ensure userId is attached to the request object for subsequent handlers
+  // auth middleware should populate req.user or req.session.userInfo.userId
+  if (!req.user && req.session && req.session.userInfo && req.session.userInfo.userId) {
+    req.user = { id: req.session.userInfo.userId, netid: req.session.userInfo.user };
+  } else if (!req.user) {
+    // Fallback attempt: Look up user by netid from session if req.user wasn't populated
+    // This might happen if only CAS auth ran but not a DB lookup middleware
+    console.warn('requireAuth: req.user not found, attempting lookup by netid');
+    if (req.session && req.session.userInfo && req.session.userInfo.user) {
+        const netid = req.session.userInfo.user;
+        UserModel.findByNetid(netid).then(user => {
+            if (user) {
+                req.user = { id: user.id, netid: user.netid };
+                // Attach user id to session as well for consistency
+                if (!req.session.userInfo.userId) {
+                    req.session.userInfo.userId = user.id;
+                    req.session.save(); // Save session if modified
+                }
+                console.log('requireAuth: Found user by netid, attached to req.user');
+                next();
+            } else {
+                console.error('requireAuth: User not found for netid:', netid);
+                return res.status(401).json({ error: 'Authentication required (user not found)' });
+            }
+        }).catch(err => {
+            console.error('requireAuth: Error looking up user by netid:', err);
+            return res.status(500).json({ error: 'Server error during authentication' });
+        });
+        return; // Don't call next() here, will be called in the promise handler
+    } else {
+         console.error('requireAuth: Cannot proceed, no user info found in session.');
+         return res.status(401).json({ error: 'Authentication required (no session info)' });
+    }
+  }
+  
+  // If req.user exists (either from original auth or fallback lookup), proceed
   next();
 };
 
-// Get user profile info
+// --- Profile Routes ---
+// All profile routes require authentication + are mounted under /profile
+router.use('/profile', requireAuth, profileRoutes); 
+
+// --- Existing API Routes ---
+
+// Get user profile info (Adjusted to use the new model fields)
 router.get('/user/profile', requireAuth, async (req, res) => {
   try {
-    const netid = req.session.userInfo.user;
-    
-    // Find or create user to ensure they exist in the database
-    const user = await UserModel.findOrCreate(netid);
-    
+    // User object should already be populated by findOrCreate or findByNetid in auth steps
+    // or the lookup in requireAuth middleware
+    const userId = req.user.id; 
+    const netid = req.user.netid;
+
+    // Fetch the full user details including bio and avatar
+    // could potentially rely on the user object attached during auth/findOrCreate
+    // but fetching fresh data seems more consistent
+    const user = await UserModel.findByNetid(netid); 
+
     if (!user) {
-      return res.status(404).json({ error: 'User not found and could not be created' });
-    }
-    
-    // Update the userId in the session if it's not already there
-    if (!req.session.userInfo.userId) {
-      req.session.userInfo.userId = user.id;
+      // This case should ideally be handled by auth steps
+      return res.status(404).json({ error: 'User not found' });
     }
     
     res.json({
-      netid,
+      netid: user.netid,
       userId: user.id,
       created_at: user.created_at,
       last_login: user.last_login,
-      avg_wpm: user.avg_wpm,
+      bio: user.bio,
+      avatar_url: user.avatar_url,
+      avg_wpm: user.avg_wpm, 
       avg_accuracy: user.avg_accuracy,
       races_completed: user.races_completed,
       fastest_wpm: user.fastest_wpm
@@ -53,21 +99,8 @@ router.get('/user/profile', requireAuth, async (req, res) => {
 // Get user stats
 router.get('/user/stats', requireAuth, async (req, res) => {
   try {
-    // Get the netid from session
-    const netid = req.session.userInfo.user;
+    const userId = req.user.id; // User ID from requireAuth middleware
     
-    // Ensure the user exists and get their ID
-    const user = await UserModel.findOrCreate(netid);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Update userId in session if missing
-    if (!req.session.userInfo.userId) {
-      req.session.userInfo.userId = user.id;
-    }
-    
-    const userId = user.id;
     const stats = await UserModel.getStats(userId);
     
     // Return the stats, or empty stats if none are found
@@ -87,21 +120,7 @@ router.get('/user/stats', requireAuth, async (req, res) => {
 // Get user recent results
 router.get('/user/results', requireAuth, async (req, res) => {
   try {
-    // Get the netid from session
-    const netid = req.session.userInfo.user;
-    
-    // Ensure the user exists and get their ID
-    const user = await UserModel.findOrCreate(netid);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Update userId in session if missing
-    if (!req.session.userInfo.userId) {
-      req.session.userInfo.userId = user.id;
-    }
-    
-    const userId = user.id;
+    const userId = req.user.id;
     const limit = parseInt(req.query.limit) || 10;
     
     const results = await UserModel.getRecentResults(userId, limit);
