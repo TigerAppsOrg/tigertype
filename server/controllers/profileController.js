@@ -12,7 +12,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_MIME_TYPES = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
-  'image/gif': '.gif',
+  'image/gif': '.gif', // allow gifs? not sure, but for now will keep
   'image/webp': '.webp'
 };
 
@@ -30,7 +30,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: MAX_FILE_SIZE }
-}).single('avatar'); // Expecting a single file field named 'avatar'
+}).single('avatar');
 
 // --- Controller Functions ---
 
@@ -67,13 +67,13 @@ exports.updateBio = async (req, res) => {
 exports.uploadAvatar = (req, res) => {
   upload(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
-      // Handle Multer errors (e.g., file size limit)
+      // Handle Multer errors (ex: file size limit)
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ message: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.` });
       }
       return res.status(400).json({ message: err.message });
     } else if (err) {
-      // Handle other errors (e.g., invalid file type)
+      // Handle other errors (ex: invalid file type)
       return res.status(400).json({ message: err.message });
     }
 
@@ -113,18 +113,19 @@ exports.uploadAvatar = (req, res) => {
       // Get the uploaded file URL - first try direct URL, fallback to signed URL if needed
       let avatarUrl = s3UploadResult.Location;
       
-      // Log successful upload
-      console.log('Successfully uploaded to S3:', s3UploadResult);
-      console.log('Raw S3 URL:', avatarUrl);
+      // console.log('Successfully uploaded to S3:', s3UploadResult);
+      // console.log('Raw S3 URL:', avatarUrl);
       
-      // Try different ways to get a working URL if the standard one doesn't work
+      // Try diff ways to get a working URL just incase standard one doesn't work
+      // this is so scuffed but im not very educated on this? ,,, i mean it works
+      // and im too egotistic to ask for ai help and then have to use a disclaimer 
       if (!avatarUrl || avatarUrl.includes('s3.amazonaws.com')) {
         // First try a direct S3 URL 
         const directUrl = getDirectS3Url(bucketName, fileName);
         console.log('Constructed direct S3 URL:', directUrl);
         avatarUrl = directUrl;
         
-        // Also generate a pre-signed URL as a backup approach
+        // Also generate pre-signed URL as a backup approach
         try {
           const signedUrl = getSignedUrl(bucketName, fileName);
           console.log('Generated pre-signed URL:', signedUrl);
@@ -142,7 +143,7 @@ exports.uploadAvatar = (req, res) => {
 
       res.json({ 
           message: 'Avatar uploaded successfully', 
-          user: { // Return necessary fields, including the new avatar URL
+          user: { // Return only necessary fields + the new avatar URL
               id: updatedUser.id,
               netid: updatedUser.netid,
               bio: updatedUser.bio,

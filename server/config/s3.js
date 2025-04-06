@@ -1,7 +1,9 @@
+// AI DISCLAIMER: THIS FILE WAS DEBUGGED WITH THE HELP OF OpenAI o1-PRO
+
 const AWS = require('aws-sdk');
 require('dotenv').config();
 
-// Configure the AWS SDK
+// Configure AWS SDK
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -9,13 +11,13 @@ AWS.config.update({
   signatureVersion: 'v4'
 });
 
-// Create an S3 client instance with specific config
+// Create S3 client instance
 const s3 = new AWS.S3({
   signatureVersion: 'v4',
   region: process.env.AWS_REGION || 'us-east-2'
 });
 
-// Helper function to generate a pre-signed URL for an S3 object
+// Helper function to generate a pre-signed URL for S3 object
 const getSignedUrl = (bucket, key, expires = 604800) => { // Default: 1 week (sec)
   console.log(`Generating signed URL for bucket: ${bucket}, key: ${key}, expires: ${expires}`);
   

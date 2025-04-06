@@ -1,3 +1,4 @@
+// is this file unncessary? maybe, but it looks cleaner
 const express = require('express');
 const router = express.Router();
 const profileController = require('../controllers/profileController');

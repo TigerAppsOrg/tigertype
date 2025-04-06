@@ -94,10 +94,10 @@ function ProfilePage() {
       
       setBioMessage('Bio saved successfully!');
       
-      // Clear message after 3 seconds
+      // Clear message after 2.5 seconds
       setTimeout(() => {
         setBioMessage('');
-      }, 3000);
+      }, 2500);
     } catch (error) {
       console.error('Error saving bio:', error);
       setBioMessage('Failed to save bio. Please try again.');
