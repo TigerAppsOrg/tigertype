@@ -148,25 +148,55 @@ io.use(async (socket, next) => {
     
     console.log(`Socket auth: Found netid ${netid}, looking up in database...`);
     
-    // Ensure user exists in database
-    const UserModel = require('./server/models/user');
-    const user = await UserModel.findOrCreate(netid);
+    // Get user from db
+    let user = null;
+    let userId = null;
+
+    try {
+      // First try to use the UserModel
+      const UserModel = require('./server/models/user');
+      user = await UserModel.findOrCreate(netid);
+      
+      if (user) {
+        userId = user.id;
+      }
+    } catch (dbErr) {
+      // If db error, log but continue w/ basic authentication
+      console.error('Database error during socket authentication:', dbErr);
+      console.log('Continuing with basic user info from session...');
+      
+      // Use the user ID from session if available
+      if (req.session.userInfo.userId) {
+        userId = req.session.userInfo.userId;
+      } else {
+        // Last resort - try a direct DB query for just the ID
+        try {
+          const db = require('./server/config/database');
+          const result = await db.query('SELECT id FROM users WHERE netid = $1', [netid]);
+          if (result.rows[0]) {
+            userId = result.rows[0].id;
+          }
+        } catch (directDbErr) {
+          console.error('Failed to get user ID directly:', directDbErr);
+        }
+      }
+    }
     
-    // If we couldn't create a user, reject the connection
-    if (!user) {
+    // If we couldn't find/create a user at all, reject the connection
+    if (!userId) {
       console.error(`Socket authentication failed: Could not find/create user for ${netid}`);
-      return next(new Error('Failed to create or find user in database'));
+      return next(new Error('Failed to identify user in database'));
     }
     
     // Add user info to socket for handlers
     socket.userInfo = {
       ...req.session.userInfo,
-      userId: user.id // Ensure userId is available
+      userId: userId // Ensure userId is available
     };
     
     // Also update session with userId if not present
     if (!req.session.userInfo.userId) {
-      req.session.userInfo.userId = user.id;
+      req.session.userInfo.userId = userId;
       // Save session to persist the userId
       req.session.save(err => {
         if (err) {
@@ -175,7 +205,7 @@ io.use(async (socket, next) => {
       });
     }
     
-    console.log(`Socket auth success for netid: ${netid}, userId: ${user.id}`);
+    console.log(`Socket auth success for netid: ${netid}, userId: ${userId}`);
     next();
   } catch (err) {
     console.error('Socket authentication error:', err);

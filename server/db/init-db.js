@@ -4,6 +4,7 @@
 const { initDB, seedTestData } = require('./index');
 const { enhanceSchema, updateExistingSnippets, seedPrincetonSnippets } = require('./migrations/01_schema_enhancements');
 const { profileEnhancements } = require('./migrations/02_profile_enhancements');
+const { addMissingStatsColumns } = require('./migrations/03_missing_stats_columns');
 
 /**
  * Initialize the database for the TigerType application
@@ -35,6 +36,10 @@ const setupDatabase = async () => {
     // Add profile enhancements (bio and avatar_url)
     console.log('Adding profile enhancements...');
     await profileEnhancements();
+    
+    // Add missing stats columns (fastest_wpm)
+    console.log('Adding missing stats columns...');
+    await addMissingStatsColumns();
     
     console.log('Database setup complete!');
     return true;
