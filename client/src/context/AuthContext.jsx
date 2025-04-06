@@ -96,6 +96,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Function to update user data
+  const updateUser = (userData) => {
+    setUser(prevUser => {
+      const updatedUser = { ...prevUser, ...userData };
+      // Also update the window.user object for socket.io access
+      window.user = updatedUser;
+      return updatedUser;
+    });
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -104,7 +114,8 @@ export const AuthProvider = ({ children }) => {
       error, 
       login, 
       logout,
-      fetchUserProfile
+      fetchUserProfile,
+      setUser: updateUser // Expose setUser function to update user state
     }}>
       {children}
     </AuthContext.Provider>
