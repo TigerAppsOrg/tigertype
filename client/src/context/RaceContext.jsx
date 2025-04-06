@@ -505,6 +505,7 @@ export const RaceProvider = ({ children }) => {
         raceState,
         typingState,
         inactivityState,
+        setRaceState,
         setTypingState,
         setInactivityState,
         joinPracticeMode,

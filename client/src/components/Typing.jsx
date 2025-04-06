@@ -146,9 +146,10 @@ function Typing() {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    // Add event listener for capturing all events
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [raceState.type, lastTabPress, loadNewSnippet, setRaceState]);
 
@@ -217,9 +218,6 @@ function Typing() {
       }
       return;
     }
-    
-    // No longer block incorrect characters - allow them to be entered
-    // and highlighted as errors in the display
     
     // Use the input after processing by the word locking mechanism
     if (raceState.inProgress) {
@@ -345,7 +343,7 @@ function Typing() {
           value={input}
           onChange={handleComponentInput}
           onPaste={handlePaste}
-          disabled={(raceState.type !== 'practice' && !raceState.inProgress) || typingState.completed}
+          disabled={(raceState.type !== 'practice' && !raceState.inProgress) || (raceState.type !== 'practice' && typingState.completed)}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
