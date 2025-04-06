@@ -25,7 +25,12 @@ export const SocketProvider = ({ children }) => {
 
   // Initialize socket when auth is confirmed
   useEffect(() => {
-    if (!authenticated || !user) return;
+    if (!authenticated) return;
+    
+    // Avoid recreating socket connection if already exist
+    if (socket && connected) return;
+    
+    console.log('Initializing socket connection');
     
     // Initialize Socket.IO connection
     const socketInstance = io(socketOptions);
@@ -38,6 +43,11 @@ export const SocketProvider = ({ children }) => {
       console.log('Socket connected successfully with ID:', socketInstance.id);
       setConnected(true);
       setError(null);
+      
+      // Keep window.user up-to-date w/ the latest user data from AuthContext
+      if (user) {
+        window.user = user;
+      }
     });
     
     socketInstance.on('connect_error', (err) => {
@@ -79,7 +89,7 @@ export const SocketProvider = ({ children }) => {
       socketInstance.off('disconnect');
       socketInstance.off('connect_error');
     };
-  }, [authenticated, user]);
+  }, [authenticated]); // Only depend on authenticated, not user
 
   // Reconnect function
   const reconnect = () => {

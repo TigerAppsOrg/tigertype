@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }) => {
         setAuthenticated(false);
         window.user = null;
         setError('Failed to check authentication status');
+        // setLoading(false);
       } finally {
         setLoading(false);
       }
@@ -59,6 +60,33 @@ export const AuthProvider = ({ children }) => {
 
     checkAuthStatus();
   }, []);
+
+  // Monitor socket connection status to update user data on reconnect
+  // PLEASE REVIEW IF THIS IS EFFICIENT (it's prlly really not lol)-- AMMAAR
+  useEffect(() => {
+    let isInitialConnection = true;
+    const handleSocketConnect = () => {
+      // When socket reconnects, fetch fresh user data to ensure consistency
+      // But skip on the initial connection to prevent loops
+      if (authenticated && !isInitialConnection) {
+        console.log('Socket reconnected, refreshing user profile data');
+        fetchUserProfile();
+      }
+      isInitialConnection = false;
+    };
+
+    // Add event listener when the component mounts
+    if (window.socket) {
+      window.socket.on('connect', handleSocketConnect);
+    }
+
+    // Cleanup function
+    return () => {
+      if (window.socket) {
+        window.socket.off('connect', handleSocketConnect);
+      }
+    };
+  }, [authenticated]);  // Remove user dependency to avoid inf loop
 
   // Function to handle login
   const login = () => {

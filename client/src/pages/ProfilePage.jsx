@@ -61,13 +61,16 @@ function ProfilePage() {
     setIsSavingBio(true);
     setBioMessage('');
     
+    // Save bio that's being sent to compare later
+    const bioToSave = bio;
+    
     try {
       const response = await fetch('/api/profile/bio', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ bio }),
+        body: JSON.stringify({ bio: bioToSave }),
         credentials: 'include'
       });
 
@@ -77,9 +80,18 @@ function ProfilePage() {
 
       const data = await response.json();
       console.log('Bio save response:', data);
-      // Update user state and set bio state to ensure UI reflects the change
+      
+      // Update the user context with new bio
       setUser(prevUser => ({ ...prevUser, bio: data.user.bio }));
-      setBio(data.user.bio); // Set local bio state to match the updated value
+      
+      // Update window.user for socket access
+      if (window.user) {
+        window.user.bio = data.user.bio;
+      }
+      
+      // Update local bio state to keep UI consistent
+      setBio(data.user.bio);
+      
       setBioMessage('Bio saved successfully!');
       
       // Clear message after 3 seconds
@@ -137,6 +149,15 @@ function ProfilePage() {
       setUploadError('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
       return;
     }
+    
+    // Create a temp local URL for immediate display
+    // i cant get a more efficient way that works lol
+    // this is stupid inefficient but someone smarter than me is needed
+    const localImageUrl = URL.createObjectURL(file);
+    // Update avatar immediately with local file for better UX
+    setUser(prevUser => ({ ...prevUser, avatar_url: localImageUrl }));
+    // Force timestamp update to show new image immediately
+    setTimestamp(Date.now());
 
     // Create FormData object to send the file
     const formData = new FormData();
@@ -159,22 +180,39 @@ function ProfilePage() {
       const data = await response.json();
       console.log('Avatar upload response:', data);
       
-      // Update user state with new avatar URL
+      // Update user state with new avatar URL from server
       setUser(prevUser => ({ ...prevUser, avatar_url: data.user.avatar_url }));
-      // Force timestamp update to ensure cache busting works
+      
+      // Make sure window.user is updated
+      if (window.user) {
+        window.user.avatar_url = data.user.avatar_url;
+      }
+      
+      // Force immediate update of the avatar by updating timestamp
       setTimestamp(Date.now());
+      
+      // Revoke the temporary local URL to free up memory
+      URL.revokeObjectURL(localImageUrl);
       
       // Show success message
       setUploadSuccess('Avatar uploaded successfully!');
       
-      // Clear success message after 3 seconds
+      // Clear success message after 2.5 sec
       setTimeout(() => {
         setUploadSuccess('');
-      }, 3000);
+      }, 2500);
       
     } catch (error) {
       console.error('Error uploading avatar:', error);
       setUploadError(error.message || 'Failed to upload avatar. Please try again.');
+      
+      // If upload fails, revert to the previous avatar
+      if (user && user.avatar_url !== localImageUrl) {
+        setUser(prevUser => ({ ...prevUser, avatar_url: user.avatar_url }));
+      }
+      
+      // Revoke the temp URL
+      URL.revokeObjectURL(localImageUrl);
     } finally {
       setIsUploading(false);
     }
