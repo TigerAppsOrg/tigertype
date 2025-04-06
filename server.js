@@ -20,6 +20,7 @@ const cors = require('cors');
 const fs = require('fs');
 const pgSession = require('connect-pg-simple')(session);
 const { pool } = require('./server/config/database');
+const runMigrations = require('./server/db/migrations/run_migrations');
 
 // Initialize Express app
 const app = express();
@@ -218,40 +219,26 @@ socketHandler.initialize(io);
 
 // Import the database setup function
 const setupDatabase = require('./server/db/init-db');
-const PORT = process.env.PORT || 3000;
 
 // Start the server
 const startServer = async () => {
-  // Start listening first, so we can at least get the server running
-  server.listen(PORT, () => {
-    console.log('TigerType backend server listening on *:' + PORT);
-    console.log('NOTE: Frontend server should be running separately on port 5174');
-    
-    // Print local network addresses for easy access during development
-    const networkInterfaces = os.networkInterfaces();
-    for (const name of Object.keys(networkInterfaces)) {
-      for (const iface of networkInterfaces[name]) {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          console.log(`Backend accessible on: http://${iface.address}:${PORT}`);
-        }
-      }
-    }
-  });
-  
-  // Now try to initialize the database with enhanced schema
   try {
-    console.log('Initializing and enhancing database schema...');
-    const success = await setupDatabase();
-    
-    if (success) {
-      console.log('Database setup completed successfully');
+    // In development mode, run migrations on startup
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode detected - running database migrations...');
+      await runMigrations();
     }
+    
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV}`);
+      console.log(`Frontend URL: ${process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5174'}`);
+    });
   } catch (err) {
-    console.error('WARNING: Database initialization failed:', err);
-    console.log('Server is running, but database functionality may be limited.');
-    console.log('Please check your database connection settings in .env file.');
+    console.error('Failed to start server:', err);
+    process.exit(1);
   }
 };
 
-// Start the server
 startServer();
