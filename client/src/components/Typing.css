@@ -65,7 +65,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  text-style: italic;
 }
 
 .tip-text {
@@ -73,6 +72,7 @@
   color: var(--princeton-orange);
   animation: fadeInOut 5s ease-in-out infinite;
   font-weight: lighter;
+  transform: skewX(-10deg); /* manually making italics since css font-style isn't working idk why*/
 }
 
 @keyframes fadeInOut {
