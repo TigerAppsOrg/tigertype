@@ -141,6 +141,60 @@ const Race = {
       console.error('Error getting race results:', err);
       throw err;
     }
+  },
+  
+  // Add a player to a lobby
+  async addPlayerToLobby(lobbyId, userId, isReady = false) {
+    try {
+      const result = await db.query(
+        `INSERT INTO lobby_players (lobby_id, user_id, is_ready, join_time)
+         VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+         ON CONFLICT (lobby_id, user_id) 
+         DO UPDATE SET is_ready = $3, join_time = CURRENT_TIMESTAMP
+         RETURNING *`,
+        [lobbyId, userId, isReady]
+      );
+      
+      return result.rows[0];
+    } catch (err) {
+      console.error('Error adding player to lobby:', err);
+      throw err;
+    }
+  },
+  
+  // Update player ready stauts
+  async updatePlayerReadyStatus(lobbyId, userId, isReady) {
+    try {
+      const result = await db.query(
+        `UPDATE lobby_players 
+         SET is_ready = $3 
+         WHERE lobby_id = $1 AND user_id = $2
+         RETURNING *`,
+        [lobbyId, userId, isReady]
+      );
+      
+      return result.rows[0];
+    } catch (err) {
+      console.error('Error updating player ready status:', err);
+      throw err;
+    }
+  },
+  
+  // Remove a player from a lobby
+  async removePlayerFromLobby(lobbyId, userId) {
+    try {
+      const result = await db.query(
+        `DELETE FROM lobby_players 
+         WHERE lobby_id = $1 AND user_id = $2
+         RETURNING *`,
+        [lobbyId, userId]
+      );
+      
+      return result.rows[0];
+    } catch (err) {
+      console.error('Error removing player from lobby:', err);
+      throw err;
+    }
   }
 };
 
