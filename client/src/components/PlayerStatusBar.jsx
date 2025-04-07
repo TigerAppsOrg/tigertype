@@ -16,7 +16,7 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
         >
           <div className="player-info">
             <div className="player-identity">
-              <div className="player-avatar">
+              <div className="player-avatar" title={`${player.netid}'s avatar`}>
                 <img 
                   src={player.avatar_url || defaultProfileImage} 
                   alt={`${player.netid}'s avatar`}

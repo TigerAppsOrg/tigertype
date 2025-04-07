@@ -84,18 +84,25 @@
 .player-identity {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.8rem;
 }
 
 .player-avatar {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
   background-color: #1e1e1e;
   border: 2px solid #3a3a3a;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.player-avatar:hover {
+  transform: scale(1.05);
+  border-color: #F58025;
+  transition: all 0.2s ease;
 }
 
 .player-avatar img {
@@ -151,7 +158,7 @@
 
 .progress-container {
   width: 100%;
-  margin-top: 0.2rem;
+  margin-top: 0.5rem;
 }
 
 .progress-bar {
