@@ -19,9 +19,37 @@ const PROGRESS_THROTTLE = 100; // ms
 const lastProgressUpdate = new Map();
 
 // Inactivity warning and timeout settings
-const INACTIVITY_WARNING_DELAY = 5000; // 5 seconds before warning
-const INACTIVITY_KICK_DELAY = 10000; // 10 seconds before kick (15 seconds total)
+const INACTIVITY_WARNING_DELAY = 60000; // 60 seconds before warning
+const INACTIVITY_KICK_DELAY = 30000; // 30 seconds before kick (45 seconds total)
 const inactivityTimers = new Map(); // Store timers for inactivity warnings and kicks
+
+// Store user avatar URLs for quicker lookup
+const playerAvatars = new Map(); // socketId -> avatar_url
+
+// Helper functions
+// Get player data for client, including avatar URL
+const getPlayerClientData = (player) => {
+  // Use cached avatar if available, otherwise use null (default avatar will be used)
+  const avatar_url = playerAvatars.get(player.id) || null;
+  return { 
+    netid: player.netid, 
+    ready: player.ready,
+    avatar_url
+  };
+};
+
+// Fetch user avatar URL from database
+const fetchUserAvatar = async (userId, socketId) => {
+  try {
+    if (!userId) return;
+    const user = await UserModel.findByNetid(userId);
+    if (user && user.avatar_url) {
+      playerAvatars.set(socketId, user.avatar_url);
+    }
+  } catch (err) {
+    console.error('Error fetching user avatar:', err);
+  }
+};
 
 // Initialize socket handlers with IO instance
 const initialize = (io) => {
@@ -59,6 +87,11 @@ const initialize = (io) => {
     
     console.log(`Socket connected: ${netid} (${socket.id})`);
     
+    // Fetch user avatar when connecting
+    if (userId) {
+      fetchUserAvatar(netid, socket.id);
+    }
+    
     // Emit welcome event with user info
     socket.emit('connected', {
       id: socket.id,
@@ -90,7 +123,7 @@ const initialize = (io) => {
               
               // Notify other players
               io.to(code).emit('race:playersUpdate', {
-                players: updatedPlayers.map(p => ({ netid: p.netid, ready: p.ready }))
+                players: updatedPlayers.map(p => getPlayerClientData(p))
               });
               
               // Broadcast player left message
@@ -179,7 +212,7 @@ const initialize = (io) => {
               
               // Notify other players
               io.to(code).emit('race:playersUpdate', {
-                players: updatedPlayers.map(p => ({ netid: p.netid, ready: p.ready }))
+                players: updatedPlayers.map(p => getPlayerClientData(p))
               });
               
               // Broadcast player left message
@@ -285,12 +318,12 @@ const initialize = (io) => {
             id: race.snippet.id,
             text: race.snippet.text
           },
-          players: players.map(p => ({ netid: p.netid, ready: p.ready }))
+          players: players.map(p => getPlayerClientData(p))
         });
         
         // Broadcast updated player list to all in the lobby
         io.to(lobby.code).emit('race:playersUpdate', {
-          players: players.map(p => ({ netid: p.netid, ready: p.ready }))
+          players: players.map(p => getPlayerClientData(p))
         });
         
         // Check for inactive players
@@ -337,7 +370,7 @@ const initialize = (io) => {
             
             // Broadcast updated player list
             io.to(code).emit('race:playersUpdate', {
-              players: players.map(p => ({ netid: p.netid, ready: p.ready }))
+              players: players.map(p => getPlayerClientData(p))
             });
             
             // Check for inactive players
@@ -542,7 +575,7 @@ const initialize = (io) => {
           
           // Broadcast updated player list
           io.to(code).emit('race:playersUpdate', {
-            players: players.map(p => ({ netid: p.netid, ready: p.ready }))
+            players: players.map(p => getPlayerClientData(p))
           });
           
           // Broadcast player left message
@@ -568,6 +601,9 @@ const initialize = (io) => {
       // Clean up any stored progress
       playerProgress.delete(socket.id);
       lastProgressUpdate.delete(socket.id);
+      
+      // Clean up stored avatar
+      playerAvatars.delete(socket.id);
     });
   });
 };
@@ -810,7 +846,7 @@ const checkForInactivePlayers = (io, code) => {
     const warningTimer = setTimeout(() => {
       // Send inactivity warning
       io.to(inactivePlayer.id).emit('inactivity:warning', {
-        message: 'You will be kicked for inactivity in 15 seconds if you do not ready up.',
+        message: 'You will be kicked for inactivity in 45 seconds if you do not ready up.',
         timeRemaining: INACTIVITY_KICK_DELAY / 1000
       });
       console.log(`Sent inactivity warning to ${inactivePlayer.netid} in lobby ${code}`);
@@ -843,7 +879,7 @@ const checkForInactivePlayers = (io, code) => {
       
       // Notify other players
       io.to(code).emit('race:playersUpdate', {
-        players: updatedPlayers.map(p => ({ netid: p.netid, ready: p.ready }))
+        players: updatedPlayers.map(p => getPlayerClientData(p))
       });
       
       // Broadcast player kicked message

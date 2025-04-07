@@ -1,5 +1,7 @@
 import React from 'react';
 import './PlayerStatusBar.css';
+// Import default profile image
+import defaultProfileImage from '../assets/default-profile.svg';
 
 function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick }) {
   // For debug
@@ -13,7 +15,15 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
           className={`player-card ${!isRaceInProgress && player.ready ? 'player-ready' : ''}`}
         >
           <div className="player-info">
-            <span className="player-name">{player.netid}</span>
+            <div className="player-identity">
+              <div className="player-avatar">
+                <img 
+                  src={player.avatar_url || defaultProfileImage} 
+                  alt={`${player.netid}'s avatar`}
+                />
+              </div>
+              <span className="player-name">{player.netid}</span>
+            </div>
             
             {!isRaceInProgress ? (
               // Lobby mode - show ready status/button
