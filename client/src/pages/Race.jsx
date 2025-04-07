@@ -79,8 +79,8 @@ function Race() {
             </div>
             
             <div className="player-status-container">
-              {/* Player Status Bar (Only relevant for multiplayer) */}
-              {raceState.players && raceState.players.length > 0 && raceState.type !== 'practice' && (
+              {/* Player Status Bar (Only relevant for multiplayer and when race is not completed) */}
+              {raceState.players && raceState.players.length > 0 && raceState.type !== 'practice' && !raceState.completed && (
                 <PlayerStatusBar
                   players={raceState.players}
                   isRaceInProgress={raceState.inProgress}
