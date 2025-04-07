@@ -99,8 +99,8 @@ const initDB = async () => {
 // Seed initial data for testing
 const seedTestData = async () => {
   try {
-    // Check if snippets exist
-    const { rows } = await pool.query('SELECT COUNT(*) FROM snippets');
+    // Check if our test snippets already exist by looking for a specific test snippet
+    const { rows } = await pool.query("SELECT COUNT(*) FROM snippets WHERE text LIKE 'The quick brown fox%'");
     
     if (parseInt(rows[0].count) === 0) {
       // Add some test snippets
@@ -112,6 +112,8 @@ const seedTestData = async () => {
           ('To be or not to be, that is the question. Whether ''tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles, and by opposing end them.', 'Shakespeare', 'advanced', 3)
       `);
       console.log('Added test snippets');
+    } else {
+      console.log('Test snippets already exist, skipping insertion');
     }
   } catch (err) {
     console.error('Error seeding test data:', err);
