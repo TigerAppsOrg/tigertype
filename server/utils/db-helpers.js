@@ -138,6 +138,11 @@ const dbHelpers = {
               SELECT AVG(accuracy)
               FROM race_results
               WHERE user_id = $1
+            ),
+            fastest_wpm = (
+              SELECT MAX(wpm)
+              FROM race_results
+              WHERE user_id = $1
             )
           WHERE id = $1
         `, [userId]);

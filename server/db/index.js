@@ -1,97 +1,20 @@
 const { pool } = require('../config/database');
-const fs = require('fs');
+const { runMigrations } = require('./migrations');
 
-// Initialize database tables
+/**
+ * Initialize the database
+ */
 const initDB = async () => {
   try {
-    // Create users table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        netid VARCHAR(50) UNIQUE NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create snippets table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS snippets (
-        id SERIAL PRIMARY KEY,
-        text TEXT NOT NULL,
-        source VARCHAR(255),
-        category VARCHAR(100),
-        difficulty INT DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create lobbies table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS lobbies (
-        id SERIAL PRIMARY KEY,
-        code VARCHAR(8) UNIQUE NOT NULL,
-        type VARCHAR(20) CHECK (type IN ('public', 'private', 'practice')) NOT NULL,
-        status VARCHAR(20) CHECK (status IN ('waiting', 'countdown', 'racing', 'finished')) NOT NULL,
-        snippet_id INT REFERENCES snippets(id),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        started_at TIMESTAMP,
-        finished_at TIMESTAMP
-      )
-    `);
-
-    // Create race_results table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS race_results (
-        id SERIAL PRIMARY KEY,
-        user_id INT REFERENCES users(id),
-        lobby_id INT REFERENCES lobbies(id),
-        snippet_id INT REFERENCES snippets(id),
-        wpm DECIMAL(6, 2),
-        accuracy DECIMAL(5, 2),
-        completion_time DECIMAL(10, 2),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create user_sessions table for session storage
-    try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS "user_sessions" (
-          "sid" varchar NOT NULL COLLATE "default",
-          "sess" json NOT NULL,
-          "expire" timestamp(6) NOT NULL
-        ) WITH (OIDS=FALSE);
-      `);
-
-      // Try to add primary key constraint to user_sessions table
-      try {
-        await pool.query(`
-          ALTER TABLE "user_sessions" 
-          ADD CONSTRAINT "user_sessions_pkey" 
-          PRIMARY KEY ("sid") 
-          NOT DEFERRABLE INITIALLY IMMEDIATE;
-        `);
-      } catch (err) {
-        // If the error is about primary key already existing, just log and continue
-        if (err.code === '42P16') {
-          console.log('Primary key for user_sessions already exists, skipping');
-        } else {
-          throw err;
-        }
-      }
-    } catch (err) {
-      // If the error is about table already existing, just log and continue
-      if (err.code === '42P07') {
-        console.log('user_sessions table already exists, skipping');
-      } else {
-        throw err;
-      }
-    }
-
-    console.log('Database tables initialized successfully');
+    console.log('Initializing database...');
+    
+    // Run all pending migrations
+    await runMigrations();
+    
+    console.log('Database initialization complete');
+    return true;
   } catch (err) {
-    console.error('Error initializing database tables:', err);
+    console.error('Database initialization failed:', err);
     throw err;
   }
 };

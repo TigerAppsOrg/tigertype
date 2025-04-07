@@ -20,7 +20,7 @@ const cors = require('cors');
 const fs = require('fs');
 const pgSession = require('connect-pg-simple')(session);
 const { pool } = require('./server/config/database');
-const setupDatabase = require('./server/db/init-db');
+const { initDB } = require('./server/db');
 
 // Initialize Express app
 const app = express();
@@ -220,15 +220,16 @@ socketHandler.initialize(io);
 // Start the server
 const startServer = async () => {
   try {
-    // In development mode, run migrations on startup
+    // Initialize db in development mode
     if (process.env.NODE_ENV === 'development') {
       console.log('Development mode detected - running database migrations...');
-      await setupDatabase();
+      await initDB();
     }
     
-    const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+    // Start the server
+    const port = process.env.PORT || 3000;
+    server.listen(port, () => {
+      console.log(`Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
       console.log(`Frontend URL: ${process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5174'}`);
     });
