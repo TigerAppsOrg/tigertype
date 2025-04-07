@@ -128,7 +128,7 @@ const Race = {
   async getResults(lobbyId) {
     try {
       const result = await db.query(
-        `SELECT r.*, u.netid
+        `SELECT r.*, u.netid, u.avatar_url
          FROM race_results r
          JOIN users u ON r.user_id = u.id
          WHERE r.lobby_id = $1
