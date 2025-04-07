@@ -24,15 +24,48 @@ const loadInactivityState = () => {
   }
 };
 
+// Helper functions for race state persistence
+const saveRaceState = (state) => {
+  try {
+    // Only save essential info needed to rejoin a race
+    const minimalState = {
+      code: state.code,
+      type: state.type,
+      lobbyId: state.lobbyId
+    };
+    if (state.code) {
+      sessionStorage.setItem('raceState', JSON.stringify(minimalState));
+    } else {
+      // If no active race, remove from storage
+      sessionStorage.removeItem('raceState');
+    }
+  } catch (error) {
+    console.error('Error saving race state to session storage:', error);
+  }
+};
+
+const loadRaceState = () => {
+  try {
+    const savedState = sessionStorage.getItem('raceState');
+    return savedState ? JSON.parse(savedState) : null;
+  } catch (error) {
+    console.error('Error loading race state from session storage:', error);
+    return null;
+  }
+};
+
 export const RaceProvider = ({ children }) => {
   const { socket, connected } = useSocket();
   const { user } = useAuth();
   
+  // Load saved race state from session storage
+  const savedRaceState = loadRaceState();
+  
   // Race state
   const [raceState, setRaceState] = useState({
-    code: null,             // Code of the race
-    type: null,             // Type of race (practice, public, custom)
-    lobbyId: null,          // ID of the lobby
+    code: savedRaceState?.code || null,     // Code of the race
+    type: savedRaceState?.type || null,     // Type of race (practice, public, custom)
+    lobbyId: savedRaceState?.lobbyId || null, // ID of the lobby
     snippet: null,          // Snippet of the race
     players: [],            // Array of objects with netid, ready status  
     startTime: null,        // Timestamp when the race started/is starting    
@@ -70,6 +103,29 @@ export const RaceProvider = ({ children }) => {
   useEffect(() => {
     saveInactivityState(inactivityState);
   }, [inactivityState]);
+
+  // Save race state to session storage when it changes
+  useEffect(() => {
+    saveRaceState(raceState);
+  }, [raceState.code, raceState.type, raceState.lobbyId]);
+  
+  // Handle reconnection to races when socket connects
+  useEffect(() => {
+    // Only run if socket connection and saved race code
+    if (!socket || !connected || !raceState.code) return;
+    
+    // Check if we don't have snippet data (which means we need to rejoin)
+    if (raceState.code && !raceState.snippet) {
+      console.log('Reconnecting to race after page refresh/connection loss:', raceState.code);
+      
+      // Rejoin the same race based on type
+      if (raceState.type === 'practice') {
+        socket.emit('practice:join');
+      } else if (raceState.type === 'public') {
+        socket.emit('public:join');
+      }
+    }
+  }, [socket, connected, raceState.code, raceState.snippet, raceState.type]);
 
   // Handle inactivity redirection
   useEffect(() => {
@@ -477,6 +533,9 @@ export const RaceProvider = ({ children }) => {
       accuracy: 0,
       lockedPosition: 0
     });
+    
+    // Clear race state from session storage
+    sessionStorage.removeItem('raceState');
   };
 
   // Methods for inactivity
