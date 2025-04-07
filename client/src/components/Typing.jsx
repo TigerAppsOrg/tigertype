@@ -19,9 +19,11 @@ const TYPING_TIPS = [
   "Two players are needed to start a race",
   "If you are the last player unreadied, you will be kicked for inactivity",
   "For feedback or suggestions, contact us at: it.admin@tigerapps.org",
-  // if either of these tooltips are removed i am resigning and dropping the class
+
+  // if any of these tooltips are removed i am resigning and dropping the class - ammaar
   "Hoagie Club is irrelevant and should be restructured",
-  "Seriously, Hoagie Club is just a den of rejected TigerApps"
+  "Seriously, Hoagie Club is just a den of rejected TigerApps",
+  "Zak Kincaid is an opp"
 ];
 
 function Typing() {
