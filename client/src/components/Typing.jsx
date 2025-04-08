@@ -336,6 +336,11 @@ function Typing() {
     if (raceState.inProgress) {
       const text = raceState.snippet?.text || '';
       
+      // Prevent typing past the end of the snippet
+      if (newInput.length >= text.length + 1) {
+        return;
+      }
+      
       // Check if there's a typing error (improved to check all characters)
       let hasError = false;
       
@@ -370,6 +375,10 @@ function Typing() {
       // This ensures the displayed input matches the processed input after word locking
       setInput(typingState.input);
     } else {
+      // Prevent typing past the end of the snippet
+      if (raceState.snippet && newInput.length > raceState.snippet.text.length) {
+        return;
+      }
       setInput(newInput);
     }
   }
