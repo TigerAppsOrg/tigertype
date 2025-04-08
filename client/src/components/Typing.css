@@ -235,7 +235,7 @@
 
 .current {
   position: relative;
-  background-color: var(--display-block);
+  background-color: none; /* temporary */
   border-radius: 2px;
   color: white;
   animation: blink 1s infinite;
