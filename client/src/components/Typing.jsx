@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
-import './Settings.css'
+import './Settings.css';
 import './Typing.css';
 
 function Typing() {

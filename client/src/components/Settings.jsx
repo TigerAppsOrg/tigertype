@@ -2,32 +2,31 @@ import './Settings.css';
 import { useState, useEffect } from 'react';
 
 function Settings({ isOpen, onClose }) {
-  const [whichUIFont, setwhichUIFont] = useState(() => {
-    return sessionStorage.getItem('preferredUIFont') || 'Inter, sans-serif';
-  });
 
   const [whichTypingFont, setWhichTypingFont] = useState(() => {
-    return sessionStorage.getItem('preferredTypingFont') || 'Fira Code, monospace';
+    return localStorage.getItem('preferredTypingFont') || 'Fira Code, monospace';
+  });
+
+  const [typingSound, setTypingSound] = useState(() => {
+    return localStorage.getItem('typingSound') === 'true';
   });
 
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
-    document.documentElement.style.setProperty('--main-font', whichUIFont);
-    document.documentElement.style.setProperty('--typing-font', whichTypingFont);
-    sessionStorage.setItem('preferredUIFont', whichUIFont);
-    sessionStorage.setItem('preferredTypingFont', whichTypingFont);
-  }, [whichUIFont, whichTypingFont]);
+    document.documentElement.style.setProperty('--main-font', whichTypingFont);
+    localStorage.setItem('preferredTypingFont', whichTypingFont);
+    localStorage.setItem('typingSound', typingSound);
+  }, [whichTypingFont, typingSound]);
 
   if (!isOpen) return null;
-
-  const handleUIFontChange = (e) => {
-    const newFont = e.target.value;
-    setwhichUIFont(newFont);
-  };
 
   const handleTypingFontChange = (e) => {
     const newFont = e.target.value;
     setWhichTypingFont(newFont);
+  };
+
+  const handleSoundToggle = () => {
+    setTypingSound(prev => !prev);
   };
 
   return (
@@ -38,34 +37,33 @@ function Settings({ isOpen, onClose }) {
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         <div className="settings-content">
-          <p>UI Fonts</p>
-          <select 
-            className="font-select" 
-            value={whichUIFont} 
-            onChange={handleUIFontChange}
-          >
-            <option value="Inter, sans-serif">Inter</option>
-            <option value="Courier New, monospace">Courier New</option>
-            <option value="Georgia, serif">Georgia</option>
-            <option value="Times New Roman, serif">Times New Roman</option>
-            <option value="Verdana, sans-serif">Verdana</option>
-            <option value="'Roboto', sans-serif">Roboto</option>
-            <option value="'Open Sans', sans-serif">Open Sans</option>
-          </select>
-
-          <p>Typing Fonts</p>
+          <p>Fonts</p>
           <select 
             className="font-select" 
             value={whichTypingFont} 
             onChange={handleTypingFontChange}
           >
+            <option value="Inter, monospace">Inter</option>
             <option value="Fira Code, monospace">Fira Code</option>
             <option value="Courier New, monospace">Courier New</option>
-            <option value="Consolas, monospace">Consolas</option>
             <option value="Source Code Pro, monospace">Source Code Pro</option>
             <option value="JetBrains Mono, monospace">JetBrains Mono</option>
             <option value="Monaco, monospace">Monaco</option>
           </select>
+
+          <p>Typing Sound</p>
+          <div className="sound-toggle">
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={typingSound}
+                onChange={handleSoundToggle}
+              />
+              <span className="slider"></span>
+            </label>
+            <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
+          </div>
+
         </div>
       </div>
     </div>
