@@ -70,6 +70,13 @@ const MIGRATIONS = [
           join_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (lobby_id, user_id)
         );
+
+        CREATE TABLE IF NOT EXISTS user_sessions (
+          "sid" varchar NOT NULL COLLATE "default",
+          "sess" json NOT NULL,
+          "expire" timestamp(6) NOT NULL,
+          CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+        );
       `);
     }
   },
