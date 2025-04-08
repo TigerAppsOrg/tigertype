@@ -40,6 +40,8 @@ function Typing() {
   const countdownRef = useRef(null);
   const [tipVisible, setTipVisible] = useState(true);
   const tipContentRef = useRef(TYPING_TIPS[tipIndex]);
+  const [isShaking, setIsShaking] = useState(false);
+  const [showErrorMessage, setShowErrorMessage] = useState(false);
   
   // Rotate through random tips every 5 seconds before race starts
   useEffect(() => {
@@ -338,15 +340,53 @@ function Typing() {
       return;
     }
     
-    // Use the input after processing by the word locking mechanism
+    // Detect errors to trigger shake animation
     if (raceState.inProgress) {
-      // Use the handleInput function from RaceContext instead of updateProgress
+      const text = raceState.snippet?.text || '';
+      
+      // Prevent typing past the end of the snippet
+      if (newInput.length >= text.length + 1) {
+        return;
+      }
+      
+      // Check if there's a typing error (improved to check all characters)
+      let hasError = false;
+      
+      // Check for any error in the entire input
+      for (let i = 0; i < newInput.length && i < text.length; i++) {
+        if (newInput[i] !== text[i]) {
+          hasError = true;
+          break;
+        }
+      }
+      
+      // Only trigger shake and error message on a new error
+      if (hasError && !isShaking) {
+        setIsShaking(true);
+        setShowErrorMessage(true);
+        
+        // Remove the shake class after animation completes
+        setTimeout(() => {
+          setIsShaking(false);
+        }, 500);
+        
+        // Hide error message after 750ms (seems to be reasonable time)
+        setTimeout(() => {
+          setShowErrorMessage(false);
+        }, 750);
+      }
+      
+      // Use the handleInput function from RaceContext
       raceHandleInput(newInput);
       
       // Update local input state to match what's in the typing state
       // This ensures the displayed input matches the processed input after word locking
       setInput(typingState.input);
     } else {
+      // Prevent typing past the end of the snippet
+      if (raceState.snippet && newInput.length > raceState.snippet.text.length) {
+        return;
+      }
       setInput(newInput);
     }
   }
@@ -515,7 +555,10 @@ function Typing() {
     {/* Only show typing area (snippet + input) if race is NOT completed */}
     {!raceState.completed && (
         <div className="typing-area">
-          <div className="snippet-display" >
+          <div className={`snippet-display ${isShaking ? 'shake-animation' : ''}`}>
+            {showErrorMessage && (
+              <div className="error-message">Fix your mistake to continue</div>
+            )}
             {getHighlightedText()}
           </div>
           <div className="typing-input-container">
@@ -526,8 +569,6 @@ function Typing() {
               onChange={handleComponentInput}
               onPaste={handlePaste}
               // Input is disabled based on non-practice conditions OR if practice is completed (but still focusable)
-              // Idk a smarter way to do this, keeping it enabled  but visually hidden or styled differently when completed?
-              // Will just hide the container for now lol
               disabled={(raceState.type !== 'practice' && !raceState.inProgress) || (raceState.type !== 'practice' && typingState.completed)}
               autoComplete="off"
               autoCorrect="off"
