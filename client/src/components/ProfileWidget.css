@@ -7,14 +7,18 @@
     height: 4rem;
     width: 10rem;
     align-items: center;
-    background-color: #1e1e1e;
+<<<<<<< Updated upstream
+    background-color: var(--background-color);
+=======
+    background-color: var(--secondary-color);
+>>>>>>> Stashed changes
     padding: 0.5rem 1rem;
     border-radius: 8px;
-    transition: background-color 0.2s;
   }
   
   .profile-widget:hover {
-    background-color: #2a2a2a;
+    transition: background-color 0.2s;
+    background-color: var(--hover-color);
   }
   
   .profile-image {
@@ -38,7 +42,7 @@
   
   .profile-name {
     font-weight: bold;
-    color: #e0e0e0;
+    color: var(--mode-text-color);
     font-size: 0.9rem;
   }
   

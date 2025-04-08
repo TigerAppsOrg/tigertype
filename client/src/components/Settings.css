@@ -1,58 +1,65 @@
 .settings-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .settings-modal {
-    position: relative;
-    bottom: 30%;
-    background-color: #1e1e1e;
-    border-radius: 8px;
-    padding: 1rem;
-    min-width: 300px;
-    max-width: 500px;
-    border: 1px solid #F58025;
-  }
-  
-  .settings-header {
-    max-height: 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .settings-header h2 {
-    color: #F58025;
-    margin: 0;
-    font-size: 1.2rem;
-  }
-  
-  .close-button {
-    background: none;
-    border: none;
-    padding: 0;
-    color: #F58025;
-    cursor: pointer;
-  }
-  
-  .close-button:hover {
-    color: #fff;
-  }
-  
-  .settings-content {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    padding-top: 20px;
-    color: #fff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+<<<<<<< Updated upstream
+  backdrop-filter: blur(5px);
+=======
+  backdrop-filter: blur(4px);
+>>>>>>> Stashed changes
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.settings-modal {
+  background-color: var(--secondary-color);
+  border-radius: 8px;
+  padding: 1rem;
+  min-width: 300px;
+  max-width: 500px;
+  border: 1px solid #F58025;
+}
+
+.settings-header {
+  max-height: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-header h2 {
+  color: #F58025;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #F58025;
+  cursor: pointer;
+}
+
+.close-button:hover {
+  color: #fff;
+}
+
+.settings-content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding-top: 20px;
+  color: #fff;
+}
+
+.settings-content p {
+  color: var(--mode-text-color);
 }
 
 .sound-toggle {
@@ -81,8 +88,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #2a2a2a;
-  transition: .4s;
+  background-color: var(--secondary-color);
   border: 1px solid #F58025;
 }
 
@@ -95,11 +101,11 @@
   transition: .4s;
 }
 
-input:checked + .slider {
+input:checked+.slider {
   background-color: rgba(245, 128, 37, 0.2);
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
   transform: translateX(20px);
 }
 

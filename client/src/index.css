@@ -14,7 +14,9 @@
     -webkit-text-size-adjust: 100%;
 
     --main-font: 'Inter', sans-serif;
-    --typing-font: 'Fira Code', monospace;
+    --secondary-color: #1e1e1e;
+    --mode-text-color: #e0e0e0;
+    --hover-color: #2a2a2a;
   }
   
   * {

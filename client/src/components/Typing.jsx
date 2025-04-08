@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
+import playKeySound from './Sound.jsx';
 import './Settings.css';
 import './Typing.css';
 
@@ -226,7 +227,7 @@ function Typing() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (raceState.type !== 'practice') return;
-      
+
       // Tab: Load new snippet
       if (e.key === 'Tab') {
         e.preventDefault();
@@ -315,7 +316,7 @@ function Typing() {
   // Handle typing input with word locking
   const handleComponentInput = (e) => {
     const newInput = e.target.value;
-    
+
     // For practice mode, start the race on first keypress
     if (raceState.type === 'practice' && !raceState.inProgress && !raceState.completed && newInput.length === 1) {
       // Update race state locally for practice mode
@@ -344,6 +345,16 @@ function Typing() {
     if (raceState.inProgress) {
       const text = raceState.snippet?.text || '';
       
+    const isMovingForward = newInput.length > input.length;
+    const isCorrectCharacter = newInput[newInput.length - 1] === text[newInput.length - 1];
+    
+    // Only play sound when:
+    // 1. Input is getting longer (typing forward, not deleting)
+    // 2. The new character typed matches the expected character
+    if (isMovingForward && isCorrectCharacter) {
+      playKeySound();
+    }
+
       // Prevent typing past the end of the snippet
       if (newInput.length >= text.length + 1) {
         return;
@@ -378,7 +389,7 @@ function Typing() {
       
       // Use the handleInput function from RaceContext
       raceHandleInput(newInput);
-      
+
       // Update local input state to match what's in the typing state
       // This ensures the displayed input matches the processed input after word locking
       setInput(typingState.input);

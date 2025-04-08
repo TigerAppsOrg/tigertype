@@ -3,30 +3,51 @@ import { useState, useEffect } from 'react';
 
 function Settings({ isOpen, onClose }) {
 
-  const [whichTypingFont, setWhichTypingFont] = useState(() => {
-    return localStorage.getItem('preferredTypingFont') || 'Fira Code, monospace';
+  const [whichFont, setWhichFont] = useState(() => {
+    return localStorage.getItem('preferredFont') || 'Fira Code, monospace';
   });
 
   const [typingSound, setTypingSound] = useState(() => {
     return localStorage.getItem('typingSound') === 'true';
   });
 
+  const [lightMode, setLightMode] = useState(() => {
+    return localStorage.getItem('lightMode') === 'true';
+  });
+
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
-    document.documentElement.style.setProperty('--main-font', whichTypingFont);
-    localStorage.setItem('preferredTypingFont', whichTypingFont);
+    document.documentElement.style.setProperty('--main-font', whichFont);
+    document.documentElement.style.setProperty(
+      '--background-color', lightMode ? '#ffffff' : '#121212'
+    );
+    document.documentElement.style.setProperty(
+      '--secondary-color', lightMode ? '#f0f0f0' : '#1e1e1e'
+    );
+    document.documentElement.style.setProperty(
+      '--mode-text-color', lightMode ? '#1e1e1e' : '#e0e0e0'
+    );
+    document.documentElement.style.setProperty(
+      '--hover-color', lightMode ? '#a2a2a2' : '#2a2a2a'
+    );
+    localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
-  }, [whichTypingFont, typingSound]);
+    localStorage.setItem('lightMode', lightMode);
+  }, [whichFont, typingSound, lightMode]);
 
   if (!isOpen) return null;
 
   const handleTypingFontChange = (e) => {
     const newFont = e.target.value;
-    setWhichTypingFont(newFont);
+    setWhichFont(newFont);
   };
 
   const handleSoundToggle = () => {
     setTypingSound(prev => !prev);
+  };
+
+  const handleLightToggle = () => {
+    setLightMode(prev => !prev);
   };
 
   return (
@@ -40,7 +61,7 @@ function Settings({ isOpen, onClose }) {
           <p>Fonts</p>
           <select 
             className="font-select" 
-            value={whichTypingFont} 
+            value={whichFont} 
             onChange={handleTypingFontChange}
           >
             <option value="Inter, monospace">Inter</option>
@@ -63,6 +84,19 @@ function Settings({ isOpen, onClose }) {
             </label>
             <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
           </div>
+
+          <p>Light Mode</p>
+            <div className="sound-toggle">
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={lightMode}
+                  onChange={handleLightToggle}
+                />
+                <span className="slider"></span>
+              </label>
+              <span className="sound-label">{lightMode ? ' On' : ' Off'}</span>
+            </div>
 
         </div>
       </div>
