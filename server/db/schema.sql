@@ -61,13 +61,21 @@ CREATE TABLE IF NOT EXISTS lobby_players (
 );
 
 -- User sessions table for storing session data
-CREATE TABLE IF NOT EXISTS "user_sessions" (
-  "sid" varchar NOT NULL COLLATE "default",
-  "sess" json NOT NULL,
-  "expire" timestamp(6) NOT NULL
-) WITH (OIDS=FALSE);
+DO $$
+BEGIN
+    -- Check if the table exists
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'user_sessions') THEN
+        -- Create the table if it doesn't exist
+        CREATE TABLE "user_sessions" (
+            "sid" varchar NOT NULL COLLATE "default",
+            "sess" json NOT NULL,
+            "expire" timestamp(6) NOT NULL
+        ) WITH (OIDS=FALSE);
 
-ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+        -- Add primary key constraint
+        ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+    END IF;
+END $$;
 
 -- Indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_race_results_user_id ON race_results(user_id);
@@ -75,26 +83,35 @@ CREATE INDEX IF NOT EXISTS idx_race_results_lobby_id ON race_results(lobby_id);
 CREATE INDEX IF NOT EXISTS idx_lobby_players_lobby_id ON lobby_players(lobby_id);
 CREATE INDEX IF NOT EXISTS idx_lobby_players_user_id ON lobby_players(user_id);
 
--- Sample data for testing
--- Test snippet examples
-INSERT INTO snippets (text, source, category, difficulty)
-VALUES 
-  ('The quick brown fox jumps over the lazy dog.', 'Typing Exercise', 'beginner', 1),
-  ('Princeton University is located in Princeton, New Jersey and is one of the oldest universities in the United States.', 'Princeton Facts', 'medium', 2),
-  ('To be or not to be, that is the question. Whether ''tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles, and by opposing end them.', 'Shakespeare', 'advanced', 3);
+-- Sample data for testing - Only insert if not already present
+DO $$
+BEGIN
+    -- Check if basic test snippets exist
+    IF NOT EXISTS (SELECT 1 FROM snippets WHERE text LIKE 'The quick brown fox%') THEN
+        -- Test snippet examples
+        INSERT INTO snippets (text, source, category, difficulty)
+        VALUES 
+            ('The quick brown fox jumps over the lazy dog.', 'Typing Exercise', 'beginner', 1),
+            ('Princeton University is located in Princeton, New Jersey and is one of the oldest universities in the United States.', 'Princeton Facts', 'medium', 2),
+            ('To be or not to be, that is the question. Whether ''tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles, and by opposing end them.', 'Shakespeare', 'advanced', 3);
+    END IF;
 
--- Princeton-themed snippets
-INSERT INTO snippets (text, source, category, difficulty, is_princeton_themed, word_count, character_count)
-VALUES 
-  ('Princeton University, founded in 1746 as the College of New Jersey, is a private Ivy League research university in Princeton, New Jersey. The university is one of the oldest institutions of higher education in the United States.', 'Princeton History', 'princeton', 2, TRUE, 36, 203),
-  
-  ('Nassau Hall, one of Princeton''s oldest buildings, was named for King William III, Prince of Orange, of the House of Nassau. When completed in 1756, it was the largest college building in North America.', 'Princeton Landmarks', 'princeton', 2, TRUE, 37, 183),
-  
-  ('Princeton''s undergraduate program operates on a liberal arts curriculum, providing students with both depth in a chosen academic department and breadth across disciplines through distribution requirements and interdisciplinary certificate programs.', 'Princeton Academics', 'princeton', 3, TRUE, 29, 209),
-  
-  ('The Princeton University Honor Code, established in 1893, is a code of academic integrity that prohibits students from cheating on exams. Students pledge their honor that they have not violated the Honor Code during examinations.', 'Princeton Traditions', 'princeton', 2, TRUE, 33, 188),
-  
-  ('The Princeton Tigers are the athletic teams of Princeton University. The school sponsors 38 varsity sports, making it one of the most diverse athletic programs among NCAA Division I schools.', 'Princeton Athletics', 'princeton', 1, TRUE, 26, 150);
+    -- Check if Princeton-themed snippets exist
+    IF NOT EXISTS (SELECT 1 FROM snippets WHERE is_princeton_themed = TRUE LIMIT 1) THEN
+        -- Princeton-themed snippets
+        INSERT INTO snippets (text, source, category, difficulty, is_princeton_themed, word_count, character_count)
+        VALUES 
+            ('Princeton University, founded in 1746 as the College of New Jersey, is a private Ivy League research university in Princeton, New Jersey. The university is one of the oldest institutions of higher education in the United States.', 'Princeton History', 'princeton', 2, TRUE, 36, 203),
+            
+            ('Nassau Hall, one of Princeton''s oldest buildings, was named for King William III, Prince of Orange, of the House of Nassau. When completed in 1756, it was the largest college building in North America.', 'Princeton Landmarks', 'princeton', 2, TRUE, 37, 183),
+            
+            ('Princeton''s undergraduate program operates on a liberal arts curriculum, providing students with both depth in a chosen academic department and breadth across disciplines through distribution requirements and interdisciplinary certificate programs.', 'Princeton Academics', 'princeton', 3, TRUE, 29, 209),
+            
+            ('The Princeton University Honor Code, established in 1893, is a code of academic integrity that prohibits students from cheating on exams. Students pledge their honor that they have not violated the Honor Code during examinations.', 'Princeton Traditions', 'princeton', 2, TRUE, 33, 188),
+            
+            ('The Princeton Tigers are the athletic teams of Princeton University. The school sponsors 38 varsity sports, making it one of the most diverse athletic programs among NCAA Division I schools.', 'Princeton Athletics', 'princeton', 1, TRUE, 26, 150);
+    END IF;
+END $$;
 
 -- Example queries
 

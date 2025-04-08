@@ -241,53 +241,51 @@ document.addEventListener('DOMContentLoaded', () => {
   // Typing input event handler
   typingInputEl.addEventListener('input', handleTypingInput);
   
+  // Handle special key combinations specifically for Mac
+  typingInputEl.addEventListener('keydown', function(e) {
+    if (!raceState.inProgress) return;
+    
+    // Handle Command+Backspace (Mac) - simulate normal backspace behavior
+    if (e.metaKey && e.key === 'Backspace') {
+      e.preventDefault(); // Prevent default to avoid browser/OS handling
+      
+      // Get current input value
+      const currentInput = this.value;
+      const snippet = raceState.snippet.text;
+      
+      // Process what the result would be after Command+Backspace
+      // (typically deletes to beginning of line or current word)
+      const cursorPosition = this.selectionStart;
+      
+      if (cursorPosition > 0) {
+        // Find the previous word boundary
+        const lastSpace = currentInput.lastIndexOf(' ', cursorPosition - 1);
+        let newValue;
+        
+        if (lastSpace >= 0) {
+          // Delete from cursor to after last space
+          newValue = currentInput.substring(0, lastSpace + 1) + 
+                     currentInput.substring(cursorPosition);
+        } else {
+          // Delete from cursor to beginning if no space
+          newValue = currentInput.substring(cursorPosition);
+        }
+        
+        // Store this value to use in the input handler
+        this.value = newValue;
+        
+        // Manually trigger the input event to process with our word locking
+        this.dispatchEvent(new Event('input'));
+      }
+    }
+  });
+  
   // Prevent paste to avoid cheating
+  // COME BACK AND IMPROVE 'ANTI-CHEAT' => add one
   typingInputEl.addEventListener('paste', function(e) {
     if (raceState.type === 'practice' || raceState.inProgress) {
       e.preventDefault();
       return false;
-    }
-  });
-  
-  // Handle keyboard events for practice mode (prevent backspace on correct characters)
-  typingInputEl.addEventListener('keydown', function(e) {
-    // Only apply this in practice mode
-    if (raceState.type !== 'practice') return;
-    
-    const input = typingInputEl.value;
-    const snippet = raceState.snippet.text;
-    
-    // Prevent Cmd+A, Cmd+Backspace, Ctrl+A combinations
-    if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A' || e.key === 'Backspace')) {
-      e.preventDefault();
-      return false;
-    }
-    
-    // Check if the key is backspace and there's text to delete
-    if (e.key === 'Backspace' && input.length > 0) {
-      // Find the last correctly typed character's position
-      let lastCorrectPos = 0;
-      for (let i = 0; i < input.length; i++) {
-        if (i >= snippet.length || input[i] !== snippet[i]) {
-          break;
-        }
-        lastCorrectPos = i + 1;
-      }
-      
-      // If attempting to delete a correct character, prevent it
-      if (input.length === lastCorrectPos && !e.ctrlKey) {
-        e.preventDefault();
-        return false;
-      }
-      
-      // If using Ctrl+Backspace, jump to the last error position
-      if (e.ctrlKey && e.key === 'Backspace') {
-        e.preventDefault();
-        typingInputEl.value = input.substring(0, lastCorrectPos);
-        // Trigger the input event programmatically
-        typingInputEl.dispatchEvent(new Event('input'));
-        return false;
-      }
     }
   });
 
@@ -393,31 +391,101 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleTypingInput(e) {
     const input = e.target.value;
     const snippet = raceState.snippet.text;
+    const previousInput = e.target.previousValue || '';
     
-    // In practice mode, ensure we don't remove correctly typed characters
-    if (raceState.type === 'practice' && input.length > 0) {
-      const perfectInput = snippet.substring(0, input.length);
-      let correctPrefix = '';
+    // For practice mode, start the race on first input if not already started
+    if (raceState.type === 'practice' && !raceState.inProgress && input.length === 1) {
+      // Set up the race state
+      const startTime = Date.now();
+      raceState.startTime = startTime;
+      raceState.inProgress = true;
       
-      // Find the longest correct prefix
-      for (let i = 0; i < input.length; i++) {
-        if (input[i] === snippet[i]) {
-          correctPrefix += input[i];
-        } else {
+      // Auto-start the race with the first character
+      startRace();
+      
+      // Don't reset the value - keep the first character
+      // This prevents needing to type the first character twice
+    }
+    
+    // Track the previous value for next comparison
+    e.target.previousValue = input;
+    
+    // Apply word locking mechanism
+    let processedInput = input;
+    
+    // Only if the race is in progress
+    if (raceState.inProgress) {
+      // Find the position of the first error in the previous input
+      let firstErrorPosition = snippet.length; // Default to end of text (no errors)
+      for (let i = 0; i < Math.min(snippet.length, previousInput.length); i++) {
+        if (previousInput[i] !== snippet[i]) {
+          firstErrorPosition = i;
           break;
         }
       }
       
-      // If the user somehow deleted correct characters, restore them
-      if (correctPrefix.length < input.length && correctPrefix !== input.substring(0, correctPrefix.length)) {
-        const newInput = correctPrefix + input.substring(correctPrefix.length);
-        e.target.value = newInput;
+      let lockedPosition = 0;
+      
+      // Find the last complete correctly typed word (including space) before the first error
+      if (firstErrorPosition > 0) {
+        let wordStart = 0;
+        for (let i = 0; i <= Math.min(previousInput.length, firstErrorPosition); i++) {
+          // We found a space or reached the first error
+          if (i === firstErrorPosition || previousInput[i] === ' ') {
+            // Check if this entire word is correct
+            let isWordCorrect = true;
+            for (let j = wordStart; j < i; j++) {
+              if (j >= snippet.length || previousInput[j] !== snippet[j]) {
+                isWordCorrect = false;
+                break;
+              }
+            }
+            
+            // If we reached a space in both input and snippet, and the word is correct
+            if (isWordCorrect && i < firstErrorPosition && previousInput[i] === ' ' && i < snippet.length && previousInput[i] === snippet[i]) {
+              // Lock position after this word (including space)
+              lockedPosition = i + 1;
+            }
+            
+            // Start of next word is after the space
+            if (i < previousInput.length && previousInput[i] === ' ') {
+              wordStart = i + 1;
+            }
+          }
+        }
+      }
+      
+      // If trying to delete locked text, preserve it only up to the first error
+      if (input.length < previousInput.length && lockedPosition > 0) {
+        // Only preserve text up to the last word break before the first error
+        const lastWordBreakBeforeError = previousInput.lastIndexOf(' ', Math.max(0, firstErrorPosition - 1)) + 1;
+        
+        // Prevent deletion of locked text by preserving it
+        if (input.length < lastWordBreakBeforeError) {
+          // Preserve text only up to the last complete word before first error
+          const preservedPart = previousInput.substring(0, lastWordBreakBeforeError);
+          let newPart = '';
+          
+          // If deletion is happening after preserved part
+          if (input.length >= preservedPart.length) {
+            newPart = input.substring(preservedPart.length);
+          } else {
+            // If they're trying to delete the preserved text
+            newPart = previousInput.substring(preservedPart.length);
+          }
+          
+          // This enforces that the locked text cannot be deleted
+          processedInput = preservedPart + newPart;
+          
+          // Update the input field with the preserved text
+          e.target.value = processedInput;
+        }
       }
     }
     
     // Calculate progress
-    const position = input.length;
-    const isCompleted = position === snippet.length && input === snippet;
+    const position = processedInput.length;
+    const isCompleted = position === snippet.length && processedInput === snippet;
     
     // Send progress to server
     socket.emit('race:progress', {
@@ -427,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Highlight the current character position in the snippet
-    updateSnippetHighlighting(input);
+    updateSnippetHighlighting(processedInput);
     
     // If completed, calculate and send results
     if (isCompleted) {
@@ -436,8 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const durationInSeconds = (endTime - raceState.startTime) / 1000;
       
       // Calculate WPM and accuracy
-      const wpm = calculateWPM(input.length, durationInSeconds);
-      const accuracy = calculateAccuracy(input, snippet);
+      const wpm = calculateWPM(processedInput.length, durationInSeconds);
+      const accuracy = calculateAccuracy(processedInput, snippet);
       
       // Send result to server
       socket.emit('race:result', {
@@ -656,6 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     typingInputEl.value = '';
     typingInputEl.disabled = false;
+    typingInputEl.previousValue = ''; // Reset the previousValue for word locking
     typingInputContainer.classList.add('hidden');
     countdownEl.classList.add('hidden');
     progressDisplayEl.innerHTML = '';

@@ -6,11 +6,20 @@ function Settings({ isOpen, onClose }) {
     return sessionStorage.getItem('preferredFont') || 'Inter, sans-serif';
   });
 
+  const [displayBlockCursor, setDisplayBlockCursor] = useState(() => {
+    return sessionStorage.getItem('blockCursor') || '#3a506b';
+  });
+
   // Apply font when component mounts or font changes
   useEffect(() => {
     document.documentElement.style.setProperty('--main-font', whichFont);
     sessionStorage.setItem('preferredFont', whichFont);
   }, [whichFont]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--display-block', displayBlockCursor);
+    sessionStorage.setItem('blockCursor', displayBlockCursor);
+  }, [displayBlockCursor])
 
   if (!isOpen) return null;
 
@@ -18,6 +27,14 @@ function Settings({ isOpen, onClose }) {
     const newFont = e.target.value;
     setWhichFont(newFont);
   };
+
+  const handleDisplayBlock = (e) => {
+    if (e.target.checked === true) {
+      setDisplayBlockCursor('#3a506b');
+    } else {
+      setDisplayBlockCursor('none');
+    }
+  }
 
   return (
     <div className="settings-overlay">

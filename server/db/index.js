@@ -1,87 +1,67 @@
 const { pool } = require('../config/database');
+const migrations = require('./migrations');
+const { runMigrations, logDatabaseState } = migrations;
 
-// Initialize database tables
+/**
+ * Initialize the database
+ * This function should be called when the server starts
+ */
 const initDB = async () => {
   try {
-    // Create users table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        netid VARCHAR(50) UNIQUE NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create snippets table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS snippets (
-        id SERIAL PRIMARY KEY,
-        text TEXT NOT NULL,
-        source VARCHAR(255),
-        category VARCHAR(100),
-        difficulty INT DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create lobbies table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS lobbies (
-        id SERIAL PRIMARY KEY,
-        code VARCHAR(8) UNIQUE NOT NULL,
-        type VARCHAR(20) CHECK (type IN ('public', 'private', 'practice')) NOT NULL,
-        status VARCHAR(20) CHECK (status IN ('waiting', 'countdown', 'racing', 'finished')) NOT NULL,
-        snippet_id INT REFERENCES snippets(id),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        started_at TIMESTAMP,
-        finished_at TIMESTAMP
-      )
-    `);
-
-    // Create race_results table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS race_results (
-        id SERIAL PRIMARY KEY,
-        user_id INT REFERENCES users(id),
-        lobby_id INT REFERENCES lobbies(id),
-        snippet_id INT REFERENCES snippets(id),
-        wpm DECIMAL(6, 2),
-        accuracy DECIMAL(5, 2),
-        completion_time DECIMAL(10, 2),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create user_sessions table for session storage
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS "user_sessions" (
-        "sid" varchar NOT NULL COLLATE "default",
-        "sess" json NOT NULL,
-        "expire" timestamp(6) NOT NULL
-      ) WITH (OIDS=FALSE);
-    `);
-
-    // Add primary key constraint to user_sessions table
-    await pool.query(`
-      ALTER TABLE "user_sessions" 
-      ADD CONSTRAINT "user_sessions_pkey" 
-      PRIMARY KEY ("sid") 
-      NOT DEFERRABLE INITIALLY IMMEDIATE;
-    `);
-
-    console.log('Database tables initialized successfully');
+    console.log('Initializing database...');
+    
+    // Run all pending migrations
+    await runMigrations();
+    
+    // Log the user stats after migrations
+    await logUserStats();
+    
+    console.log('Database initialization complete');
+    return true;
   } catch (err) {
-    console.error('Error initializing database tables:', err);
+    console.error('Database initialization failed:', err);
     throw err;
+  }
+};
+
+/**
+ * Log user stats for debugging
+ */
+const logUserStats = async () => {
+  const client = await pool.connect();
+  try {
+    // Query users with race results
+    const usersWithRaces = await client.query(`
+      SELECT u.id, u.netid, u.races_completed, u.avg_wpm, u.fastest_wpm,
+             MAX(r.wpm) as max_wpm_from_results
+      FROM users u
+      LEFT JOIN race_results r ON u.id = r.user_id
+      GROUP BY u.id, u.netid
+      ORDER BY u.races_completed DESC
+      LIMIT 10
+    `);
+    
+    console.log('User stats check:');
+    for (const user of usersWithRaces.rows) {
+      console.log(`User ${user.netid} - races: ${user.races_completed}, avg_wpm: ${user.avg_wpm}, fastest_wpm: ${user.fastest_wpm}, max_wpm_from_results: ${user.max_wpm_from_results}`);
+      
+      // If there's a discrepancy between fastest_wpm and max_wpm_from_results
+      if (user.fastest_wpm !== user.max_wpm_from_results && user.max_wpm_from_results !== null) {
+        console.log(`  DISCREPANCY DETECTED for ${user.netid}: fastest_wpm=${user.fastest_wpm}, max_wpm_from_results=${user.max_wpm_from_results}`);
+      }
+    }
+  } catch (err) {
+    console.error('Error checking user stats:', err);
+  } finally {
+    client.release();
   }
 };
 
 // Seed initial data for testing
 const seedTestData = async () => {
   try {
-    // Check if snippets exist
-    const { rows } = await pool.query('SELECT COUNT(*) FROM snippets');
+    // Check if our test snippets already exist by looking for a specific test snippet
+    const { rows } = await pool.query("SELECT COUNT(*) FROM snippets WHERE text LIKE 'The quick brown fox%'");
     
     if (parseInt(rows[0].count) === 0) {
       // Add some test snippets
@@ -93,6 +73,8 @@ const seedTestData = async () => {
           ('To be or not to be, that is the question. Whether ''tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles, and by opposing end them.', 'Shakespeare', 'advanced', 3)
       `);
       console.log('Added test snippets');
+    } else {
+      console.log('Test snippets already exist, skipping insertion');
     }
   } catch (err) {
     console.error('Error seeding test data:', err);
@@ -101,5 +83,7 @@ const seedTestData = async () => {
 
 module.exports = {
   initDB,
-  seedTestData
+  seedTestData,
+  logDatabaseState,
+  logUserStats
 };
