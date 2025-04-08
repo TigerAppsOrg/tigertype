@@ -4,6 +4,29 @@ import { useSocket } from '../context/SocketContext';
 import './Settings.css';
 import './Typing.css';
 
+// Typing Tips shown before race countdown start
+const TYPING_TIPS = [
+  "Keep your wrists neutral and fingers curved",
+  "Learn touch typing, using all ten fingers, for faster typing",
+  "Learn to look at the screen, not your keyboard",
+  "Take regular breaks to avoid strain",
+  "Practice regularly to build muscle memory",
+  "Correct posture improves typing speed",
+  "Don't rush - accuracy is more important than speed",
+  "Learn keyboard shortcuts to save time",
+  "CTRL + BACKSPACE will delete the entire word",
+  "Also try TigerSpot :)",
+  "Practicing just 10-minutes of typing daily can significantly improve your speed",
+  "Two players are needed to start a race",
+  "If you are the last player unreadied, you will be kicked for inactivity",
+  "For feedback or suggestions, contact us at: it.admin@tigerapps.org",
+
+  // if any of these tooltips are removed i am resigning and dropping the class - ammaar
+  "Hoagie Club is irrelevant and should be restructured",
+  "Seriously, Hoagie Club is just a den of rejected TigerApps",
+  "Zak Kincaid is an opp"
+];
+
 function Typing() {
   const { raceState, setRaceState, typingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet } = useRace();
   const { socket } = useSocket();
@@ -12,6 +35,89 @@ function Typing() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [lastTabPress, setLastTabPress] = useState(0);
   const [snippetId, setSnippetId] = useState(null);
+  const [tipIndex, setTipIndex] = useState(Math.floor(Math.random() * TYPING_TIPS.length));
+  const [countdown, setCountdown] = useState(null);
+  const countdownRef = useRef(null);
+  const [tipVisible, setTipVisible] = useState(true);
+  const tipContentRef = useRef(TYPING_TIPS[tipIndex]);
+  
+  // Rotate through random tips every 5 seconds before race starts
+  useEffect(() => {
+    if (raceState.type !== 'practice' && !raceState.inProgress && !countdown) {
+      const tipInterval = setInterval(() => {
+        // Step 1: Hide the current tip
+        setTipVisible(false);
+        
+        // Step 2: After fade out completes, change the content
+        setTimeout(() => {
+          // Get a new random index (skipping same one again)
+          let newIndex;
+          do {
+            newIndex = Math.floor(Math.random() * TYPING_TIPS.length);
+          } while (newIndex === tipIndex);
+          
+          // Update the tip index
+          setTipIndex(newIndex);
+          tipContentRef.current = TYPING_TIPS[newIndex];
+          
+          // Step 3: Show the new tip
+          setTipVisible(true);
+        }, 600); // Give enough time for fade out to complete
+        
+      }, 5000);
+      
+      return () => clearInterval(tipInterval);
+    }
+  }, [raceState.type, raceState.inProgress, countdown, tipIndex]);
+  
+  // Update tip content ref when tipIndex changes
+  useEffect(() => {
+    tipContentRef.current = TYPING_TIPS[tipIndex];
+  }, [tipIndex]);
+  
+  // Handle race countdown
+  useEffect(() => {
+    if (!socket || raceState.type === 'practice') return;
+    
+    const handleCountdown = (data) => {
+      console.log('Countdown received:', data);
+      setCountdown(data.seconds);
+      
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+      
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownRef.current);
+            countdownRef.current = null;
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    };
+
+    socket.on('race:countdown', handleCountdown);
+    
+    return () => {
+      socket.off('race:countdown', handleCountdown);
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    };
+  }, [socket, raceState.type, raceState.inProgress, raceState.completed]);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+    };
+  }, []);
 
   // Gets latest typingState.position
   const positionRef = useRef(typingState.position);
@@ -119,21 +225,15 @@ function Typing() {
     const handleKeyDown = (e) => {
       if (raceState.type !== 'practice') return;
       
-      // Tab: Load new snippet (with rate limiting)
+      // Tab: Load new snippet
       if (e.key === 'Tab') {
         e.preventDefault();
-        
-        // Rate limit to prevent spamming (1 second cooldown)
-        const now = Date.now();
-        if (now - lastTabPress > 1000) {
-          setLastTabPress(now);
-          // Clear input immediately to prevent visual artifacts
-          setInput('');
-          if (inputRef.current) {
-            inputRef.current.value = '';
-          }
-          loadNewSnippet();
+        // Clear input immediately to prevent visual artifacts
+        setInput('');
+        if (inputRef.current) {
+          inputRef.current.value = '';
         }
+        loadNewSnippet();
       }
       
       // Escape: Restart current snippet
@@ -154,11 +254,12 @@ function Typing() {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    // Add event listener for capturing all events
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [raceState.type, lastTabPress, loadNewSnippet, setRaceState]);
+  }, [raceState.type, loadNewSnippet, setRaceState]);
 
   const getElapsedTime = () =>
     raceState.startTime ? (Date.now() - raceState.startTime) / 1000 : 0;
@@ -166,37 +267,48 @@ function Typing() {
   // Update elapsed time every ms
   useEffect(() => {
     let interval;
-    if (raceState.inProgress && raceState.startTime) {
+    // Only run the interval if the race is in progress AND not completed
+    if (raceState.inProgress && raceState.startTime && !raceState.completed) {
       interval = setInterval(() => {
         setElapsedTime(getElapsedTime());
-      }, 1);
+      }, 1); // Update frequently for smoothness
     } else {
-      setElapsedTime(0);
+      // Clear interval if race stops or is completed
+      if (interval) clearInterval(interval);
+      // If completed, ensure final time is calculated once? 
+      // Results component handles displaying final time
+      // If not in progress and not completed, reset to 0
+      if (!raceState.inProgress && !raceState.completed) {
+         setElapsedTime(0);
+      }
     }
   
     return () => {
       clearInterval(interval);
     };
-  }, [raceState.inProgress, raceState.startTime]);
+  // Add raceState.completed to dependency array
+  }, [raceState.inProgress, raceState.startTime, raceState.completed]);
 
-  // Update WPM continuously - using handleInput instead of updateProgress
+  // Update WPM continuously - This useEffect might be redundant if WPM is calculated on completion
+  // Let's remove this or adjust it. The Results component displays final WPM.
+  // We'll keep the continuous WPM display logic but stop it on completion.
   useEffect(() => {
     let interval;
-    if (raceState.inProgress && raceState.startTime && input.length > 0) {
+    // Only run interval if in progress and not completed
+    if (raceState.inProgress && raceState.startTime && input.length > 0 && !raceState.completed) {
       interval = setInterval(() => {
-        const words = input.length / 5; // Standard word length
-        const minutes = getElapsedTime() / 60;
-        const wpm = words / minutes;
-        raceHandleInput(input); // Use handleInput instead of updateProgress
-      }, 300); // Update every 300ms for smoother display
+        // No need to call raceHandleInput here, just update local display WPM if needed
+        // Or perhaps remove this continuous WPM calculation entirely if stats bar updates it
+      }, 300); 
     } else {
-      setElapsedTime(0);
+       if (interval) clearInterval(interval); // Clear interval if race stops or completes
     }
 
     return () => {
       clearInterval(interval);
     };
-  }, [raceState.inProgress, raceState.startTime, input, raceHandleInput]);
+  // Add raceState.completed to dependency array
+  }, [raceState.inProgress, raceState.startTime, input, raceState.completed]);
   
   // Handle typing input with word locking
   const handleComponentInput = (e) => {
@@ -225,9 +337,6 @@ function Typing() {
       }
       return;
     }
-    
-    // No longer block incorrect characters - allow them to be entered
-    // and highlighted as errors in the display
     
     // Use the input after processing by the word locking mechanism
     if (raceState.inProgress) {
@@ -282,30 +391,11 @@ function Typing() {
     return components;
   };
     
-  // Get real-time statistics
-  const getStats = () => {
-    return (
-      <div className="stats">
-        <div className="stat-item">
-          <span className="stat-label">WPM:</span>
-          <span className="stat-value">{Math.round(typingState.wpm)}</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-label">Accuracy:</span>
-          <span className="stat-value">{Math.round(typingState.accuracy)}%</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-label">Time:</span>
-          <span className="stat-value">{elapsedTime.toFixed(2)}s</span>
-        </div>
-      </div>
-    );
-  };
-  
-  // Get placeholder for statistics before typing starts
+  // Render stats placeholder (before practice starts)
   const getStatsPlaceholder = () => {
+    // Restore original placeholder structure and class name
     return (
-      <div className="stats">
+      <div className="stats practice-placeholder">
         <div className="stat-item">
           <span className="stat-label">WPM</span>
           <span className="stat-value">--</span>
@@ -322,9 +412,68 @@ function Typing() {
     );
   };
 
+  // Render live stats during race
+  const getStats = () => {
+    // Don't show stats if race is completed 
+    //(Results component will show final stats)
+    if (raceState.completed) return null;
+    
+    // Calculate live WPM
+    const time = elapsedTime || getElapsedTime();
+    const minutes = time / 60;
+    const charCount = typingState.position;
+    const words = charCount / 5;
+    const wpm = minutes > 0 ? words / minutes : 0;
+    
+    // Use accuracy directly from typingState which is now calculated properly
+    const accuracy = typingState.accuracy;
+      
+    return (
+      <div className="stats">
+        <div className="stat-item">
+          <span className="stat-label">WPM</span>
+          <span className="stat-value">{wpm.toFixed(0)}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Accuracy</span>
+          <span className="stat-value">{accuracy.toFixed(0)}%</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Time</span>
+          <span className="stat-value">{elapsedTime.toFixed(2)}s</span>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render countdown in the stats area
+  const getCountdown = () => {
+    return (
+      <div className="stats countdown-stats">
+        <div className="stat-item countdown-item">
+          <span className="countdown-value">{countdown}</span>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render tips before race starts
+  const getTips = () => {
+    return (
+      <div className="stats tips-stats">
+        <div className="stat-item tip-item">
+          <span className={`tip-text ${tipVisible ? 'tip-visible tip-pulsing' : 'tip-hidden'}`}>
+            {tipContentRef.current}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   // Render tooltip for keyboard shortcuts in practice mode
   const renderPracticeTooltip = () => {
-    if (raceState.type !== 'practice') return null;
+    // Only show if in practice mode AND not completed
+    if (raceState.type !== 'practice' || raceState.completed) return null;
 
     return (
       <div className="practice-tooltip">
@@ -335,32 +484,61 @@ function Typing() {
     );
   };
   
+  // Determine what content to show in the stats container
+  const getStatsContent = () => {
+    // For practice mode
+    if (raceState.type === 'practice') {
+      if (!raceState.inProgress) {
+        return getStatsPlaceholder();
+      } else {
+        return getStats();
+      }
+    } 
+    // For race mode
+    else {
+      if (countdown !== null) {
+        return getCountdown();
+      } else if (!raceState.inProgress) {
+        return getTips();
+      } else {
+        return getStats();
+      }
+    }
+  };
+  
   return (
     <>
-    {raceState.type === 'practice' && !raceState.inProgress ?
-      getStatsPlaceholder() :
-      (raceState.inProgress && getStats())
-    }
-    <div className="typing-area">
-      
-      <div className="snippet-display" >
-        {getHighlightedText()}
-      </div>
-      <div className="typing-input-container">
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={handleComponentInput}
-          onPaste={handlePaste}
-          disabled={(raceState.type !== 'practice' && !raceState.inProgress) || typingState.completed}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck="false"
-        />
-      </div>
+    <div className="stats-container">
+      {getStatsContent()}
     </div>
+    
+    {/* Only show typing area (snippet + input) if race is NOT completed */}
+    {!raceState.completed && (
+        <div className="typing-area">
+          <div className="snippet-display" >
+            {getHighlightedText()}
+          </div>
+          <div className="typing-input-container">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={handleComponentInput}
+              onPaste={handlePaste}
+              // Input is disabled based on non-practice conditions OR if practice is completed (but still focusable)
+              // Idk a smarter way to do this, keeping it enabled  but visually hidden or styled differently when completed?
+              // Will just hide the container for now lol
+              disabled={(raceState.type !== 'practice' && !raceState.inProgress) || (raceState.type !== 'practice' && typingState.completed)}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+            />
+          </div>
+        </div>
+    )}
+
+    {/* Tooltip is rendered conditionally inside its function based on completion state */}
     {renderPracticeTooltip()}
     </>
   );

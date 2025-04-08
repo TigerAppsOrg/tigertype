@@ -20,6 +20,7 @@ const cors = require('cors');
 const fs = require('fs');
 const pgSession = require('connect-pg-simple')(session);
 const { pool } = require('./server/config/database');
+const { initDB, logDatabaseState } = require('./server/db');
 
 // Initialize Express app
 const app = express();
@@ -42,7 +43,9 @@ app.set('trust proxy', 1);
 // Configure CORS
 const corsOptions = {
   origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 
@@ -146,25 +149,55 @@ io.use(async (socket, next) => {
     
     console.log(`Socket auth: Found netid ${netid}, looking up in database...`);
     
-    // Ensure user exists in database
-    const UserModel = require('./server/models/user');
-    const user = await UserModel.findOrCreate(netid);
+    // Get user from db
+    let user = null;
+    let userId = null;
+
+    try {
+      // First try to use the UserModel
+      const UserModel = require('./server/models/user');
+      user = await UserModel.findOrCreate(netid);
+      
+      if (user) {
+        userId = user.id;
+      }
+    } catch (dbErr) {
+      // If db error, log but continue w/ basic authentication
+      console.error('Database error during socket authentication:', dbErr);
+      console.log('Continuing with basic user info from session...');
+      
+      // Use the user ID from session if available
+      if (req.session.userInfo.userId) {
+        userId = req.session.userInfo.userId;
+      } else {
+        // Last resort - try a direct DB query for just the ID
+        try {
+          const db = require('./server/config/database');
+          const result = await db.query('SELECT id FROM users WHERE netid = $1', [netid]);
+          if (result.rows[0]) {
+            userId = result.rows[0].id;
+          }
+        } catch (directDbErr) {
+          console.error('Failed to get user ID directly:', directDbErr);
+        }
+      }
+    }
     
-    // If we couldn't create a user, reject the connection
-    if (!user) {
+    // If we couldn't find/create a user at all, reject the connection
+    if (!userId) {
       console.error(`Socket authentication failed: Could not find/create user for ${netid}`);
-      return next(new Error('Failed to create or find user in database'));
+      return next(new Error('Failed to identify user in database'));
     }
     
     // Add user info to socket for handlers
     socket.userInfo = {
       ...req.session.userInfo,
-      userId: user.id // Ensure userId is available
+      userId: userId // Ensure userId is available
     };
     
     // Also update session with userId if not present
     if (!req.session.userInfo.userId) {
-      req.session.userInfo.userId = user.id;
+      req.session.userInfo.userId = userId;
       // Save session to persist the userId
       req.session.save(err => {
         if (err) {
@@ -173,7 +206,7 @@ io.use(async (socket, next) => {
       });
     }
     
-    console.log(`Socket auth success for netid: ${netid}, userId: ${user.id}`);
+    console.log(`Socket auth success for netid: ${netid}, userId: ${userId}`);
     next();
   } catch (err) {
     console.error('Socket authentication error:', err);
@@ -184,42 +217,72 @@ io.use(async (socket, next) => {
 // Initialize socket handlers
 socketHandler.initialize(io);
 
-// Import the database setup function
-const setupDatabase = require('./server/db/init-db');
-const PORT = process.env.PORT || 3000;
-
 // Start the server
 const startServer = async () => {
-  // Start listening first, so we can at least get the server running
-  server.listen(PORT, () => {
-    console.log('TigerType backend server listening on *:' + PORT);
-    console.log('NOTE: Frontend server should be running separately on port 5174');
-    
-    // Print local network addresses for easy access during development
-    const networkInterfaces = os.networkInterfaces();
-    for (const name of Object.keys(networkInterfaces)) {
-      for (const iface of networkInterfaces[name]) {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          console.log(`Backend accessible on: http://${iface.address}:${PORT}`);
-        }
-      }
-    }
-  });
-  
-  // Now try to initialize the database with enhanced schema
   try {
-    console.log('Initializing and enhancing database schema...');
-    const success = await setupDatabase();
+    // Initialize database in all environments
+    console.log(`${process.env.NODE_ENV} mode detected - checking database state...`);
     
-    if (success) {
-      console.log('Database setup completed successfully');
+    try {
+      // Import DB module
+      const db = require('./server/db');
+      
+      // Run database initialization
+      await db.initDB();
+      
+      // Check for discrepancies in fastest_wpm values and fix if needed
+      try {
+        const { pool } = require('./server/config/database');
+        const client = await pool.connect();
+        
+        try {
+          // Check if there are users with race results but fastest_wpm = 0
+          const result = await client.query(`
+            SELECT COUNT(*) as count
+            FROM users u
+            WHERE u.fastest_wpm = 0
+            AND EXISTS (
+              SELECT 1 FROM race_results r
+              WHERE r.user_id = u.id AND r.wpm > 0
+            )
+          `);
+          
+          const discrepancyCount = parseInt(result.rows[0].count);
+          
+          if (discrepancyCount > 0) {
+            console.log(`Found ${discrepancyCount} users with fastest_wpm = 0 but have race results > 0`);
+            
+            // Fix discrepancies
+            const dbHelpers = require('./server/utils/db-helpers');
+            await dbHelpers.updateAllUsersFastestWpm();
+            
+            console.log('Fixed fastest_wpm discrepancies');
+          } else {
+            console.log('No fastest_wpm discrepancies found');
+          }
+        } finally {
+          client.release();
+        }
+      } catch (err) {
+        console.error('Error checking/fixing fastest_wpm discrepancies:', err);
+        // Continue starting the server even if this check fails
+      }
+    } catch (err) {
+      console.error('Database initialization failed:', err);
+      console.log('Continuing server startup despite database initialization failure');
     }
+    
+    // Start the server
+    const port = process.env.PORT || 3000;
+    server.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+      console.log(`Environment: ${process.env.NODE_ENV}`);
+      console.log(`Frontend URL: ${process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5174'}`);
+    });
   } catch (err) {
-    console.error('WARNING: Database initialization failed:', err);
-    console.log('Server is running, but database functionality may be limited.');
-    console.log('Please check your database connection settings in .env file.');
+    console.error('Failed to start server:', err);
+    process.exit(1);
   }
 };
 
-// Start the server
 startServer();

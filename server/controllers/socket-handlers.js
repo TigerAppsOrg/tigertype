@@ -18,6 +18,39 @@ const playerProgress = new Map();
 const PROGRESS_THROTTLE = 100; // ms
 const lastProgressUpdate = new Map();
 
+// Inactivity warning and timeout settings
+const INACTIVITY_WARNING_DELAY = 60000; // 60 seconds before warning
+const INACTIVITY_KICK_DELAY = 30000; // 30 seconds before kick (45 seconds total)
+const inactivityTimers = new Map(); // Store timers for inactivity warnings and kicks
+
+// Store user avatar URLs for quicker lookup
+const playerAvatars = new Map(); // socketId -> avatar_url
+
+// Helper functions
+// Get player data for client, including avatar URL
+const getPlayerClientData = (player) => {
+  // Use cached avatar if available, otherwise use null (default avatar will be used)
+  const avatar_url = playerAvatars.get(player.id) || null;
+  return { 
+    netid: player.netid, 
+    ready: player.ready,
+    avatar_url
+  };
+};
+
+// Fetch user avatar URL from database
+const fetchUserAvatar = async (userId, socketId) => {
+  try {
+    if (!userId) return;
+    const user = await UserModel.findByNetid(userId);
+    if (user && user.avatar_url) {
+      playerAvatars.set(socketId, user.avatar_url);
+    }
+  } catch (err) {
+    console.error('Error fetching user avatar:', err);
+  }
+};
+
 // Initialize socket handlers with IO instance
 const initialize = (io) => {
   io.on('connection', (socket) => {
@@ -31,8 +64,7 @@ const initialize = (io) => {
       socketId: socket.id
     });
     
-    // If no netid, log error but try to continue
-    // This should not happen with auth middleware but we'll handle it gracefully
+    // If no netid, log error but try continuing
     if (!netid) {
       console.error('Socket connection has missing netid, this is unexpected');
       console.error('Socket userInfo:', socket.userInfo);
@@ -54,6 +86,11 @@ const initialize = (io) => {
     }
     
     console.log(`Socket connected: ${netid} (${socket.id})`);
+    
+    // Fetch user avatar when connecting
+    if (userId) {
+      fetchUserAvatar(netid, socket.id);
+    }
     
     // Emit welcome event with user info
     socket.emit('connected', {
@@ -86,7 +123,7 @@ const initialize = (io) => {
               
               // Notify other players
               io.to(code).emit('race:playersUpdate', {
-                players: updatedPlayers.map(p => ({ netid: p.netid, ready: p.ready }))
+                players: updatedPlayers.map(p => getPlayerClientData(p))
               });
               
               // Broadcast player left message
@@ -175,7 +212,7 @@ const initialize = (io) => {
               
               // Notify other players
               io.to(code).emit('race:playersUpdate', {
-                players: updatedPlayers.map(p => ({ netid: p.netid, ready: p.ready }))
+                players: updatedPlayers.map(p => getPlayerClientData(p))
               });
               
               // Broadcast player left message
@@ -262,6 +299,15 @@ const initialize = (io) => {
         });
         racePlayers.set(lobby.code, players);
         
+        // Add the player to the lobby_players table for public matches
+        try {
+          await RaceModel.addPlayerToLobby(raceInfo.id, userId, false);
+          console.log(`Added user ${netid} to lobby_players table for lobby ${lobby.code}`);
+        } catch (dbErr) {
+          console.error(`Error adding user ${netid} to lobby_players table:`, dbErr);
+          // Continue anyway; in-memory state is already updated
+        }
+        
         // Send race info to player
         const race = activeRaces.get(lobby.code);
         socket.emit('race:joined', {
@@ -272,13 +318,16 @@ const initialize = (io) => {
             id: race.snippet.id,
             text: race.snippet.text
           },
-          players: players.map(p => ({ netid: p.netid, ready: p.ready }))
+          players: players.map(p => getPlayerClientData(p))
         });
         
         // Broadcast updated player list to all in the lobby
         io.to(lobby.code).emit('race:playersUpdate', {
-          players: players.map(p => ({ netid: p.netid, ready: p.ready }))
+          players: players.map(p => getPlayerClientData(p))
         });
+        
+        // Check for inactive players
+        checkForInactivePlayers(io, lobby.code);
         
         // If all players are ready (2+), start countdown
         checkAndStartCountdown(io, lobby.code);
@@ -289,7 +338,7 @@ const initialize = (io) => {
     });
     
     // Handle player ready status
-    socket.on('player:ready', () => {
+    socket.on('player:ready', async () => {
       try {
         console.log(`User ${netid} is ready`);
         
@@ -300,14 +349,32 @@ const initialize = (io) => {
           if (playerIndex !== -1) {
             console.log(`Found user ${netid} in race ${code}, marking as ready`);
             
+            // Clear any inactivity timers for this player
+            clearInactivityTimers(code, socket.id);
+            
             // Mark player as ready
             players[playerIndex].ready = true;
             racePlayers.set(code, players);
             
+            // Update player ready status in database for non-practice lobbies
+            const race = activeRaces.get(code);
+            if (race && race.type !== 'practice') {
+              try {
+                await RaceModel.updatePlayerReadyStatus(race.id, userId, true);
+                console.log(`Updated ready status in database for user ${netid} in lobby ${code}`);
+              } catch (dbErr) {
+                console.error(`Error updating ready status in database for user ${netid}:`, dbErr);
+                // Continue anyway as the in-memory state is already updated
+              }
+            }
+            
             // Broadcast updated player list
             io.to(code).emit('race:playersUpdate', {
-              players: players.map(p => ({ netid: p.netid, ready: p.ready }))
+              players: players.map(p => getPlayerClientData(p))
             });
+            
+            // Check for inactive players
+            checkForInactivePlayers(io, code);
             
             // If all players are ready (2+), start countdown
             checkAndStartCountdown(io, code);
@@ -465,7 +532,7 @@ const initialize = (io) => {
     });
     
     // Handle disconnect
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       console.log(`Socket disconnected: ${netid} (${socket.id})`);
       
       // Remove player from all races
@@ -475,8 +542,25 @@ const initialize = (io) => {
         if (playerIndex !== -1) {
           console.log(`Removing user ${netid} from race ${code}`);
           
+          // Get player and race information before removing
+          const player = players[playerIndex];
+          const race = activeRaces.get(code);
+          
+          // Clear any inactivity timers for this player
+          clearInactivityTimers(code, socket.id);
+          
           // Remove player from race
           players.splice(playerIndex, 1);
+          
+          // If race exists and isn't practice mode, remove from db
+          if (race && race.type !== 'practice' && player.userId) {
+            try {
+              await RaceModel.removePlayerFromLobby(race.id, player.userId);
+              console.log(`Removed user ${netid} from lobby_players table for lobby ${code}`);
+            } catch (dbErr) {
+              console.error(`Error removing user ${netid} from lobby_players table:`, dbErr);
+            }
+          }
           
           // If no players left, clean up race
           if (players.length === 0) {
@@ -491,14 +575,13 @@ const initialize = (io) => {
           
           // Broadcast updated player list
           io.to(code).emit('race:playersUpdate', {
-            players: players.map(p => ({ netid: p.netid, ready: p.ready }))
+            players: players.map(p => getPlayerClientData(p))
           });
           
           // Broadcast player left message
           io.to(code).emit('race:playerLeft', { netid });
           
           // Check if we should end the race early if all remaining players are finished
-          const race = activeRaces.get(code);
           if (race && race.status === 'racing') {
             const allCompleted = players.every(p => {
               const progress = playerProgress.get(p.id);
@@ -518,6 +601,9 @@ const initialize = (io) => {
       // Clean up any stored progress
       playerProgress.delete(socket.id);
       lastProgressUpdate.delete(socket.id);
+      
+      // Clean up stored avatar
+      playerAvatars.delete(socket.id);
     });
   });
 };
@@ -731,6 +817,97 @@ const endRace = async (io, code) => {
 
   } catch (err) {
     console.error('Error ending race:', err);
+  }
+};
+
+// Check if a single player isn't ready when everyone else is ready
+const checkForInactivePlayers = (io, code) => {
+  const players = racePlayers.get(code);
+  if (!players || players.length < 2) {
+    return; // Need at least 2 players
+  }
+  
+  const notReadyPlayers = players.filter(p => !p.ready);
+  const readyPlayers = players.filter(p => p.ready);
+  
+  // If only one player isn't ready and at least one other player is ready
+  if (notReadyPlayers.length === 1 && readyPlayers.length > 0) {
+    const inactivePlayer = notReadyPlayers[0];
+    
+    // Clear any existing timers for this player in this lobby
+    const timerKey = `${code}-${inactivePlayer.id}`;
+    if (inactivityTimers.has(timerKey)) {
+      const { warningTimer, kickTimer } = inactivityTimers.get(timerKey);
+      clearTimeout(warningTimer);
+      clearTimeout(kickTimer);
+    }
+    
+    // Set warning timer
+    const warningTimer = setTimeout(() => {
+      // Send inactivity warning
+      io.to(inactivePlayer.id).emit('inactivity:warning', {
+        message: 'You will be kicked for inactivity in 45 seconds if you do not ready up.',
+        timeRemaining: INACTIVITY_KICK_DELAY / 1000
+      });
+      console.log(`Sent inactivity warning to ${inactivePlayer.netid} in lobby ${code}`);
+    }, INACTIVITY_WARNING_DELAY);
+    
+    // Set kick timer
+    const kickTimer = setTimeout(() => {
+      console.log(`Kicking inactive player ${inactivePlayer.netid} from lobby ${code}`);
+      
+      // Send kick event to the inactive player
+      io.to(inactivePlayer.id).emit('inactivity:kicked');
+      
+      // Clean up player from the race
+      const currentPlayers = racePlayers.get(code) || [];
+      const updatedPlayers = currentPlayers.filter(p => p.id !== inactivePlayer.id);
+      racePlayers.set(code, updatedPlayers);
+      
+      // Force leave the room
+      const socket = io.sockets.sockets.get(inactivePlayer.id);
+      if (socket) {
+        socket.leave(code);
+      }
+      
+      // Update database if needed (non-practice lobbies)
+      const race = activeRaces.get(code);
+      if (race && race.type !== 'practice' && inactivePlayer.userId) {
+        RaceModel.removePlayerFromLobby(race.id, inactivePlayer.userId)
+          .catch(err => console.error(`Error removing inactive player from lobby_players table:`, err));
+      }
+      
+      // Notify other players
+      io.to(code).emit('race:playersUpdate', {
+        players: updatedPlayers.map(p => getPlayerClientData(p))
+      });
+      
+      // Broadcast player kicked message
+      io.to(code).emit('race:playerLeft', { 
+        netid: inactivePlayer.netid,
+        reason: 'inactivity'
+      });
+      
+      // Clean up timers
+      inactivityTimers.delete(timerKey);
+      
+      // Check if we should start countdown now
+      checkAndStartCountdown(io, code);
+    }, INACTIVITY_WARNING_DELAY + INACTIVITY_KICK_DELAY);
+    
+    // Store timers
+    inactivityTimers.set(timerKey, { warningTimer, kickTimer });
+  }
+};
+
+// Clear inactivity timers for a player
+const clearInactivityTimers = (code, playerId) => {
+  const timerKey = `${code}-${playerId}`;
+  if (inactivityTimers.has(timerKey)) {
+    const { warningTimer, kickTimer } = inactivityTimers.get(timerKey);
+    clearTimeout(warningTimer);
+    clearTimeout(kickTimer);
+    inactivityTimers.delete(timerKey);
   }
 };
 
