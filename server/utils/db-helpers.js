@@ -138,6 +138,11 @@ const dbHelpers = {
               SELECT AVG(accuracy)
               FROM race_results
               WHERE user_id = $1
+            ),
+            fastest_wpm = (
+              SELECT MAX(wpm)
+              FROM race_results
+              WHERE user_id = $1
             )
           WHERE id = $1
         `, [userId]);
@@ -158,6 +163,49 @@ const dbHelpers = {
       }
     } catch (err) {
       console.error('Error recording race result:', err);
+      throw err;
+    }
+  },
+  
+  /**
+   * Manually update fastest_wpm for all users
+   * This can be called if we detect inconsistencies
+   */
+  async updateAllUsersFastestWpm() {
+    try {
+      console.log('Manually updating fastest_wpm for all users...');
+      
+      const client = await db.getClient();
+      
+      try {
+        await client.query('BEGIN');
+        
+        // Update fastest_wpm for all users based on their race results
+        await client.query(`
+          UPDATE users u
+          SET fastest_wpm = (
+            SELECT MAX(wpm)
+            FROM race_results
+            WHERE user_id = u.id
+          )
+          WHERE EXISTS (
+            SELECT 1
+            FROM race_results
+            WHERE user_id = u.id
+          )
+        `);
+        
+        await client.query('COMMIT');
+        console.log('Successfully updated fastest_wpm for all users');
+      } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error updating fastest_wpm for all users:', err);
+        throw err;
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.error('Error in updateAllUsersFastestWpm:', err);
       throw err;
     }
   }

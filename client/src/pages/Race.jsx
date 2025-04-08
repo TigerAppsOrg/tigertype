@@ -5,6 +5,7 @@ import { useSocket } from '../context/SocketContext';
 import Typing from '../components/Typing';
 import Results from '../components/Results';
 import PlayerStatusBar from '../components/PlayerStatusBar';
+import Modal from '../components/Modal';
 import './Race.css';
 
 function Race() {
@@ -13,64 +14,45 @@ function Race() {
   const { 
     raceState, 
     typingState,
-    setPlayerReady, 
-    resetRace 
+    inactivityState,
+    setPlayerReady,
+    resetRace,
+    dismissInactivityWarning,
+    dismissInactivityKick
   } = useRace();
   
-  const [countdown, setCountdown] = useState(null);
-  const countdownRef = useRef(null);
-  
-  // Handle race countdown
-  useEffect(() => {
-    if (!socket || raceState.type === 'practice') return;
-    
-    const handleCountdown = (data) => {
-      console.log('Countdown received:', data);
-      setCountdown(data.seconds);
-      
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-      
-      countdownRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownRef.current);
-            countdownRef.current = null;
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    };
-
-    socket.on('race:countdown', handleCountdown);
-    
-    return () => {
-      socket.off('race:countdown', handleCountdown);
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-      }
-    };
-  }, [socket, raceState.type, raceState.inProgress, raceState.completed]);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-    };
-  }, []);
-
   // Handle back button
   const handleBack = () => {
     resetRace();
     navigate('/home');
   };
+  
+  // Handle ready button when there's an inactivity warning
+  const handleReadyFromWarning = () => {
+    dismissInactivityWarning();
+    setPlayerReady();
+  };
+
   return (
     <div className="race-page">
+      {/* Inactivity Warning Modal */}
+      <Modal
+        isOpen={inactivityState.warning}
+        title="Ready Up Required"
+        message={inactivityState.warningMessage || "Please ready up to continue in this lobby."}
+        buttonText="Ready Up Now"
+        onClose={handleReadyFromWarning}
+      />
+      
+      {/* Kicked for Inactivity Modal */}
+      <Modal
+        isOpen={inactivityState.kicked}
+        title="Removed for Inactivity"
+        message={inactivityState.kickMessage || "You have been removed from the lobby due to inactivity."}
+        buttonText="I Understand"
+        onClose={dismissInactivityKick}
+      />
+      
       <div className="race-container">
         <div className="race-header-wrapper">
           <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
@@ -84,27 +66,32 @@ function Race() {
         
         <div className="race-content">
           <div className="race-info">
+            <div className="race-content-container">
+              {/* Conditionally render Typing */}
+              {/* Show Typing if:
+                  - It's practice mode OR
+                  - It's multiplayer AND not completed */}
+              {(raceState.type === 'practice' || !raceState.completed) && <Typing />}
+
+              {/* Conditionally render Results */}
+              {/* Show Results if race is completed */}
+              {raceState.completed && <Results />}
+            </div>
             
-            {countdown !== null && !raceState.completed && !raceState.inProgress && raceState.type !== 'practice' && (
-              <div className="countdown">{countdown}</div>
-            )}
-          {!raceState.completed ? (
-            <Typing />
-          ) : (
-            <Results />
-          )}
-          
-          {raceState.players && raceState.players.length > 0 && (
-            <PlayerStatusBar
-              players={raceState.players}
-              isRaceInProgress={raceState.inProgress}
-              currentUser={window.user}
-              onReadyClick={setPlayerReady}
-            />
-          )}
+            <div className="player-status-container">
+              {/* Player Status Bar (Only relevant for multiplayer and when race is not completed) */}
+              {raceState.players && raceState.players.length > 0 && raceState.type !== 'practice' && !raceState.completed && (
+                <PlayerStatusBar
+                  players={raceState.players}
+                  isRaceInProgress={raceState.inProgress}
+                  currentUser={window.user}
+                  onReadyClick={setPlayerReady} 
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
