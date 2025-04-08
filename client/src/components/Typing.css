@@ -199,11 +199,21 @@
   text-decoration: underline wavy rgba(255, 65, 47, 0.55);
 }
 
+
 .current {
-  background-color: #3a506b;
+  position: relative;
+  /* background-color: #3a506b; */
   border-radius: 2px;
   color: white;
   animation: blink 1s infinite;
+}
+
+.current::before {
+  position: absolute;
+  content: "|";
+  color: #5a7b8c;
+  right: 0.44rem;
+  padding: 0;
 }
 
 @keyframes blink {
