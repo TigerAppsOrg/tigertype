@@ -77,25 +77,37 @@ const MIGRATIONS = [
     version: 2,
     description: 'Seed initial data',
     up: async (client) => {
-      // Insert test snippets
-      await client.query(`
-        INSERT INTO snippets (text, source, category, difficulty, word_count, character_count)
-        VALUES 
-          ('The quick brown fox jumps over the lazy dog.', 'Test', 'general', 1, 9, 43),
-          ('To be or not to be, that is the question.', 'Shakespeare', 'literature', 2, 10, 35),
-          ('All that glitters is not gold.', 'Shakespeare', 'literature', 2, 7, 28)
-        ON CONFLICT DO NOTHING;
+      // Check if snippets already exist to avoid duplicates
+      const existingCount = await client.query(`
+        SELECT COUNT(*) FROM snippets 
+        WHERE text = 'The quick brown fox jumps over the lazy dog.'
       `);
-
-      // Insert Princeton-themed snippets
-      await client.query(`
-        INSERT INTO snippets (text, source, category, difficulty, is_princeton_themed, word_count, character_count)
-        VALUES 
-          ('Princeton University, founded in 1746 as the College of New Jersey, is a private Ivy League research university in Princeton, New Jersey.', 'Princeton History', 'princeton', 2, TRUE, 22, 123),
-          ('Nassau Hall, one of Princeton''s oldest buildings, was named for King William III, Prince of Orange, of the House of Nassau.', 'Princeton Landmarks', 'princeton', 2, TRUE, 22, 123),
-          ('The Princeton Tigers are the athletic teams of Princeton University. The school sponsors 38 varsity sports.', 'Princeton Athletics', 'princeton', 1, TRUE, 16, 100)
-        ON CONFLICT DO NOTHING;
-      `);
+      
+      if (parseInt(existingCount.rows[0].count) === 0) {
+        console.log('No existing snippets found, adding test snippets...');
+        
+        // Insert test snippets
+        await client.query(`
+          INSERT INTO snippets (text, source, category, difficulty, word_count, character_count)
+          VALUES 
+            ('The quick brown fox jumps over the lazy dog.', 'Test', 'general', 1, 9, 43),
+            ('To be or not to be, that is the question.', 'Shakespeare', 'literature', 2, 10, 35),
+            ('All that glitters is not gold.', 'Shakespeare', 'literature', 2, 7, 28)
+        `);
+        
+        // Insert Princeton-themed snippets
+        await client.query(`
+          INSERT INTO snippets (text, source, category, difficulty, is_princeton_themed, word_count, character_count)
+          VALUES 
+            ('Princeton University, founded in 1746 as the College of New Jersey, is a private Ivy League research university in Princeton, New Jersey.', 'Princeton History', 'princeton', 2, TRUE, 22, 123),
+            ('Nassau Hall, one of Princeton''s oldest buildings, was named for King William III, Prince of Orange, of the House of Nassau.', 'Princeton Landmarks', 'princeton', 2, TRUE, 22, 123),
+            ('The Princeton Tigers are the athletic teams of Princeton University. The school sponsors 38 varsity sports.', 'Princeton Athletics', 'princeton', 1, TRUE, 16, 100)
+        `);
+        
+        console.log('Added test snippets successfully');
+      } else {
+        console.log('Test snippets already exist, skipping seed data insertion');
+      }
     }
   },
   {
