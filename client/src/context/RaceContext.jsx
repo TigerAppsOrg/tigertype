@@ -394,62 +394,101 @@ export const RaceProvider = ({ children }) => {
     // Calculate current position in the snippet
     const text = raceState.snippet?.text || '';
     let correctChars = 0;
-    let errors = 0;
+    let currentErrors = 0;
+    let hasError = false;
+    let firstErrorPosition = text.length;
     
-    // Find position of first error (if any)
-    let firstErrorPosition = text.length; // Default to end of text
-    
-    // Count correct characters and errors
+    // Find the first error position
     for (let i = 0; i < input.length; i++) {
-      if (i < text.length) {
-        if (input[i] === text[i]) {
-          correctChars++;
-        } else {
-          errors++;
-          firstErrorPosition = Math.min(firstErrorPosition, i);
-        }
+      if (i < text.length && input[i] !== text[i]) {
+        firstErrorPosition = i;
+        hasError = true;
+        break;
       }
     }
     
-    // Calculate WPM and accuracy
+    // Count correct characters up to firstErrorPosition
+    for (let i = 0; i < input.length && i < text.length; i++) {
+      if (i < firstErrorPosition) {
+        // All characters before the first error are correct by definition
+        correctChars++;
+      } else if (input[i] === text[i]) {
+        // After the first error, only count matching characters
+        // but we don't count this for accuracy - just for WPM
+        correctChars++;
+      } else {
+        currentErrors++;
+      }
+    }
+    
+    // Get previous total errors (persist even after fixes)
+    let totalErrors = typingState.errors;
+    
+    // If there's a new error (wasn't there in previous input)
+    const previousInput = typingState.input;
+    let isNewError = false;
+    
+    // Check if we have a new error that wasn't in the previous input
+    if (hasError && (previousInput.length <= firstErrorPosition || 
+        (previousInput.length > firstErrorPosition && previousInput[firstErrorPosition] === text[firstErrorPosition]))) {
+      isNewError = true;
+    }
+    
+    // Only increment error count if this is a new error
+    if (isNewError) {
+      totalErrors += 1;
+    }
+    
+    // For accuracy calculation:
+    // - The denominator is (all correct characters typed + all errors made)
+    // - The numerator is all correct characters typed
+    const totalCharsForAccuracy = Math.min(firstErrorPosition, input.length) + totalErrors;
+    const accuracyCorrectChars = Math.min(firstErrorPosition, input.length);
+    
+    // Calculate WPM using all correctly typed characters
     const words = correctChars / 5; // standard definition: 1 word = 5 chars
     const wpm = (words / elapsedSeconds) * 60;
-    // Calculate accuracy based on total input length, not just correct characters
-    const accuracy = input.length > 0 ? (correctChars / input.length) * 100 : 0;
     
-    // Check if all characters are typed correctly
-    const isCompleted = input.length === text.length && correctChars === text.length;
+    // Calculate accuracy using only valid characters (before first error) plus cumulative errors
+    const accuracy = totalCharsForAccuracy > 0 ? (accuracyCorrectChars / totalCharsForAccuracy) * 100 : 100;
     
-    // Find the last completely correct word boundary before the first error
+    // Check if all characters are typed correctly for completion
+    const isCompleted = input.length === text.length && !hasError;
+    
+    // Find the last completely correct word boundary before any error
     let newLockedPosition = 0;
     
-    // Only lock text if there are no errors, or only lock up to the last word break before first error
-    if (firstErrorPosition > 0) {
+    // Only process word locking if there are characters
+    if (input.length > 0) {
       let wordStart = 0;
       
-      // Iterate through the input text word by word
-      // This was annoying asf to implement correctly im not even gonna lie; prolly not the most efficient
-      for (let i = 0; i <= Math.min(input.length, firstErrorPosition); i++) {
-        // We found a space or reached the first error
-        if (i === firstErrorPosition || input[i] === ' ') {
-          // Check if this entire word is correct
-          let isWordCorrect = true;
-          for (let j = wordStart; j < i; j++) {
-            if (j >= text.length || input[j] !== text[j]) {
-              isWordCorrect = false;
-              break;
+      // Only lock text if there are no errors, or only lock up to the last word break before first error
+      if (firstErrorPosition > 0) {
+        let wordStart = 0;
+        
+        // Iterate through the input text word by word
+        for (let i = 0; i <= Math.min(input.length, firstErrorPosition); i++) {
+          // We found a space or reached the first error
+          if (i === firstErrorPosition || input[i] === ' ') {
+            // Check if this entire word is correct
+            let isWordCorrect = true;
+            for (let j = wordStart; j < i; j++) {
+              if (j >= text.length || input[j] !== text[j]) {
+                isWordCorrect = false;
+                break;
+              }
             }
-          }
-          
-          // If we reached a space in both input and text, and the word is correct
-          if (isWordCorrect && i < firstErrorPosition && input[i] === ' ' && i < text.length && input[i] === text[i]) {
-            // Lock position after this word (including space)
-            newLockedPosition = i + 1;
-          }
-          
-          // Start of next word is after the space
-          if (i < input.length && input[i] === ' ') {
-            wordStart = i + 1;
+            
+            // If we reached a space in both input and text, and the word is correct
+            if (isWordCorrect && i < firstErrorPosition && input[i] === ' ' && i < text.length && input[i] === text[i]) {
+              // Lock position after this word (including space)
+              newLockedPosition = i + 1;
+            }
+            
+            // Start of next word is after the space
+            if (i < input.length && input[i] === ' ') {
+              wordStart = i + 1;
+            }
           }
         }
       }
@@ -460,7 +499,7 @@ export const RaceProvider = ({ children }) => {
       input,
       position: input.length, // Use actual input length instead of correct chars
       correctChars,
-      errors,
+      errors: totalErrors,
       completed: isCompleted, // Only completed when all characters match exactly
       wpm,
       accuracy,

@@ -417,11 +417,8 @@ function Typing() {
     const words = charCount / 5;
     const wpm = minutes > 0 ? words / minutes : 0;
     
-    // Calculate accuracy 
-    const totalChars = typingState.position;
-    const accuracy = totalChars > 0 
-      ? ((totalChars - typingState.errors) / totalChars) * 100
-      : 100;
+    // Use accuracy directly from typingState which is now calculated properly
+    const accuracy = typingState.accuracy;
       
     return (
       <div className="stats">
