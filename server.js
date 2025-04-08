@@ -20,7 +20,7 @@ const cors = require('cors');
 const fs = require('fs');
 const pgSession = require('connect-pg-simple')(session);
 const { pool } = require('./server/config/database');
-const { initDB } = require('./server/db');
+const { initDB, logDatabaseState } = require('./server/db');
 
 // Initialize Express app
 const app = express();
@@ -220,10 +220,51 @@ socketHandler.initialize(io);
 // Start the server
 const startServer = async () => {
   try {
-    // Initialize db in development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode detected - running database migrations...');
-      await initDB();
+    // Initialize database in all environments
+    console.log(`${process.env.NODE_ENV} mode detected - checking database state...`);
+    
+    // First log the current state
+    await logDatabaseState();
+    
+    // Then run migrations if needed
+    await initDB();
+    
+    // Check for discrepancies in fastest_wpm values and fix if needed
+    try {
+      const { pool } = require('./server/config/database');
+      const client = await pool.connect();
+      
+      try {
+        // Check if there are users with race results but fastest_wpm = 0
+        const result = await client.query(`
+          SELECT COUNT(*) as count
+          FROM users u
+          WHERE u.fastest_wpm = 0
+          AND EXISTS (
+            SELECT 1 FROM race_results r
+            WHERE r.user_id = u.id AND r.wpm > 0
+          )
+        `);
+        
+        const discrepancyCount = parseInt(result.rows[0].count);
+        
+        if (discrepancyCount > 0) {
+          console.log(`Found ${discrepancyCount} users with fastest_wpm = 0 but have race results > 0`);
+          
+          // Fix discrepancies
+          const dbHelpers = require('./server/utils/db-helpers');
+          await dbHelpers.updateAllUsersFastestWpm();
+          
+          console.log('Fixed fastest_wpm discrepancies');
+        } else {
+          console.log('No fastest_wpm discrepancies found');
+        }
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.error('Error checking/fixing fastest_wpm discrepancies:', err);
+      // Continue starting the server even if this check fails
     }
     
     // Start the server

@@ -97,6 +97,30 @@ const MIGRATIONS = [
         ON CONFLICT DO NOTHING;
       `);
     }
+  },
+  {
+    version: 3,
+    description: 'Update fastest_wpm for all users',
+    up: async (client) => {
+      console.log('Running migration to update fastest_wpm for all users...');
+      
+      // Update all users' fastest_wpm based on their race results
+      await client.query(`
+        UPDATE users u
+        SET fastest_wpm = (
+          SELECT MAX(wpm)
+          FROM race_results
+          WHERE user_id = u.id
+        )
+        WHERE EXISTS (
+          SELECT 1
+          FROM race_results
+          WHERE user_id = u.id
+        )
+      `);
+      
+      console.log('Successfully updated fastest_wpm for all users');
+    }
   }
 ];
 
