@@ -217,21 +217,15 @@ function Typing() {
     const handleKeyDown = (e) => {
       if (raceState.type !== 'practice') return;
       
-      // Tab: Load new snippet (with rate limiting)
+      // Tab: Load new snippet
       if (e.key === 'Tab') {
         e.preventDefault();
-        
-        // Rate limit to prevent spamming (1 second cooldown)
-        const now = Date.now();
-        if (now - lastTabPress > 1000) {
-          setLastTabPress(now);
-          // Clear input immediately to prevent visual artifacts
-          setInput('');
-          if (inputRef.current) {
-            inputRef.current.value = '';
-          }
-          loadNewSnippet();
+        // Clear input immediately to prevent visual artifacts
+        setInput('');
+        if (inputRef.current) {
+          inputRef.current.value = '';
         }
+        loadNewSnippet();
       }
       
       // Escape: Restart current snippet
@@ -257,7 +251,7 @@ function Typing() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [raceState.type, lastTabPress, loadNewSnippet, setRaceState]);
+  }, [raceState.type, loadNewSnippet, setRaceState]);
 
   const getElapsedTime = () =>
     raceState.startTime ? (Date.now() - raceState.startTime) / 1000 : 0;
