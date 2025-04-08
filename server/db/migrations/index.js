@@ -186,6 +186,55 @@ const runMigrations = async () => {
   }
 };
 
+// Log current database state for debugging
+const logDatabaseState = async () => {
+  const client = await pool.connect();
+  try {
+    // Check if migrations table exists
+    const migrationsExist = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'migrations'
+      );
+    `);
+    
+    if (!migrationsExist.rows[0].exists) {
+      console.log('Migrations table does not exist in the database');
+      return;
+    }
+    
+    // Get current version
+    const version = await getCurrentVersion(client);
+    console.log(`Current database version: ${version}`);
+    
+    // Check if fastest_wpm column exists
+    const columnExists = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_name = 'users' AND column_name = 'fastest_wpm'
+      );
+    `);
+    
+    console.log(`fastest_wpm column exists: ${columnExists.rows[0].exists}`);
+    
+    // Get some sample data to verify
+    const sampleData = await client.query(`
+      SELECT id, netid, fastest_wpm 
+      FROM users 
+      WHERE fastest_wpm > 0 
+      LIMIT 5;
+    `);
+    
+    console.log('Sample users with fastest_wpm > 0:', sampleData.rows);
+    
+  } catch (err) {
+    console.error('Error checking database state:', err);
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
-  runMigrations
+  runMigrations,
+  logDatabaseState
 }; 

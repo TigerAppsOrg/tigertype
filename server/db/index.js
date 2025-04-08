@@ -1,5 +1,6 @@
 const { pool } = require('../config/database');
-const { runMigrations, logDatabaseState } = require('./migrations');
+const migrations = require('./migrations');
+const { runMigrations, logDatabaseState } = migrations;
 
 /**
  * Initialize the database

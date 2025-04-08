@@ -223,48 +223,53 @@ const startServer = async () => {
     // Initialize database in all environments
     console.log(`${process.env.NODE_ENV} mode detected - checking database state...`);
     
-    // First log the current state
-    await logDatabaseState();
-    
-    // Then run migrations if needed
-    await initDB();
-    
-    // Check for discrepancies in fastest_wpm values and fix if needed
     try {
-      const { pool } = require('./server/config/database');
-      const client = await pool.connect();
+      // Import DB module
+      const db = require('./server/db');
       
+      // Run database initialization
+      await db.initDB();
+      
+      // Check for discrepancies in fastest_wpm values and fix if needed
       try {
-        // Check if there are users with race results but fastest_wpm = 0
-        const result = await client.query(`
-          SELECT COUNT(*) as count
-          FROM users u
-          WHERE u.fastest_wpm = 0
-          AND EXISTS (
-            SELECT 1 FROM race_results r
-            WHERE r.user_id = u.id AND r.wpm > 0
-          )
-        `);
+        const { pool } = require('./server/config/database');
+        const client = await pool.connect();
         
-        const discrepancyCount = parseInt(result.rows[0].count);
-        
-        if (discrepancyCount > 0) {
-          console.log(`Found ${discrepancyCount} users with fastest_wpm = 0 but have race results > 0`);
+        try {
+          // Check if there are users with race results but fastest_wpm = 0
+          const result = await client.query(`
+            SELECT COUNT(*) as count
+            FROM users u
+            WHERE u.fastest_wpm = 0
+            AND EXISTS (
+              SELECT 1 FROM race_results r
+              WHERE r.user_id = u.id AND r.wpm > 0
+            )
+          `);
           
-          // Fix discrepancies
-          const dbHelpers = require('./server/utils/db-helpers');
-          await dbHelpers.updateAllUsersFastestWpm();
+          const discrepancyCount = parseInt(result.rows[0].count);
           
-          console.log('Fixed fastest_wpm discrepancies');
-        } else {
-          console.log('No fastest_wpm discrepancies found');
+          if (discrepancyCount > 0) {
+            console.log(`Found ${discrepancyCount} users with fastest_wpm = 0 but have race results > 0`);
+            
+            // Fix discrepancies
+            const dbHelpers = require('./server/utils/db-helpers');
+            await dbHelpers.updateAllUsersFastestWpm();
+            
+            console.log('Fixed fastest_wpm discrepancies');
+          } else {
+            console.log('No fastest_wpm discrepancies found');
+          }
+        } finally {
+          client.release();
         }
-      } finally {
-        client.release();
+      } catch (err) {
+        console.error('Error checking/fixing fastest_wpm discrepancies:', err);
+        // Continue starting the server even if this check fails
       }
     } catch (err) {
-      console.error('Error checking/fixing fastest_wpm discrepancies:', err);
-      // Continue starting the server even if this check fails
+      console.error('Database initialization failed:', err);
+      console.log('Continuing server startup despite database initialization failure');
     }
     
     // Start the server
