@@ -202,7 +202,7 @@
 
 .current {
   position: relative;
-  /* background-color: #3a506b; */
+  background-color: var(--display-block);
   border-radius: 2px;
   color: white;
   animation: blink 1s infinite;
@@ -211,7 +211,7 @@
 .current::before {
   position: absolute;
   content: "|";
-  color: #5a7b8c;
+  color: #5a6e8c;
   right: 0.44rem;
   padding: 0;
 }
