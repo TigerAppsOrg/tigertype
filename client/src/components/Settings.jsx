@@ -56,7 +56,11 @@ function Settings({ isOpen, onClose }) {
           </select>
           <br />
           <label>
-            <input type='checkbox' checked={defaultCursor} onChange={handleDefaultCursor} />
+            <input 
+                className='cursor-setting' 
+                type='checkbox' 
+                checked={defaultCursor} 
+                onChange={handleDefaultCursor} />
             Block Cursor
           </label>
         </div>
