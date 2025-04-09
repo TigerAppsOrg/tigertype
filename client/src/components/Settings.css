@@ -58,6 +58,52 @@
   color: var(--mode-text-color);
 }
 
+.settings-modal {
+  background-color: var(--secondary-color);
+  border-radius: 8px;
+  padding: 1rem;
+  min-width: 300px;
+  max-width: 500px;
+  border: 1px solid #F58025;
+}
+
+.settings-header {
+  max-height: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-header h2 {
+  color: #F58025;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #F58025;
+  cursor: pointer;
+}
+
+.close-button:hover {
+  color: #fff;
+}
+
+.settings-content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding-top: 20px;
+  color: #fff;
+}
+
+.settings-content p {
+  color: var(--mode-text-color);
+}
+
 .toggle {
   display: flex;
   align-items: center;
