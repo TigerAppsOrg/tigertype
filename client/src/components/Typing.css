@@ -144,7 +144,7 @@
 .typing-input-container {
   position: fixed;
   inset: 0px;
-
+  z-index: -1000;
 }
 
 .typing-input-container input {
