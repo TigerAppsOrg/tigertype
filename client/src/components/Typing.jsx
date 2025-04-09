@@ -68,7 +68,7 @@ function Typing({
           ...prev,
           timedTest: {
             enabled: false,
-            duration: testDuration,
+            duration: 15,
           }
         }));
       }
@@ -313,6 +313,30 @@ function Typing({
     if (raceState.inProgress && raceState.startTime && !raceState.completed) {
       interval = setInterval(() => {
         setElapsedTime(getElapsedTime());
+        
+        // For timed tests, check if time is up
+        if (raceState.snippet?.is_timed_test && raceState.snippet?.duration) {
+          const duration = raceState.snippet.duration;
+          const elapsed = getElapsedTime();
+          
+          // When time is up, mark race as completed
+          if (elapsed >= duration && !raceState.completed) {
+            console.log('Timed test completed due to time limit');
+            
+            // Mark as completed locally
+            setRaceState(prev => ({
+              ...prev,
+              completed: true,
+              // Store results directly in state
+              results: [{
+                netid: user?.netid,
+                wpm: typingState.wpm,
+                accuracy: typingState.accuracy,
+                completion_time: elapsed
+              }]
+            }));
+          }
+        }
       }, 1); // Update frequently for smoothness
     } else {
       // Clear interval if race stops or is completed
@@ -329,7 +353,7 @@ function Typing({
       clearInterval(interval);
     };
   // Add raceState.completed to dependency array
-  }, [raceState.inProgress, raceState.startTime, raceState.completed]);
+  }, [raceState.inProgress, raceState.startTime, raceState.completed, raceState.snippet?.is_timed_test, raceState.snippet?.duration, typingState.wpm, typingState.accuracy, user?.netid]);
 
   // Update WPM continuously - This useEffect might be redundant if WPM is calculated on completion
   // Let's remove this or adjust it. The Results component displays final WPM.
@@ -507,6 +531,15 @@ function Typing({
     
     // Use accuracy directly from typingState which is now calculated properly
     const accuracy = typingState.accuracy;
+    
+    // For timed tests, show time remaining instead of elapsed time
+    let timeDisplay;
+    if (raceState.snippet?.is_timed_test && raceState.snippet?.duration) {
+      const timeRemaining = Math.max(0, raceState.snippet.duration - time);
+      timeDisplay = `${timeRemaining.toFixed(2)}s left`;
+    } else {
+      timeDisplay = `${time.toFixed(2)}s`;
+    }
       
     return (
       <div className="stats">
@@ -520,7 +553,7 @@ function Typing({
         </div>
         <div className="stat-item">
           <span className="stat-label">Time</span>
-          <span className="stat-value">{elapsedTime.toFixed(2)}s</span>
+          <span className="stat-value">{timeDisplay}</span>
         </div>
       </div>
     );

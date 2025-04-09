@@ -75,7 +75,7 @@ export const RaceProvider = ({ children }) => {
     manuallyStarted: false, // Flag to track if practice mode was manually started
     timedTest: {            // Configuration for timed tests
       enabled: false,
-      duration: 30          // Default duration in seconds
+      duration: 15          // Default duration in seconds
     },
     snippetFilters: {       // Filters for snippets
       difficulty: 'all',
@@ -301,7 +301,15 @@ export const RaceProvider = ({ children }) => {
   const joinPracticeMode = () => {
     if (!socket || !connected) return;
     console.log('Joining practice mode...');
-    socket.emit('practice:join');
+    
+    // Pass test configuration when joining practice mode
+    const options = {
+      testMode: raceState.timedTest?.enabled ? 'timed' : 'snippet',
+      testDuration: raceState.timedTest?.duration || 15,
+      snippetFilters: raceState.snippetFilters
+    };
+    
+    socket.emit('practice:join', options);
   };
 
   const joinPublicRace = () => {
@@ -341,8 +349,15 @@ export const RaceProvider = ({ children }) => {
       manuallyStarted: false
     }));
     
-    // Request a new practice snippet
-    socket.emit('practice:join');
+    // Request a new practice snippet with test configuration
+    const options = {
+      testMode: raceState.timedTest?.enabled ? 'timed' : 'snippet',
+      testDuration: raceState.timedTest?.duration || 15,
+      snippetFilters: raceState.snippetFilters
+    };
+    
+    console.log('Requesting new practice snippet with options:', options);
+    socket.emit('practice:join', options);
   };
 
   // Handle text input, enforce word locking
@@ -571,7 +586,7 @@ export const RaceProvider = ({ children }) => {
       manuallyStarted: false,
       timedTest: {
         enabled: false,
-        duration: 30
+        duration: 15
       },
       snippetFilters: {
         difficulty: 'all',

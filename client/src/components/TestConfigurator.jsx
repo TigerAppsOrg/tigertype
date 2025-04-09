@@ -28,6 +28,8 @@ function TestConfigurator({
   setSnippetDifficulty,
   setSnippetType,
   setSnippetDepartment,
+  setRaceState,
+  loadNewSnippet,
 }) {
 
   React.useEffect(() => {
@@ -36,15 +38,64 @@ function TestConfigurator({
     }
   }, [snippetType, snippetDepartment, setSnippetDepartment]);
 
+  // Ensure the component always shows the current active test mode
+  React.useEffect(() => {
+    // When the component loads, make sure we're showing the correct mode's options
+    if (testMode === 'timed' || testMode === 'snippet') {
+      const timedOptions = document.querySelector('.timed-options');
+      const snippetOptions = document.querySelector('.snippet-options');
+      
+      if (timedOptions) {
+        timedOptions.classList.toggle('visible', testMode === 'timed');
+      }
+      
+      if (snippetOptions) {
+        snippetOptions.classList.toggle('visible', testMode === 'snippet');
+      }
+    }
+  }, [testMode]);
+
   const handleSelectChange = (setter) => (event) => {
     setter(event.target.value);
+  };
+
+  // Enhanced button handler to immediately apply mode changes
+  const handleModeChange = (value, setter) => {
+    setter(value);
+    
+    // If switching to timed mode, immediately enable it in the race context
+    if (value === 'timed') {
+      setRaceState(prev => ({
+        ...prev,
+        timedTest: {
+          ...prev.timedTest,
+          enabled: true
+        }
+      }));
+      
+      // Also request a new timed test
+      loadNewSnippet && loadNewSnippet();
+    } 
+    // If switching to snippet mode, immediately disable timed mode
+    else if (value === 'snippet') {
+      setRaceState(prev => ({
+        ...prev,
+        timedTest: {
+          ...prev.timedTest,
+          enabled: false
+        }
+      }));
+      
+      // Also request a new snippet
+      loadNewSnippet && loadNewSnippet();
+    }
   };
 
   const renderButton = (value, state, setter, label, icon = null, isFunctional = true) => (
     <button
       key={value}
       className={`config-button ${state === value ? 'active' : ''} ${!isFunctional ? 'non-functional' : ''} ${icon ? 'icon-button' : ''}`}
-      onClick={() => isFunctional && setter(value)}
+      onClick={() => isFunctional && (value === 'timed' || value === 'snippet' ? handleModeChange(value, setter) : setter(value))}
       title={!isFunctional ? 'Filter coming soon!' : label || value}
       aria-label={label || value}
     >
@@ -127,6 +178,8 @@ TestConfigurator.propTypes = {
   setSnippetDifficulty: PropTypes.func.isRequired,
   setSnippetType: PropTypes.func.isRequired,
   setSnippetDepartment: PropTypes.func.isRequired,
+  setRaceState: PropTypes.func.isRequired,
+  loadNewSnippet: PropTypes.func,
 };
 
 export default TestConfigurator;

@@ -308,3 +308,32 @@
   50% { transform: scale(1.1); opacity: 0.5; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+.test-mode-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.test-mode-indicator.timed-mode {
+  background-color: var(--primary-color-transparent, rgba(255, 153, 0, 0.1));
+  color: var(--primary-color, #ff9900);
+  border: 1px solid var(--primary-color-light, rgba(255, 153, 0, 0.3));
+}
+
+.test-mode-indicator .mode-label {
+  display: inline-block;
+}
+
+.test-mode-indicator .mode-duration {
+  font-weight: 600;
+}

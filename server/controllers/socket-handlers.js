@@ -6,6 +6,7 @@ const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
 const UserModel = require('../models/user');
 const analytics = require('../utils/analytics');
+const { createTimedTestSnippet } = require('../utils/timed-test');
 
 // Store active races in memory
 const activeRaces = new Map();
@@ -99,9 +100,9 @@ const initialize = (io) => {
     });
     
     // Handle joining practice mode
-    socket.on('practice:join', async () => {
+    socket.on('practice:join', async (options = {}) => {
       try {
-        console.log(`User ${netid} joining practice mode`);
+        console.log(`User ${netid} joining practice mode with options:`, options);
         
         // Check if player is already in a race
         let alreadyInRace = false;
@@ -132,19 +133,35 @@ const initialize = (io) => {
           }
         }
         
-        // Get a random snippet
-        const snippet = await SnippetModel.getRandom();
+        let snippet;
+        let lobby;
         
-        if (!snippet) {
-          console.error('Failed to load snippet for practice mode');
-          socket.emit('error', { message: 'Failed to load snippet' });
-          return;
+        // Handle timed test mode
+        if (options.testMode === 'timed' && options.testDuration) {
+          // Create a timed test snippet
+          const duration = parseInt(options.testDuration) || 30;
+          snippet = createTimedTestSnippet(duration);
+          
+          // Since this is a virtual snippet, create a practice lobby without a snippet ID
+          lobby = await RaceModel.create('practice', null);
+          
+          console.log(`Created timed test (${duration}s) for practice mode`);
+        } else {
+          // Standard snippet mode - get a random snippet from database
+          snippet = await SnippetModel.getRandom();
+          
+          if (!snippet) {
+            console.error('Failed to load snippet for practice mode');
+            socket.emit('error', { message: 'Failed to load snippet' });
+            return;
+          }
+          
+          console.log(`Loaded snippet ID ${snippet.id} for practice mode`);
+          
+          // Create a practice lobby
+          lobby = await RaceModel.create('practice', snippet.id);
         }
         
-        console.log(`Loaded snippet ID ${snippet.id} for practice mode`);
-        
-        // Create a practice lobby
-        const lobby = await RaceModel.create('practice', snippet.id);
         console.log(`Created practice lobby with code ${lobby.code}`);
         
         // Join the socket room
@@ -166,7 +183,9 @@ const initialize = (io) => {
           code: lobby.code,
           snippet: {
             id: snippet.id,
-            text: snippet.text
+            text: snippet.text,
+            is_timed_test: snippet.is_timed_test || false,
+            duration: snippet.duration || null
           },
           status: 'waiting',
           type: 'practice',
@@ -180,7 +199,9 @@ const initialize = (io) => {
           lobbyId: lobby.id,
           snippet: {
             id: snippet.id,
-            text: snippet.text
+            text: snippet.text,
+            is_timed_test: snippet.is_timed_test || false,
+            duration: snippet.duration || null
           }
         });
       } catch (err) {

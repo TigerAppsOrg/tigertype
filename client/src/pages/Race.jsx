@@ -19,12 +19,14 @@ function Race() {
     setPlayerReady,
     resetRace,
     dismissInactivityWarning,
-    dismissInactivityKick
+    dismissInactivityKick,
+    setRaceState,
+    loadNewSnippet
   } = useRace();
   
   // Test configuration states
   const [testMode, setTestMode] = useState('snippet');
-  const [testDuration, setTestDuration] = useState(30);
+  const [testDuration, setTestDuration] = useState(15);
   const [snippetDifficulty, setSnippetDifficulty] = useState('');
   const [snippetType, setSnippetType] = useState('');
   const [snippetDepartment, setSnippetDepartment] = useState('all');
@@ -85,6 +87,8 @@ function Race() {
             setSnippetDifficulty={setSnippetDifficulty}
             setSnippetType={setSnippetType}
             setSnippetDepartment={setSnippetDepartment}
+            setRaceState={setRaceState}
+            loadNewSnippet={loadNewSnippet}
           />
         )}
         
