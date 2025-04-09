@@ -47,6 +47,7 @@ function Typing({
   const tipContentRef = useRef(TYPING_TIPS[tipIndex]);
   const [isShaking, setIsShaking] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
+  const tabActionInProgressRef = useRef(false);
   
   // Use testMode and testDuration for timed tests if provided
   useEffect(() => {
@@ -266,15 +267,32 @@ function Typing({
     const handleKeyDown = (e) => {
       if (raceState.type !== 'practice') return;
       
-      // Tab: Load new snippet
+      // Tab: Load new snippet - without using a timer but ensuring only one request
       if (e.key === 'Tab') {
         e.preventDefault();
-        // Clear input immediately to prevent visual artifacts
+        
+        // If a tab action is already in progress, skip this one
+        if (tabActionInProgressRef.current) {
+          return;
+        }
+        
+        // Set flag to prevent additional calls
+        tabActionInProgressRef.current = true;
+        
+        // Clear input immediately
         setInput('');
         if (inputRef.current) {
           inputRef.current.value = '';
         }
+        
+        // Request new snippet
         loadNewSnippet();
+        
+        // Reset the flag after the operation completes
+        // This is better than an arbitrary timeout
+        setTimeout(() => {
+          tabActionInProgressRef.current = false;
+        }, 100);
       }
       
       // Escape: Restart current snippet

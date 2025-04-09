@@ -100,11 +100,48 @@ function TestConfigurator({
     }
   };
 
+  // Handle duration changes - immediately update and reload if in timed mode
+  const handleDurationChange = (duration) => {
+    // First update the duration state
+    setTestDuration(duration);
+    
+    // If we're in timed mode, update raceState and reload the test
+    if (testMode === 'timed') {
+      setRaceState(prev => ({
+        ...prev,
+        timedTest: {
+          ...prev.timedTest,
+          enabled: true,
+          duration: duration
+        }
+      }));
+      
+      // Reload with the new duration
+      setTimeout(() => {
+        loadNewSnippet && loadNewSnippet();
+      }, 0);
+    }
+  };
+
   const renderButton = (value, state, setter, label, icon = null, isFunctional = true) => (
     <button
       key={value}
       className={`config-button ${state === value ? 'active' : ''} ${!isFunctional ? 'non-functional' : ''} ${icon ? 'icon-button' : ''}`}
-      onClick={() => isFunctional && (value === 'timed' || value === 'snippet' ? handleModeChange(value, setter) : setter(value))}
+      onClick={() => {
+        if (!isFunctional) return;
+        
+        // Handle different types of buttons
+        if (value === 'timed' || value === 'snippet') {
+          // Mode buttons
+          handleModeChange(value, setter);
+        } else if (setter === setTestDuration) {
+          // Duration buttons
+          handleDurationChange(value);
+        } else {
+          // Other buttons (department, etc.)
+          setter(value);
+        }
+      }}
       title={!isFunctional ? 'Filter coming soon!' : label || value}
       aria-label={label || value}
     >
