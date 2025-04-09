@@ -302,11 +302,14 @@ export const RaceProvider = ({ children }) => {
     if (!socket || !connected) return;
     console.log('Joining practice mode...');
     
+    // Use current state values, not potentially stale ones from closure
+    const currentRaceState = { ...raceState };
+    
     // Pass test configuration when joining practice mode
     const options = {
-      testMode: raceState.timedTest?.enabled ? 'timed' : 'snippet',
-      testDuration: raceState.timedTest?.duration || 15,
-      snippetFilters: raceState.snippetFilters
+      testMode: currentRaceState.timedTest?.enabled ? 'timed' : 'snippet',
+      testDuration: currentRaceState.timedTest?.duration || 15,
+      snippetFilters: currentRaceState.snippetFilters
     };
     
     socket.emit('practice:join', options);
@@ -341,23 +344,29 @@ export const RaceProvider = ({ children }) => {
       lockedPosition: 0
     });
     
-    setRaceState(prev => ({
-      ...prev,
-      startTime: null,
-      inProgress: false,
-      completed: false,
-      manuallyStarted: false
-    }));
-    
-    // Request a new practice snippet with test configuration
-    const options = {
-      testMode: raceState.timedTest?.enabled ? 'timed' : 'snippet',
-      testDuration: raceState.timedTest?.duration || 15,
-      snippetFilters: raceState.snippetFilters
-    };
-    
-    console.log('Requesting new practice snippet with options:', options);
-    socket.emit('practice:join', options);
+    setRaceState(prev => {
+      // Get current race state
+      const currentState = {
+        ...prev,
+        startTime: null,
+        inProgress: false,
+        completed: false,
+        manuallyStarted: false
+      };
+      
+      // Request a new practice snippet with test configuration 
+      // using the current state values (not stale ones)
+      const options = {
+        testMode: currentState.timedTest?.enabled ? 'timed' : 'snippet',
+        testDuration: currentState.timedTest?.duration || 15,
+        snippetFilters: currentState.snippetFilters
+      };
+      
+      console.log('Requesting new practice snippet with options:', options);
+      socket.emit('practice:join', options);
+      
+      return currentState;
+    });
   };
 
   // Handle text input, enforce word locking

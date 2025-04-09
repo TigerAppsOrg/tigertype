@@ -61,10 +61,9 @@ function TestConfigurator({
 
   // Enhanced button handler to immediately apply mode changes
   const handleModeChange = (value, setter) => {
-    setter(value);
-    
-    // If switching to timed mode, immediately enable it in the race context
+    // First set the raceState.timedTest.enabled property
     if (value === 'timed') {
+      // If switching to timed mode, enable it first
       setRaceState(prev => ({
         ...prev,
         timedTest: {
@@ -73,11 +72,16 @@ function TestConfigurator({
         }
       }));
       
-      // Also request a new timed test
-      loadNewSnippet && loadNewSnippet();
+      // Then update the UI state to match
+      setter(value);
+      
+      // Finally request a new timed test
+      setTimeout(() => {
+        loadNewSnippet && loadNewSnippet();
+      }, 0);
     } 
-    // If switching to snippet mode, immediately disable timed mode
     else if (value === 'snippet') {
+      // If switching to snippet mode, disable timed mode first
       setRaceState(prev => ({
         ...prev,
         timedTest: {
@@ -86,8 +90,13 @@ function TestConfigurator({
         }
       }));
       
-      // Also request a new snippet
-      loadNewSnippet && loadNewSnippet();
+      // Then update the UI state
+      setter(value);
+      
+      // Finally request a new snippet
+      setTimeout(() => {
+        loadNewSnippet && loadNewSnippet();
+      }, 0);
     }
   };
 

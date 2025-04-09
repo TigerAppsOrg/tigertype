@@ -50,30 +50,29 @@ function Typing({
   
   // Use testMode and testDuration for timed tests if provided
   useEffect(() => {
-    if (raceState.type === 'practice' && testMode === 'timed' && testDuration) {
-      // Only update if there's a change in mode or duration to avoid unnecessary rerenders
-      if (!raceState.timedTest || raceState.timedTest.duration !== testDuration) {
-        setRaceState(prev => ({
-          ...prev,
-          timedTest: {
-            enabled: true,
-            duration: testDuration,
-          }
-        }));
-      }
-    } else if (raceState.type === 'practice' && testMode === 'snippet') {
-      // Disable timed test when in snippet mode
-      if (raceState.timedTest && raceState.timedTest.enabled) {
-        setRaceState(prev => ({
-          ...prev,
-          timedTest: {
-            enabled: false,
-            duration: 15,
-          }
-        }));
-      }
+    if (raceState.type !== 'practice') return;
+    
+    // Mode-specific updates
+    if (testMode === 'timed') {
+      // Enable timed test mode and set duration
+      setRaceState(prev => ({
+        ...prev,
+        timedTest: {
+          enabled: true,
+          duration: testDuration || 15,
+        }
+      }));
+    } else if (testMode === 'snippet') {
+      // Disable timed test mode
+      setRaceState(prev => ({
+        ...prev,
+        timedTest: {
+          enabled: false,
+          duration: 15,
+        }
+      }));
     }
-  }, [testMode, testDuration, raceState.type, setRaceState, raceState.timedTest]);
+  }, [testMode, testDuration, raceState.type, setRaceState]);
 
   // Use snippet filters if provided
   useEffect(() => {
