@@ -296,17 +296,13 @@ function Typing({
     const handleKeyDown = (e) => {
       if (raceState.type !== 'practice') return;
       
-      // Tab: Load new snippet - without using a timer but ensuring only one request
+      // Tab: Load new snippet
       if (e.key === 'Tab') {
         e.preventDefault();
         
-        // If a tab action is already in progress, skip this one
-        if (tabActionInProgressRef.current) {
-          return;
-        }
-        
-        // Set flag to prevent additional calls
-        tabActionInProgressRef.current = true;
+        // IMPORTANT: Only execute this event on keydown, not keypress or other events
+        // This is the key fix to prevent duplicate lobbies without limiting spam ability
+        if (e.type !== 'keydown') return;
         
         // Clear input immediately
         setInput('');
@@ -316,12 +312,6 @@ function Typing({
         
         // Request new snippet
         loadNewSnippet();
-        
-        // Reset the flag after the operation completes
-        // This is better than an arbitrary timeout
-        setTimeout(() => {
-          tabActionInProgressRef.current = false;
-        }, 100);
       }
       
       // Escape: Restart current snippet
@@ -342,10 +332,10 @@ function Typing({
       }
     };
 
-    // Add event listener for capturing all events
-    document.addEventListener('keydown', handleKeyDown);
+    // Add event listener for capturing ONLY the keydown event
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
   }, [raceState.type, loadNewSnippet, setRaceState]);
 

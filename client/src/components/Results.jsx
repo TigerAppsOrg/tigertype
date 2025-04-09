@@ -68,23 +68,35 @@ function Results() {
           <h3>Practice Results</h3>
           
           <div className="stat-item">
-            <div className="stat-label">Time Completed:</div>
+            <div className="stat-label">
+              <i className="bi bi-clock"></i>
+              Time Completed:
+            </div>
             <div className="stat-value">{result.completion_time?.toFixed(2)}s</div>
           </div>
           
           <div className="stat-item">
-            <div className="stat-label">Accuracy:</div>
+            <div className="stat-label">
+              <i className="bi bi-check-circle"></i>
+              Accuracy:
+            </div>
             <div className="stat-value">{result.accuracy?.toFixed(2)}%</div>
           </div>
           
           <div className="stat-item">
-            <div className="stat-label">Raw WPM:</div>
+            <div className="stat-label">
+              <i className="bi bi-speedometer"></i>
+              Raw WPM:
+            </div>
             <div className="stat-value">{rawWpm?.toFixed(2)}</div>
           </div>
           
           <div className="stat-item">
-            <div className="stat-label">Adjusted WPM:</div>
-            <div className="stat-value">{adjustedWpm?.toFixed(2)}</div>
+            <div className="stat-label">
+              <i className="bi bi-lightning"></i>
+              Adjusted WPM:
+            </div>
+            <div className="stat-value highlight">{adjustedWpm?.toFixed(2)}</div>
           </div>
 
           <div className="keyboard-shortcuts">
@@ -105,23 +117,35 @@ function Results() {
           <h3>Practice Results</h3>
           
           <div className="stat-item">
-            <div className="stat-label">Time Completed:</div>
+            <div className="stat-label">
+              <i className="bi bi-clock"></i>
+              Time Completed:
+            </div>
             <div className="stat-value">{elapsedSeconds.toFixed(2)}s</div>
           </div>
           
           <div className="stat-item">
-            <div className="stat-label">Accuracy:</div>
+            <div className="stat-label">
+              <i className="bi bi-check-circle"></i>
+              Accuracy:
+            </div>
             <div className="stat-value">{typingState.accuracy.toFixed(2)}%</div>
           </div>
           
           <div className="stat-item">
-            <div className="stat-label">Raw WPM:</div>
+            <div className="stat-label">
+              <i className="bi bi-speedometer"></i>
+              Raw WPM:
+            </div>
             <div className="stat-value">{rawWpm.toFixed(2)}</div>
           </div>
           
           <div className="stat-item">
-            <div className="stat-label">Adjusted WPM:</div>
-            <div className="stat-value">{adjustedWpm.toFixed(2)}</div>
+            <div className="stat-label">
+              <i className="bi bi-lightning"></i>
+              Adjusted WPM:
+            </div>
+            <div className="stat-value highlight">{adjustedWpm.toFixed(2)}</div>
           </div>
 
           <div className="keyboard-shortcuts">
@@ -135,7 +159,12 @@ function Results() {
     return (
       <div className="practice-results">
         <h3>Practice Results</h3>
-        <p>Waiting for results or results not available...</p>
+        <div className="loading-results">
+          <div className="spinner-border text-orange" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p>Waiting for results...</p>
+        </div>
       </div>
     );
   };

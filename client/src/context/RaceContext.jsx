@@ -344,29 +344,30 @@ export const RaceProvider = ({ children }) => {
       lockedPosition: 0
     });
     
-    setRaceState(prev => {
-      // Get current race state
-      const currentState = {
-        ...prev,
-        startTime: null,
-        inProgress: false,
-        completed: false,
-        manuallyStarted: false
-      };
-      
-      // Request a new practice snippet with test configuration 
-      // using the current state values (not stale ones)
-      const options = {
-        testMode: currentState.timedTest?.enabled ? 'timed' : 'snippet',
-        testDuration: currentState.timedTest?.duration || 15,
-        snippetFilters: currentState.snippetFilters
-      };
-      
-      console.log('Requesting new practice snippet with options:', options);
-      socket.emit('practice:join', options);
-      
-      return currentState;
-    });
+    // Use a local variable to capture current state rather than using stale closure values
+    // This is the key fix: we'll emit the socket event only once, outside of the setState function
+    const currentState = {
+      ...raceState,
+      startTime: null,
+      inProgress: false,
+      completed: false,
+      manuallyStarted: false
+    };
+    
+    // Request a new practice snippet with test configuration
+    const options = {
+      testMode: currentState.timedTest?.enabled ? 'timed' : 'snippet',
+      testDuration: currentState.timedTest?.duration || 15,
+      snippetFilters: currentState.snippetFilters
+    };
+    
+    console.log('Requesting new practice snippet with options:', options);
+    
+    // EMIT ONLY ONCE, outside of setRaceState to prevent duplicate emissions
+    socket.emit('practice:join', options);
+    
+    // Now update state without another emit
+    setRaceState(currentState);
   };
 
   // Handle text input, enforce word locking
