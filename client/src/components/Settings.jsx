@@ -6,7 +6,7 @@ function Settings({ isOpen, onClose }) {
     return sessionStorage.getItem('preferredFont') || 'Inter, sans-serif';
   });
 
-  const [defaultCursor, setDefaultCursor] = useState("true");
+  const [defaultCursor, setDefaultCursor] = useState(true);
 
   // Apply font when component mounts or font changes
   useEffect(() => {
