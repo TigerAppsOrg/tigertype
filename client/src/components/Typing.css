@@ -235,17 +235,18 @@
 
 .current {
   position: relative;
-  background-color: none; /* temporary */
+  background-color: var(--default-cursor);
   border-radius: 2px;
   color: white;
   animation: blink 1s infinite;
 }
 
 .current::before {
+  visibility: var(--line-cursor);
   position: absolute;
   content: "|";
   color: #5a6e8c;
-  right: 0.44rem;
+  right: 0.4rem;
   padding: 0;
 }
 

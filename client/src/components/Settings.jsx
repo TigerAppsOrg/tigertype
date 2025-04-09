@@ -6,9 +6,7 @@ function Settings({ isOpen, onClose }) {
     return sessionStorage.getItem('preferredFont') || 'Inter, sans-serif';
   });
 
-  const [displayBlockCursor, setDisplayBlockCursor] = useState(() => {
-    return sessionStorage.getItem('blockCursor') || '#3a506b';
-  });
+  const [defaultCursor, setDefaultCursor] = useState("true");
 
   // Apply font when component mounts or font changes
   useEffect(() => {
@@ -17,9 +15,11 @@ function Settings({ isOpen, onClose }) {
   }, [whichFont]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--display-block', displayBlockCursor);
-    sessionStorage.setItem('blockCursor', displayBlockCursor);
-  }, [displayBlockCursor])
+    const color = defaultCursor ? "#3a506b" : "none";
+    const line = defaultCursor ? "hidden" : "visible";
+    document.documentElement.style.setProperty('--default-cursor', color);
+    document.documentElement.style.setProperty('--line-cursor', line);
+  }, [defaultCursor]);
 
   if (!isOpen) return null;
 
@@ -28,13 +28,9 @@ function Settings({ isOpen, onClose }) {
     setWhichFont(newFont);
   };
 
-  const handleDisplayBlock = (e) => {
-    if (e.target.checked === true) {
-      setDisplayBlockCursor('#3a506b');
-    } else {
-      setDisplayBlockCursor('none');
-    }
-  }
+  const handleDefaultCursor = (e) => {
+    setDefaultCursor(!defaultCursor);
+  };
 
   return (
     <div className="settings-overlay">
@@ -58,6 +54,11 @@ function Settings({ isOpen, onClose }) {
             <option value="'Roboto', sans-serif">Roboto</option>
             <option value="'Open Sans', sans-serif">Open Sans</option>
           </select>
+          <br />
+          <label>
+            <input type='checkbox' checked={defaultCursor} onChange={handleDefaultCursor} />
+            Block Cursor
+          </label>
         </div>
       </div>
     </div>
