@@ -199,21 +199,67 @@
   text-decoration: underline wavy rgba(255, 65, 47, 0.55);
 }
 
+.shake-animation {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+.error-message {
+  position: absolute;
+  top: -3vh;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 65, 47, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  pointer-events: none;
+  animation: fadeInOut 2s forwards;
+  z-index: 10;
+  box-shadow: 0 2px 10px rgba(255, 65, 47, 0.5);
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, 5px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  80% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -5px); }
+}
 
 .current {
   position: relative;
-  background-color: var(--display-block);
+  background-color: var(--default-cursor);
   border-radius: 2px;
   color: white;
   animation: blink 1s infinite;
 }
 
 .current::before {
+  visibility: var(--line-cursor);
   position: absolute;
   content: "|";
   color: #5a6e8c;
-  right: 0.44rem;
-  padding: 0;
+  right: 0.4rem;
+  animation: slide 0.125s ease-in-out;
+}
+
+@keyframes slide {
+  0% { right: 1.2rem; }
+  12.5% { right: 1.1rem; }
+  25% { right: 1.0rem; }
+  37.5% { right: 0.9rem; }
+  50% { right: 0.8rem; }
+  62.5% { right: 0.7rem; }
+  75% { right: 0.6rem; }
+  87.5% { right: 0.5rem; }
+  100% { right: 0.4rem; }
 }
 
 @keyframes blink {
@@ -284,3 +330,4 @@
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.1); opacity: 0.5; }
   100% { transform: scale(1); opacity: 1; }
+}
