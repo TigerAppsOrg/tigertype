@@ -247,6 +247,19 @@
   content: "|";
   color: #5a6e8c;
   right: 0.4rem;
+  animation: slide 0.125s ease-in-out;
+}
+
+@keyframes slide {
+  0% { right: 1.2rem; }
+  12.5% { right: 1.1rem; }
+  25% { right: 1.0rem; }
+  37.5% { right: 0.9rem; }
+  50% { right: 0.8rem; }
+  62.5% { right: 0.7rem; }
+  75% { right: 0.6rem; }
+  87.5% { right: 0.5rem; }
+  100% { right: 0.4rem; }
 }
 
 @keyframes blink {
