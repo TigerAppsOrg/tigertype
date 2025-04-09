@@ -7,11 +7,7 @@
     height: 4rem;
     width: 10rem;
     align-items: center;
-<<<<<<< Updated upstream
-    background-color: var(--background-color);
-=======
     background-color: var(--secondary-color);
->>>>>>> Stashed changes
     padding: 0.5rem 1rem;
     border-radius: 8px;
   }

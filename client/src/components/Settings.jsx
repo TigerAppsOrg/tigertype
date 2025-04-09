@@ -73,7 +73,7 @@ function Settings({ isOpen, onClose }) {
           </select>
 
           <p>Typing Sound</p>
-          <div className="sound-toggle">
+          <div className="toggle">
             <label className="switch">
               <input
                 type="checkbox"
@@ -86,7 +86,7 @@ function Settings({ isOpen, onClose }) {
           </div>
 
           <p>Light Mode</p>
-            <div className="sound-toggle">
+            <div className="toggle">
               <label className="switch">
                 <input
                   type="checkbox"
