@@ -248,7 +248,7 @@
   transform: scale(1.8, 1);
   color: var(--princeton-orange);
   right: 0.4rem;
-  animation: slide 0.125s ease-in-out;
+  animation: slide 0.05s ease-in-out;
 }
 
 @keyframes slide {
