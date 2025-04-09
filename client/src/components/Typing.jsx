@@ -26,7 +26,13 @@ const TYPING_TIPS = [
   "Zak Kincaid is an opp"
 ];
 
-function Typing() {
+function Typing({ 
+  testMode,
+  testDuration,
+  snippetDifficulty,
+  snippetType,
+  snippetDepartment
+}) {
   const { raceState, setRaceState, typingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet } = useRace();
   const { socket } = useSocket();
   const [input, setInput] = useState('');
@@ -41,6 +47,48 @@ function Typing() {
   const tipContentRef = useRef(TYPING_TIPS[tipIndex]);
   const [isShaking, setIsShaking] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
+  
+  // Use testMode and testDuration for timed tests if provided
+  useEffect(() => {
+    if (raceState.type === 'practice' && testMode === 'timed' && testDuration) {
+      // Only update if there's a change in mode or duration to avoid unnecessary rerenders
+      if (!raceState.timedTest || raceState.timedTest.duration !== testDuration) {
+        setRaceState(prev => ({
+          ...prev,
+          timedTest: {
+            enabled: true,
+            duration: testDuration,
+          }
+        }));
+      }
+    } else if (raceState.type === 'practice' && testMode === 'snippet') {
+      // Disable timed test when in snippet mode
+      if (raceState.timedTest && raceState.timedTest.enabled) {
+        setRaceState(prev => ({
+          ...prev,
+          timedTest: {
+            enabled: false,
+            duration: testDuration,
+          }
+        }));
+      }
+    }
+  }, [testMode, testDuration, raceState.type, setRaceState, raceState.timedTest]);
+
+  // Use snippet filters if provided
+  useEffect(() => {
+    if (raceState.type === 'practice' && snippetType && snippetDifficulty) {
+      // Update snippet filters in race state
+      setRaceState(prev => ({
+        ...prev,
+        snippetFilters: {
+          difficulty: snippetDifficulty || 'all',
+          type: snippetType || 'all',
+          department: snippetDepartment || 'all'
+        }
+      }));
+    }
+  }, [snippetDifficulty, snippetType, snippetDepartment, raceState.type, setRaceState]);
   
   // Rotate through random tips every 5 seconds before race starts
   useEffect(() => {

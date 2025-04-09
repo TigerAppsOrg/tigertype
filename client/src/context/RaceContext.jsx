@@ -72,7 +72,16 @@ export const RaceProvider = ({ children }) => {
     inProgress: false,      // Whether the race is currently in progress
     completed: false,       // Whether the race has been completed
     results: [],            // Array of objects with netid, wpm, accuracy, completion_time
-    manuallyStarted: false  // Flag to track if practice mode was manually started
+    manuallyStarted: false, // Flag to track if practice mode was manually started
+    timedTest: {            // Configuration for timed tests
+      enabled: false,
+      duration: 30          // Default duration in seconds
+    },
+    snippetFilters: {       // Filters for snippets
+      difficulty: 'all',
+      type: 'all',
+      department: 'all'
+    }
   });
   
   // Local typing state
@@ -559,7 +568,16 @@ export const RaceProvider = ({ children }) => {
       inProgress: false,
       completed: false,
       results: [],
-      manuallyStarted: false
+      manuallyStarted: false,
+      timedTest: {
+        enabled: false,
+        duration: 30
+      },
+      snippetFilters: {
+        difficulty: 'all',
+        type: 'all',
+        department: 'all'
+      }
     });
     
     setTypingState({

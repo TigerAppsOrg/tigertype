@@ -6,6 +6,7 @@ import Typing from '../components/Typing';
 import Results from '../components/Results';
 import PlayerStatusBar from '../components/PlayerStatusBar';
 import Modal from '../components/Modal';
+import TestConfigurator from '../components/TestConfigurator';
 import './Race.css';
 
 function Race() {
@@ -20,6 +21,13 @@ function Race() {
     dismissInactivityWarning,
     dismissInactivityKick
   } = useRace();
+  
+  // Test configuration states
+  const [testMode, setTestMode] = useState('snippet');
+  const [testDuration, setTestDuration] = useState(30);
+  const [snippetDifficulty, setSnippetDifficulty] = useState('');
+  const [snippetType, setSnippetType] = useState('');
+  const [snippetDepartment, setSnippetDepartment] = useState('all');
   
   // Handle back button
   const handleBack = () => {
@@ -64,6 +72,22 @@ function Race() {
           )}
         </div>
         
+        {/* TestConfigurator - render only in practice mode */}
+        {raceState.type === 'practice' && (
+          <TestConfigurator 
+            testMode={testMode}
+            testDuration={testDuration}
+            snippetDifficulty={snippetDifficulty}
+            snippetType={snippetType}
+            snippetDepartment={snippetDepartment}
+            setTestMode={setTestMode}
+            setTestDuration={setTestDuration}
+            setSnippetDifficulty={setSnippetDifficulty}
+            setSnippetType={setSnippetType}
+            setSnippetDepartment={setSnippetDepartment}
+          />
+        )}
+        
         <div className="race-content">
           <div className="race-info">
             <div className="race-content-container">
@@ -71,7 +95,15 @@ function Race() {
               {/* Show Typing if:
                   - It's practice mode OR
                   - It's multiplayer AND not completed */}
-              {(raceState.type === 'practice' || !raceState.completed) && <Typing />}
+              {(raceState.type === 'practice' || !raceState.completed) && (
+                <Typing 
+                  testMode={raceState.type === 'practice' ? testMode : null}
+                  testDuration={raceState.type === 'practice' ? testDuration : null}
+                  snippetDifficulty={raceState.type === 'practice' ? snippetDifficulty : null}
+                  snippetType={raceState.type === 'practice' ? snippetType : null}
+                  snippetDepartment={raceState.type === 'practice' ? snippetDepartment : null}
+                />
+              )}
 
               {/* Conditionally render Results */}
               {/* Show Results if race is completed */}
