@@ -130,6 +130,8 @@
   white-space: pre-wrap;
   position: relative;
   min-height: 150px;
+  max-height: 10vh;
+  overflow-y: auto;
   letter-spacing: 0.5px;
   border-left: 4px solid #F58025;
   margin-bottom: 1rem;
@@ -139,6 +141,8 @@
   color: rgba(255, 255, 255, 0.325);
   font-family: 'Fira Code', monospace;
   text-align: justify;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
 .typing-input-container {

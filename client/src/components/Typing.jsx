@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
+import { useAuth } from '../context/AuthContext';
 import './Typing.css';
 
 // Typing Tips shown before race countdown start
@@ -35,6 +36,7 @@ function Typing({
 }) {
   const { raceState, setRaceState, typingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet } = useRace();
   const { socket } = useSocket();
+  const { user } = useAuth();
   const [input, setInput] = useState('');
   const inputRef = useRef(null);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -158,6 +160,33 @@ function Typing({
       }
     };
   }, [socket, raceState.type, raceState.inProgress, raceState.completed]);
+  
+  // Listen for text updates in timed mode
+  useEffect(() => {
+    if (!socket || !raceState.snippet?.is_timed_test) return;
+    
+    const handleTextUpdate = (data) => {
+      if (data.code === raceState.code) {
+        console.log('Received new words for timed test');
+        
+        // Update the snippet text with the new combined text
+        setRaceState(prev => ({
+          ...prev,
+          snippet: {
+            ...prev.snippet,
+            text: data.text
+          }
+        }));
+      }
+    };
+    
+    // Listen for text updates
+    socket.on('timed:text_update', handleTextUpdate);
+    
+    return () => {
+      socket.off('timed:text_update', handleTextUpdate);
+    };
+  }, [socket, raceState.code, raceState.snippet?.is_timed_test, setRaceState]);
   
   // Clean up on unmount
   useEffect(() => {
@@ -425,6 +454,18 @@ function Typing({
     if (raceState.inProgress) {
       const text = raceState.snippet?.text || '';
       
+      // For timed tests, check if we need to get more words
+      // Request when the user has typed about 90% of the way through the text
+      if (raceState.snippet?.is_timed_test && 
+          newInput.length > text.length * 0.75 && 
+          !raceState.completed) {
+        // Request fewer words to be appended to the current text
+        socket.emit('timed:more_words', {
+          code: raceState.code,
+          wordCount: 1 // Request 1 more words
+        });
+      }
+      
       // Prevent typing past the end of the snippet
       if (newInput.length >= text.length + 1) {
         return;
@@ -512,6 +553,32 @@ function Typing({
     return components;
   };
     
+  // Auto-scroll to keep cursor in view
+  useEffect(() => {
+    if (raceState.inProgress && input.length > 0) {
+      // Find the current element (the character the user is about to type)
+      const currentElement = document.querySelector('.current');
+      if (currentElement) {
+        // Get the container
+        const container = document.querySelector('.snippet-display');
+        if (container) {
+          // Calculate position to keep the current element in the middle of the viewport
+          const containerRect = container.getBoundingClientRect();
+          const currentRect = currentElement.getBoundingClientRect();
+          
+          // Get the relative position within the container
+          const relativeTop = currentRect.top - containerRect.top;
+          
+          // Check if the element is getting close to the bottom of the viewport
+          if (relativeTop > containerRect.height * 0.6) {
+            // Scroll to keep the current element at 1/3 of the container height
+            container.scrollTop = container.scrollTop + (relativeTop - containerRect.height / 3);
+          }
+        }
+      }
+    }
+  }, [input.length, raceState.inProgress]);
+  
   // Render stats placeholder (before practice starts)
   const getStatsPlaceholder = () => {
     // Restore original placeholder structure and class name
@@ -638,39 +705,38 @@ function Typing({
   
   return (
     <>
-    <div className="stats-container">
-      {getStatsContent()}
-    </div>
-    
-    {/* Only show typing area (snippet + input) if race is NOT completed */}
-    {!raceState.completed && (
-        <div className="typing-area">
-          <div className={`snippet-display ${isShaking ? 'shake-animation' : ''}`}>
+      <div className="stats-container">
+        {getStatsContent()}
+      </div>
+      
+      {/* Only show typing area (snippet + input) if race is NOT completed */}
+      {!raceState.completed && (
+          <div className="typing-area">
+            {/* Render error message separately, positioned relative to typing-area */}
             {showErrorMessage && (
               <div className="error-message">Fix your mistake to continue</div>
             )}
-            {getHighlightedText()}
+            <div className={`snippet-display ${isShaking ? 'shake-animation' : ''}`}>
+              {getHighlightedText()}
+            </div>
+            <div className="typing-input-container">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={handleComponentInput}
+                onPaste={handlePaste}
+                disabled={(raceState.type !== 'practice' && !raceState.inProgress) || (raceState.type !== 'practice' && typingState.completed)}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+              />
+            </div>
           </div>
-          <div className="typing-input-container">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={handleComponentInput}
-              onPaste={handlePaste}
-              // Input is disabled based on non-practice conditions OR if practice is completed (but still focusable)
-              disabled={(raceState.type !== 'practice' && !raceState.inProgress) || (raceState.type !== 'practice' && typingState.completed)}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-          </div>
-        </div>
-    )}
+      )}
 
-    {/* Tooltip is rendered conditionally inside its function based on completion state */}
-    {renderPracticeTooltip()}
+      {renderPracticeTooltip()}
     </>
   );
 }

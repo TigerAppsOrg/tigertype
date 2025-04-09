@@ -111,15 +111,12 @@ function generateTimedText(wordCount = 100, options = {}) {
  * @returns {Object} Snippet object with the same structure as database snippets
  */
 function createTimedTestSnippet(duration = 15) {
-  // Average typing speed is ~40 WPM, so we generate enough words for the
-  // duration plus extra to ensure users don't run out of text
-  
-  // 40 WPM = 40 words per minute = 0.67 words per second
-  // Multiply by duration and add 50% extra words to be safe
-  const estimatedWordCount = Math.ceil(duration * 0.67 * 1.5);
+  // For the initial words, we'll generate enough for about 20 seconds of typing
+  // This ensures users will need to request more words frequently
+  const initialWordCount = 25;
   
   // Generate the text content - NO capitalization or punctuation for timed tests
-  const text = generateTimedText(estimatedWordCount, { 
+  const text = generateTimedText(initialWordCount, { 
     capitalize: false, 
     punctuation: false 
   });

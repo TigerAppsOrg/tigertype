@@ -6,7 +6,7 @@ const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
 const UserModel = require('../models/user');
 const analytics = require('../utils/analytics');
-const { createTimedTestSnippet } = require('../utils/timed-test');
+const { createTimedTestSnippet, generateTimedText } = require('../utils/timed-test');
 
 // Store active races in memory
 const activeRaces = new Map();
@@ -549,6 +549,49 @@ const initialize = (io) => {
 
       } catch (err) {
         console.error('Error handling race:result event:', err);
+      }
+    });
+    
+    // Handle requests for more words in timed tests
+    socket.on('timed:more_words', (data) => {
+      try {
+        const { code, wordCount = 20 } = data; // Default to 20 words
+        
+        // Check if race exists
+        const race = activeRaces.get(code);
+        if (!race || !race.snippet || !race.snippet.is_timed_test) {
+          console.log(`Invalid request for more words: race ${code} does not exist or is not a timed test`);
+          return;
+        }
+        
+        console.log(`Generating ${wordCount} more words for timed test in race ${code}`);
+        
+        // Generate additional words
+        const additionalText = generateTimedText(wordCount, {
+          capitalize: false,
+          punctuation: false
+        });
+        
+        // Add a space between existing text and new text if needed
+        let newText = race.snippet.text;
+        if (!newText.endsWith(' ')) {
+          newText += ' ';
+        }
+        newText += additionalText;
+        
+        // Update the race snippet
+        race.snippet.text = newText;
+        activeRaces.set(code, race);
+        
+        // Broadcast the updated text to all participants
+        io.to(code).emit('timed:text_update', {
+          code,
+          text: newText
+        });
+        
+        console.log(`Added ${wordCount} more words to timed test in race ${code}`);
+      } catch (err) {
+        console.error('Error generating more words for timed test:', err);
       }
     });
     
