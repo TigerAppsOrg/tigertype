@@ -16,11 +16,6 @@ function Settings({ isOpen, onClose }) {
   });
 
   const [defaultCursor, setDefaultCursor] = useState(true);
-  });
-
-  const [lightMode, setLightMode] = useState(() => {
-    return localStorage.getItem('lightMode') === 'true';
-  });
 
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
@@ -65,7 +60,7 @@ function Settings({ isOpen, onClose }) {
     document.documentElement.style.setProperty('--line-cursor', line);
   }, [defaultCursor]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {return null};
 
   const handleTypingFontChange = (e) => {
     const newFont = e.target.value;
