@@ -31,13 +31,13 @@ function Settings({ isOpen, onClose }) {
       '--hover-color', lightMode ? '#a2a2a2' : '#2a2a2a'
     );
     document.documentElement.style.setProperty(
-      '--type-container-color', lightMode ? '#dfdfdf' : '#121212'
+      '--type-container-color', lightMode ? '#dfdfdf' : '#1e1e1e'
     );
     document.documentElement.style.setProperty(
-      '--typing-color', lightMode ? 'black' : 'white'
+      '--typing-color', lightMode ? 'black' : '#ffffff53'
     );
     document.documentElement.style.setProperty(
-      '--container-color', lightMode ? '#f0f0f0' : '#121212'
+      '--container-color', lightMode ? '#ffffff' : '#121212'
     );
     localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
