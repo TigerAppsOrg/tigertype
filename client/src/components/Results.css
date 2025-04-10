@@ -3,18 +3,17 @@
     flex-direction: column;
     align-items: center;
     padding: 2rem;
-    background-color: var(--secondary-color);
     border-radius: 8px;
     min-height: 350px; /* change to be more responsive later */
     width: 100%;
     position: relative;
-    top: -5vh;
+    top: -10vh;
   }
   
   .results-container h2 {
     color: #F58025;
     margin-top: 0;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     font-size: 1.8rem;
   }
   
@@ -245,76 +244,70 @@
     color: #ccc;
   }
   
+  /* Practice results container - simplified */
   .practice-results {
-    width: 100%;
     max-width: 500px;
     display: flex;
     flex-direction: column;
-    background-color: #2a2a2a;
+    background-color: #222222;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     border: 1px solid rgba(245, 128, 37, 0.2);
-    margin-bottom: 1.5rem;
     position: relative;
     z-index: 5;
+    align-items: center;
   }
   
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
+  /* Hide the Practice Results heading as it's redundant with the main Results heading */
   .practice-results h3 {
-    text-align: center;
-    color: #F58025;
-    margin: 0;
-    padding: 1rem;
-    font-size: 1.6rem;
-    background-color: rgba(82, 59, 38, 0.6);
-    border-bottom: 1px solid rgba(245, 128, 37, 0.15);
+    display: none;
   }
   
-  .stat-item {
+  /* Practice result stat items - now vertical layout */
+  .practice-results .stat-item {
     display: flex;
-    justify-content: space-between;
-    padding: 0.85rem 1.25rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 1.25rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     transition: background-color 0.2s ease;
+    box-sizing: border-box;
+    text-align: center;
+    max-width: -webkit-fill-available;
+    width: -webkit-fill-available;
   }
   
-  .stat-item:hover {
+  .practice-results .stat-item:hover {
     background-color: rgba(255, 255, 255, 0.03);
   }
   
-  .stat-item:last-child {
+  .practice-results .stat-item:last-child {
     border-bottom: none;
   }
   
-  .stat-label {
+  .practice-results .stat-label {
     font-weight: bold;
     font-size: 1rem;
     color: rgba(255, 255, 255, 0.85);
     display: flex;
     align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    text-align: center;
   }
   
-  .stat-label i {
+  .practice-results .stat-label i {
     margin-right: 8px;
     font-size: 1.1rem;
     color: #F58025;
   }
   
-  .stat-value {
+  .practice-results .stat-value {
     color: #F58025;
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1.5rem;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
   
@@ -344,10 +337,11 @@
     box-shadow: 0 2px 8px rgba(245, 128, 37, 0.3);
   }
 
+  /* Keyboard shortcuts - better spacing */
   .keyboard-shortcuts {
     margin: 0;
     text-align: center;
-    padding: 0.75rem;
+    padding: 0.85rem;
     background-color: rgba(30, 30, 30, 0.6);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
@@ -357,7 +351,7 @@
     margin: 0;
     font-size: 0.9rem;
   }
-
+  
   .keyboard-shortcuts kbd {
     background-color: #333;
     border: 1px solid #555;
@@ -376,6 +370,37 @@
     background-color: #3a3a3a;
   }
   
+  /* Leaderboard button - improved spacing and visibility */
+  .leaderboard-shortcut-btn {
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    gap: 8px; 
+    width: calc(100% - 2.5rem); 
+    margin: 0.75rem auto 1.25rem;
+    padding: 0.85rem 1rem;
+    background-color: #3a3a3a;
+    color: #ccc;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .leaderboard-shortcut-btn:hover {
+    background-color: #F58025;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(245, 128, 37, 0.3);
+  }
+
+  .leaderboard-shortcut-btn i {
+    font-size: 1.1em;
+  }
+  
   /* Highlight highest value */
   .stat-value.highlight {
     color: #ffc107;
@@ -386,8 +411,8 @@
     content: '🏆';
     position: absolute;
     font-size: 0.9rem;
-    right: -20px;
-    top: 2px;
+    right: -25px;
+    top: 4px;
   }
 
   /* Avatar Modal Styles */
@@ -508,35 +533,4 @@
     color: #F58025;
     width: 2.5rem;
     height: 2.5rem;
-  }
-
-  /* Leaderboard shortcut button in practice results */
-  .leaderboard-shortcut-btn {
-    display: flex; /* Align icon and text */
-    align-items: center;
-    justify-content: center; /* Center content */
-    gap: 8px; /* Space between icon and text */
-    width: calc(100% - 2.5rem); /* Match padding */
-    margin: 1rem auto 0; /* Spacing */
-    padding: 0.7rem 1rem;
-    background-color: #3a3a3a; /* Darker button */
-    color: #ccc;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  }
-
-  .leaderboard-shortcut-btn:hover {
-    background-color: #F58025; /* Orange on hover */
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(245, 128, 37, 0.3);
-  }
-
-  .leaderboard-shortcut-btn i {
-    font-size: 1.1em; /* Slightly larger icon */
   }

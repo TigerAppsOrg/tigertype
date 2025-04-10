@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
-import { useAuth } from '../context/AuthContext';
 import playKeySound from './Sound.jsx';
 import './Settings.css';
+import { useAuth } from '../context/AuthContext';
 import './Typing.css';
 
 // Typing Tips shown before race countdown start
@@ -280,6 +280,8 @@ function Typing({
   }, [raceState.inProgress, typingState.completed, raceHandleInput, typingState.input]);
 
   // Prevents the user from unfocusing the input box
+  // Modify the unfocusing prevention effect so that you can click on settings,
+  // then autofocuses after closing the settings modal or clicking outside of it
   // Modify the unfocusing prevention effect so that you can click on settings,
   // then autofocuses after closing the settings modal or clicking outside of it
   useEffect(() => {
