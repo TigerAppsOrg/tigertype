@@ -109,16 +109,18 @@ function Settings({ isOpen, onClose }) {
             <option value="JetBrains Mono, monospace">JetBrains Mono</option>
             <option value="Monaco, monospace">Monaco</option>
           </select>
-          <br />
-          <label>
+          <p>Block Cursor</p>
+          <div className="toggle">
+            <label className="switch">
             <input 
                 className='cursor-setting' 
                 type='checkbox' 
                 checked={defaultCursor} 
                 onChange={handleDefaultCursor} />
-            Block Cursor
-          </label>
-
+                <span className="slider"></span>
+            </label>
+            <span className="sound-label">{defaultCursor ? ' On' : ' Off'}</span>
+          </div>
           <p>Typing Sound</p>
           <div className="toggle">
             <label className="switch">
