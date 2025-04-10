@@ -113,7 +113,7 @@ function generateTimedText(wordCount = 100, options = {}) {
 function createTimedTestSnippet(duration = 15) {
   // For the initial words, we'll generate enough for about 20 seconds of typing
   // This ensures users will need to request more words frequently
-  const initialWordCount = 25;
+  const initialWordCount = 100;
   
   // Generate the text content - NO capitalization or punctuation for timed tests
   const text = generateTimedText(initialWordCount, { 
