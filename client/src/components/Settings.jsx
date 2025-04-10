@@ -48,6 +48,14 @@ function Settings({ isOpen, onClose }) {
       '--correct-bg-color', 
       lightMode ? '#008080' : 'rgba(128, 239, 128, 0.55)'
     );
+    document.documentElement.style.setProperty(
+      '--incorrect-color',
+      lightMode ? '#FF0000' : 'rgba(255, 65, 47, 0.55)'
+    );
+    document.documentElement.style.setProperty(
+      '--incorrect-bg-color',
+      lightMode ? 'rgba(255,116,108, 0.30)' : 'rgba(255,116,108, 0.10)'
+    );
     localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
     localStorage.setItem('lightMode', lightMode);
