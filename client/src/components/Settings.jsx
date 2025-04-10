@@ -46,7 +46,7 @@ function Settings({ isOpen, onClose }) {
     );
     document.documentElement.style.setProperty(
       '--correct-bg-color', 
-      lightMode ? '#008080' : 'rgba(128, 239, 128, 0.55)'
+      lightMode ? '#0A970A' : 'rgba(128, 239, 128, 0.55)'
     );
     document.documentElement.style.setProperty(
       '--incorrect-color',
