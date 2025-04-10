@@ -158,6 +158,7 @@
 .typing-input-container {
   position: fixed;
   inset: 0px;
+  z-index: -1000;
 }
 
 .typing-input-container input {
@@ -205,8 +206,8 @@
 }
 
 .incorrect {
-  color: rgba(255, 65, 47, 0.55);
-  background-color: rgba(255,116,108, 0.10);
+  color: var(--incorrect-color)!important;
+  background-color: var(--incorrect-bg-color)!important;
   text-decoration: underline wavy rgba(255, 65, 47, 0.55);
 }
 
@@ -245,12 +246,28 @@
 }
 
 .current {
-  background-color: #3a506b;
+  position: relative;
+  background-color: var(--default-cursor);
   border-radius: 2px;
-  color: white !important;
+  color: var(--current-color)!important;
   animation: blink 1s infinite;
 }
-  
+
+.current::before {
+  visibility: var(--line-cursor);
+  position: absolute;
+  content: "|";
+  transform: scale(1.8, 1);
+  color: var(--princeton-orange);
+  right: 0.4rem;
+  animation: slide 0.05s ease-out;
+}
+
+@keyframes slide {
+  from { right: 0.7rem; }
+  to   { right: 0.4rem; }
+}
+
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
@@ -302,12 +319,12 @@
     font-size: 1rem;
     padding: 1.5rem;
   }
-  
+
   .typing-input-container input {
     font-size: 1rem;
     padding: 0.8rem;
   }
-  
+
   .stats {
     padding: 0.6rem 1rem;
     gap: 1.5rem;
