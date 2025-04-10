@@ -316,7 +316,17 @@ function Typing() {
   // Handle typing input with word locking
   const handleComponentInput = (e) => {
     const newInput = e.target.value;
+    const text = raceState.snippet?.text || '';
 
+    // Check if new character is correct
+    const isMovingForward = newInput.length > input.length;
+    const isCorrectCharacter = newInput[newInput.length - 1] === text[newInput.length - 1];
+
+    // Play sound if typing correctly (moved before practice mode check)
+    if (isMovingForward && isCorrectCharacter) {
+      playKeySound();
+    }
+    
     // For practice mode, start the race on first keypress
     if (raceState.type === 'practice' && !raceState.inProgress && !raceState.completed && newInput.length === 1) {
       // Update race state locally for practice mode
@@ -344,16 +354,6 @@ function Typing() {
     // Detect errors to trigger shake animation
     if (raceState.inProgress) {
       const text = raceState.snippet?.text || '';
-      
-    const isMovingForward = newInput.length > input.length;
-    const isCorrectCharacter = newInput[newInput.length - 1] === text[newInput.length - 1];
-    
-    // Only play sound when:
-    // 1. Input is getting longer (typing forward, not deleting)
-    // 2. The new character typed matches the expected character
-    if (isMovingForward && isCorrectCharacter) {
-      playKeySound();
-    }
 
       // Prevent typing past the end of the snippet
       if (newInput.length >= text.length + 1) {

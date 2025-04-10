@@ -39,6 +39,10 @@ function Settings({ isOpen, onClose }) {
     document.documentElement.style.setProperty(
       '--container-color', lightMode ? '#ffffff' : '#121212'
     );
+    document.documentElement.style.setProperty(
+      '--correct-bg-color', 
+      lightMode ? '#008080' : 'rgba(128, 239, 128, 0.55)'
+    );
     localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
     localStorage.setItem('lightMode', lightMode);

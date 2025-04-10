@@ -11,7 +11,7 @@
   margin-bottom: 1rem;
   display: flex;
   justify-content: center;
-  background-color: var(--type-container-color);
+  background-color: var(--container-color);
 }
 
 .stats {
@@ -195,7 +195,7 @@
 }
 
 .correct {
-  color: rgba(128, 239, 128, 0.55) !important;
+  color: var(--correct-bg-color)!important;
 }
 
 .incorrect {
