@@ -156,6 +156,7 @@
 .typing-input-container {
   position: fixed;
   inset: 0px;
+  display: none;
 }
 
 .typing-input-container input {
