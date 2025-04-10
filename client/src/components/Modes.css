@@ -6,7 +6,7 @@
   }
   
   .mode-box {
-    background-color: #1e1e1e;
+    background-color: var(--secondary-color);
     border-radius: 8px;
     padding: 2rem;
     display: flex;
@@ -33,7 +33,7 @@
   }
   
   .mode-box p {
-    color: #e0e0e0;
+    color: var(--mode-text-color);
     margin: 0;
   }
   

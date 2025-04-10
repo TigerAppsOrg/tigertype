@@ -2,21 +2,68 @@ import './Settings.css';
 import { useState, useEffect } from 'react';
 
 function Settings({ isOpen, onClose }) {
+
   const [whichFont, setWhichFont] = useState(() => {
-    return sessionStorage.getItem('preferredFont') || 'Inter, sans-serif';
+    return localStorage.getItem('preferredFont') || 'Fira Code, monospace';
   });
 
-  // Apply font when component mounts or font changes
+  const [typingSound, setTypingSound] = useState(() => {
+    return localStorage.getItem('typingSound') === 'true';
+  });
+
+  const [lightMode, setLightMode] = useState(() => {
+    return localStorage.getItem('lightMode') === 'true';
+  });
+
+  // Apply fonts when component mounts or fonts change
   useEffect(() => {
     document.documentElement.style.setProperty('--main-font', whichFont);
-    sessionStorage.setItem('preferredFont', whichFont);
-  }, [whichFont]);
+    document.documentElement.style.setProperty(
+      '--background-color', lightMode ? '#ffffff' : '#121212'
+    );
+    document.documentElement.style.setProperty(
+      '--secondary-color', lightMode ? '#f0f0f0' : '#1e1e1e'
+    );
+    document.documentElement.style.setProperty(
+      '--mode-text-color', lightMode ? '#1e1e1e' : '#e0e0e0'
+    );
+    document.documentElement.style.setProperty(
+      '--hover-color', lightMode ? '#a2a2a2' : '#2a2a2a'
+    );
+    document.documentElement.style.setProperty(
+      '--type-container-color', lightMode ? '#dfdfdf' : '#1e1e1e'
+    );
+    document.documentElement.style.setProperty(
+      '--typing-color', lightMode ? 'black' : '#ffffff53'
+    );
+    document.documentElement.style.setProperty(
+      '--container-color', lightMode ? '#ffffff' : '#121212'
+    );
+    document.documentElement.style.setProperty(
+      '--player-card-color', lightMode ? '#aeaeae' : '#2a2a2a'
+    );
+    document.documentElement.style.setProperty(
+      '--correct-bg-color', 
+      lightMode ? '#008080' : 'rgba(128, 239, 128, 0.55)'
+    );
+    localStorage.setItem('preferredFont', whichFont);
+    localStorage.setItem('typingSound', typingSound);
+    localStorage.setItem('lightMode', lightMode);
+  }, [whichFont, typingSound, lightMode]);
 
   if (!isOpen) return null;
 
-  const handleFontChange = (e) => {
+  const handleTypingFontChange = (e) => {
     const newFont = e.target.value;
     setWhichFont(newFont);
+  };
+
+  const handleSoundToggle = () => {
+    setTypingSound(prev => !prev);
+  };
+
+  const handleLightToggle = () => {
+    setLightMode(prev => !prev);
   };
 
   return (
@@ -27,20 +74,46 @@ function Settings({ isOpen, onClose }) {
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         <div className="settings-content">
-          <p className='fonts'>Fonts</p>
+          <p>Fonts</p>
           <select 
             className="font-select" 
             value={whichFont} 
-            onChange={handleFontChange}
+            onChange={handleTypingFontChange}
           >
-            <option value="Inter, sans-serif">Inter</option>
+            <option value="Inter, monospace">Inter</option>
+            <option value="Fira Code, monospace">Fira Code</option>
             <option value="Courier New, monospace">Courier New</option>
-            <option value="Georgia, serif">Georgia</option>
-            <option value="Times New Roman, serif">Times New Roman</option>
-            <option value="Verdana, sans-serif">Verdana</option>
-            <option value="'Roboto', sans-serif">Roboto</option>
-            <option value="'Open Sans', sans-serif">Open Sans</option>
+            <option value="Source Code Pro, monospace">Source Code Pro</option>
+            <option value="JetBrains Mono, monospace">JetBrains Mono</option>
+            <option value="Monaco, monospace">Monaco</option>
           </select>
+
+          <p>Typing Sound</p>
+          <div className="toggle">
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={typingSound}
+                onChange={handleSoundToggle}
+              />
+              <span className="slider"></span>
+            </label>
+            <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
+          </div>
+
+          <p>Light Mode</p>
+            <div className="toggle">
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={lightMode}
+                  onChange={handleLightToggle}
+                />
+                <span className="slider"></span>
+              </label>
+              <span className="sound-label">{lightMode ? ' On' : ' Off'}</span>
+            </div>
+
         </div>
       </div>
     </div>
