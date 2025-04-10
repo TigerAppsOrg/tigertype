@@ -18,7 +18,7 @@
   justify-content: center;
   gap: 2rem;
   margin-bottom: 1rem;
-  background-color: #1e1e1e;
+  background-color: var(--type-container-color);
   padding: 0.8rem 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -126,7 +126,7 @@
 }
 
 .snippet-display {
-  background-color: #1e1e1e;
+  background-color: var(--type-container-color);
   padding: 2rem;
   border-radius: 8px;
   font-size: 1.2rem;
@@ -144,6 +144,10 @@
   font-family: var(--main-font);
 }
 
+.snippet-display span {
+  color: var(--typing-color);
+}
+
 .typing-input-container {
   position: fixed;
   inset: 0px;
@@ -152,10 +156,9 @@
 .typing-input-container input {
   width: 100%;
   padding: 1rem;
-  background-color: #2a2a2a;
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--typing-color);
 }
 
 .progress-container {

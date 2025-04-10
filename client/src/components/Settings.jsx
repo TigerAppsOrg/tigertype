@@ -30,6 +30,15 @@ function Settings({ isOpen, onClose }) {
     document.documentElement.style.setProperty(
       '--hover-color', lightMode ? '#a2a2a2' : '#2a2a2a'
     );
+    document.documentElement.style.setProperty(
+      '--type-container-color', lightMode ? '#dfdfdf' : '#121212'
+    );
+    document.documentElement.style.setProperty(
+      '--typing-color', lightMode ? 'black' : 'white'
+    );
+    document.documentElement.style.setProperty(
+      '--container-color', lightMode ? '#f0f0f0' : '#121212'
+    );
     localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
     localStorage.setItem('lightMode', lightMode);
