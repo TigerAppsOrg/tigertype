@@ -58,7 +58,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime' }) {
   };
 
   return (
-    <div className="leaderboard-container">
+    <>
       <h2>Timed Leaderboards</h2>
 
       <div className="leaderboard-controls">
@@ -154,7 +154,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime' }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
