@@ -74,7 +74,6 @@ function Race() {
       <Modal
         isOpen={showLeaderboard}
         onClose={toggleLeaderboard}
-        title="Timed Leaderboards"
         showCloseButton={true}
         isLarge={true}
       >

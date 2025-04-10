@@ -3,7 +3,7 @@
   flex-direction: column;
   align-items: center;
   padding: 2rem;
-  background-color: var(--secondary-color);
+  background-color: #222222; /* Changed to darker background */
   border-radius: 8px;
   min-height: 450px; /* Increased height */
   width: 100%;
@@ -30,7 +30,7 @@
   gap: 1.5rem; /* Spacing between groups */
   margin-bottom: 2rem;
   padding: 0.75rem;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(20, 20, 20, 0.3); /* Darker background */
   border-radius: 8px;
   width: 100%;
   max-width: 600px;
@@ -72,8 +72,8 @@
   flex-grow: 1;
   overflow-y: auto;
   border-radius: 8px;
-  background-color: #2a2a2a; /* Slightly lighter dark */
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(30, 30, 30, 0.4); /* Slightly darker but still transparent */
+  border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 0.5rem;
 }
 
