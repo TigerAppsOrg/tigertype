@@ -1,3 +1,4 @@
+// [AI DISCLAIMER: THIS COMPONENT WAS DEBUGGED WITH THE HELP OF AI; IT MIGHT NOT BE FULLY ACCURATE
 import React from 'react';
 import PropTypes from 'prop-types';
 import './TestConfigurator.css';

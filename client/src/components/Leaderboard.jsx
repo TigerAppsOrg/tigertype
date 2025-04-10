@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
-import './Leaderboard.css'; // We will create this file next
+import './Leaderboard.css';
 
 const DURATIONS = [15, 30, 60, 120];
 const PERIODS = ['daily', 'alltime'];
@@ -39,7 +39,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime' }) {
 
     fetchLeaderboard();
 
-    // Optional: Add listener for real-time updates if implemented on the server
+    // OPTOINAL FOR LATER: Add listener for real-time updates if implemented on the server
     // const handleLeaderboardUpdate = (data) => { ... };
     // socket.on('leaderboard:timedUpdate', handleLeaderboardUpdate);
 
