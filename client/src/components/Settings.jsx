@@ -79,17 +79,16 @@ function Settings({ isOpen, onClose }) {
     setWhichFont(newFont);
   };
 
+  const handleDefaultCursor = (e) => {
+    setDefaultCursor(!defaultCursor);
+  };
+
   const handleSoundToggle = () => {
     setTypingSound(prev => !prev);
   };
 
   const handleLightToggle = () => {
     setLightMode(prev => !prev);
-  };
-
-
-  const handleDefaultCursor = (e) => {
-    setDefaultCursor(!defaultCursor);
   };
 
   return (

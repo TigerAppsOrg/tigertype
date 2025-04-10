@@ -3,6 +3,7 @@
     flex-direction: column;
     align-items: center;
     padding: 2rem;
+    background-color: var(--secondary-color);
     border-radius: 8px;
     min-height: 350px; /* change to be more responsive later */
     width: 100%;

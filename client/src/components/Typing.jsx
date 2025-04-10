@@ -282,8 +282,7 @@ function Typing({
   // Prevents the user from unfocusing the input box
   // Modify the unfocusing prevention effect so that you can click on settings,
   // then autofocuses after closing the settings modal or clicking outside of it
-  // Modify the unfocusing prevention effect so that you can click on settings,
-  // then autofocuses after closing the settings modal or clicking outside of it
+
   useEffect(() => {
     const handleBodyClick = (e) => {
       const isSettingsClick = e.target.closest('.settings-modal') || 
@@ -489,8 +488,7 @@ function Typing({
     
     // Detect errors to trigger shake animation
     if (raceState.inProgress) {
-      const text = raceState.snippet?.text || '';
-      
+      const text = raceState.snippet?.text || '';      
       // For timed tests, check if we need to get more words
       // Request when the user has typed about X% of the way through the text
       if (raceState.snippet?.is_timed_test && 
@@ -502,7 +500,6 @@ function Typing({
           wordCount: 15 // Request 1 more words
         });
       }
-      
       // Prevent typing past the end of the snippet
       if (newInput.length >= text.length + 1) {
         return;
