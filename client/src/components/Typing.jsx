@@ -512,7 +512,7 @@ function Typing() {
   const getTips = () => {
     return (
       <div className="stats tips-stats">
-        <div className="stat-item tip-item">
+        <div className="tool-tip tip-item">
           <span className={`tip-text ${tipVisible ? 'tip-visible tip-pulsing' : 'tip-hidden'}`}>
             {tipContentRef.current}
           </span>
