@@ -206,7 +206,7 @@
 }
 
 .incorrect {
-  color: rgba(255, 65, 47, 0.55);
+  color: rgba(255, 65, 47, 0.55)!important;
   background-color: rgba(255,116,108, 0.10);
   text-decoration: underline wavy rgba(255, 65, 47, 0.55);
 }
