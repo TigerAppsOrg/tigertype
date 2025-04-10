@@ -249,7 +249,7 @@
   position: relative;
   background-color: var(--default-cursor);
   border-radius: 2px;
-  color: white !important;
+  color: var(--current-color)!important;
   animation: blink 1s infinite;
 }
 
