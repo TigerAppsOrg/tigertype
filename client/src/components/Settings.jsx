@@ -16,6 +16,11 @@ function Settings({ isOpen, onClose }) {
   });
 
   const [defaultCursor, setDefaultCursor] = useState(true);
+  });
+
+  const [lightMode, setLightMode] = useState(() => {
+    return localStorage.getItem('lightMode') === 'true';
+  });
 
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
@@ -66,6 +71,7 @@ function Settings({ isOpen, onClose }) {
     const newFont = e.target.value;
     setWhichFont(newFont);
   };
+
 
   const handleDefaultCursor = (e) => {
     setDefaultCursor(!defaultCursor);
