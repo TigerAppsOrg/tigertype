@@ -8,6 +8,7 @@ const QuoteIcon = () => <i className="bi bi-quote"></i>;
 const DifficultyIcon = () => <i className="bi bi-bar-chart-line"></i>;
 const TypeIcon = () => <i className="bi bi-tags"></i>;
 const DepartmentIcon = () => <i className="bi bi-building"></i>;
+const LeaderboardIcon = () => <i className="bi bi-trophy"></i>;
 // --- ---
 
 // --- Configuration Options ---
@@ -30,6 +31,7 @@ function TestConfigurator({
   setSnippetDepartment,
   setRaceState,
   loadNewSnippet,
+  onShowLeaderboard,
 }) {
 
   React.useEffect(() => {
@@ -123,11 +125,15 @@ function TestConfigurator({
     }
   };
 
-  const renderButton = (value, state, setter, label, icon = null, isFunctional = true) => (
+  const renderButton = (value, state, setter, label, icon = null, isFunctional = true, onClickOverride = null) => (
     <button
       key={value}
       className={`config-button ${state === value ? 'active' : ''} ${!isFunctional ? 'non-functional' : ''} ${icon ? 'icon-button' : ''}`}
       onClick={() => {
+        if (onClickOverride) {
+          onClickOverride();
+          return;
+        }
         if (!isFunctional) return;
         
         // Handle different types of buttons
@@ -208,6 +214,14 @@ function TestConfigurator({
         </div>
 
       </div> {/* End Conditional Options Container */}
+
+      {/* Separator */}
+      <div className="config-separator"></div>
+
+      {/* Leaderboard Button (always visible in practice mode) */}
+      <div className="config-section leaderboard-button-section">
+        {renderButton('leaderboard', null, null, 'Leaderboard', LeaderboardIcon, true, onShowLeaderboard)}
+      </div>
     </div> // End Main Container
   );
 }
@@ -226,6 +240,7 @@ TestConfigurator.propTypes = {
   setSnippetDepartment: PropTypes.func.isRequired,
   setRaceState: PropTypes.func.isRequired,
   loadNewSnippet: PropTypes.func,
+  onShowLeaderboard: PropTypes.func.isRequired,
 };
 
 export default TestConfigurator;

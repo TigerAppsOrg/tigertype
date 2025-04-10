@@ -7,6 +7,7 @@ import Results from '../components/Results';
 import PlayerStatusBar from '../components/PlayerStatusBar';
 import Modal from '../components/Modal';
 import TestConfigurator from '../components/TestConfigurator';
+import Leaderboard from '../components/Leaderboard';
 import './Race.css';
 
 function Race() {
@@ -30,6 +31,7 @@ function Race() {
   const [snippetDifficulty, setSnippetDifficulty] = useState('');
   const [snippetType, setSnippetType] = useState('');
   const [snippetDepartment, setSnippetDepartment] = useState('all');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   
   // Handle back button
   const handleBack = () => {
@@ -41,6 +43,11 @@ function Race() {
   const handleReadyFromWarning = () => {
     dismissInactivityWarning();
     setPlayerReady();
+  };
+
+  // Toggle leaderboard modal
+  const toggleLeaderboard = () => {
+    setShowLeaderboard(prev => !prev);
   };
 
   return (
@@ -62,6 +69,19 @@ function Race() {
         buttonText="I Understand"
         onClose={dismissInactivityKick}
       />
+      
+      {/* Leaderboard Modal */}
+      <Modal
+        isOpen={showLeaderboard}
+        onClose={toggleLeaderboard}
+        title="Timed Leaderboards"
+        showCloseButton={true}
+        isLarge={true}
+      >
+        <Leaderboard 
+           defaultDuration={testDuration}
+        />
+      </Modal>
       
       <div className="race-container">
         <div className="race-header-wrapper">
@@ -89,6 +109,7 @@ function Race() {
             setSnippetDepartment={setSnippetDepartment}
             setRaceState={setRaceState}
             loadNewSnippet={loadNewSnippet}
+            onShowLeaderboard={toggleLeaderboard}
           />
         )}
         
@@ -111,7 +132,11 @@ function Race() {
 
               {/* Conditionally render Results */}
               {/* Show Results if race is completed */}
-              {raceState.completed && <Results />}
+              {raceState.completed && (
+                <Results 
+                  onShowLeaderboard={raceState.type === 'practice' ? toggleLeaderboard : null}
+                />
+              )}
             </div>
             
             <div className="player-status-container">

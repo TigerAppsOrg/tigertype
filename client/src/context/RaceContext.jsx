@@ -566,16 +566,20 @@ export const RaceProvider = ({ children }) => {
           }] : prev.results
         }));
         
-        // Send completion to server only for multiplayer races
-        if (socket && connected && raceState.type !== 'practice') {
+        // Send completion to server for multiplayer races OR timed practice tests
+        const isMultiplayer = raceState.type !== 'practice';
+        const isTimedPractice = raceState.type === 'practice' && raceState.snippet?.is_timed_test;
+        
+        if (socket && connected && (isMultiplayer || isTimedPractice)) {
           socket.emit('race:result', {
             code: raceState.code,
-            lobbyId: raceState.lobbyId,
-            snippetId: raceState.snippet?.id,
+            lobbyId: raceState.lobbyId, // Will be null for practice, that's okay
+            snippetId: raceState.snippet?.id, // Will be like 'timed-15' for timed tests
             wpm,
             accuracy,
             completion_time: elapsedSeconds
           });
+          console.log(`Emitted race:result for ${isMultiplayer ? 'multiplayer' : 'timed practice'} race ${raceState.code}`);
         }
       }
     }

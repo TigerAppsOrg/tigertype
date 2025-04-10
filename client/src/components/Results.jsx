@@ -5,8 +5,9 @@ import { useState, useCallback, useEffect } from 'react';
 import './Results.css';
 // Import default profile image
 import defaultProfileImage from '../assets/default-profile.svg';
+import PropTypes from 'prop-types';
 
-function Results() {
+function Results({ onShowLeaderboard }) {
   const navigate = useNavigate();
   const { raceState, typingState, resetRace } = useRace();
   const { user } = useAuth();
@@ -56,33 +57,26 @@ function Results() {
   
   // Render practice mode results
   const renderPracticeResults = () => {
-    // First try to get results from raceState
-    const result = raceState.results?.[0];
-    
-    if (result) {
-      const rawWpm = result.wpm;
-      const adjustedWpm = rawWpm * (result.accuracy / 100);
-      
+    // Function to render the main stats block
+    const renderStatsBlock = (wpm, accuracy, time) => {
+      const rawWpm = wpm;
+      const adjustedWpm = rawWpm * (accuracy / 100);
       return (
-        <div className="practice-results">
-          <h3>Practice Results</h3>
-          
+        <>
           <div className="stat-item">
             <div className="stat-label">
               <i className="bi bi-clock"></i>
               Time Completed:
             </div>
-            <div className="stat-value">{result.completion_time?.toFixed(2)}s</div>
+            <div className="stat-value">{time?.toFixed(2)}s</div>
           </div>
-          
           <div className="stat-item">
             <div className="stat-label">
               <i className="bi bi-check-circle"></i>
               Accuracy:
             </div>
-            <div className="stat-value">{result.accuracy?.toFixed(2)}%</div>
+            <div className="stat-value">{accuracy?.toFixed(2)}%</div>
           </div>
-          
           <div className="stat-item">
             <div className="stat-label">
               <i className="bi bi-speedometer"></i>
@@ -90,7 +84,6 @@ function Results() {
             </div>
             <div className="stat-value">{rawWpm?.toFixed(2)}</div>
           </div>
-          
           <div className="stat-item">
             <div className="stat-label">
               <i className="bi bi-lightning"></i>
@@ -98,73 +91,51 @@ function Results() {
             </div>
             <div className="stat-value highlight">{adjustedWpm?.toFixed(2)}</div>
           </div>
-
-          <div className="keyboard-shortcuts">
-            <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
-          </div>
-        </div>
+        </>
       );
-    }
+    };
     
-    // If no results in state yet but typing is completed, use typing state
-    if (typingState.completed) {
-      const rawWpm = typingState.wpm;
-      const adjustedWpm = rawWpm * (typingState.accuracy / 100);
+    // Determine which data source to use
+    let statsContent;
+    const resultFromState = raceState.results?.[0];
+
+    if (resultFromState) {
+      statsContent = renderStatsBlock(
+        resultFromState.wpm,
+        resultFromState.accuracy,
+        resultFromState.completion_time
+      );
+    } else if (typingState.completed && raceState.startTime) { // Make sure startTime exists
       const elapsedSeconds = (Date.now() - raceState.startTime) / 1000;
-      
-      return (
-        <div className="practice-results">
-          <h3>Practice Results</h3>
-          
-          <div className="stat-item">
-            <div className="stat-label">
-              <i className="bi bi-clock"></i>
-              Time Completed:
-            </div>
-            <div className="stat-value">{elapsedSeconds.toFixed(2)}s</div>
-          </div>
-          
-          <div className="stat-item">
-            <div className="stat-label">
-              <i className="bi bi-check-circle"></i>
-              Accuracy:
-            </div>
-            <div className="stat-value">{typingState.accuracy.toFixed(2)}%</div>
-          </div>
-          
-          <div className="stat-item">
-            <div className="stat-label">
-              <i className="bi bi-speedometer"></i>
-              Raw WPM:
-            </div>
-            <div className="stat-value">{rawWpm.toFixed(2)}</div>
-          </div>
-          
-          <div className="stat-item">
-            <div className="stat-label">
-              <i className="bi bi-lightning"></i>
-              Adjusted WPM:
-            </div>
-            <div className="stat-value highlight">{adjustedWpm.toFixed(2)}</div>
-          </div>
-
-          <div className="keyboard-shortcuts">
-            <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
-          </div>
-        </div>
+      statsContent = renderStatsBlock(
+        typingState.wpm,
+        typingState.accuracy,
+        elapsedSeconds
       );
-    }
-    
-    // If no results yet
-    return (
-      <div className="practice-results">
-        <h3>Practice Results</h3>
+    } else {
+      statsContent = (
         <div className="loading-results">
           <div className="spinner-border text-orange" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
           <p>Waiting for results...</p>
         </div>
+      );
+    }
+
+    return (
+      <div className="practice-results">
+        <h3>Practice Results</h3>
+        {statsContent}
+        <div className="keyboard-shortcuts">
+          <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
+        </div>
+        {/* Conditionally add Leaderboard Button */} 
+        {onShowLeaderboard && (
+          <button className="leaderboard-shortcut-btn" onClick={onShowLeaderboard}>
+            <i className="bi bi-trophy"></i> View Leaderboards
+          </button>
+        )}
       </div>
     );
   };
@@ -300,5 +271,9 @@ function Results() {
     </>
   );
 }
+
+Results.propTypes = {
+  onShowLeaderboard: PropTypes.func, // Prop is optional
+};
 
 export default Results;

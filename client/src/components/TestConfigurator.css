@@ -51,6 +51,21 @@
   background-color: var(--border-color, #444);
 }
 
+/* Leaderboard Button Section in Configurator */
+.leaderboard-button-section {
+  display: flex;
+  align-items: center;
+}
+
+.leaderboard-button-section .config-button {
+  background-color: transparent; /* Same as mode buttons */
+  color: var(--text-secondary-color, #888); /* Muted */
+}
+
+.leaderboard-button-section .config-button:hover {
+  color: var(--primary-color, #ff9900); /* Highlight on hover */
+}
+
 /* Container for conditional options - defines the area */
 .conditional-options-container {
   position: relative; /* Context for absolute wrappers */

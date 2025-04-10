@@ -358,37 +358,60 @@ function Typing({
     // Only run the interval if the race is in progress AND not completed
     if (raceState.inProgress && raceState.startTime && !raceState.completed) {
       interval = setInterval(() => {
-        setElapsedTime(getElapsedTime());
+        const currentElapsedTime = getElapsedTime(); // Calculate elapsed time once
+        setElapsedTime(currentElapsedTime);
         
         // For timed tests, check if time is up
         if (raceState.snippet?.is_timed_test && raceState.snippet?.duration) {
           const duration = raceState.snippet.duration;
-          const elapsed = getElapsedTime();
+          // Use the calculated elapsed time
+          const elapsed = currentElapsedTime; 
           
-          // When time is up, mark race as completed
+          // When time is up, mark race as completed AND EMIT RESULT
           if (elapsed >= duration && !raceState.completed) {
             console.log('Timed test completed due to time limit');
+
+            // Capture final WPM and Accuracy from typingState at the moment of completion
+            const finalWpm = typingState.wpm;
+            const finalAccuracy = typingState.accuracy;
             
             // Mark as completed locally
             setRaceState(prev => ({
               ...prev,
               completed: true,
-              // Store results directly in state
+              // Store results directly in state using captured values
               results: [{
                 netid: user?.netid,
-                wpm: typingState.wpm,
-                accuracy: typingState.accuracy,
-                completion_time: elapsed
+                wpm: finalWpm,          
+                accuracy: finalAccuracy, 
+                completion_time: elapsed // Use final elapsed time
               }]
             }));
+
+            // --- EMIT race:result FOR TIMED TEST COMPLETION --- 
+            if (socket && raceState.code) { // Ensure socket and race code are available
+              socket.emit('race:result', {
+                code: raceState.code,
+                lobbyId: null, // Practice mode lobbyId is null/irrelevant here
+                snippetId: raceState.snippet?.id, // e.g., 'timed-15'
+                wpm: finalWpm, // Use captured WPM
+                accuracy: finalAccuracy, // Use captured Accuracy
+                completion_time: elapsed // Use final elapsed time
+              });
+              console.log('[Typing.jsx] Emitted race:result for timed test completion (time limit)');
+            } else {
+              console.warn('[Typing.jsx] Cannot emit race:result - socket or race code missing.');
+            }
+            // --- END EMIT --- 
+
+            // Clear the interval immediately after completion logic
+            clearInterval(interval);
           }
         }
       }, 1); // Update frequently for smoothness
     } else {
       // Clear interval if race stops or is completed
       if (interval) clearInterval(interval);
-      // If completed, ensure final time is calculated once? 
-      // Results component handles displaying final time
       // If not in progress and not completed, reset to 0
       if (!raceState.inProgress && !raceState.completed) {
          setElapsedTime(0);
@@ -396,10 +419,10 @@ function Typing({
     }
   
     return () => {
-      clearInterval(interval);
+      if (interval) clearInterval(interval); // Ensure cleanup on unmount/dependency change
     };
-  // Add raceState.completed to dependency array
-  }, [raceState.inProgress, raceState.startTime, raceState.completed, raceState.snippet?.is_timed_test, raceState.snippet?.duration, typingState.wpm, typingState.accuracy, user?.netid]);
+  // Add socket, raceState.code, user?.netid to dependency array
+  }, [raceState.inProgress, raceState.startTime, raceState.completed, raceState.snippet?.is_timed_test, raceState.snippet?.duration, typingState.wpm, typingState.accuracy, user?.netid, socket, raceState.code, setRaceState]); // Added socket, raceState.code, user?.netid, setRaceState
 
   // Smoother update for WPM instead of constantly
   useEffect(() => {
