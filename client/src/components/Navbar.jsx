@@ -26,9 +26,14 @@ function Navbar() {
     <header className="navbar">
       <div className="navbar-logo">
         <button type='text' onClick={handleLogo}>TigerType</button>
-        <span className="material-icons settings-icon"
-              onClick={() => setIsSettingsOpen(true)}
-        >settings</span>
+        <button 
+          className="settings-button"
+          onClick={() => setIsSettingsOpen(true)}
+          aria-label="Open settings"
+          tabIndex={0}
+        >
+          <span className="material-icons settings-icon">settings</span>
+        </button>
       </div>
       
       <nav className="navbar-links">
