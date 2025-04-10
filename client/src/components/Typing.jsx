@@ -467,14 +467,14 @@ function Typing({
       const text = raceState.snippet?.text || '';
       
       // For timed tests, check if we need to get more words
-      // Request when the user has typed about 90% of the way through the text
+      // Request when the user has typed about X% of the way through the text
       if (raceState.snippet?.is_timed_test && 
           newInput.length > text.length * 0.75 && 
           !raceState.completed) {
         // Request fewer words to be appended to the current text
         socket.emit('timed:more_words', {
           code: raceState.code,
-          wordCount: 1 // Request 1 more words
+          wordCount: 15 // Request 1 more words
         });
       }
       
