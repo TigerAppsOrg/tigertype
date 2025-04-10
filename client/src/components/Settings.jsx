@@ -79,7 +79,6 @@ function Settings({ isOpen, onClose }) {
     setWhichFont(newFont);
   };
 
-
   const handleDefaultCursor = (e) => {
     setDefaultCursor(!defaultCursor);
   };
