@@ -11,6 +11,7 @@
   margin-bottom: 1rem;
   display: flex;
   justify-content: center;
+  background-color: var(--container-color);
 }
 
 .stats {
@@ -18,7 +19,7 @@
   justify-content: center;
   gap: 2rem;
   margin-bottom: 1rem;
-  background-color: #1e1e1e;
+  background-color: var(--type-container-color);
   padding: 0.8rem 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -107,12 +108,22 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: 80px;
+}
+
+.tool-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .stat-label {
   font-size: 0.8rem;
   color: #aaa;
   margin-bottom: 0.2rem;
+  min-width: 4ch; 
+  text-align: center; 
+  display: inline-block;
 }
 
 .stat-value {
@@ -122,7 +133,7 @@
 }
 
 .snippet-display {
-  background-color: #1e1e1e;
+  background-color: var(--type-container-color);
   padding: 2rem;
   border-radius: 8px;
   font-size: 1.2rem;
@@ -133,12 +144,15 @@
   letter-spacing: 0.5px;
   border-left: 4px solid #F58025;
   margin-bottom: 1rem;
-  font-family: 'Fira Code', monospace;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(245, 128, 37, 0.1);
   color: rgba(255, 255, 255, 0.325);
-  font-family: 'Fira Code', monospace;
   text-align: justify;
+  font-family: var(--main-font);
+}
+
+.snippet-display span {
+  color: var(--typing-color);
 }
 
 .typing-input-container {
@@ -149,11 +163,9 @@
 .typing-input-container input {
   width: 100%;
   padding: 1rem;
-  background-color: #2a2a2a;
   border: none;
   border-radius: 8px;
   color: white;
-  font-family: 'Fira Code', monospace;
 }
 
 .progress-container {
@@ -189,7 +201,7 @@
 }
 
 .correct {
-  color: rgba(128, 239, 128, 0.55);
+  color: var(--correct-bg-color)!important;
 }
 
 .incorrect {
@@ -204,8 +216,8 @@
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
-  20%, 40%, 60%, 80% { transform: translateX(3px); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
 }
 
 .error-message {
@@ -235,7 +247,7 @@
 .current {
   background-color: #3a506b;
   border-radius: 2px;
-  color: white;
+  color: white !important;
   animation: blink 1s infinite;
 }
   

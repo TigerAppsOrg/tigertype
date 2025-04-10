@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
+import playKeySound from './Sound.jsx';
+import './Settings.css';
 import './Typing.css';
 
 // Typing Tips shown before race countdown start
@@ -200,9 +202,16 @@ function Typing() {
   }, [raceState.inProgress, typingState.completed, raceHandleInput, typingState.input]);
 
   // Prevents the user from unfocusing the input box
+  // Modify the unfocusing prevention effect so that you can click on settings,
+  // then autofocuses after closing the settings modal or clicking outside of it
   useEffect(() => {
-    const handleBodyClick = () => {
-      if (inputRef.current) {
+    const handleBodyClick = (e) => {
+      const isSettingsClick = e.target.closest('.settings-modal') || 
+                            e.target.closest('.settings-icon');
+
+      // Force focus back when clicking close button or outside settings
+      if (e.target.closest('.close-button') || 
+          (!isSettingsClick && inputRef.current)) {
         inputRef.current.focus();
       }
     };
@@ -218,7 +227,7 @@ function Typing() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (raceState.type !== 'practice') return;
-      
+
       // Tab: Load new snippet
       if (e.key === 'Tab') {
         e.preventDefault();
@@ -307,6 +316,16 @@ function Typing() {
   // Handle typing input with word locking
   const handleComponentInput = (e) => {
     const newInput = e.target.value;
+    const text = raceState.snippet?.text || '';
+
+    // Check if new character is correct
+    const isMovingForward = newInput.length > input.length;
+    const isCorrectCharacter = newInput[newInput.length - 1] === text[newInput.length - 1];
+
+    // Play sound if typing correctly (moved before practice mode check)
+    if (isMovingForward && isCorrectCharacter) {
+      playKeySound();
+    }
     
     // For practice mode, start the race on first keypress
     if (raceState.type === 'practice' && !raceState.inProgress && !raceState.completed && newInput.length === 1) {
@@ -335,7 +354,7 @@ function Typing() {
     // Detect errors to trigger shake animation
     if (raceState.inProgress) {
       const text = raceState.snippet?.text || '';
-      
+
       // Prevent typing past the end of the snippet
       if (newInput.length >= text.length + 1) {
         return;
@@ -370,7 +389,7 @@ function Typing() {
       
       // Use the handleInput function from RaceContext
       raceHandleInput(newInput);
-      
+
       // Update local input state to match what's in the typing state
       // This ensures the displayed input matches the processed input after word locking
       setInput(typingState.input);
@@ -493,7 +512,7 @@ function Typing() {
   const getTips = () => {
     return (
       <div className="stats tips-stats">
-        <div className="stat-item tip-item">
+        <div className="tool-tip tip-item">
           <span className={`tip-text ${tipVisible ? 'tip-visible tip-pulsing' : 'tip-hidden'}`}>
             {tipContentRef.current}
           </span>
