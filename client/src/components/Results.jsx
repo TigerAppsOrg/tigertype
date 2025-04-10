@@ -172,6 +172,7 @@ function Results({ onShowLeaderboard }) {
             <img 
               src={winner.avatar_url || defaultProfileImage} 
               alt={`${winner.netid}'s avatar`}
+              onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
             />
           </div>
           <div className="winner-details">
@@ -212,6 +213,7 @@ function Results({ onShowLeaderboard }) {
                   <img 
                     src={result.avatar_url || defaultProfileImage} 
                     alt={`${result.netid}'s avatar`}
+                    onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
                   />
                 </div>
                 <div className="result-netid">{result.netid}</div>
@@ -262,6 +264,7 @@ function Results({ onShowLeaderboard }) {
                 src={enlargedAvatar.url} 
                 alt={`${enlargedAvatar.netid}'s avatar`} 
                 className="avatar-modal-image"
+                onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
               />
               <div className="avatar-modal-name">{enlargedAvatar.netid}</div>
             </div>

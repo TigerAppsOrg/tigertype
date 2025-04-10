@@ -43,13 +43,22 @@ const getPlayerClientData = (player) => {
 // Fetch user avatar URL from database
 const fetchUserAvatar = async (userId, socketId) => {
   try {
-    if (!userId) return;
+    if (!userId) {
+      console.log(`Cannot fetch avatar: No userId provided for socketId ${socketId}`);
+      return;
+    }
+    
     const user = await UserModel.findById(userId);
     if (user && user.avatar_url) {
+      console.log(`Successfully fetched avatar for user ${userId} (socket ${socketId}): ${user.avatar_url}`);
       playerAvatars.set(socketId, user.avatar_url);
+    } else {
+      console.log(`No avatar found for user ${userId} (socket ${socketId})`);
+      // Set to null explicitly to indicate we checked but found no avatar
+      playerAvatars.set(socketId, null);
     }
   } catch (err) {
-    console.error('Error fetching user avatar:', err);
+    console.error(`Error fetching avatar for user ${userId} (socket ${socketId}):`, err);
   }
 };
 
@@ -91,7 +100,9 @@ const initialize = (io) => {
     
     // Fetch user avatar when connecting
     if (userId) {
-      fetchUserAvatar(netid, socket.id);
+      fetchUserAvatar(userId, socket.id);
+    } else {
+      console.log(`No userId available for fetching avatar: ${netid} (${socket.id})`);
     }
     
     // Emit welcome event with user info
@@ -877,12 +888,20 @@ const handlePlayerFinish = async (io, code, playerId, resultData) => {
     .filter(p => p.completed && playerProgress.has(p.id))
     .map(p => {
       const prog = playerProgress.get(p.id);
+      const avatarUrl = playerAvatars.get(p.id);
+      
+      // Log avatar status for debugging
+      console.log(`Player ${p.netid} avatar status:`, {
+        hasAvatar: !!avatarUrl,
+        avatarUrl: avatarUrl || 'null'
+      });
+      
       return {
         netid: p.netid,
         wpm: prog.wpm,
         accuracy: prog.accuracy,
         completion_time: prog.completion_time,
-        avatar_url: playerAvatars.get(p.id) || null // Include avatar URL
+        avatar_url: avatarUrl // Include avatar URL
       };
     })
     .sort((a, b) => a.completion_time - b.completion_time); // Sort by time initially
