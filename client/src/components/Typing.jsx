@@ -52,6 +52,7 @@ function Typing({
   const [isShaking, setIsShaking] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const tabActionInProgressRef = useRef(false);
+  const [displayedWpm, setDisplayedWpm] = useState(0);
   
   // Use testMode and testDuration for timed tests if provided
   useEffect(() => {
@@ -400,27 +401,29 @@ function Typing({
   // Add raceState.completed to dependency array
   }, [raceState.inProgress, raceState.startTime, raceState.completed, raceState.snippet?.is_timed_test, raceState.snippet?.duration, typingState.wpm, typingState.accuracy, user?.netid]);
 
-  // Update WPM continuously - This useEffect might be redundant if WPM is calculated on completion
-  // Let's remove this or adjust it. The Results component displays final WPM.
-  // We'll keep the continuous WPM display logic but stop it on completion.
+  // Smoother update for WPM instead of constantly
   useEffect(() => {
-    let interval;
-    // Only run interval if in progress and not completed
-    if (raceState.inProgress && raceState.startTime && input.length > 0 && !raceState.completed) {
-      interval = setInterval(() => {
-        // No need to call raceHandleInput here, just update local display WPM if needed
-        // Or perhaps remove this continuous WPM calculation entirely if stats bar updates it
-      }, 300); 
+    let wpmInterval;
+    if (raceState.inProgress && raceState.startTime && !raceState.completed) {
+      wpmInterval = setInterval(() => {
+        const time = (Date.now() - raceState.startTime) / 1000;
+        const minutes = time / 60;
+        const charCount = typingState.position; // Use pos from typingState
+        const words = charCount / 5;
+        const currentWpm = minutes > 0 ? Math.round(words / minutes) : 0;
+        setDisplayedWpm(currentWpm);
+      }, 50); // Update every 100ms
     } else {
-       if (interval) clearInterval(interval); // Clear interval if race stops or completes
+      // Reset WPM display when race is not active
+      setDisplayedWpm(0);
     }
 
+    // Cleanup interval on unmount or when dependencies change
     return () => {
-      clearInterval(interval);
+      if (wpmInterval) clearInterval(wpmInterval);
     };
-  // Add raceState.completed to dependency array
-  }, [raceState.inProgress, raceState.startTime, input, raceState.completed]);
-  
+  }, [raceState.inProgress, raceState.startTime, raceState.completed, typingState.position]); // Include typingState.position
+
   // Handle typing input with word locking
   const handleComponentInput = (e) => {
     const newInput = e.target.value;
@@ -615,18 +618,12 @@ function Typing({
     //(Results component will show final stats)
     if (raceState.completed) return null;
     
-    // Calculate live WPM
-    const time = elapsedTime || getElapsedTime();
-    const minutes = time / 60;
-    const charCount = typingState.position;
-    const words = charCount / 5;
-    const wpm = minutes > 0 ? words / minutes : 0;
-    
     // Use accuracy directly from typingState which is now calculated properly
     const accuracy = typingState.accuracy;
     
     // For timed tests, show time remaining instead of elapsed time
     let timeDisplay;
+    const time = elapsedTime || getElapsedTime(); // Keep calculating elapsed time for display
     if (raceState.snippet?.is_timed_test && raceState.snippet?.duration) {
       const timeRemaining = Math.max(0, raceState.snippet.duration - time);
       timeDisplay = `${timeRemaining.toFixed(2)}s left`;
@@ -638,7 +635,8 @@ function Typing({
       <div className="stats">
         <div className="stat-item">
           <span className="stat-label">WPM</span>
-          <span className="stat-value">{wpm.toFixed(0)}</span>
+          {/* Use the smoothed displayedWpm state */}
+          <span className="stat-value">{displayedWpm}</span> 
         </div>
         <div className="stat-item">
           <span className="stat-label">Accuracy</span>
