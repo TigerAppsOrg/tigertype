@@ -741,11 +741,13 @@ function Typing({
       {/* Only show typing area (snippet + input) if race is NOT completed */}
       {!raceState.completed && (
           <div className="typing-area">
-            {/* Render error message separately, positioned relative to typing-area */}
-            {showErrorMessage && (
-              <div className="error-message">Fix your mistake to continue</div>
-            )}
             <div className={`snippet-display ${isShaking ? 'shake-animation' : ''}`}>
+              {/* Error message moved inside snippet-display */}
+              {showErrorMessage && (
+                <div className="error-message">
+                  Fix your mistake to continue
+                </div>
+              )}
               {getHighlightedText()}
             </div>
             <div className="typing-input-container">
