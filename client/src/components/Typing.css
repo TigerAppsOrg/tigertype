@@ -142,15 +142,15 @@
   min-height: 150px;
   max-height: 10vh;
   overflow-y: auto;
-  letter-spacing: 0.5px;
+  overflow-x: hidden;
+  letter-spacing: 0;
+  tab-size: 4;
   border-left: 4px solid #F58025;
   margin-bottom: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(245, 128, 37, 0.1);
   color: rgba(255, 255, 255, 0.325);
   text-align: justify;
-  font-family: var(--main-font);
-  overflow-x: hidden;
   scroll-behavior: smooth;
   /* Hide scrollbar for Firefox */
   scrollbar-width: none;
