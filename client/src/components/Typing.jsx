@@ -565,26 +565,68 @@ function Typing({
     if (!raceState.snippet) return null;
     
     const text = raceState.snippet.text;
-    const components = [];
-    let hasEncounteredError = false;
     
-    for (let i = 0; i < text.length; i++) {
-      if (i < input.length) {
-        if (input[i] === text[i] && !hasEncounteredError) {
-          components.push(<span key={i} className="correct">{text[i]}</span>);
-        } else {
-          // Once an error is encountered, mark this and all subsequent typed chars as incorrect
-          hasEncounteredError = true;
-          components.push(<span key={i} className="incorrect">{text[i]}</span>);
+    // Split text by words, maintaining spaces between them
+    const renderNonBreakingText = () => {
+      const words = text.split(' ');
+      const components = [];
+      let charIndex = 0;
+      let hasEncounteredError = false;
+      
+      words.forEach((word, wordIndex) => {
+        // For each word, render each character
+        const wordChars = [];
+        for (let i = 0; i < word.length; i++) {
+          const charPos = charIndex + i;
+          
+          if (charPos < input.length) {
+            if (input[charPos] === text[charPos] && !hasEncounteredError) {
+              wordChars.push(<span key={`${wordIndex}-${i}`} className="correct">{word[i]}</span>);
+            } else {
+              hasEncounteredError = true;
+              wordChars.push(<span key={`${wordIndex}-${i}`} className="incorrect">{word[i]}</span>);
+            }
+          } else if (charPos === input.length) {
+            wordChars.push(<span key={`${wordIndex}-${i}`} className="current">{word[i]}</span>);
+          } else {
+            wordChars.push(<span key={`${wordIndex}-${i}`}>{word[i]}</span>);
+          }
         }
-      } else if (i === input.length) {
-        components.push(<span key={i} className="current">{text[i]}</span>);
-      } else {
-        components.push(<span key={i}>{text[i]}</span>);
-      }
-    }
+        
+        // Add the word with non-breaking wrapper
+        components.push(
+          <span key={`word-${wordIndex}`} style={{display: 'inline-block', whiteSpace: 'nowrap'}}>
+            {wordChars}
+          </span>
+        );
+        
+        // Add space after each word (except the last)
+        if (wordIndex < words.length - 1) {
+          const spacePos = charIndex + word.length;
+          
+          if (spacePos < input.length) {
+            if (input[spacePos] === ' ' && !hasEncounteredError) {
+              components.push(<span key={`space-${wordIndex}`} className="correct"> </span>);
+            } else {
+              hasEncounteredError = true;
+              components.push(<span key={`space-${wordIndex}`} className="incorrect"> </span>);
+            }
+          } else if (spacePos === input.length) {
+            components.push(<span key={`space-${wordIndex}`} className="current"> </span>);
+          } else {
+            components.push(<span key={`space-${wordIndex}`}> </span>);
+          }
+          
+          charIndex += word.length + 1; // +1 for the space
+        } else {
+          charIndex += word.length;
+        }
+      });
+      
+      return components;
+    };
     
-    return components;
+    return renderNonBreakingText();
   };
     
   // Auto-scroll to keep cursor in view
