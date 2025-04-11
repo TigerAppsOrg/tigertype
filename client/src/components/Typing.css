@@ -1,9 +1,8 @@
 .typing-area {
   position: relative;
   inset: 0px;
-  min-height: 12rem;
+  min-height: 5rem;
   flex-direction: column;
-  margin-bottom: 1.5rem;
 }
 
 .stats-container {
@@ -133,18 +132,17 @@
 
 .snippet-display {
   background-color: var(--type-container-color);
-  padding: 2rem;
+  padding: 1rem;
   border-radius: 8px;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   line-height: 1.8;
   white-space: pre-wrap;
   position: relative;
-  min-height: 150px;
-  max-height: 10vh;
+  min-height: 10vh;
+  max-height: 50vh;
   overflow-y: auto;
   overflow-x: hidden;
-  letter-spacing: 0;
-  tab-size: 4;
+  letter-spacing: 1px;
   border-left: 4px solid #F58025;
   margin-bottom: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -234,7 +232,7 @@
 }
 
 .error-message {
-  position: absolute;
+  position: relative;
   top: -1vh;
   left: 50%;
   transform: translateX(-50%);
@@ -267,7 +265,7 @@
 
 .current::before {
   visibility: var(--line-cursor);
-  position: absolute;
+  position: fixed;
   content: "|";
   transform: scale(1.8, 1);
   color: var(--princeton-orange);
