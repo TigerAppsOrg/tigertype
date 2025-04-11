@@ -139,7 +139,7 @@
   white-space: pre-wrap;
   position: relative;
   min-height: 10vh;
-  max-height: 50vh;
+  max-height: 25vh;
   overflow-y: auto;
   overflow-x: hidden;
   letter-spacing: 1px;
