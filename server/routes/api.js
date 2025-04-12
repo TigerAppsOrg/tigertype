@@ -53,9 +53,28 @@ const requireAuth = (req, res, next) => {
   // If req.user exists (either from original auth or fallback lookup), proceed
   next();
 };
+// --- Public Routes ---
 
-// --- Profile Routes ---
+// Get a random snippet for the landing page (unauthenticated)
+router.get('/landing-snippet', async (req, res) => {
+  try {
+    const snippet = await SnippetModel.getRandom();
+    if (!snippet) {
+      // If no snippets exist at all, return a default message
+      return res.json({ text: 'Welcome to TigerType! Start typing...' });
+    }
+    // Return only the text field
+    res.json({ text: snippet.text });
+  } catch (err) {
+    console.error('Error fetching landing page snippet:', err);
+    // Send a generic snippet text on error
+    res.status(500).json({ text: 'Error loading snippet. Please try refreshing.' });
+  }
+});
+
+// --- Authenticated Profile Routes ---
 // All profile routes require authentication + are mounted under /profile
+router.use('/profile', requireAuth, profileRoutes);
 router.use('/profile', requireAuth, profileRoutes); 
 
 // --- Existing API Routes ---
