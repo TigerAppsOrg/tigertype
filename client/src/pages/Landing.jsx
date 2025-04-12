@@ -20,12 +20,12 @@ function Landing() {
   const [charIndex, setCharIndex] = useState(0);
   const [stage, setStage] = useState('honorCode');
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
-  const intervalRef = useRef(null);
-  const timeoutRef = useRef(null); // For stage transitions/pauses
+  const intervalRef = useRef(null); // Holds the main typing/mistake/backspace interval
+  const timeoutRef = useRef(null); // Holds stage transition/pause timeouts
   const isMountedRef = useRef(true);
-  const [mistakeActive, setMistakeActive] = useState(false);
+  const [isMistakeCorrectionPhase, setIsMistakeCorrectionPhase] = useState(false); // Tracks if we are currently correcting (typing mistake + backspacing)
   const [mistakeStartIndex, setMistakeStartIndex] = useState(-1);
-  const [mistakeEndIndex, setMistakeEndIndex] = useState(-1); // Track the end of the mistake sequence
+  const [mistakeEndIndex, setMistakeEndIndex] = useState(-1);
 
   // --- Animation Logic ---
 
@@ -34,39 +34,32 @@ function Landing() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     intervalRef.current = null;
     timeoutRef.current = null;
+    // console.log("Cleared timers/intervals"); // Debug log
   }, []);
 
   const startAnimationProgress = useCallback((textToAnimate) => {
     if (!isMountedRef.current) return;
+    // console.log("Starting animation for:", textToAnimate.substring(0, 10) + "..."); // Debug log
 
     clearTimersAndIntervals();
     setFullText(textToAnimate);
     setCharIndex(0);
-    setMistakeActive(false);
+    setIsMistakeCorrectionPhase(false);
     setMistakeStartIndex(-1);
     setMistakeEndIndex(-1);
 
-    const typeCharacter = () => {
+    const performTypingStep = () => {
       if (!isMountedRef.current) {
         clearTimersAndIntervals();
         return;
       }
 
-      // --- Backspace Logic ---
-      if (mistakeActive && charIndex > mistakeStartIndex) {
-        // Currently backspacing after a mistake
-        setCharIndex(prevIndex => prevIndex - 1);
-        return; // Let the backspace interval handle timing
-      }
-      // --- End Backspace Logic ---
-
-
-      // --- Normal Typing & Mistake Trigger ---
       setCharIndex((prevIndex) => {
-        // End Condition
+        // --- End Condition ---
         if (prevIndex >= textToAnimate.length) {
           clearTimersAndIntervals();
           if (stage === 'honorCode') {
+            // console.log("Honor code finished, setting timeout for fetch"); // Debug log
             timeoutRef.current = setTimeout(() => {
               if (isMountedRef.current) setStage('fetching');
             }, PAUSE_DURATION_MS);
@@ -74,46 +67,75 @@ function Landing() {
           return prevIndex;
         }
 
-        // Mistake Trigger
+        // --- Mistake Trigger ---
         if (Math.random() < MISTAKE_CHANCE) {
+          // console.log(`Mistake triggered at index ${prevIndex}`); // Debug log
           clearTimersAndIntervals(); // Stop normal typing
-          setMistakeActive(true);
-          setMistakeStartIndex(prevIndex);
+          setIsMistakeCorrectionPhase(true); // Enter mistake phase
+          const mistakeStart = prevIndex;
           const mistakeLength = Math.floor(Math.random() * 5) + 1;
-          const targetMistakeEndIndex = Math.min(prevIndex + mistakeLength, textToAnimate.length);
+          const targetMistakeEndIndex = Math.min(mistakeStart + mistakeLength, textToAnimate.length);
+          setMistakeStartIndex(mistakeStart);
           setMistakeEndIndex(targetMistakeEndIndex);
+
+          let mistakesTyped = 0;
+          let currentMistakeIndex = mistakeStart;
 
           // Interval to "type" the mistake (advance index)
           intervalRef.current = setInterval(() => {
-            if (!isMountedRef.current) {
-              clearTimersAndIntervals();
-              return;
+            if (!isMountedRef.current) { clearTimersAndIntervals(); return; }
+
+            currentMistakeIndex++;
+            mistakesTyped++;
+            setCharIndex(currentMistakeIndex); // Update visual cursor
+
+            if (currentMistakeIndex >= targetMistakeEndIndex || mistakesTyped >= mistakeLength) {
+              clearInterval(intervalRef.current); // Stop typing mistakes
+              // console.log(`Finished typing mistake sequence (length ${mistakesTyped})`); // Debug log
+              // Pause, then start backspacing
+              timeoutRef.current = setTimeout(() => {
+                if (!isMountedRef.current) return;
+                // console.log("Starting backspace..."); // Debug log
+                // Start backspacing interval
+                intervalRef.current = setInterval(() => {
+                  if (!isMountedRef.current) { clearTimersAndIntervals(); return; }
+                  setCharIndex(currentIndexBackspace => {
+                    const nextBackspaceIndex = currentIndexBackspace - 1;
+                    // console.log(`Backspacing: ${currentIndexBackspace} -> ${nextBackspaceIndex}`); // Debug log
+                    if (nextBackspaceIndex < mistakeStart) { // Finished backspacing
+                      // console.log("Finished backspacing"); // Debug log
+                      clearTimersAndIntervals();
+                      setIsMistakeCorrectionPhase(false); // Exit mistake phase
+                      setMistakeStartIndex(-1);
+                      setMistakeEndIndex(-1);
+                      // Pause slightly before resuming normal typing
+                      timeoutRef.current = setTimeout(() => {
+                         if (isMountedRef.current) {
+                            // console.log("Resuming normal typing"); // Debug log
+                            intervalRef.current = setInterval(performTypingStep, TYPING_SPEED_MS); // Resume normal typing
+                         }
+                      }, POST_CORRECTION_PAUSE_MS);
+                      return mistakeStart; // Ensure index is correct
+                    }
+                    return nextBackspaceIndex; // Decrement index
+                  });
+                }, BACKSPACE_SPEED_MS);
+              }, MISTAKE_PAUSE_MS);
             }
-            setCharIndex(currentIndex => {
-              const nextIndex = currentIndex + 1;
-              if (nextIndex >= targetMistakeEndIndex) {
-                clearInterval(intervalRef.current); // Stop typing mistakes
-                // Pause, then start backspacing
-                timeoutRef.current = setTimeout(() => {
-                  if (!isMountedRef.current) return;
-                  // Start backspacing interval (calls typeCharacter, which now handles backspace logic)
-                  intervalRef.current = setInterval(typeCharacter, BACKSPACE_SPEED_MS);
-                }, MISTAKE_PAUSE_MS);
-              }
-              return nextIndex;
-            });
           }, TYPING_SPEED_MS);
 
-          return prevIndex; // Initial return before mistake interval takes over
+          return prevIndex; // Return current index initially
         }
+        // --- End Mistake Trigger ---
 
         // Normal Typing
+        // console.log(`Normal typing: ${prevIndex} -> ${prevIndex + 1}`); // Debug log
         return prevIndex + 1;
       });
     };
 
     // Start the initial typing interval
-    intervalRef.current = setInterval(typeCharacter, TYPING_SPEED_MS);
+    intervalRef.current = setInterval(performTypingStep, TYPING_SPEED_MS);
 
   }, [stage, clearTimersAndIntervals]);
 
@@ -121,6 +143,7 @@ function Landing() {
    // Fetch random snippet
    useEffect(() => {
     if (stage === 'fetching' && isMountedRef.current) {
+       // console.log("Fetching new snippet..."); // Debug log
        clearTimersAndIntervals();
 
        fetch('/api/landing-snippet')
@@ -164,23 +187,24 @@ function Landing() {
     return fullText.split('').map((char, index) => {
       let className = 'landing-future'; // Default: Untyped
 
-      if (mistakeActive && index >= mistakeStartIndex && index < mistakeEndIndex) {
+      if (isMistakeCorrectionPhase && index >= mistakeStartIndex && index < mistakeEndIndex) {
         // Character is within the range affected by the mistake sequence
         // Highlight red only up to the current cursor position during the mistake/backspace phase
         if (index < charIndex) {
             className = 'landing-incorrect';
         }
+        // Characters within the mistake range but *after* the current backspace cursor remain future
       } else if (index < charIndex) {
         // Character has been typed correctly
         className = 'landing-correct';
-      } else if (index === charIndex && !mistakeActive) {
+      } else if (index === charIndex && !isMistakeCorrectionPhase) {
         // Current cursor position when not making/correcting a mistake
         className = 'landing-current';
       }
 
       return <span key={index} className={className}>{char}</span>;
     });
-  }, [fullText, charIndex, mistakeActive, mistakeStartIndex, mistakeEndIndex]); // Added mistakeEndIndex
+  }, [fullText, charIndex, isMistakeCorrectionPhase, mistakeStartIndex, mistakeEndIndex]); // Use isMistakeCorrectionPhase
 
 
   // --- Event Handlers ---

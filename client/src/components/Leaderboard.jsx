@@ -63,6 +63,8 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
       {layoutMode === 'landing' && (
         <>
           <div className="leaderboard-landing-controls-col">
+            {/* Conditionally render heading */}
+            {layoutMode !== 'landing' && <h2>Timed Leaderboards</h2>}
             <h2>Timed Leaderboards</h2>
             <div className="control-group period-controls vertical">
               {PERIODS.map(p => (
@@ -100,8 +102,8 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
         </>
       )}
 
-      {/* Modal Layout (Original Structure) */}
-      {layoutMode !== 'landing' && (
+      {/* Modal Layout (Original Structure) - Keep heading here */}
+      {layoutMode === 'modal' && (
          <>
            <h2>Timed Leaderboards</h2>
            <div className="leaderboard-controls">

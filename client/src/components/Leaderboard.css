@@ -316,18 +316,14 @@ h2 {
 .leaderboard-landing-controls-col {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center controls horizontally */
-  flex-basis: 200px; /* Fixed width for controls column */
+  align-items: stretch; /* Stretch items to fill width */
+  flex-basis: 160px; /* Reduced width */
   flex-shrink: 0;
   gap: 1rem; /* Space between elements in the controls column */
 }
 
-.leaderboard-landing-controls-col h2 {
-  font-size: 1.5rem; /* Slightly smaller heading */
-  margin-bottom: 0.5rem; /* Less space below heading */
-  color: #F58025; /* Ensure heading color */
-  text-align: center;
-}
+/* Heading is removed via JSX, remove style */
+/* .leaderboard-landing-controls-col h2 { ... } */
 
 /* Make control groups stack vertically */
 .leaderboard-landing-controls-col .control-group {
@@ -340,7 +336,7 @@ h2 {
 
 .leaderboard-landing-controls-col .control-button {
   width: 100%; /* Make buttons take full width */
-  padding: 0.7rem 1rem; /* Adjust padding */
+  padding: 0.5rem 0.8rem; /* Reduced padding */
   box-sizing: border-box; /* Include padding in width */
 }
 
@@ -360,11 +356,10 @@ h2 {
   flex-direction: column;
 }
 
-/* Adjust list height and scrolling within the landing page section */
+/* Adjust list height and scrolling */
 .leaderboard-landing-list-col .leaderboard-list {
-  flex-grow: 1; /* Allow list to fill available vertical space */
-  max-height: 45vh; /* Set a max height for scrolling */
-  /* Keep existing background/border from modal version or adjust as needed */
+  flex-grow: 1;
+  max-height: 35vh; /* Reduced max height */
    background-color: rgba(30, 30, 30, 0.4);
    border: 1px solid rgba(255, 255, 255, 0.05);
    padding: 0.5rem;
@@ -378,6 +373,7 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 150px; /* Reduced min height */
   min-height: 200px; /* Ensure they take some space */
 }
 
