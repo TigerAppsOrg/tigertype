@@ -138,6 +138,7 @@ body {
   align-items: flex-start;
   flex-basis: 60%; /* Slightly larger basis */
   justify-content: flex-start; /* Align content to top of column */
+  margin-top: 10vh;
 }
 
 .landing-right-column h2 {
