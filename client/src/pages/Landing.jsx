@@ -246,12 +246,17 @@ function Landing() {
           </div>
         </div>
 
-        {/* Statistics Showcase Section */}
-        <StatsShowcase />
-
-        {/* Leaderboard Section Below Main Content */}
-        <div className="leaderboard-section-landing">
-             <Leaderboard defaultDuration={15} defaultPeriod="alltime" layoutMode="landing" />
+        {/* Combined Data Section */}
+        <div className="landing-data-section">
+          {/* Statistics Showcase */}
+          <div className="landing-stats-container">
+            <StatsShowcase />
+          </div>
+          
+          {/* Leaderboard Section */}
+          <div className="landing-leaderboard-container">
+            <Leaderboard defaultDuration={15} defaultPeriod="alltime" layoutMode="landing" />
+          </div>
         </div>
       </div>
 
