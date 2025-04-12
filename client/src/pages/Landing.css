@@ -37,10 +37,11 @@ body {
 /* General Landing Page Container - Takes full height after Navbar */
 .landing-container {
   display: flex;
-  flex-direction: column; /* Keep column flow for potential footer later */
+  flex-direction: column;
   align-items: center;
-  justify-content: center; /* Center the main content vertically */
-  min-height: calc(100vh - 90px); /* Full height minus approx Navbar height */
+  /* Remove min-height calculation, rely on flex-grow of content */
+  /* justify-content: center; */ /* Let content flow naturally from top */
+  padding-top: 2rem; /* Add padding below the Landing page's own Navbar */
   padding: 2rem 5%; /* Use percentage for padding */
   background-color: var(--background-color, #121212);
   color: var(--mode-text-color, #e0e0e0);
@@ -55,8 +56,10 @@ body {
   align-items: center; /* Align items vertically */
   justify-content: space-around; /* Space out columns */
   width: 100%;
-  max-width: 1200px; /* Max width for larger screens */
-  gap: 4rem; /* Space between columns */
+  max-width: 1200px;
+  gap: 4rem;
+  flex-grow: 1; /* Allow this container to grow and push footer down if needed */
+  justify-content: center; /* Center the columns horizontally */
 }
 
 /* Left Column */
@@ -74,9 +77,31 @@ body {
   height: 200px;
   border-radius: 50%; /* Circular as per wireframe */
   background-color: var(--secondary-color, #1e1e1e); /* Placeholder bg */
-  margin-bottom: 2rem;
-  object-fit: contain; /* Ensure logo fits */
+  margin-bottom: 1.5rem; /* Space before login button */
+  object-fit: contain;
   border: 3px solid var(--hover-color, #2a2a2a);
+}
+
+/* Style for the login button in the left column */
+.login-button-left {
+  background-color: var(--secondary-color, #1e1e1e); /* Match wireframe */
+  color: var(--mode-text-color, #e0e0e0);
+  border: 1px solid var(--mode-text-color, #e0e0e0);
+  padding: 0.8rem 2.5rem; /* Make it prominent */
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  margin-bottom: 2rem; /* Space before snippet examples */
+  width: 80%; /* Make button wider */
+  max-width: 250px;
+}
+
+.login-button-left:hover {
+  background-color: var(--princeton-orange, #F58025);
+  border-color: var(--princeton-orange, #F58025);
+  color: white;
 }
 
 .snippet-examples {

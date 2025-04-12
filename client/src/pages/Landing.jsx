@@ -130,11 +130,15 @@ function Landing() {
           {/* Left Column */}
           <div className="landing-left-column">
             <img src={tigerLogo} alt="TigerType Logo" className="landing-logo-large" />
-            {/* Placeholder for snippet examples or other content */}
+            {/* Add Login button below logo */}
+            <button onClick={handleLogin} className="login-button-left">
+              Log In
+            </button>
+            {/* Add actual example text */}
             <div className="snippet-examples">
-              <div className="snippet-example-box">[Text snippet example 1]</div>
-              <div className="snippet-example-box">[Text snippet example 2]</div>
-              <div className="snippet-example-box">[Text snippet example 3]</div>
+              <div className="snippet-example-box">"Princeton University, founded in 1746..."</div>
+              <div className="snippet-example-box">"The quick brown fox jumps over the lazy dog."</div>
+              <div className="snippet-example-box">"Type faster, race harder, conquer the leaderboard!"</div>
             </div>
           </div>
 

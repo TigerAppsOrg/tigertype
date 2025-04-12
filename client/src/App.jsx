@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'; // Import useLocation
 import { lazy, Suspense } from 'react';
 import './App.css';
 
@@ -33,10 +33,21 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Helper component to conditionally render Navbar
+const ConditionalNavbar = () => {
+  const location = useLocation();
+  // Don't render Navbar on the landing page
+  if (location.pathname === '/') {
+    return null;
+  }
+  // Render Navbar on all other pages
+  return <Navbar />;
+};
+
 function AppRoutes() {
   return (
     <Router>
-      <Navbar />
+      <ConditionalNavbar /> {/* Use the conditional component */}
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route path="/" element={<Landing />} />
