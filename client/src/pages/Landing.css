@@ -1,10 +1,8 @@
-/* Remove default body margin if necessary */
+/* might not be necessary but */
 body {
   margin: 0;
 }
 
-/* Ensure Navbar is positioned correctly */
-/* Styles for Navbar elements might need adjustment in Navbar.css */
 .navbar-button, .navbar-link, .login-nav-button {
   background: none;
   border: none;
@@ -21,10 +19,10 @@ body {
 }
 
 .login-nav-button {
-  background-color: var(--secondary-color, #1e1e1e); /* Match wireframe */
+  background-color: var(--secondary-color, #1e1e1e); 
   border: 1px solid var(--mode-text-color, #e0e0e0);
   border-radius: 4px;
-  margin-left: 1rem; /* Add some space */
+  margin-left: 1rem;
 }
 
 .login-nav-button:hover {
@@ -39,9 +37,9 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100vh; /* Ensure it takes full viewport height */
-  padding-top: 5vh; /* Add top padding roughly equal to Navbar height + some space */
-  box-sizing: border-box; /* Include padding in height calculation */
+  min-height: 100vh;
+  padding-top: 5vh; 
+  box-sizing: border-box; 
   background-color: var(--background-color, #121212);
   color: var(--mode-text-color, #e0e0e0);
   font-family: var(--main-font, 'Inter', sans-serif);
@@ -52,14 +50,12 @@ body {
 .landing-main-content {
   display: flex;
   flex-direction: row;
-  align-items: flex-start; /* Align columns to the top */
-  justify-content: center; /* Center columns horizontally */
+  align-items: flex-start; 
+  justify-content: center;
   width: 100%;
   max-width: 1200px;
   gap: 5rem;
-  flex-grow: 1; /* Allow content to take available space */
-  margin-top: 4rem; /* Add space below the Navbar */
-  padding-bottom: 4rem; /* Add space at the bottom */
+  flex-grow: 1;
 }
 
 /* Left Column */
@@ -67,36 +63,35 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Align items towards top */
-  flex-basis: 35%; /* Slightly smaller basis */
+  flex-basis: 35%; 
   text-align: center;
-  justify-content: flex-start; /* Align content to the top of the column */
+  justify-content: flex-start; 
 }
 
 .landing-logo-large {
-  width: 30vh; /* Larger logo */
+  width: 30vh; 
   height: 30vh;
-  border-radius: 50%; /* Circular as per wireframe */
-  background-color: var(--secondary-color, #1e1e1e); /* Placeholder bg */
-  margin-bottom: 2rem; /* More space before login button */
+  border-radius: 50%; 
+  background-color: var(--secondary-color, #1e1e1e); 
+  margin-bottom: 2rem; 
   object-fit: contain;
   border: 3px solid var(--hover-color, #2a2a2a);
 }
 
 /* Style for the login button in the left column */
 .login-button-left {
-  background-color: var(--secondary-color, #1e1e1e); /* Match wireframe */
+  background-color: var(--secondary-color, #1e1e1e); 
   color: var(--mode-text-color, #e0e0e0);
   border: 1px solid var(--mode-text-color, #e0e0e0);
-  padding: 0.8rem 2.5rem; /* Make it prominent */
+  padding: 0.8rem 2.5rem; 
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  text-align: center; /* Center text in button */
+  text-align: center; 
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-  margin-bottom: 2.5rem; /* More space before snippet examples */
-  width: 70%; /* Adjust width */
+  margin-bottom: 2.5rem; 
+  width: 70%; 
   max-width: 220px; /* Adjust max-width */
 }
 
@@ -106,39 +101,35 @@ body {
   color: white;
 }
 
-/* Remove styles for snippet examples */
-/* .snippet-examples { ... } */
-/* .snippet-example-box { ... } */
-/* .snippet-example-box:hover { ... } */
-
-/* Remove styles for .leaderboard-container-landing as it's moved */
-
 /* Styles for the new Leaderboard section below main content */
 .leaderboard-section-landing {
   width: 100%;
-  max-width: 900px; /* Allow leaderboard to be wider */
-  margin-top: 4rem; /* Space above the leaderboard section */
-  padding: 2rem;
+  max-width: 1100px; 
+  margin-top: 2rem; 
+  padding: 1.5rem; 
   background-color: var(--secondary-color, #1e1e1e);
   border-radius: 8px;
   border: 1px solid var(--hover-color, #3a3a3a);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+.landing-container {
+  padding-top: 3vh; 
+  padding-bottom: 2rem; 
+}
+
+.landing-main-content {
+  margin-bottom: 1rem; 
+}
+
 .leaderboard-section-landing h2 {
-  text-align: center;
-  color: var(--princeton-orange, #F58025);
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.8rem;
+  font-size: 1.5rem; 
+  margin-bottom: 0.75rem; 
 }
 
 /* Ensure leaderboard list within this section scrolls if needed */
 .leaderboard-section-landing .leaderboard-list {
-  max-height: 50vh; /* Allow more height */
-  background-color: rgba(30, 30, 30, 0.4); /* Restore original list background */
-  border: 1px solid rgba(255, 255, 255, 0.05); /* Restore original border */
-  padding: 0.5rem; /* Restore padding */
+  max-height: 30vh; 
 }
 
 /* Right Column */
@@ -146,8 +137,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  flex-basis: 60%; /* Slightly larger basis */
-  justify-content: flex-start; /* Align content to top of column */
+  flex-basis: 60%; 
+  justify-content: flex-start; 
   margin-top: 10vh;
 }
 
@@ -155,15 +146,14 @@ body {
   font-size: 2.5rem;
   color: var(--mode-text-color, #e0e0e0);
   font-weight: 600;
-  margin-bottom: 2rem; /* Increased margin */
+  margin-bottom: 2rem; 
   display: flex;
   align-items: center;
 }
 
 .train-icon {
   margin-left: 1rem;
-  font-size: 2rem; /* Adjust icon size */
-  /* Add train icon styles if needed, e.g., using ::before with content */
+  font-size: 2rem; 
 }
 
 /* Animated Text Area */
@@ -171,14 +161,14 @@ body {
   background-color: var(--secondary-color, #1e1e1e);
   padding: 1.5rem 2rem;
   border-radius: 8px;
-  border: 1px solid var(--hover-color, #3a3a3a); /* Match example box border */
-  min-height: 100px; /* Adjust height */
+  border: 1px solid var(--hover-color, #3a3a3a); 
+  min-height: 100px; 
   width: 100%;
-  margin-bottom: 2rem; /* More space below */
+  margin-bottom: 2rem; 
   display: flex;
-  align-items: flex-start; /* Align text to top */
+  align-items: flex-start; 
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-  overflow: hidden; /* Hide potential overflow */
+  overflow: hidden; 
 }
 
 .animated-text {
@@ -193,26 +183,24 @@ body {
   text-align: left;
 }
 
-/* Highlighted Text Styles (Mimic Typing.css) */
+/* Highlighted Text Styles */
 .animated-text span {
-  /* Base style for all characters */
   transition: color 0.1s ease-in-out, background-color 0.1s ease-in-out;
 }
 
 .landing-future {
-  color: var(--typing-color, #ffffff53); /* Grayish for untyped */
+  color: var(--typing-color, #ffffff53); 
 }
 
 .landing-correct {
-  color: var(--correct-bg-color, rgba(128, 239, 128, 0.55)) !important; /* Greenish for correct */
+  color: var(--correct-bg-color, rgba(128, 239, 128, 0.55)) !important; 
 }
 
 .landing-current {
   position: relative;
-  background-color: var(--default-cursor, #3a506b); /* Block cursor */
+  background-color: var(--default-cursor, #3a506b); 
   border-radius: 2px;
-  color: var(--current-color, white) !important; /* White text on cursor */
-  /* Add blinking line cursor if block cursor is off - requires JS toggle */
+  color: var(--current-color, white) !important; 
 }
 
 /* Style for incorrect character during animation */
@@ -227,7 +215,7 @@ body {
 .landing-current.line-cursor::before {
   content: "|";
   position: absolute;
-  right: -1px; /* Adjust position */
+  right: -1px; 
   color: var(--princeton-orange, #F58025);
   animation: blink 1s step-end infinite;
 }
@@ -245,8 +233,8 @@ body {
   opacity: 0.9;
   line-height: 1.6;
   text-align: left;
-  max-width: 90%; /* Prevent text from going too wide */
-  margin-top: 1rem; /* Increase space above description */
+  max-width: 90%; 
+  margin-top: 1rem; 
 }
 
 /* Responsive Adjustments */
@@ -254,15 +242,15 @@ body {
   .landing-main-content {
     flex-direction: column; /* Stack columns */
     gap: 2rem;
-    align-items: center; /* Center stacked columns */
+    align-items: center; 
   }
   .landing-left-column, .landing-right-column {
-    flex-basis: 100%; /* Full width when stacked */
-    max-width: 600px; /* Limit width when stacked */
-    align-items: center; /* Center content within columns */
+    flex-basis: 100%; 
+    max-width: 600px; 
+    align-items: center; 
   }
   .landing-right-column h2, .landing-description-right {
-    text-align: center; /* Center text when stacked */
+    text-align: center; 
   }
   .animated-text-container {
      min-height: 100px;

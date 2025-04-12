@@ -1,4 +1,3 @@
-/* Remove the leaderboard-container as we're now rendering directly in the modal */
 /* Heading Styling */
 h2 {
   color: #F58025; /* Orange */
@@ -309,139 +308,104 @@ h2 {
 
 .leaderboard-landing-wrapper {
   display: flex;
-  gap: 2rem; /* Space between controls and list */
+  flex-direction: column;
   width: 100%;
+  gap: 1rem; 
 }
 
-.leaderboard-landing-controls-col {
+/* New Controls Area - Horizontal Layout */
+.leaderboard-landing-controls-area {
   display: flex;
   flex-direction: column;
-  align-items: stretch; /* Stretch items to fill width */
-  flex-basis: 160px; /* Reduced width */
-  flex-shrink: 0;
-  gap: 1rem; /* Space between elements in the controls column */
+  align-items: center;
+  width: 100%;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background-color: rgba(20, 20, 20, 0.3);
+  border-radius: 8px;
 }
 
-/* Heading is removed via JSX, remove style */
-/* .leaderboard-landing-controls-col h2 { ... } */
+.leaderboard-landing-controls-area h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+  margin-top: 0;
+}
 
-/* Make control groups stack vertically */
-.leaderboard-landing-controls-col .control-group {
-  display: flex; /* Override default */
-  flex-direction: column;
-  width: 100%; /* Make groups take full width of column */
+/* Horizontal control groups */
+.leaderboard-landing-controls-area .control-group.horizontal {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
   gap: 0.5rem;
-  align-items: stretch; /* Make buttons fill width */
+  width: 100%;
+  max-width: 600px; 
 }
 
-.leaderboard-landing-controls-col .control-button {
-  width: 100%; /* Make buttons take full width */
-  padding: 0.5rem 0.8rem; /* Reduced padding */
-  box-sizing: border-box; /* Include padding in width */
+/* Period controls (Daily/Alltime) styling */
+.leaderboard-landing-controls-area .period-controls {
+  margin-bottom: 0.5rem;
 }
 
-/* Ensure period controls are above duration controls */
-.leaderboard-landing-controls-col .period-controls {
-  order: 1; /* Comes first */
-}
-.leaderboard-landing-controls-col .duration-controls {
-  order: 2; /* Comes second */
+.leaderboard-landing-controls-area .period-controls .control-button {
+  flex: 1;
+  max-width: 120px; 
 }
 
+/* Duration controls (15s, 30s, etc.) styling */
+.leaderboard-landing-controls-area .duration-controls .control-button {
+  flex: 1;
+  max-width: 80px; 
+}
 
-.leaderboard-landing-list-col {
-  flex-grow: 1; /* List takes remaining space */
-  min-width: 0; /* Prevent flexbox overflow issues */
-  display: flex; /* Use flex to manage height */
+/* List Area */
+.leaderboard-landing-list-area {
+  flex-grow: 1;
+  width: 100%;
+  display: flex;
   flex-direction: column;
 }
 
 /* Adjust list height and scrolling */
-.leaderboard-landing-list-col .leaderboard-list {
+.leaderboard-landing-list-area .leaderboard-list {
   flex-grow: 1;
-  max-height: 35vh; /* Reduced max height */
-   background-color: rgba(30, 30, 30, 0.4);
-   border: 1px solid rgba(255, 255, 255, 0.05);
-   padding: 0.5rem;
-   border-radius: 8px; /* Re-add border radius */
+  max-height: 30vh; 
+  background-color: rgba(30, 30, 30, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.5rem;
+  border-radius: 8px;
+  overflow-y: auto;
 }
 
-.leaderboard-landing-list-col .loading-indicator,
-.leaderboard-landing-list-col .error-message,
-.leaderboard-landing-list-col .no-results {
-  flex-grow: 1; /* Allow these states to fill space too */
+/* Make leaderboard items more compact for landing page */
+.leaderboard-landing-list-area .leaderboard-item {
+  padding: 0.7rem 1rem; 
+}
+
+.leaderboard-landing-list-area .loading-indicator,
+.leaderboard-landing-list-area .error-message,
+.leaderboard-landing-list-area .no-results {
+  flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 150px; /* Reduced min height */
-  min-height: 200px; /* Ensure they take some space */
+  min-height: 150px;
 }
 
-/* --- Styles for Landing Page Leaderboard Layout --- */
-
-.leaderboard-landing-wrapper {
-  display: flex;
-  gap: 2rem; /* Space between controls and list */
-  width: 100%;
-}
-
-.leaderboard-landing-controls-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Center controls horizontally */
-  flex-basis: 200px; /* Fixed width for controls column */
-  flex-shrink: 0;
-  gap: 1rem; /* Space between elements in the controls column */
-}
-
-.leaderboard-landing-controls-col h2 {
-  font-size: 1.5rem; /* Slightly smaller heading */
-  margin-bottom: 0.5rem; /* Less space below heading */
-}
-
-/* Make control groups stack vertically */
-.leaderboard-landing-controls-col .control-group {
-  flex-direction: column;
-  width: 100%; /* Make groups take full width of column */
-  gap: 0.5rem;
-}
-
-.leaderboard-landing-controls-col .control-button {
-  width: 100%; /* Make buttons take full width */
-  padding: 0.7rem 1rem; /* Adjust padding */
-}
-
-/* Ensure period controls are above duration controls */
-.leaderboard-landing-controls-col .period-controls {
-  order: 1; /* Comes first */
-}
-.leaderboard-landing-controls-col .duration-controls {
-  order: 2; /* Comes second */
-}
-
-
-.leaderboard-landing-list-col {
-  flex-grow: 1; /* List takes remaining space */
-  min-width: 0; /* Prevent flexbox overflow issues */
-  display: flex; /* Use flex to manage height */
-  flex-direction: column;
-}
-
-/* Adjust list height and scrolling within the landing page section */
-.leaderboard-landing-list-col .leaderboard-list {
-  flex-grow: 1; /* Allow list to fill available vertical space */
-  max-height: 45vh; /* Set a max height for scrolling */
-  /* Keep existing background/border from modal version or adjust as needed */
-   background-color: rgba(30, 30, 30, 0.4);
-   border: 1px solid rgba(255, 255, 255, 0.05);
-   padding: 0.5rem;
-}
-
-.leaderboard-landing-list-col .loading-indicator,
-.leaderboard-landing-list-col .error-message,
-.leaderboard-landing-list-col .no-results {
-  flex-grow: 1; /* Allow these states to fill space too */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .leaderboard-landing-wrapper {
+    flex-direction: row; 
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  
+  .leaderboard-landing-controls-area {
+    flex-basis: 200px;
+    flex-shrink: 0;
+  }
+  
+  .leaderboard-landing-list-area {
+    flex-grow: 1;
+    min-width: 0; 
+  }
 }

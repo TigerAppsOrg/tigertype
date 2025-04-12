@@ -62,35 +62,35 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
       {/* Landing Page Layout */}
       {layoutMode === 'landing' && (
         <>
-          <div className="leaderboard-landing-controls-col">
-            {/* Conditionally render heading */}
-            {layoutMode !== 'landing' && <h2>Timed Leaderboards</h2>}
-            <h2>Timed Leaderboards</h2>
-            <div className="control-group period-controls vertical">
-              {PERIODS.map(p => (
-                <button
-                  key={p}
-                  className={`control-button ${period === p ? 'active' : ''}`}
-                  onClick={() => setPeriod(p)}
-                >
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
-                </button>
-              ))}
-            </div>
-             <div className="control-group duration-controls vertical">
-              {DURATIONS.map(d => (
-                <button
-                  key={d}
-                  className={`control-button ${duration === d ? 'active' : ''}`}
-                  onClick={() => setDuration(d)}
-                >
-                  {d}s
-                </button>
-              ))}
-            </div>
+          {/* Combined Controls Area */}
+          <div className="leaderboard-landing-controls-area">
+             <h2>Timed Leaderboards</h2>
+             {/* Period Controls (Daily/Alltime) - Separate Row */}
+             <div className="control-group period-controls horizontal">
+               {PERIODS.map(p => (
+                 <button
+                   key={p}
+                   className={`control-button ${period === p ? 'active' : ''}`}
+                   onClick={() => setPeriod(p)}
+                 >
+                   {p.charAt(0).toUpperCase() + p.slice(1)}
+                 </button>
+               ))}
+             </div>
+             {/* Duration Controls (Times) - Separate Row */}
+             <div className="control-group duration-controls horizontal">
+               {DURATIONS.map(d => (
+                 <button
+                   key={d}
+                   className={`control-button ${duration === d ? 'active' : ''}`}
+                   onClick={() => setDuration(d)}
+                 >
+                   {d}s
+                 </button>
+               ))}
+             </div>
           </div>
-          <div className="leaderboard-landing-list-col">
-            {/* List Rendering Logic (same as below) */}
+          <div className="leaderboard-landing-list-area">
             {loading && ( <div className="loading-indicator"><div className="spinner-border text-orange" role="status"><span className="visually-hidden">Loading...</span></div><p>Loading Leaderboard...</p></div> )}
             {error && <p className="error-message">Error: {error}</p>}
             {!loading && !error && (
@@ -101,7 +101,6 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
           </div>
         </>
       )}
-
       {/* Modal Layout (Original Structure) - Keep heading here */}
       {layoutMode === 'modal' && (
          <>
