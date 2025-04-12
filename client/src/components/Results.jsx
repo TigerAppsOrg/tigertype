@@ -3,7 +3,6 @@ import { useRace } from '../context/RaceContext';
 import { useAuth } from '../context/AuthContext';
 import { useState, useCallback, useEffect } from 'react';
 import './Results.css';
-// Import default profile image
 import defaultProfileImage from '../assets/default-profile.svg';
 import PropTypes from 'prop-types';
 

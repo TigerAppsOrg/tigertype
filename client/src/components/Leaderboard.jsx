@@ -3,6 +3,8 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
 import './Leaderboard.css';
+import defaultProfileImage from '../assets/default-profile.svg';
+
 
 const DURATIONS = [15, 30, 60, 120];
 const PERIODS = ['daily', 'alltime'];
@@ -112,9 +114,9 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime' }) {
                     title={`View ${entry.netid}\'s avatar`}
                   >
                      <img 
-                       src={entry.avatar_url || '/default-avatar.png'} 
+                       src={entry.avatar_url || defaultProfileImage} 
                        alt={`${entry.netid} avatar`} 
-                       onError={(e) => { e.target.onerror = null; e.target.src='/default-avatar.png'; }} // Fallback
+                       onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} // Fallback
                      />
                   </div>
                   <span className="leaderboard-netid">{entry.netid}</span>
@@ -144,10 +146,10 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime' }) {
             <button className="avatar-modal-close" onClick={closeAvatarModal}>&times;</button>
             <div className="avatar-modal-content">
               <img 
-                src={selectedAvatar.url || '/default-avatar.png'} 
+                src={selectedAvatar.url || defaultProfileImage} 
                 alt={`${selectedAvatar.name} avatar`} 
                 className="avatar-modal-image" 
-                onError={(e) => { e.target.onerror = null; e.target.src='/default-avatar.png'; }} // Fallback
+                onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} // Fallback
               />
               <p className="avatar-modal-name">{selectedAvatar.name}</p>
             </div>

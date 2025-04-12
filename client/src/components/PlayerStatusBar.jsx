@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './PlayerStatusBar.css';
-// Import default profile image
 import defaultProfileImage from '../assets/default-profile.svg';
 
 function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick }) {
