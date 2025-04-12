@@ -7,23 +7,35 @@ import './Landing.css';
 import tigerLogo from '../assets/tigertype-logo.png'; // Use the simpler icon
 
 const HONOR_CODE = "I pledge my honour that I have not violated the honour code during this examination.";
-const TYPING_SPEED_MS = 100; // Milliseconds per character
-const MISTAKE_CHANCE = 0.04; // 4% chance of making a mistake per character
+const TYPING_SPEED_MS = 80; // Slightly faster typing
+const MISTAKE_CHANCE = 0.05; // 5% chance to start a mistake sequence
 const MISTAKE_PAUSE_MS = 300; // Pause after making mistake
 const BACKSPACE_PAUSE_MS = 150; // Pause after backspacing
 const PAUSE_DURATION_MS = 3000; // Pause between Honor Code and snippet
 
 function Landing() {
   const { login } = useAuth();
-  const [fullText, setFullText] = useState(HONOR_CODE); // The complete text to display (Honor Code or snippet)
+  const [fullText, setFullText] = useState(HONOR_CODE);
   const [charIndex, setCharIndex] = useState(0); // Current position in the text
   const [stage, setStage] = useState('honorCode'); // 'honorCode', 'fetching', 'snippet'
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false); // State for modal
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
-  const isMountedRef = useRef(true); // Track mount status for cleanup
-  const [mistakeActive, setMistakeActive] = useState(false); // Track if a mistake is shown
-  const [mistakeChar, setMistakeChar] = useState(''); // The incorrect char to display
+  const isMountedRef = useRef(true);
+  const [mistakeActive, setMistakeActive] = useState(false); // Is a mistake sequence happening?
+  const [mistakeStartIndex, setMistakeStartIndex] = useState(-1); // Where the mistake sequence started
+  const [currentMistakeChars, setCurrentMistakeChars] = useState([]); // Store the incorrect chars typed
+  const mistakeTimeoutRef = useRef(null); // Ref for mistake-related timeouts
+
+// Helper function to get a random character (excluding the correct one)
+const getRandomChar = (excludeChar = '') => {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'; // Simpler charset for mistakes
+  let randomChar;
+  do {
+    randomChar = chars[Math.floor(Math.random() * chars.length)];
+  } while (randomChar === excludeChar);
+  return randomChar;
+};
 
   // --- Animation Logic ---
 
@@ -40,39 +52,65 @@ function Landing() {
       if (!isMountedRef.current) return;
 
       setCharIndex((prevIndex) => {
-        if (prevIndex >= textToAnimate.length) {
-           // End of text reached
-           clearInterval(intervalRef.current);
-           if (stage === 'honorCode') {
-             if (timeoutRef.current) clearTimeout(timeoutRef.current);
-             timeoutRef.current = setTimeout(() => {
-               if (isMountedRef.current) setStage('fetching');
-             }, PAUSE_DURATION_MS);
+        // If currently correcting a mistake, just decrement index
+        if (mistakeActive && currentMistakeChars.length > 0) {
+           // Simulate backspace
+           setCurrentMistakeChars(prev => prev.slice(0, -1)); // Remove last mistake char
+           if (currentMistakeChars.length === 1) { // Last mistake char removed
+             setMistakeActive(false); // End mistake state
+             setMistakeStartIndex(-1);
+             // Resume normal typing slightly delayed
+             mistakeTimeoutRef.current = setTimeout(() => {
+                if (intervalRef.current) clearInterval(intervalRef.current); // Clear backspace interval
+                intervalRef.current = setInterval(typeCharacter, TYPING_SPEED_MS); // Resume typing
+             }, BACKSPACE_PAUSE_MS);
            }
-           return prevIndex;
+           return prevIndex - 1; // Move index back
         }
 
-        // --- Mistake Logic ---
-        if (Math.random() < MISTAKE_CHANCE && !mistakeActive) {
-          clearInterval(intervalRef.current); // Stop typing
-          const incorrectChar = getRandomChar(textToAnimate[prevIndex]);
-          setMistakeChar(incorrectChar);
-          setMistakeActive(true);
-
-          // Pause, then backspace, then resume
-          timeoutRef.current = setTimeout(() => {
-            if (!isMountedRef.current) return;
-            setMistakeActive(false); // Simulate backspace visually
+        // Check if animation should end
+        if (prevIndex >= textToAnimate.length) {
+          clearInterval(intervalRef.current);
+          if (stage === 'honorCode') {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => {
-               if (!isMountedRef.current) return;
-               // Resume typing interval
-               intervalRef.current = setInterval(typeCharacter, TYPING_SPEED_MS);
-            }, BACKSPACE_PAUSE_MS);
-          }, MISTAKE_PAUSE_MS);
-
-          return prevIndex; // Don't advance index yet
+              if (isMountedRef.current) setStage('fetching');
+            }, PAUSE_DURATION_MS);
+          }
+          return prevIndex;
         }
-        // --- End Mistake Logic ---
+
+        // --- Mistake Trigger Logic ---
+        if (!mistakeActive && Math.random() < MISTAKE_CHANCE) {
+          clearInterval(intervalRef.current); // Stop normal typing
+          setMistakeActive(true);
+          setMistakeStartIndex(prevIndex);
+          const mistakeLength = Math.floor(Math.random() * 5) + 1; // 1-5 mistakes
+          let mistakesTyped = 0;
+          let tempMistakeChars = [];
+
+          const typeMistakeSequence = () => {
+             if (!isMountedRef.current || mistakesTyped >= mistakeLength) {
+                // Finished typing mistakes, start backspacing
+                mistakeTimeoutRef.current = setTimeout(() => {
+                    if (intervalRef.current) clearInterval(intervalRef.current); // Clear mistake interval
+                    intervalRef.current = setInterval(typeCharacter, BACKSPACE_PAUSE_MS); // Start backspacing interval
+                }, MISTAKE_PAUSE_MS);
+                return;
+             }
+
+             const incorrectChar = getRandomChar(textToAnimate[prevIndex + mistakesTyped]);
+             tempMistakeChars.push(incorrectChar);
+             setCurrentMistakeChars([...tempMistakeChars]); // Update state for rendering
+             setCharIndex(prev => prev + 1); // Advance index while making mistakes
+             mistakesTyped++;
+             mistakeTimeoutRef.current = setTimeout(typeMistakeSequence, TYPING_SPEED_MS); // Continue mistake sequence
+          };
+
+          mistakeTimeoutRef.current = setTimeout(typeMistakeSequence, MISTAKE_PAUSE_MS); // Start mistake sequence after pause
+          return prevIndex; // Return current index, mistake sequence handles advancement
+        }
+        // --- End Mistake Trigger Logic ---
 
         // Normal typing: advance index
         return prevIndex + 1;
@@ -82,27 +120,34 @@ function Landing() {
     intervalRef.current = setInterval(typeCharacter, TYPING_SPEED_MS);
   };
 
+
   // Fetch random snippet when stage changes to 'fetching'
   useEffect(() => {
     if (stage === 'fetching' && isMountedRef.current) {
-      fetch('/api/landing-snippet')
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          if (isMountedRef.current && data && data.text) {
-            startAnimationProgress(data.text); // Start animating the new snippet
-            setStage('snippet');
-          } else {
-            console.error("Could not fetch landing snippet or snippet was empty.");
-            // Optionally handle error: maybe revert to Honor Code or show static text
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching landing snippet:', error);
-          // Optionally handle fetch error
-        });
+       // Clear any mistake timeouts before fetching
+       if (mistakeTimeoutRef.current) clearTimeout(mistakeTimeoutRef.current);
+       if (intervalRef.current) clearInterval(intervalRef.current); // Stop any ongoing animation
+
+       fetch('/api/landing-snippet')
+         .then(res => {
+           if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+           return res.json();
+         })
+         .then(data => {
+           if (isMountedRef.current && data && data.text) {
+             startAnimationProgress(data.text); // Start animating the new snippet
+             setStage('snippet');
+           } else {
+             console.error("Could not fetch landing snippet or snippet was empty.");
+             // Fallback: restart Honor Code animation if fetch fails
+             if (isMountedRef.current) startAnimationProgress(HONOR_CODE);
+           }
+         })
+         .catch(error => {
+           console.error('Error fetching landing snippet:', error);
+            // Fallback: restart Honor Code animation on error
+           if (isMountedRef.current) startAnimationProgress(HONOR_CODE);
+         });
     }
   }, [stage]); // Re-run when stage changes
 
@@ -116,6 +161,7 @@ function Landing() {
       isMountedRef.current = false; // Mark as unmounted
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (mistakeTimeoutRef.current) clearTimeout(mistakeTimeoutRef.current); // Clear mistake timeouts too
     };
   }, []); // Empty dependency array ensures this runs only once on mount
 
@@ -123,28 +169,27 @@ function Landing() {
   const getHighlightedText = useCallback(() => {
     if (!fullText) return null;
 
-    // Similar logic to Typing.jsx's getHighlightedText
     return fullText.split('').map((char, index) => {
       let className = 'landing-future';
       let displayChar = char;
 
-      if (index < charIndex) {
-        className = 'landing-correct';
-      } else if (index === charIndex) {
-        if (mistakeActive) {
-          className = 'landing-incorrect'; // Show mistake style
-          displayChar = mistakeChar; // Show the wrong character
-        } else {
-          className = 'landing-current'; // Normal current character
-        }
+      if (mistakeActive && index >= mistakeStartIndex && index < mistakeStartIndex + currentMistakeChars.length) {
+        // Part of the currently displayed mistake sequence
+        className = 'landing-incorrect';
+        // Display the incorrect character that was typed for this position in the sequence
+        displayChar = currentMistakeChars[index - mistakeStartIndex];
+      } else if (index < charIndex && (!mistakeActive || index < mistakeStartIndex)) {
+         // Correctly typed characters before any active mistake OR characters before the backspace point
+         className = 'landing-correct';
+      } else if (index === charIndex && !mistakeActive) {
+         // Current cursor position (not making a mistake)
+         className = 'landing-current';
       }
-
-      // Handle spaces specifically if needed for styling
-      // if (char === ' ') className += ' space';
+      // else: it remains 'landing-future'
 
       return <span key={index} className={className}>{displayChar}</span>;
     });
-  }, [fullText, charIndex]);
+  }, [fullText, charIndex, mistakeActive, mistakeStartIndex, currentMistakeChars]); // Add mistake states to dependencies
 
 
   // --- Event Handlers ---
@@ -170,10 +215,7 @@ function Landing() {
             <button onClick={handleLogin} className="login-button-left">
               Log In
             </button>
-            {/* Replace snippet examples with Leaderboard */}
-            <div className="leaderboard-container-landing">
-              <Leaderboard defaultDuration={15} defaultPeriod="alltime" />
-            </div>
+            {/* Leaderboard removed from left column */}
           </div>
 
           {/* Right Column */}
@@ -188,6 +230,11 @@ function Landing() {
               Improve your typing skills with Princeton-themed challenges! Race against fellow students or practice solo.
             </p>
           </div>
+        </div>
+        {/* Leaderboard Section Below Main Content */}
+        <div className="leaderboard-section-landing">
+             <h2>Leaderboards</h2>
+             <Leaderboard defaultDuration={15} defaultPeriod="alltime" />
         </div>
       </div>
 

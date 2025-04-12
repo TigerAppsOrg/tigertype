@@ -111,35 +111,34 @@ body {
 /* .snippet-example-box { ... } */
 /* .snippet-example-box:hover { ... } */
 
-/* Add styles for the Leaderboard container in the left column */
-.leaderboard-container-landing {
+/* Remove styles for .leaderboard-container-landing as it's moved */
+
+/* Styles for the new Leaderboard section below main content */
+.leaderboard-section-landing {
   width: 100%;
-  max-width: 400px; /* Adjust as needed */
-  /* You might need to set a height or max-height if the leaderboard overflows */
-  max-height: 40vh; /* Example max height */
-  overflow: hidden; /* Hide overflow initially, leaderboard has its own scroll */
+  max-width: 900px; /* Allow leaderboard to be wider */
+  margin-top: 4rem; /* Space above the leaderboard section */
+  padding: 2rem;
+  background-color: var(--secondary-color, #1e1e1e);
   border-radius: 8px;
   border: 1px solid var(--hover-color, #3a3a3a);
-  background-color: var(--secondary-color, #1e1e1e);
-  padding: 0.5rem; /* Add some padding around the leaderboard */
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Adjust Leaderboard internal styles if needed (might require !important or more specific selectors) */
-.leaderboard-container-landing .leaderboard-controls {
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-  gap: 1rem;
+.leaderboard-section-landing h2 {
+  text-align: center;
+  color: var(--princeton-orange, #F58025);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
 }
-.leaderboard-container-landing .leaderboard-list {
-   background-color: transparent; /* Make list background transparent */
-   border: none;
-   padding: 0;
-   max-height: calc(40vh - 80px); /* Adjust based on container padding and controls height */
-}
-.leaderboard-container-landing h2 {
-  font-size: 1.2rem; /* Smaller heading for landing page */
-  margin-bottom: 1rem;
+
+/* Ensure leaderboard list within this section scrolls if needed */
+.leaderboard-section-landing .leaderboard-list {
+  max-height: 50vh; /* Allow more height */
+  background-color: rgba(30, 30, 30, 0.4); /* Restore original list background */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Restore original border */
+  padding: 0.5rem; /* Restore padding */
 }
 
 /* Right Column */
