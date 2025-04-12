@@ -5,8 +5,9 @@ import ProfileWidget from './ProfileWidget';
 import Settings from './Settings';
 import './Navbar.css';
 import { useRace } from '../context/RaceContext';
+import PropTypes from 'prop-types'; // Import PropTypes
 
-function Navbar() {
+function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { authenticated, user, logout } = useAuth();
   const navigate = useNavigate();
@@ -26,14 +27,17 @@ function Navbar() {
     <header className="navbar">
       <div className="navbar-logo">
         <button type='text' onClick={handleLogo}>TigerType</button>
-        <button 
-          className="settings-button"
-          onClick={() => setIsSettingsOpen(true)}
-          aria-label="Open settings"
-          tabIndex={0}
-        >
-          <span className="material-icons settings-icon">settings</span>
-        </button>
+        {/* Conditionally render settings button only when authenticated */}
+        {authenticated && (
+          <button
+            className="settings-button"
+            onClick={() => setIsSettingsOpen(true)}
+            aria-label="Open settings"
+            tabIndex={0}
+          >
+            <span className="material-icons settings-icon">settings</span>
+          </button>
+        )}
       </div>
       
       <nav className="navbar-links">
@@ -44,8 +48,11 @@ function Navbar() {
           </>
         ) : (
           <>
-            <a href="#">About</a>
-            <a href="#">Features</a>
+            {/* Logged-out Navbar items */}
+            <button onClick={onOpenLeaderboard} className="navbar-button">Leaderboard</button>
+            <a href="#" className="navbar-link">About Us</a>
+            <a href="#" className="navbar-link">Contact Us</a>
+            <button onClick={onLoginClick} className="login-nav-button">Log In</button>
           </>
         )}
       </nav>
@@ -57,5 +64,11 @@ function Navbar() {
     </header>
   );
 }
+
+// Add PropTypes validation
+Navbar.propTypes = {
+  onOpenLeaderboard: PropTypes.func,
+  onLoginClick: PropTypes.func,
+};
 
 export default Navbar;
