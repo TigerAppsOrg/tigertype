@@ -7,8 +7,11 @@ import './Landing.css';
 import tigerLogo from '../assets/tigertype-logo.png'; // Use the simpler icon
 
 const HONOR_CODE = "I pledge my honour that I have not violated the honour code during this examination.";
-const TYPING_SPEED_MS = 100; // Faster typing speed
-const PAUSE_DURATION_MS = 5000; // Longer pause
+const TYPING_SPEED_MS = 100; // Milliseconds per character
+const MISTAKE_CHANCE = 0.04; // 4% chance of making a mistake per character
+const MISTAKE_PAUSE_MS = 300; // Pause after making mistake
+const BACKSPACE_PAUSE_MS = 150; // Pause after backspacing
+const PAUSE_DURATION_MS = 3000; // Pause between Honor Code and snippet
 
 function Landing() {
   const { login } = useAuth();
@@ -19,6 +22,8 @@ function Landing() {
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
   const isMountedRef = useRef(true); // Track mount status for cleanup
+  const [mistakeActive, setMistakeActive] = useState(false); // Track if a mistake is shown
+  const [mistakeChar, setMistakeChar] = useState(''); // The incorrect char to display
 
   // --- Animation Logic ---
 
@@ -31,27 +36,50 @@ function Landing() {
 
     if (intervalRef.current) clearInterval(intervalRef.current);
 
-    intervalRef.current = setInterval(() => {
-      if (!isMountedRef.current) {
-        clearInterval(intervalRef.current);
-        return;
-      }
+    const typeCharacter = () => {
+      if (!isMountedRef.current) return;
+
       setCharIndex((prevIndex) => {
-        const nextIndex = prevIndex + 1;
-        if (nextIndex > textToAnimate.length) {
-          clearInterval(intervalRef.current);
-          // Trigger next stage after Honor Code completes
-          if (stage === 'honorCode') {
-             if (timeoutRef.current) clearTimeout(timeoutRef.current); // Clear previous timeout if any
+        if (prevIndex >= textToAnimate.length) {
+           // End of text reached
+           clearInterval(intervalRef.current);
+           if (stage === 'honorCode') {
+             if (timeoutRef.current) clearTimeout(timeoutRef.current);
              timeoutRef.current = setTimeout(() => {
                if (isMountedRef.current) setStage('fetching');
              }, PAUSE_DURATION_MS);
-          }
-          return prevIndex; // Keep index at the end
+           }
+           return prevIndex;
         }
-        return nextIndex;
+
+        // --- Mistake Logic ---
+        if (Math.random() < MISTAKE_CHANCE && !mistakeActive) {
+          clearInterval(intervalRef.current); // Stop typing
+          const incorrectChar = getRandomChar(textToAnimate[prevIndex]);
+          setMistakeChar(incorrectChar);
+          setMistakeActive(true);
+
+          // Pause, then backspace, then resume
+          timeoutRef.current = setTimeout(() => {
+            if (!isMountedRef.current) return;
+            setMistakeActive(false); // Simulate backspace visually
+            timeoutRef.current = setTimeout(() => {
+               if (!isMountedRef.current) return;
+               // Resume typing interval
+               intervalRef.current = setInterval(typeCharacter, TYPING_SPEED_MS);
+            }, BACKSPACE_PAUSE_MS);
+          }, MISTAKE_PAUSE_MS);
+
+          return prevIndex; // Don't advance index yet
+        }
+        // --- End Mistake Logic ---
+
+        // Normal typing: advance index
+        return prevIndex + 1;
       });
-    }, TYPING_SPEED_MS);
+    };
+
+    intervalRef.current = setInterval(typeCharacter, TYPING_SPEED_MS);
   };
 
   // Fetch random snippet when stage changes to 'fetching'
@@ -97,16 +125,24 @@ function Landing() {
 
     // Similar logic to Typing.jsx's getHighlightedText
     return fullText.split('').map((char, index) => {
-      let className = 'landing-future'; // Default: character yet to be typed
+      let className = 'landing-future';
+      let displayChar = char;
+
       if (index < charIndex) {
-        className = 'landing-correct'; // Character correctly typed
+        className = 'landing-correct';
       } else if (index === charIndex) {
-        className = 'landing-current'; // Current character position
+        if (mistakeActive) {
+          className = 'landing-incorrect'; // Show mistake style
+          displayChar = mistakeChar; // Show the wrong character
+        } else {
+          className = 'landing-current'; // Normal current character
+        }
       }
-      // Handle spaces specifically if needed for styling (e.g., different background)
+
+      // Handle spaces specifically if needed for styling
       // if (char === ' ') className += ' space';
 
-      return <span key={index} className={className}>{char}</span>;
+      return <span key={index} className={className}>{displayChar}</span>;
     });
   }, [fullText, charIndex]);
 
@@ -134,11 +170,9 @@ function Landing() {
             <button onClick={handleLogin} className="login-button-left">
               Log In
             </button>
-            {/* Add actual example text */}
-            <div className="snippet-examples">
-              <div className="snippet-example-box">"Princeton University, founded in 1746..."</div>
-              <div className="snippet-example-box">"The quick brown fox jumps over the lazy dog."</div>
-              <div className="snippet-example-box">"Type faster, race harder, conquer the leaderboard!"</div>
+            {/* Replace snippet examples with Leaderboard */}
+            <div className="leaderboard-container-landing">
+              <Leaderboard defaultDuration={15} defaultPeriod="alltime" />
             </div>
           </div>
 

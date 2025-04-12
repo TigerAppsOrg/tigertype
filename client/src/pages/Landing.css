@@ -106,29 +106,40 @@ body {
   color: white;
 }
 
-.snippet-examples {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem; /* Slightly increase gap */
+/* Remove styles for snippet examples */
+/* .snippet-examples { ... } */
+/* .snippet-example-box { ... } */
+/* .snippet-example-box:hover { ... } */
+
+/* Add styles for the Leaderboard container in the left column */
+.leaderboard-container-landing {
   width: 100%;
-}
-
-.snippet-example-box {
-  border: 1px solid var(--hover-color, #3a3a3a); /* Slightly lighter border */
+  max-width: 400px; /* Adjust as needed */
+  /* You might need to set a height or max-height if the leaderboard overflows */
+  max-height: 40vh; /* Example max height */
+  overflow: hidden; /* Hide overflow initially, leaderboard has its own scroll */
+  border-radius: 8px;
+  border: 1px solid var(--hover-color, #3a3a3a);
   background-color: var(--secondary-color, #1e1e1e);
-  padding: 1rem 1.4rem; /* Increased padding */
-  border-radius: 6px;
-  color: var(--mode-text-color, #b0b0b0); /* Lighter text */
-  opacity: 0.8; /* Less dim */
-  font-style: normal; /* Remove italic */
-  font-size: 0.9rem; /* Slightly smaller */
-  text-align: left; /* Align text left */
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  padding: 0.5rem; /* Add some padding around the leaderboard */
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
-.snippet-example-box:hover {
-  background-color: var(--hover-color, #2a2a2a);
-  border-color: var(--princeton-orange, #F58025);
+/* Adjust Leaderboard internal styles if needed (might require !important or more specific selectors) */
+.leaderboard-container-landing .leaderboard-controls {
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+.leaderboard-container-landing .leaderboard-list {
+   background-color: transparent; /* Make list background transparent */
+   border: none;
+   padding: 0;
+   max-height: calc(40vh - 80px); /* Adjust based on container padding and controls height */
+}
+.leaderboard-container-landing h2 {
+  font-size: 1.2rem; /* Smaller heading for landing page */
+  margin-bottom: 1rem;
 }
 
 /* Right Column */
@@ -203,6 +214,14 @@ body {
   border-radius: 2px;
   color: var(--current-color, white) !important; /* White text on cursor */
   /* Add blinking line cursor if block cursor is off - requires JS toggle */
+}
+
+/* Style for incorrect character during animation */
+.landing-incorrect {
+  color: var(--incorrect-color, rgba(255, 65, 47, 0.8)) !important;
+  background-color: var(--incorrect-bg-color, rgba(255, 116, 108, 0.15)) !important;
+  text-decoration: underline wavy rgba(255, 65, 47, 0.55);
+  border-radius: 2px; /* Match current style */
 }
 
 /* Blinking line cursor (alternative to block) */
