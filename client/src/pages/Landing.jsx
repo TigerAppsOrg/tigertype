@@ -1,78 +1,72 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import Navbar from '../components/Navbar'; // Import Navbar
-import Modal from '../components/Modal'; // Import Modal
-import Leaderboard from '../components/Leaderboard'; // Import Leaderboard
+import Navbar from '../components/Navbar';
+import Modal from '../components/Modal';
+import Leaderboard from '../components/Leaderboard';
 import './Landing.css';
-import tigerLogo from '../assets/tigertype-logo.png'; // Use the simpler icon
+import tigerLogo from '../assets/tigertype-logo.png';
 
 const HONOR_CODE = "I pledge my honour that I have not violated the honour code during this examination.";
-const TYPING_SPEED_MS = 80; // Slightly faster typing
-const MISTAKE_CHANCE = 0.05; // 5% chance to start a mistake sequence
-const MISTAKE_PAUSE_MS = 300; // Pause after making mistake
-const BACKSPACE_PAUSE_MS = 150; // Pause after backspacing
-const PAUSE_DURATION_MS = 3000; // Pause between Honor Code and snippet
+const TYPING_SPEED_MS = 80;
+const MISTAKE_CHANCE = 0.06;
+const MISTAKE_PAUSE_MS = 400;
+const BACKSPACE_SPEED_MS = 60;
+const POST_CORRECTION_PAUSE_MS = 250;
+const PAUSE_DURATION_MS = 3000;
 
 function Landing() {
   const { login } = useAuth();
   const [fullText, setFullText] = useState(HONOR_CODE);
-  const [charIndex, setCharIndex] = useState(0); // Current position in the text
-  const [stage, setStage] = useState('honorCode'); // 'honorCode', 'fetching', 'snippet'
-  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false); // State for modal
+  const [charIndex, setCharIndex] = useState(0);
+  const [stage, setStage] = useState('honorCode');
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const intervalRef = useRef(null);
-  const timeoutRef = useRef(null);
+  const timeoutRef = useRef(null); // For stage transitions/pauses
   const isMountedRef = useRef(true);
-  const [mistakeActive, setMistakeActive] = useState(false); // Is a mistake sequence happening?
-  const [mistakeStartIndex, setMistakeStartIndex] = useState(-1); // Where the mistake sequence started
-  const [currentMistakeChars, setCurrentMistakeChars] = useState([]); // Store the incorrect chars typed
-  const mistakeTimeoutRef = useRef(null); // Ref for mistake-related timeouts
-
-// Helper function to get a random character (excluding the correct one)
-const getRandomChar = (excludeChar = '') => {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'; // Simpler charset for mistakes
-  let randomChar;
-  do {
-    randomChar = chars[Math.floor(Math.random() * chars.length)];
-  } while (randomChar === excludeChar);
-  return randomChar;
-};
+  const [mistakeActive, setMistakeActive] = useState(false);
+  const [mistakeStartIndex, setMistakeStartIndex] = useState(-1);
+  const [mistakeEndIndex, setMistakeEndIndex] = useState(-1); // Track the end of the mistake sequence
 
   // --- Animation Logic ---
 
-  // Function to start the animation progress for a given text
-  const startAnimationProgress = (textToAnimate) => {
-    if (!isMountedRef.current) return; // Prevent updates if unmounted
-
-    setFullText(textToAnimate); // Set the full text immediately
-    setCharIndex(0); // Reset index
-
+  const clearTimersAndIntervals = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    intervalRef.current = null;
+    timeoutRef.current = null;
+  }, []);
+
+  const startAnimationProgress = useCallback((textToAnimate) => {
+    if (!isMountedRef.current) return;
+
+    clearTimersAndIntervals();
+    setFullText(textToAnimate);
+    setCharIndex(0);
+    setMistakeActive(false);
+    setMistakeStartIndex(-1);
+    setMistakeEndIndex(-1);
 
     const typeCharacter = () => {
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current) {
+        clearTimersAndIntervals();
+        return;
+      }
 
+      // --- Backspace Logic ---
+      if (mistakeActive && charIndex > mistakeStartIndex) {
+        // Currently backspacing after a mistake
+        setCharIndex(prevIndex => prevIndex - 1);
+        return; // Let the backspace interval handle timing
+      }
+      // --- End Backspace Logic ---
+
+
+      // --- Normal Typing & Mistake Trigger ---
       setCharIndex((prevIndex) => {
-        // If currently correcting a mistake, just decrement index
-        if (mistakeActive && currentMistakeChars.length > 0) {
-           // Simulate backspace
-           setCurrentMistakeChars(prev => prev.slice(0, -1)); // Remove last mistake char
-           if (currentMistakeChars.length === 1) { // Last mistake char removed
-             setMistakeActive(false); // End mistake state
-             setMistakeStartIndex(-1);
-             // Resume normal typing slightly delayed
-             mistakeTimeoutRef.current = setTimeout(() => {
-                if (intervalRef.current) clearInterval(intervalRef.current); // Clear backspace interval
-                intervalRef.current = setInterval(typeCharacter, TYPING_SPEED_MS); // Resume typing
-             }, BACKSPACE_PAUSE_MS);
-           }
-           return prevIndex - 1; // Move index back
-        }
-
-        // Check if animation should end
+        // End Condition
         if (prevIndex >= textToAnimate.length) {
-          clearInterval(intervalRef.current);
+          clearTimersAndIntervals();
           if (stage === 'honorCode') {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => {
               if (isMountedRef.current) setStage('fetching');
             }, PAUSE_DURATION_MS);
@@ -80,53 +74,54 @@ const getRandomChar = (excludeChar = '') => {
           return prevIndex;
         }
 
-        // --- Mistake Trigger Logic ---
-        if (!mistakeActive && Math.random() < MISTAKE_CHANCE) {
-          clearInterval(intervalRef.current); // Stop normal typing
+        // Mistake Trigger
+        if (Math.random() < MISTAKE_CHANCE) {
+          clearTimersAndIntervals(); // Stop normal typing
           setMistakeActive(true);
           setMistakeStartIndex(prevIndex);
-          const mistakeLength = Math.floor(Math.random() * 5) + 1; // 1-5 mistakes
-          let mistakesTyped = 0;
-          let tempMistakeChars = [];
+          const mistakeLength = Math.floor(Math.random() * 5) + 1;
+          const targetMistakeEndIndex = Math.min(prevIndex + mistakeLength, textToAnimate.length);
+          setMistakeEndIndex(targetMistakeEndIndex);
 
-          const typeMistakeSequence = () => {
-             if (!isMountedRef.current || mistakesTyped >= mistakeLength) {
-                // Finished typing mistakes, start backspacing
-                mistakeTimeoutRef.current = setTimeout(() => {
-                    if (intervalRef.current) clearInterval(intervalRef.current); // Clear mistake interval
-                    intervalRef.current = setInterval(typeCharacter, BACKSPACE_PAUSE_MS); // Start backspacing interval
+          // Interval to "type" the mistake (advance index)
+          intervalRef.current = setInterval(() => {
+            if (!isMountedRef.current) {
+              clearTimersAndIntervals();
+              return;
+            }
+            setCharIndex(currentIndex => {
+              const nextIndex = currentIndex + 1;
+              if (nextIndex >= targetMistakeEndIndex) {
+                clearInterval(intervalRef.current); // Stop typing mistakes
+                // Pause, then start backspacing
+                timeoutRef.current = setTimeout(() => {
+                  if (!isMountedRef.current) return;
+                  // Start backspacing interval (calls typeCharacter, which now handles backspace logic)
+                  intervalRef.current = setInterval(typeCharacter, BACKSPACE_SPEED_MS);
                 }, MISTAKE_PAUSE_MS);
-                return;
-             }
+              }
+              return nextIndex;
+            });
+          }, TYPING_SPEED_MS);
 
-             const incorrectChar = getRandomChar(textToAnimate[prevIndex + mistakesTyped]);
-             tempMistakeChars.push(incorrectChar);
-             setCurrentMistakeChars([...tempMistakeChars]); // Update state for rendering
-             setCharIndex(prev => prev + 1); // Advance index while making mistakes
-             mistakesTyped++;
-             mistakeTimeoutRef.current = setTimeout(typeMistakeSequence, TYPING_SPEED_MS); // Continue mistake sequence
-          };
-
-          mistakeTimeoutRef.current = setTimeout(typeMistakeSequence, MISTAKE_PAUSE_MS); // Start mistake sequence after pause
-          return prevIndex; // Return current index, mistake sequence handles advancement
+          return prevIndex; // Initial return before mistake interval takes over
         }
-        // --- End Mistake Trigger Logic ---
 
-        // Normal typing: advance index
+        // Normal Typing
         return prevIndex + 1;
       });
     };
 
+    // Start the initial typing interval
     intervalRef.current = setInterval(typeCharacter, TYPING_SPEED_MS);
-  };
+
+  }, [stage, clearTimersAndIntervals]);
 
 
-  // Fetch random snippet when stage changes to 'fetching'
-  useEffect(() => {
+   // Fetch random snippet
+   useEffect(() => {
     if (stage === 'fetching' && isMountedRef.current) {
-       // Clear any mistake timeouts before fetching
-       if (mistakeTimeoutRef.current) clearTimeout(mistakeTimeoutRef.current);
-       if (intervalRef.current) clearInterval(intervalRef.current); // Stop any ongoing animation
+       clearTimersAndIntervals();
 
        fetch('/api/landing-snippet')
          .then(res => {
@@ -135,72 +130,68 @@ const getRandomChar = (excludeChar = '') => {
          })
          .then(data => {
            if (isMountedRef.current && data && data.text) {
-             startAnimationProgress(data.text); // Start animating the new snippet
+             startAnimationProgress(data.text);
              setStage('snippet');
            } else {
              console.error("Could not fetch landing snippet or snippet was empty.");
-             // Fallback: restart Honor Code animation if fetch fails
-             if (isMountedRef.current) startAnimationProgress(HONOR_CODE);
+             if (isMountedRef.current) startAnimationProgress(HONOR_CODE); // Fallback
            }
          })
          .catch(error => {
            console.error('Error fetching landing snippet:', error);
-            // Fallback: restart Honor Code animation on error
-           if (isMountedRef.current) startAnimationProgress(HONOR_CODE);
+           if (isMountedRef.current) startAnimationProgress(HONOR_CODE); // Fallback
          });
     }
-  }, [stage]); // Re-run when stage changes
+  }, [stage, startAnimationProgress, clearTimersAndIntervals]);
 
-  // Start Honor Code animation on mount
+
+  // Start Honor Code animation on mount & cleanup
   useEffect(() => {
     isMountedRef.current = true;
     startAnimationProgress(HONOR_CODE);
 
-    // Cleanup function
     return () => {
-      isMountedRef.current = false; // Mark as unmounted
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (mistakeTimeoutRef.current) clearTimeout(mistakeTimeoutRef.current); // Clear mistake timeouts too
+      isMountedRef.current = false;
+      clearTimersAndIntervals();
     };
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, [startAnimationProgress, clearTimersAndIntervals]);
+
 
   // --- Highlighted Text Generation ---
   const getHighlightedText = useCallback(() => {
     if (!fullText) return null;
 
     return fullText.split('').map((char, index) => {
-      let className = 'landing-future';
-      let displayChar = char;
+      let className = 'landing-future'; // Default: Untyped
 
-      if (mistakeActive && index >= mistakeStartIndex && index < mistakeStartIndex + currentMistakeChars.length) {
-        // Part of the currently displayed mistake sequence
-        className = 'landing-incorrect';
-        // Display the incorrect character that was typed for this position in the sequence
-        displayChar = currentMistakeChars[index - mistakeStartIndex];
-      } else if (index < charIndex && (!mistakeActive || index < mistakeStartIndex)) {
-         // Correctly typed characters before any active mistake OR characters before the backspace point
-         className = 'landing-correct';
+      if (mistakeActive && index >= mistakeStartIndex && index < mistakeEndIndex) {
+        // Character is within the range affected by the mistake sequence
+        // Highlight red only up to the current cursor position during the mistake/backspace phase
+        if (index < charIndex) {
+            className = 'landing-incorrect';
+        }
+      } else if (index < charIndex) {
+        // Character has been typed correctly
+        className = 'landing-correct';
       } else if (index === charIndex && !mistakeActive) {
-         // Current cursor position (not making a mistake)
-         className = 'landing-current';
+        // Current cursor position when not making/correcting a mistake
+        className = 'landing-current';
       }
-      // else: it remains 'landing-future'
 
-      return <span key={index} className={className}>{displayChar}</span>;
+      return <span key={index} className={className}>{char}</span>;
     });
-  }, [fullText, charIndex, mistakeActive, mistakeStartIndex, currentMistakeChars]); // Add mistake states to dependencies
+  }, [fullText, charIndex, mistakeActive, mistakeStartIndex, mistakeEndIndex]); // Added mistakeEndIndex
 
 
   // --- Event Handlers ---
   const handleOpenLeaderboard = () => setIsLeaderboardOpen(true);
   const handleCloseLeaderboard = () => setIsLeaderboardOpen(false);
-  const handleLogin = () => login(); // Use the login function from AuthContext
+  const handleLogin = () => login();
+
 
   // --- Render ---
   return (
     <>
-      {/* Pass handlers to Navbar */}
       <Navbar
         onOpenLeaderboard={handleOpenLeaderboard}
         onLoginClick={handleLogin}
@@ -211,11 +202,9 @@ const getRandomChar = (excludeChar = '') => {
           {/* Left Column */}
           <div className="landing-left-column">
             <img src={tigerLogo} alt="TigerType Logo" className="landing-logo-large" />
-            {/* Add Login button below logo */}
             <button onClick={handleLogin} className="login-button-left">
               Log In
             </button>
-            {/* Leaderboard removed from left column */}
           </div>
 
           {/* Right Column */}
@@ -231,10 +220,10 @@ const getRandomChar = (excludeChar = '') => {
             </p>
           </div>
         </div>
+
         {/* Leaderboard Section Below Main Content */}
         <div className="leaderboard-section-landing">
-             <h2>Leaderboards</h2>
-             <Leaderboard defaultDuration={15} defaultPeriod="alltime" />
+             <Leaderboard defaultDuration={15} defaultPeriod="alltime" layoutMode="landing" />
         </div>
       </div>
 
@@ -242,11 +231,10 @@ const getRandomChar = (excludeChar = '') => {
       <Modal
         isOpen={isLeaderboardOpen}
         onClose={handleCloseLeaderboard}
-        // title="Leaderboards" // Title is inside Leaderboard component
         isLarge={true}
         showCloseButton={true}
       >
-        <Leaderboard />
+        <Leaderboard defaultDuration={15} defaultPeriod="alltime" layoutMode="modal" />
       </Modal>
     </>
   );

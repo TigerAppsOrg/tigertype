@@ -302,4 +302,150 @@ h2 {
   letter-spacing: 0.5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(245, 128, 37, 0.3);
-} 
+}
+
+/* --- Styles for Landing Page Leaderboard Layout --- */
+/* Applied via .leaderboard-section-landing selector in Landing.css */
+
+.leaderboard-landing-wrapper {
+  display: flex;
+  gap: 2rem; /* Space between controls and list */
+  width: 100%;
+}
+
+.leaderboard-landing-controls-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center controls horizontally */
+  flex-basis: 200px; /* Fixed width for controls column */
+  flex-shrink: 0;
+  gap: 1rem; /* Space between elements in the controls column */
+}
+
+.leaderboard-landing-controls-col h2 {
+  font-size: 1.5rem; /* Slightly smaller heading */
+  margin-bottom: 0.5rem; /* Less space below heading */
+  color: #F58025; /* Ensure heading color */
+  text-align: center;
+}
+
+/* Make control groups stack vertically */
+.leaderboard-landing-controls-col .control-group {
+  display: flex; /* Override default */
+  flex-direction: column;
+  width: 100%; /* Make groups take full width of column */
+  gap: 0.5rem;
+  align-items: stretch; /* Make buttons fill width */
+}
+
+.leaderboard-landing-controls-col .control-button {
+  width: 100%; /* Make buttons take full width */
+  padding: 0.7rem 1rem; /* Adjust padding */
+  box-sizing: border-box; /* Include padding in width */
+}
+
+/* Ensure period controls are above duration controls */
+.leaderboard-landing-controls-col .period-controls {
+  order: 1; /* Comes first */
+}
+.leaderboard-landing-controls-col .duration-controls {
+  order: 2; /* Comes second */
+}
+
+
+.leaderboard-landing-list-col {
+  flex-grow: 1; /* List takes remaining space */
+  min-width: 0; /* Prevent flexbox overflow issues */
+  display: flex; /* Use flex to manage height */
+  flex-direction: column;
+}
+
+/* Adjust list height and scrolling within the landing page section */
+.leaderboard-landing-list-col .leaderboard-list {
+  flex-grow: 1; /* Allow list to fill available vertical space */
+  max-height: 45vh; /* Set a max height for scrolling */
+  /* Keep existing background/border from modal version or adjust as needed */
+   background-color: rgba(30, 30, 30, 0.4);
+   border: 1px solid rgba(255, 255, 255, 0.05);
+   padding: 0.5rem;
+   border-radius: 8px; /* Re-add border radius */
+}
+
+.leaderboard-landing-list-col .loading-indicator,
+.leaderboard-landing-list-col .error-message,
+.leaderboard-landing-list-col .no-results {
+  flex-grow: 1; /* Allow these states to fill space too */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px; /* Ensure they take some space */
+}
+
+/* --- Styles for Landing Page Leaderboard Layout --- */
+
+.leaderboard-landing-wrapper {
+  display: flex;
+  gap: 2rem; /* Space between controls and list */
+  width: 100%;
+}
+
+.leaderboard-landing-controls-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center controls horizontally */
+  flex-basis: 200px; /* Fixed width for controls column */
+  flex-shrink: 0;
+  gap: 1rem; /* Space between elements in the controls column */
+}
+
+.leaderboard-landing-controls-col h2 {
+  font-size: 1.5rem; /* Slightly smaller heading */
+  margin-bottom: 0.5rem; /* Less space below heading */
+}
+
+/* Make control groups stack vertically */
+.leaderboard-landing-controls-col .control-group {
+  flex-direction: column;
+  width: 100%; /* Make groups take full width of column */
+  gap: 0.5rem;
+}
+
+.leaderboard-landing-controls-col .control-button {
+  width: 100%; /* Make buttons take full width */
+  padding: 0.7rem 1rem; /* Adjust padding */
+}
+
+/* Ensure period controls are above duration controls */
+.leaderboard-landing-controls-col .period-controls {
+  order: 1; /* Comes first */
+}
+.leaderboard-landing-controls-col .duration-controls {
+  order: 2; /* Comes second */
+}
+
+
+.leaderboard-landing-list-col {
+  flex-grow: 1; /* List takes remaining space */
+  min-width: 0; /* Prevent flexbox overflow issues */
+  display: flex; /* Use flex to manage height */
+  flex-direction: column;
+}
+
+/* Adjust list height and scrolling within the landing page section */
+.leaderboard-landing-list-col .leaderboard-list {
+  flex-grow: 1; /* Allow list to fill available vertical space */
+  max-height: 45vh; /* Set a max height for scrolling */
+  /* Keep existing background/border from modal version or adjust as needed */
+   background-color: rgba(30, 30, 30, 0.4);
+   border: 1px solid rgba(255, 255, 255, 0.05);
+   padding: 0.5rem;
+}
+
+.leaderboard-landing-list-col .loading-indicator,
+.leaderboard-landing-list-col .error-message,
+.leaderboard-landing-list-col .no-results {
+  flex-grow: 1; /* Allow these states to fill space too */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
