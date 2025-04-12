@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import Leaderboard from '../components/Leaderboard';
+import StatsShowcase from '../components/StatsShowcase';
 import './Landing.css';
 import tigerLogo from '../assets/tigertype-logo.png';
 
@@ -244,6 +245,9 @@ function Landing() {
             </p>
           </div>
         </div>
+
+        {/* Statistics Showcase Section */}
+        <StatsShowcase />
 
         {/* Leaderboard Section Below Main Content */}
         <div className="leaderboard-section-landing">
