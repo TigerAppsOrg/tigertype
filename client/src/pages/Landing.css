@@ -40,8 +40,7 @@ body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh; /* Ensure it takes full viewport height */
-  padding: 0 5%; /* Remove explicit top padding here */
-  padding-top: 110px; /* Add top padding roughly equal to Navbar height + some space */
+  padding-top: 5vh; /* Add top padding roughly equal to Navbar height + some space */
   box-sizing: border-box; /* Include padding in height calculation */
   background-color: var(--background-color, #121212);
   color: var(--mode-text-color, #e0e0e0);
@@ -75,8 +74,8 @@ body {
 }
 
 .landing-logo-large {
-  width: 200px; /* Larger logo */
-  height: 200px;
+  width: 30vh; /* Larger logo */
+  height: 30vh;
   border-radius: 50%; /* Circular as per wireframe */
   background-color: var(--secondary-color, #1e1e1e); /* Placeholder bg */
   margin-bottom: 2rem; /* More space before login button */
@@ -112,7 +111,6 @@ body {
   flex-direction: column;
   gap: 1.2rem; /* Slightly increase gap */
   width: 100%;
-  max-width: 300px; /* Limit width of example boxes */
 }
 
 .snippet-example-box {

@@ -4,11 +4,11 @@ import Navbar from '../components/Navbar'; // Import Navbar
 import Modal from '../components/Modal'; // Import Modal
 import Leaderboard from '../components/Leaderboard'; // Import Leaderboard
 import './Landing.css';
-import tigerLogo from '../assets/tiger-icon.png'; // Use the simpler icon
+import tigerLogo from '../assets/tigertype-logo.png'; // Use the simpler icon
 
-const HONOR_CODE = "I pledge my honour that I have not violated the honour code during this examination";
-const TYPING_SPEED_MS = 50; // Faster typing speed
-const PAUSE_DURATION_MS = 2500; // Longer pause
+const HONOR_CODE = "I pledge my honour that I have not violated the honour code during this examination.";
+const TYPING_SPEED_MS = 100; // Faster typing speed
+const PAUSE_DURATION_MS = 5000; // Longer pause
 
 function Landing() {
   const { login } = useAuth();
