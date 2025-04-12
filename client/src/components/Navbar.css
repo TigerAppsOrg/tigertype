@@ -44,7 +44,7 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 2.5rem; /* Increased gap */
     right: 5%;
   }
   

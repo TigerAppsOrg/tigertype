@@ -39,10 +39,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Remove min-height calculation, rely on flex-grow of content */
-  /* justify-content: center; */ /* Let content flow naturally from top */
-  padding-top: 2rem; /* Add padding below the Landing page's own Navbar */
-  padding: 2rem 5%; /* Use percentage for padding */
+  min-height: 100vh; /* Ensure it takes full viewport height */
+  padding: 0 5%; /* Remove explicit top padding here */
+  padding-top: 110px; /* Add top padding roughly equal to Navbar height + some space */
+  box-sizing: border-box; /* Include padding in height calculation */
   background-color: var(--background-color, #121212);
   color: var(--mode-text-color, #e0e0e0);
   font-family: var(--main-font, 'Inter', sans-serif);
@@ -52,14 +52,15 @@ body {
 /* Main Content Area - Two Columns */
 .landing-main-content {
   display: flex;
-  flex-direction: row; /* Side-by-side columns */
-  align-items: center; /* Align items vertically */
-  justify-content: space-around; /* Space out columns */
+  flex-direction: row;
+  align-items: flex-start; /* Align columns to the top */
+  justify-content: center; /* Center columns horizontally */
   width: 100%;
   max-width: 1200px;
-  gap: 4rem;
-  flex-grow: 1; /* Allow this container to grow and push footer down if needed */
-  justify-content: center; /* Center the columns horizontally */
+  gap: 5rem;
+  flex-grow: 1; /* Allow content to take available space */
+  margin-top: 4rem; /* Add space below the Navbar */
+  padding-bottom: 4rem; /* Add space at the bottom */
 }
 
 /* Left Column */
@@ -67,9 +68,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  flex-basis: 40%; /* Adjust basis as needed */
+  /* Align items towards top */
+  flex-basis: 35%; /* Slightly smaller basis */
   text-align: center;
+  justify-content: flex-start; /* Align content to the top of the column */
 }
 
 .landing-logo-large {
@@ -77,7 +79,7 @@ body {
   height: 200px;
   border-radius: 50%; /* Circular as per wireframe */
   background-color: var(--secondary-color, #1e1e1e); /* Placeholder bg */
-  margin-bottom: 1.5rem; /* Space before login button */
+  margin-bottom: 2rem; /* More space before login button */
   object-fit: contain;
   border: 3px solid var(--hover-color, #2a2a2a);
 }
@@ -92,10 +94,11 @@ body {
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
+  text-align: center; /* Center text in button */
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-  margin-bottom: 2rem; /* Space before snippet examples */
-  width: 80%; /* Make button wider */
-  max-width: 250px;
+  margin-bottom: 2.5rem; /* More space before snippet examples */
+  width: 70%; /* Adjust width */
+  max-width: 220px; /* Adjust max-width */
 }
 
 .login-button-left:hover {
@@ -107,34 +110,43 @@ body {
 .snippet-examples {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem; /* Slightly increase gap */
   width: 100%;
   max-width: 300px; /* Limit width of example boxes */
 }
 
 .snippet-example-box {
-  border: 1px solid var(--hover-color, #2a2a2a);
+  border: 1px solid var(--hover-color, #3a3a3a); /* Slightly lighter border */
   background-color: var(--secondary-color, #1e1e1e);
-  padding: 1rem;
+  padding: 1rem 1.4rem; /* Increased padding */
   border-radius: 6px;
-  color: var(--mode-text-color, #e0e0e0);
-  opacity: 0.6; /* Dim placeholder text */
-  font-style: italic;
+  color: var(--mode-text-color, #b0b0b0); /* Lighter text */
+  opacity: 0.8; /* Less dim */
+  font-style: normal; /* Remove italic */
+  font-size: 0.9rem; /* Slightly smaller */
+  text-align: left; /* Align text left */
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.snippet-example-box:hover {
+  background-color: var(--hover-color, #2a2a2a);
+  border-color: var(--princeton-orange, #F58025);
 }
 
 /* Right Column */
 .landing-right-column {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Align text to the left */
-  flex-basis: 55%; /* Adjust basis */
+  align-items: flex-start;
+  flex-basis: 60%; /* Slightly larger basis */
+  justify-content: flex-start; /* Align content to top of column */
 }
 
 .landing-right-column h2 {
   font-size: 2.5rem;
   color: var(--mode-text-color, #e0e0e0);
   font-weight: 600;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem; /* Increased margin */
   display: flex;
   align-items: center;
 }
@@ -150,22 +162,22 @@ body {
   background-color: var(--secondary-color, #1e1e1e);
   padding: 1.5rem 2rem;
   border-radius: 8px;
-  border: 1px solid var(--hover-color, #2a2a2a); /* Subtle border */
-  min-height: 120px; /* Ensure minimum height */
+  border: 1px solid var(--hover-color, #3a3a3a); /* Match example box border */
+  min-height: 100px; /* Adjust height */
   width: 100%;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem; /* More space below */
   display: flex;
-  /* align-items: center; */ /* Align text top */
+  align-items: flex-start; /* Align text to top */
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
   overflow: hidden; /* Hide potential overflow */
 }
 
 .animated-text {
   font-family: 'Fira Code', monospace;
-  font-size: 1.3rem; /* Slightly larger */
-  line-height: 1.7;
+  font-size: 1.2rem; /* Adjust size */
+  line-height: 1.6;
   margin: 0;
-  color: var(--typing-color, #ffffff53); /* Default color for future text */
+  color: var(--typing-color, #ffffff53);
   white-space: pre-wrap;
   word-wrap: break-word;
   width: 100%;
@@ -211,11 +223,13 @@ body {
 
 /* Description Text (Right Column) */
 .landing-description-right {
-  font-size: 1.1rem;
+  font-size: 1.05rem; /* Adjust size */
   color: var(--mode-text-color, #e0e0e0);
   opacity: 0.9;
   line-height: 1.6;
   text-align: left;
+  max-width: 90%; /* Prevent text from going too wide */
+  margin-top: 1rem; /* Increase space above description */
 }
 
 /* Responsive Adjustments */
