@@ -46,7 +46,7 @@ function AboutUs() {
           <div className="developer-card leader">
             <div className="developer-image-container">
               <div className="developer-image">
-                <img src="https://via.placeholder.com/150" alt="Ammaar Alam" />
+                <img src="https://media.licdn.com/dms/image/v2/D4E03AQF2NVaZwBFgtg/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1718231509781?e=1750291200&v=beta&t=YPYS9f3_3ptRrCgKTFV4djUvZAsgKRzLeEAU0ygNoqo" alt="Ammaar Alam" />
               </div>
               <div className="leader-badge">Team Lead</div>
             </div>
@@ -54,15 +54,15 @@ function AboutUs() {
             <p className="developer-role">Lead Developer</p>
             <p className="developer-bio">Princeton '27 - Computer Science</p>
             <div className="developer-links">
-              <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
-              <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              <a href="https://github.com/ammaar-alam" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="https://ammaaralam.com" target="_blank" rel="noopener noreferrer">Website</a>
             </div>
           </div>
           
           <div className="developer-card">
             <div className="developer-image-container">
               <div className="developer-image">
-                <img src="https://via.placeholder.com/150" alt="William Guan" />
+                <img src="https://media.licdn.com/dms/image/v2/D4D03AQFxz0EUKZnBhw/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1695095743340?e=1750291200&v=beta&t=CwOt8lkzXGpadwDx-EFKiJeGe-N2Q67eHUKztvOMh9w" alt="William Guan" />
               </div>
             </div>
             <h3>William Guan</h3>
