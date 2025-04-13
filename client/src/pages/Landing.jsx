@@ -9,7 +9,7 @@ import tigerLogo from '../assets/tigertype-logo.png';
 
 const HONOR_CODE = "I pledge my honour that I have not violated the honour code during this examination.";
 const TYPING_SPEED_MS = 80;
-const MISTAKE_CHANCE = 0.06;
+const MISTAKE_CHANCE = 0.2;
 const MISTAKE_PAUSE_MS = 400;
 const BACKSPACE_SPEED_MS = 60;
 const POST_CORRECTION_PAUSE_MS = 250;
