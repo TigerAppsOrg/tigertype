@@ -5,11 +5,10 @@ import PropTypes from 'prop-types';
 import './Leaderboard.css';
 import defaultProfileImage from '../assets/default-profile.svg';
 
-
 const DURATIONS = [15, 30, 60, 120];
 const PERIODS = ['daily', 'alltime'];
 
-function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime' }) {
+function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMode = 'modal' }) {
   const { socket } = useSocket();
   const { user } = useAuth();
   const [duration, setDuration] = useState(defaultDuration);
@@ -61,95 +60,139 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime' }) {
 
   return (
     <>
-      <h2>Timed Leaderboards</h2>
-
-      <div className="leaderboard-controls">
-        <div className="control-group duration-controls">
-          {DURATIONS.map(d => (
-            <button
-              key={d}
-              className={`control-button ${duration === d ? 'active' : ''}`}
-              onClick={() => setDuration(d)}
-            >
-              {d}s
-            </button>
-          ))}
-        </div>
-        <div className="control-group period-controls">
-          {PERIODS.map(p => (
-            <button
-              key={p}
-              className={`control-button ${period === p ? 'active' : ''}`}
-              onClick={() => setPeriod(p)}
-            >
-              {p.charAt(0).toUpperCase() + p.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {loading && (
-        <div className="loading-indicator">
-          <div className="spinner-border text-orange" role="status">
-            <span className="visually-hidden">Loading...</span>
+      {layoutMode === 'landing' ? (
+        <div className="leaderboard-landing-wrapper">
+          {/* Combined Controls Area */}
+          <div className="leaderboard-landing-controls-area">
+             <h2>Leaderboards</h2>
+             {/* Period Controls (Daily/Alltime) - Separate Row */}
+             <div className="control-group period-controls horizontal">
+               {PERIODS.map(p => (
+                 <button
+                   key={p}
+                   className={`control-button ${period === p ? 'active' : ''}`}
+                   onClick={() => setPeriod(p)}
+                 >
+                   {p.charAt(0).toUpperCase() + p.slice(1)}
+                 </button>
+               ))}
+             </div>
+             {/* Duration Controls (Times) */}
+             <div className="control-group duration-controls vertical">
+               {DURATIONS.map(d => (
+                 <button
+                   key={d}
+                   className={`control-button ${duration === d ? 'active' : ''}`}
+                   onClick={() => setDuration(d)}
+                 >
+                   {d}s
+                 </button>
+               ))}
+             </div>
           </div>
-          <p>Loading Leaderboard...</p>
-        </div>
-      )}
-      {error && <p className="error-message">Error: {error}</p>}
-
-      {!loading && !error && (
-        <div className="leaderboard-list">
-          {leaderboard.length > 0 ? (
-            leaderboard.map((entry, index) => (
-              <div
-                key={`${entry.user_id}-${entry.created_at}`}
-                className={`leaderboard-item ${entry.netid === user?.netid ? 'current-user' : ''}`}
-              >
-                <span className="leaderboard-rank">{index + 1}</span>
-                <div className="leaderboard-player">
-                  <div 
-                    className="leaderboard-avatar" 
-                    onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)}
-                    title={`View ${entry.netid}\'s avatar`}
-                  >
-                     <img 
-                       src={entry.avatar_url || defaultProfileImage} 
-                       alt={`${entry.netid} avatar`} 
-                       onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} // Fallback
-                     />
-                  </div>
-                  <span className="leaderboard-netid">{entry.netid}</span>
-                </div>
-                <div className="leaderboard-stats">
-                  <span className="leaderboard-wpm">{parseFloat(entry.wpm).toFixed(0)} WPM</span>
-                  <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span>
-                  <span className="leaderboard-date">
-                    {period === 'daily' 
-                      ? new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-                      : new Date(entry.created_at).toLocaleDateString()
-                    }
-                  </span>
-                </div>
+          <div className="leaderboard-landing-list-area">
+            {loading && ( <div className="loading-indicator"><div className="spinner-border text-orange" role="status"><span className="visually-hidden">Loading...</span></div><p>Loading Leaderboard...</p></div> )}
+            {error && <p className="error-message">Error: {error}</p>}
+            {!loading && !error && (
+              <div className="leaderboard-list">
+                {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${entry.netid === user?.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <span className="leaderboard-netid">{entry.netid}</span> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
               </div>
-            ))
-          ) : (
-            <p className="no-results">No results found for this leaderboard.</p>
-          )}
+            )}
+          </div>
         </div>
+      ) : (
+        <>
+          <h2>Timed Leaderboards</h2>
+          
+          <div className="leaderboard-controls">
+            <div className="control-group duration-controls">
+              {DURATIONS.map(d => (
+                <button
+                  key={d}
+                  className={`control-button ${duration === d ? 'active' : ''}`}
+                  onClick={() => setDuration(d)}
+                >
+                  {d}s
+                </button>
+              ))}
+            </div>
+            <div className="control-group period-controls">
+              {PERIODS.map(p => (
+                <button
+                  key={p}
+                  className={`control-button ${period === p ? 'active' : ''}`}
+                  onClick={() => setPeriod(p)}
+                >
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading && (
+            <div className="loading-indicator">
+              <div className="spinner-border text-orange" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p>Loading Leaderboard...</p>
+            </div>
+          )}
+          {error && <p className="error-message">Error: {error}</p>}
+
+          {!loading && !error && (
+            <div className="leaderboard-list">
+              {leaderboard.length > 0 ? (
+                leaderboard.map((entry, index) => (
+                  <div
+                    key={`${entry.user_id}-${entry.created_at}`}
+                    className={`leaderboard-item ${entry.netid === user?.netid ? 'current-user' : ''}`}
+                  >
+                    <span className="leaderboard-rank">{index + 1}</span>
+                    <div className="leaderboard-player">
+                      <div 
+                        className="leaderboard-avatar" 
+                        onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)}
+                        title={`View ${entry.netid}\'s avatar`}
+                      >
+                        <img 
+                          src={entry.avatar_url || defaultProfileImage} 
+                          alt={`${entry.netid} avatar`} 
+                          onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
+                        />
+                      </div>
+                      <span className="leaderboard-netid">{entry.netid}</span>
+                    </div>
+                    <div className="leaderboard-stats">
+                      <span className="leaderboard-wpm">{parseFloat(entry.wpm).toFixed(0)} WPM</span>
+                      <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span>
+                      <span className="leaderboard-date">
+                        {period === 'daily' 
+                          ? new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                          : new Date(entry.created_at).toLocaleDateString()
+                        }
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="no-results">No results found for this leaderboard.</p>
+              )}
+            </div>
+          )}
+        </>
       )}
 
-      {/* Avatar Modal */}
+      {/* Avatar Modal (Common to both layouts) */}
       {selectedAvatar && (
         <div className="avatar-modal-overlay" onClick={closeAvatarModal}>
-          <div className="avatar-modal" onClick={(e) => e.stopPropagation()}> 
+          <div className="avatar-modal" onClick={(e) => e.stopPropagation()}>
             <button className="avatar-modal-close" onClick={closeAvatarModal}>&times;</button>
             <div className="avatar-modal-content">
               <img 
                 src={selectedAvatar.url || defaultProfileImage} 
                 alt={`${selectedAvatar.name} avatar`} 
                 className="avatar-modal-image" 
-                onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} // Fallback
+                onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
               />
               <p className="avatar-modal-name">{selectedAvatar.name}</p>
             </div>
@@ -163,6 +206,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime' }) {
 Leaderboard.propTypes = {
   defaultDuration: PropTypes.oneOf(DURATIONS),
   defaultPeriod: PropTypes.oneOf(PERIODS),
+  layoutMode: PropTypes.oneOf(['modal', 'landing']),
 };
 
 export default Leaderboard; 

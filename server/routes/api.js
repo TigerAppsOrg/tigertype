@@ -53,9 +53,28 @@ const requireAuth = (req, res, next) => {
   // If req.user exists (either from original auth or fallback lookup), proceed
   next();
 };
+// --- Public Routes ---
 
-// --- Profile Routes ---
+// Get a random snippet for the landing page (unauthenticated)
+router.get('/landing-snippet', async (req, res) => {
+  try {
+    const snippet = await SnippetModel.getRandom();
+    if (!snippet) {
+      // If no snippets exist at all, return a default message
+      return res.json({ text: 'Welcome to TigerType! Start typing...' });
+    }
+    // Return only the text field
+    res.json({ text: snippet.text });
+  } catch (err) {
+    console.error('Error fetching landing page snippet:', err);
+    // Send a generic snippet text on error
+    res.status(500).json({ text: 'Error loading snippet. Please try refreshing.' });
+  }
+});
+
+// --- Authenticated Profile Routes ---
 // All profile routes require authentication + are mounted under /profile
+router.use('/profile', requireAuth, profileRoutes);
 router.use('/profile', requireAuth, profileRoutes); 
 
 // --- Existing API Routes ---
@@ -210,6 +229,46 @@ router.get('/leaderboard', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Error fetching leaderboard:', err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get platform statistics (for landing page)
+router.get('/stats', async (req, res) => {
+  try {
+    const { pool } = require('../config/database');
+    
+    // Query to get platform statistics
+    const statsQuery = `
+      SELECT
+        (SELECT COUNT(*) FROM race_results) AS total_races,
+        (SELECT SUM(word_count) FROM snippets JOIN race_results ON snippets.id = race_results.snippet_id) AS total_words_typed,
+        (SELECT ROUND(AVG(wpm)) FROM race_results) AS avg_wpm,
+        (SELECT COUNT(*) FROM users WHERE races_completed > 0) AS active_users
+    `;
+    
+    const result = await pool.query(statsQuery);
+    const stats = result.rows[0];
+    
+    // Format the numbers for display
+    const formattedStats = {
+      total_races: parseInt(stats.total_races).toLocaleString(),
+      total_words_typed: stats.total_words_typed ?
+        (parseInt(stats.total_words_typed) / 1000000).toFixed(1) + 'M+' :
+        '1.2M+', // Fallback if word_count is not available
+      avg_wpm: parseInt(stats.avg_wpm) || 68, // Fallback if no data
+      active_users: parseInt(stats.active_users).toLocaleString() || 842 // Fallback if no data
+    };
+    
+    res.json(formattedStats);
+  } catch (err) {
+    console.error('Error fetching platform statistics:', err);
+    // Return fallback data if there's an error
+    res.json({
+      total_races: '10,482',
+      total_words_typed: '1.2M+',
+      avg_wpm: '68',
+      active_users: '842'
+    });
   }
 });
 

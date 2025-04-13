@@ -1,88 +1,281 @@
+/* might not be necessary but */
+body {
+  margin: 0;
+}
+
+.navbar-button, .navbar-link, .login-nav-button {
+  background: none;
+  border: none;
+  color: var(--mode-text-color, #e0e0e0);
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.navbar-link:hover, .navbar-button:hover {
+  color: var(--princeton-orange, #F58025);
+}
+
+.login-nav-button {
+  background-color: var(--secondary-color, #1e1e1e); 
+  border: 1px solid var(--mode-text-color, #e0e0e0);
+  border-radius: 4px;
+  margin-left: 1rem;
+}
+
+.login-nav-button:hover {
+  background-color: var(--hover-color, #2a2a2a);
+  border-color: var(--princeton-orange, #F58025);
+  color: var(--princeton-orange, #F58025);
+}
+
+
+/* General Landing Page Container - Takes full height after Navbar */
 .landing-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 5vh; 
+  box-sizing: border-box; 
+  background-color: var(--background-color, #121212);
+  color: var(--mode-text-color, #e0e0e0);
+  font-family: var(--main-font, 'Inter', sans-serif);
+  box-sizing: border-box;
+}
+
+/* Main Content Area - Two Columns */
+.landing-main-content {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start; 
+  justify-content: center;
+  width: 100%;
+  max-width: fit-content;
+  gap: 5em;
+  flex-grow: 1;
+  max-height: fit-content;  
+  padding-bottom: 3vh;
+  padding-top: 0vh;
+}
+
+/* Left Column */
+.landing-left-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-basis: 35%; 
+  text-align: center;
+  justify-content: flex-start; 
+}
+
+.landing-logo-large {
+  width: 30vh; 
+  height: 30vh;
+  border-radius: 50%; 
+  background-color: var(--secondary-color, #1e1e1e); 
+  margin-bottom: 2rem; 
+  object-fit: contain;
+  border: 3px solid var(--hover-color, #2a2a2a);
+}
+
+/* Style for the login button in the left column */
+.login-button-left {
+  background-color: var(--secondary-color, #1e1e1e); 
+  color: var(--mode-text-color, #e0e0e0);
+  border: 1px solid var(--mode-text-color, #e0e0e0);
+  padding: 0.8rem 2.5rem; 
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center; 
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  margin-bottom: 2.5rem; 
+  width: 70%; 
+  max-width: 220px; /* Adjust max-width */
+}
+
+.login-button-left:hover {
+  background-color: var(--princeton-orange, #F58025);
+  border-color: var(--princeton-orange, #F58025);
+  color: white;
+}
+
+/* Combined Data Section */
+.landing-data-section {
+  display: flex;
+  width: 100%;
+  max-width: 120vh;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.landing-leaderboard-container {
+  flex: 6; /* 60% width */
+  background-color: var(--secondary-color, #1e1e1e);
+  border-radius: 8px;
+  border: 1px solid var(--hover-color, #3a3a3a);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+}
+
+.landing-container {
+  padding-top: 3vh;
+  padding-bottom: 2rem;
+  max-height: fit-content; /* Added as suggested to fix extra space */
+}
+
+/* Ensure leaderboard list within this section scrolls if needed */
+.landing-leaderboard-container .leaderboard-list {
+  max-height: 25vh; /* Reduced height to fit better */
+}
+
+/* Right Column */
+.landing-right-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-basis: 60%; 
+  justify-content: flex-start;
+  align-self: anchor-center
+}
+
+.landing-right-column h2 {
+  font-size: 2.5rem;
+  color: var(--mode-text-color, #e0e0e0);
+  font-weight: 600;
+  margin-bottom: 2rem; 
+  display: flex;
+  align-items: center;
+}
+
+.train-icon {
+  margin-left: 1rem;
+  font-size: 2rem; 
+}
+
+/* Animated Text Area */
+.animated-text-container {
+  background-color: var(--secondary-color, #1e1e1e);
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  border: 1px solid var(--hover-color, #3a3a3a); 
+  min-height: 100px; 
+  width: 100%;
+  margin-bottom: 2rem; 
+  display: flex;
+  align-items: flex-start; 
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  overflow: hidden; 
+}
+
+.animated-text {
+  font-family: 'Fira Code', monospace;
+  font-size: 1.2rem; /* Adjust size */
+  line-height: 1.6;
+  margin: 0;
+  color: var(--typing-color, #ffffff53);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  width: 100%;
+  text-align: left;
+}
+
+/* Highlighted Text Styles */
+.animated-text span {
+  transition: color 0.1s ease-in-out, background-color 0.1s ease-in-out;
+}
+
+.landing-future {
+  color: var(--typing-color, #ffffff53); 
+}
+
+.landing-correct {
+  color: var(--correct-bg-color, rgba(128, 239, 128, 0.55)) !important; 
+}
+
+.landing-current {
+  position: relative;
+  background-color: var(--default-cursor, #3a506b); 
+  border-radius: 2px;
+  color: var(--current-color, white) !important; 
+}
+
+/* Style for incorrect character during animation */
+.landing-incorrect {
+  color: var(--incorrect-color, rgba(255, 65, 47, 0.8)) !important;
+  background-color: var(--incorrect-bg-color, rgba(255, 116, 108, 0.15)) !important;
+  text-decoration: underline wavy rgba(255, 65, 47, 0.55);
+  border-radius: 2px; /* Match current style */
+}
+
+/* Blinking line cursor (alternative to block) */
+.landing-current.line-cursor::before {
+  content: "|";
+  position: absolute;
+  right: -1px; 
+  color: var(--princeton-orange, #F58025);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+
+/* Description Text (Right Column) */
+.landing-description-right {
+  font-size: 1.05rem; /* Adjust size */
+  color: var(--mode-text-color, #e0e0e0);
+  opacity: 0.9;
+  line-height: 1.6;
+  text-align: left;
+  max-width: 90%; 
+  margin-top: 1rem; 
+}
+
+/* Responsive Adjustments */
+@media (max-width: 900px) {
+  .landing-main-content {
+    flex-direction: column; /* Stack columns */
+    gap: 2rem;
+    align-items: center; 
   }
-  
-  .landing-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    max-width: 600px;
-    margin-bottom: 4rem;
+  .landing-left-column, .landing-right-column {
+    flex-basis: 100%; 
+    max-width: 600px; 
+    align-items: center; 
   }
-  
-  .landing-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 2rem;
+  .landing-right-column h2, .landing-description-right {
+    text-align: center; 
   }
-  
-  .landing-logo {
-    width: 120px;
-    height: 120px;
-    margin-bottom: 1rem;
+  .animated-text-container {
+     min-height: 100px;
   }
-  
-  .landing-header h1 {
-    font-size: 3.5rem;
-    color: #F58025;
-    margin: 0;
-  }
-  
-  .landing-description {
-    margin-bottom: 2.5rem;
-  }
-  
-  .landing-description p {
-    font-size: 1.2rem;
-    margin: 0.5rem 0;
-    color: var(--mode-text-color);
-  }
-  
-  .login-button {
-    background-color: #F58025;
-    color: white;
-    border: none;
-    padding: 0.8rem 2rem;
-    font-size: 1.2rem;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .login-button:hover {
-    background-color: #d56a1a;
-  }
-  
-  .landing-footer {
-    width: 100%;
-    max-width: 800px;
-  }
-  
-  .example-snippet {
-    background-color: var(--secondary-color);
-    padding: 1.5rem;
-    border-radius: 8px;
-    border-left: 3px solid #F58025;
-  }
-  
-  .snippet-title {
-    color: #F58025;
-    font-weight: bold;
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-  }
-  
-  .snippet-text {
-    font-family: monospace;
+   .animated-text {
     font-size: 1.1rem;
-    line-height: 1.6;
-    margin: 0;
-    color: var(--mode-text-color);
   }
+}
+
+@media (max-width: 600px) {
+  .landing-container {
+    padding: 1rem 3%;
+  }
+  .landing-right-column h2 {
+    font-size: 2rem;
+  }
+   .landing-logo-large {
+    width: 150px;
+    height: 150px;
+  }
+  .animated-text {
+    font-size: 1rem;
+  }
+   .landing-description-right {
+    font-size: 1rem;
+  }
+}

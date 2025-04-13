@@ -1,0 +1,145 @@
+.stats-showcase {
+  width: 100%;
+  padding: 1.2rem;
+  background-color: var(--secondary-color, #1e1e1e);
+  border-radius: 8px;
+  border: 1px solid var(--hover-color, #3a3a3a);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-heading {
+  text-align: center;
+  color: var(--princeton-orange, #F58025);
+  font-weight: bold;
+}
+
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 0.75rem;
+  flex-grow: 1;
+  min-height: 120px; /* Ensure container has height even when loading */
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  background-color: rgba(30, 30, 30, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 1rem;
+}
+
+.stat-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--princeton-orange, #F58025);
+  margin-right: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--mode-text-color, #e0e0e0);
+  opacity: 0.9;
+  margin-left: auto;
+}
+
+/* Loading and Error States */
+.stats-loading, .stats-error {
+  width: 100%;
+  text-align: center;
+  padding: 2rem;
+  color: var(--mode-text-color, #e0e0e0);
+  font-size: 1.1rem;
+}
+
+.stats-loading {
+  position: relative;
+  padding-bottom: 3rem;
+}
+
+.stats-loading::after {
+  content: "";
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background-color: var(--princeton-orange, #F58025);
+  border-radius: 2px;
+  animation: loading-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.3; width: 40px; }
+  50% { opacity: 1; width: 80px; }
+}
+
+.stats-error {
+  color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stats-container {
+    gap: 0.5rem;
+  }
+  
+  .stat-card {
+    padding: 0.7rem 0.8rem;
+  }
+  
+  .stat-icon {
+    font-size: 1.3rem;
+  }
+  
+  .stat-value {
+    font-size: 1.3rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* In mobile view, when the layout is stacked, we can keep the vertical card layout */
+  .stats-showcase {
+    padding: 1rem;
+  }
+  
+  .stats-container {
+    flex-direction: column;
+  }
+  
+  .stat-card {
+    width: 100%;
+    padding: 0.7rem 1rem;
+  }
+  
+  .stats-loading, .stats-error {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+}
