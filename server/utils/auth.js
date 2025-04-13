@@ -223,8 +223,17 @@ function logoutApp(req, res) {
   if (req.session) {
     req.session.destroy();
   }
-  // Always redirect to frontend landing page
-  res.redirect(`${FRONTEND_URL}/`);
+  
+  // Ensure we don't get double slashes by using URL constructor
+  try {
+    const landingUrl = new URL('/', FRONTEND_URL).toString();
+    res.redirect(landingUrl);
+  } catch (error) {
+    console.error('Error constructing landing page URL:', error);
+    // Fallback to basic concatenation with trailing slash check
+    const baseUrl = FRONTEND_URL.endsWith('/') ? FRONTEND_URL.slice(0, -1) : FRONTEND_URL;
+    res.redirect(`${baseUrl}/`);
+  }
 }
 
 /**
