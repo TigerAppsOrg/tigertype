@@ -15,8 +15,13 @@ body {
   outline: none; /* Remove outline */
 }
 
+.navbar-link:link, .navbar-link:visited {
+  color: var(--mode-text-color, #e0e0e0);
+  text-decoration: none;
+}
+
 .navbar-link:hover, .navbar-button:hover {
-  color: var(--princeton-orange, #F58025);
+  color: var(--princeton-orange, #F58025) !important;
 }
 
 .login-nav-button {

@@ -18,16 +18,22 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
     resetRace
   } = useRace();
 
+  // State to track hover state of each link
+  const [hoveredLink, setHoveredLink] = useState(null);
+
   const handleLogo = () => {
     resetRace();
     navigate('/home');
   };
 
-  // Style to ensure no border appears
-  const buttonStyle = {
-    border: 'none',
-    outline: 'none',
-    boxShadow: 'none'
+  // Base style for all navbar links
+  const getLinkStyle = (linkName) => {
+    return {
+      color: hoveredLink === linkName ? '#F58025' : '#e0e0e0',
+      textDecoration: 'none',
+      fontFamily: 'inherit',
+      cursor: 'pointer'
+    };
   };
 
   return (
@@ -51,8 +57,25 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
         {authenticated ? (
           <>
             {/* Common items for both logged-in and logged-out states */}
-            <a href="#" onClick={onOpenLeaderboard} className="navbar-link">Leaderboard</a>
-            <a href="#" className="navbar-link">About Us</a>
+            <a 
+              href="#" 
+              onClick={onOpenLeaderboard} 
+              className="navbar-link" 
+              style={getLinkStyle('leaderboard')}
+              onMouseEnter={() => setHoveredLink('leaderboard')}
+              onMouseLeave={() => setHoveredLink(null)}
+            >
+              Leaderboard
+            </a>
+            <a 
+              href="#" 
+              className="navbar-link" 
+              style={getLinkStyle('about')}
+              onMouseEnter={() => setHoveredLink('about')}
+              onMouseLeave={() => setHoveredLink(null)}
+            >
+              About Us
+            </a>
             
             {/* Logged-in specific items */}
             <button onClick={logout} className="logout-button">Logout</button>
@@ -61,8 +84,25 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
         ) : (
           <>
             {/* Logged-out Navbar items */}
-            <a href="#" onClick={onOpenLeaderboard} className="navbar-link">Leaderboard</a>
-            <a href="#" className="navbar-link">About Us</a>
+            <a 
+              href="#" 
+              onClick={onOpenLeaderboard} 
+              className="navbar-link" 
+              style={getLinkStyle('leaderboard')}
+              onMouseEnter={() => setHoveredLink('leaderboard')}
+              onMouseLeave={() => setHoveredLink(null)}
+            >
+              Leaderboard
+            </a>
+            <a 
+              href="#" 
+              className="navbar-link" 
+              style={getLinkStyle('about')}
+              onMouseEnter={() => setHoveredLink('about')}
+              onMouseLeave={() => setHoveredLink(null)}
+            >
+              About Us
+            </a>
             <button onClick={onLoginClick} className="login-nav-button">Log In</button>
           </>
         )}
