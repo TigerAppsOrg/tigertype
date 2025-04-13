@@ -67,15 +67,15 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
             >
               Leaderboard
             </a>
-            <a 
-              href="#" 
-              className="navbar-link" 
+            <Link
+              to="/about" // Changed to Link component
+              className="navbar-link"
               style={getLinkStyle('about')}
               onMouseEnter={() => setHoveredLink('about')}
               onMouseLeave={() => setHoveredLink(null)}
             >
               About Us
-            </a>
+            </Link>
             
             {/* Logged-in specific items */}
             <button onClick={logout} className="logout-button">Logout</button>
@@ -94,15 +94,15 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
             >
               Leaderboard
             </a>
-            <a 
-              href="#" 
-              className="navbar-link" 
+            <Link
+              to="/about" // Changed to Link component
+              className="navbar-link"
               style={getLinkStyle('about')}
               onMouseEnter={() => setHoveredLink('about')}
               onMouseLeave={() => setHoveredLink(null)}
             >
               About Us
-            </a>
+            </Link>
             <button onClick={onLoginClick} className="login-nav-button">Log In</button>
           </>
         )}
