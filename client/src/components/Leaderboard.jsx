@@ -19,34 +19,57 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
   const [selectedAvatar, setSelectedAvatar] = useState(null);
 
   useEffect(() => {
-    if (!socket) return;
-
+    // Fetch from API directly if socket isn't available (user not logged in)
     const fetchLeaderboard = async () => {
       setLoading(true);
       setError(null);
       console.log(`Requesting leaderboard: duration=${duration}, period=${period}`);
-      socket.emit('leaderboard:timed', { duration, period }, (response) => {
-        setLoading(false);
-        if (response.error) {
-          console.error('Error fetching leaderboard:', response.error);
-          setError(response.error);
+      
+      if (socket) {
+        // Use socket if available (user is logged in)
+        socket.emit('leaderboard:timed', { duration, period }, (response) => {
+          setLoading(false);
+          if (response.error) {
+            console.error('Error fetching leaderboard:', response.error);
+            setError(response.error);
+            setLeaderboard([]);
+          } else {
+            console.log('Leaderboard data received:', response.leaderboard);
+            setLeaderboard(response.leaderboard || []);
+          }
+        });
+      } else {
+        // Direct API fetch for public leaderboard data (no auth required)
+        try {
+          const response = await fetch(`/api/public/leaderboard/timed?duration=${duration}&period=${period}`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          console.log('Leaderboard data received via public API:', data.leaderboard);
+          setLeaderboard(data.leaderboard || []);
+        } catch (err) {
+          console.error('Error fetching leaderboard via public API:', err);
+          setError('Unable to load leaderboard data. Please try again later.');
           setLeaderboard([]);
-        } else {
-          console.log('Leaderboard data received:', response.leaderboard);
-          setLeaderboard(response.leaderboard || []);
+        } finally {
+          setLoading(false);
         }
-      });
+      }
     };
 
     fetchLeaderboard();
 
-    // OPTOINAL FOR LATER: Add listener for real-time updates if implemented on the server
+    // OPTIONAL FOR LATER: Add listener for real-time updates if implemented on the server
     // const handleLeaderboardUpdate = (data) => { ... };
-    // socket.on('leaderboard:timedUpdate', handleLeaderboardUpdate);
-
-    // return () => {
-    //   socket.off('leaderboard:timedUpdate', handleLeaderboardUpdate);
-    // };
+    // if (socket) {
+    //   socket.on('leaderboard:timedUpdate', handleLeaderboardUpdate);
+    //   return () => {
+    //     socket.off('leaderboard:timedUpdate', handleLeaderboardUpdate);
+    //   };
+    // }
 
   }, [socket, duration, period]);
 
@@ -95,7 +118,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
             {error && <p className="error-message">Error: {error}</p>}
             {!loading && !error && (
               <div className="leaderboard-list">
-                {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${entry.netid === user?.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <span className="leaderboard-netid">{entry.netid}</span> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
+                {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <span className="leaderboard-netid">{entry.netid}</span> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
               </div>
             )}
           </div>
@@ -145,7 +168,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                 leaderboard.map((entry, index) => (
                   <div
                     key={`${entry.user_id}-${entry.created_at}`}
-                    className={`leaderboard-item ${entry.netid === user?.netid ? 'current-user' : ''}`}
+                    className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}
                   >
                     <span className="leaderboard-rank">{index + 1}</span>
                     <div className="leaderboard-player">
