@@ -39,8 +39,8 @@ function AboutUs() {
             <p className="developer-role">Frontend Developer</p>
             <p className="developer-bio">Princeton '27 - Computer Science</p>
             <div className="developer-links">
-              <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
-              <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              <a href="https://github.com/rc6542" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="https://www.linkedin.com/in/ryan-chen-2369a4289/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
             </div>
           </div>
           
@@ -70,8 +70,8 @@ function AboutUs() {
             <p className="developer-role">Frontend Developer</p>
             <p className="developer-bio">Princeton '27 - Computer Science</p>
             <div className="developer-links">
-              <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
-              <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              <a href="https://github.com/wg6872" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="https://www.linkedin.com/in/wei-feng-guan-407a00217/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
             </div>
           </div>
         </div>
