@@ -106,3 +106,13 @@
 .settings-button:hover .settings-icon {
     transform: rotate(90deg);
 }
+
+.navbar-logo button:hover {
+  background-color: var(--background-color);
+  /* border-color: transparent; */
+}
+
+.settings-button:hover {
+    background: none;
+    /* border-color: transparent; */
+}
