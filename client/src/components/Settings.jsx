@@ -11,8 +11,10 @@ function Settings({ isOpen, onClose }) {
     return localStorage.getItem('typingSound') === 'true';
   });
 
-  const [lightMode, setLightMode] = useState(() => {
-    return localStorage.getItem('lightMode') === 'true';
+  const [theme, setTheme] = useState(() => {
+    // Default to 'dark' if no theme is stored or if stored value is invalid
+    const storedTheme = localStorage.getItem('theme');
+    return storedTheme === 'light' ? 'light' : 'dark'; 
   });
 
   const [defaultCursor, setDefaultCursor] = useState(true);
@@ -23,49 +25,49 @@ function Settings({ isOpen, onClose }) {
   useEffect(() => {
     document.documentElement.style.setProperty('--main-font', whichFont);
     document.documentElement.style.setProperty(
-      '--background-color', lightMode ? '#ffffff' : '#121212'
+      '--background-color', theme === 'light' ? '#ffffff' : '#121212'
     );
     document.documentElement.style.setProperty(
-      '--secondary-color', lightMode ? '#f0f0f0' : '#1e1e1e'
+      '--secondary-color', theme === 'light' ? '#f0f0f0' : '#1e1e1e'
     );
     document.documentElement.style.setProperty(
-      '--mode-text-color', lightMode ? '#1e1e1e' : '#e0e0e0'
+      '--mode-text-color', theme === 'light' ? '#1e1e1e' : '#e0e0e0'
     );
     document.documentElement.style.setProperty(
-      '--hover-color', lightMode ? '#a2a2a2' : '#2a2a2a'
+      '--hover-color', theme === 'light' ? '#a2a2a2' : '#2a2a2a'
     );
     document.documentElement.style.setProperty(
-      '--type-container-color', lightMode ? '#dfdfdf' : '#1e1e1e'
+      '--type-container-color', theme === 'light' ? '#dfdfdf' : '#1e1e1e'
     );
     document.documentElement.style.setProperty(
-      '--typing-color', lightMode ? 'black' : '#ffffff53'
+      '--typing-color', theme === 'light' ? 'black' : '#ffffff53'
     );
     document.documentElement.style.setProperty(
-      '--container-color', lightMode ? '#ffffff' : '#121212'
+      '--container-color', theme === 'light' ? '#ffffff' : '#121212'
     );
     document.documentElement.style.setProperty(
-      '--player-card-color', lightMode ? '#aeaeae' : '#2a2a2a'
+      '--player-card-color', theme === 'light' ? '#aeaeae' : '#2a2a2a'
     );
     document.documentElement.style.setProperty(
       '--correct-bg-color', 
-      lightMode ? '#0A970A' : 'rgba(128, 239, 128, 0.55)'
+      theme === 'light' ? '#0A970A' : 'rgba(128, 239, 128, 0.55)'
     );
     document.documentElement.style.setProperty(
       '--incorrect-color',
-      lightMode ? '#FF0000' : 'rgba(255, 65, 47, 0.55)'
+      theme === 'light' ? '#FF0000' : 'rgba(255, 65, 47, 0.55)'
     );
     document.documentElement.style.setProperty(
       '--incorrect-bg-color',
-      lightMode ? 'rgba(255,116,108, 0.30)' : 'rgba(255,116,108, 0.10)'
+      theme === 'light' ? 'rgba(255,116,108, 0.30)' : 'rgba(255,116,108, 0.10)'
     );
     document.documentElement.style.setProperty(
       '--current-color',
-      lightMode ? 'black' : 'white'
+      theme === 'light' ? 'black' : 'white'
     );
     localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
-    localStorage.setItem('lightMode', lightMode);
-  }, [whichFont, typingSound, lightMode]);
+    localStorage.setItem('theme', theme); // Store theme string
+  }, [whichFont, typingSound, theme]); // Depend on theme state
 
   useEffect(() => {
     const color = defaultCursor ? "#3a506b" : "none";
@@ -122,8 +124,8 @@ function Settings({ isOpen, onClose }) {
     setTypingSound(prev => !prev);
   };
 
-  const handleLightToggle = () => {
-    setLightMode(prev => !prev);
+  const handleThemeChange = (e) => {
+    setTheme(e.target.value);
   };
 
   return (
@@ -134,56 +136,68 @@ function Settings({ isOpen, onClose }) {
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         <div className="settings-content">
-          <p>Fonts</p>
-          <select 
-            className="font-select" 
-            value={whichFont} 
-            onChange={handleTypingFontChange}
-          >
-            <option value="Inter, monospace">Inter</option>
-            <option value="Fira Code, monospace">Fira Code</option>
-            <option value="Courier New, monospace">Courier New</option>
-            <option value="Source Code Pro, monospace">Source Code Pro</option>
-            <option value="JetBrains Mono, monospace">JetBrains Mono</option>
-            <option value="Monaco, monospace">Monaco</option>
-          </select>
-          <p>Block Cursor</p>
-          <div className="toggle">
-            <label className="switch">
-            <input 
-                className='cursor-setting' 
-                type='checkbox' 
-                checked={defaultCursor} 
-                onChange={handleDefaultCursor} />
+          {/* Customization Category */}
+          <h3>Customization</h3>
+          <div className="setting-item">
+            <label htmlFor="font-select">Fonts</label>
+            <select 
+              id="font-select"
+              className="font-select" 
+              value={whichFont} 
+              onChange={handleTypingFontChange}
+            >
+              <option value="Inter, monospace">Inter</option>
+              <option value="Fira Code, monospace">Fira Code</option>
+              <option value="Courier New, monospace">Courier New</option>
+              <option value="Source Code Pro, monospace">Source Code Pro</option>
+              <option value="JetBrains Mono, monospace">JetBrains Mono</option>
+              <option value="Monaco, monospace">Monaco</option>
+            </select>
+          </div>
+          <div className="setting-item">
+            <label htmlFor="block-cursor-toggle">Block Cursor</label>
+            <div className="toggle">
+              <label className="switch">
+                <input 
+                  className='cursor-setting' 
+                  type='checkbox' 
+                  checked={defaultCursor} 
+                  onChange={handleDefaultCursor} />
                 <span className="slider"></span>
-            </label>
-            <span className="sound-label">{defaultCursor ? ' On' : ' Off'}</span>
+              </label>
+              <span className="sound-label">{defaultCursor ? ' On' : ' Off'}</span>
+            </div>
           </div>
-          <p>Typing Sound</p>
-          <div className="toggle">
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={typingSound}
-                onChange={handleSoundToggle}
-              />
-              <span className="slider"></span>
-            </label>
-            <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
-          </div>
-
-          <p>Light Mode</p>
+          <div className="setting-item">
+            <label htmlFor="sound-toggle">Typing Sound</label>
             <div className="toggle">
               <label className="switch">
                 <input
+                  id="sound-toggle"
                   type="checkbox"
-                  checked={lightMode}
-                  onChange={handleLightToggle}
+                  checked={typingSound}
+                  onChange={handleSoundToggle}
                 />
                 <span className="slider"></span>
               </label>
-              <span className="sound-label">{lightMode ? ' On' : ' Off'}</span>
+              <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
             </div>
+          </div>
+
+          <div className="setting-item">
+            <label htmlFor="theme-select">Theme</label>
+            <select
+              id="theme-select"
+              className="theme-select" 
+              value={theme}
+              onChange={handleThemeChange}
+            >
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+          
+          {/* Add more categories below as needed */}
 
         </div>
       </div>
