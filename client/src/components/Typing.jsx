@@ -225,6 +225,24 @@ function Typing({
     }
   }, [raceState.snippet, snippetId]);
 
+  // Track when loadNewSnippet is called to ensure input is reset
+  useEffect(() => {
+    // Listener to when the race state is reset due to ext actions
+    if (!raceState.inProgress && !raceState.manuallyStarted) {
+      // Reset input state when race is reset externally
+      setInput('');
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+      
+      // Also make sure snippet container is scrolled to top
+      const snippetContainer = document.querySelector('.snippet-display');
+      if (snippetContainer) {
+        snippetContainer.scrollTop = 0;
+      }
+    }
+  }, [raceState.inProgress, raceState.manuallyStarted]);
+
   // Focus input when race starts
   useEffect(() => {
     if ((raceState.inProgress || raceState.type === 'practice') && inputRef.current) {
