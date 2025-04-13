@@ -21,6 +21,27 @@
     --container-color: #1e1e1e;
     --typing-color: #ffffff53;  
     --player-card-color: #2a2a2a;
+
+    --primary-color: #F5821F;
+    --primary-color-light: #FFAD6B;
+    --primary-color-dark: #C25A00;
+    --primary-color-rgb: 245, 130, 31;
+
+    --background-color: #121212;
+    --background-color-secondary: #1e1e1e;
+    --background-color-tertiary: #2a2a2a;
+    --background-color-tertiary-rgb: 42, 42, 42;
+
+    --text-color: #e0e0e0;
+    --text-color-secondary: #b0b0b0;
+    --text-color-tertiary: #888888;
+    --text-color-highlight: #ffffff;
+
+    --border-color: #3a3a3a;
+    --border-color-light: #4a4a4a;
+    --border-color-rgb: 58, 58, 58;
+
+    --font-family-main: var(--main-font);
   }
   
   * {
@@ -34,15 +55,22 @@
     display: flex;
     min-width: 320px;
     min-height: 100vh;
+    background-color: var(--background-color);
+    color: var(--text-color);
   }
   
   #root {
     width: 100%;
-    font-family: var(--main-font);
+    font-family: var(--font-family-main);
   }
   
   a {
     text-decoration: none;
+    color: var(--primary-color);
+  }
+  
+  a:hover {
+    color: var(--primary-color-light);
   }
   
   button {
@@ -54,4 +82,10 @@
     font-family: inherit;
     cursor: pointer;
     transition: border-color 0.25s;
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  button:hover {
+    background-color: var(--primary-color-dark);
   }
