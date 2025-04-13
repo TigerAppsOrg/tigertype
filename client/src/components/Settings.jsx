@@ -29,7 +29,7 @@ function Settings({ isOpen, onClose }) {
   const [fontSize, setFontSize] = useState(() => {
     // Get stored font size or use default medium (24px)
     const storedSize = localStorage.getItem('snippetFontSize');
-    if (!storedSize) return 24; // Default to medium
+    if (!storedSize) return 36; // Default to medium
     
     // Find the closest size in our options
     const parsedSize = parseInt(storedSize, 10);
