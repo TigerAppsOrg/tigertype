@@ -1,5 +1,5 @@
 import './Settings.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 function Settings({ isOpen, onClose }) {
 
@@ -16,6 +16,8 @@ function Settings({ isOpen, onClose }) {
   });
 
   const [defaultCursor, setDefaultCursor] = useState(true);
+
+  const modalRef = useRef(); // Create a ref for the modal content
 
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
@@ -72,6 +74,39 @@ function Settings({ isOpen, onClose }) {
     document.documentElement.style.setProperty('--line-cursor', line);
   }, [defaultCursor]);
 
+  // Handle closing modal on outside click or ESC key
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      // Close if clicked outside the modal content area
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    const handleEscapeKey = (event) => {
+      // Close if Escape key is pressed
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      // Add event listeners when the modal is open
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleEscapeKey);
+    } else {
+      // Clean up listeners when modal is closed
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscapeKey);
+    }
+
+    // Cleanup function to remove listeners when the component unmounts or isOpen changes
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isOpen, onClose]); // Re-run effect if isOpen or onClose changes
+
   if (!isOpen) {return null};
 
   const handleTypingFontChange = (e) => {
@@ -93,7 +128,7 @@ function Settings({ isOpen, onClose }) {
 
   return (
     <div className="settings-overlay">
-      <div className="settings-modal">
+      <div className="settings-modal" ref={modalRef}>
         <div className="settings-header">
           <h2>Settings</h2>
           <button className="close-button" onClick={onClose}>×</button>
