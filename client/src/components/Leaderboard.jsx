@@ -105,25 +105,28 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
           <h2>Timed Leaderboards</h2>
           
           <div className="leaderboard-controls">
-            {/* All controls in a single row */}
-            {DURATIONS.map(d => (
-              <button
-                key={d}
-                className={`control-button ${duration === d ? 'active' : ''}`}
-                onClick={() => setDuration(d)}
-              >
-                {d}s
-              </button>
-            ))}
-            {PERIODS.map(p => (
-              <button
-                key={p}
-                className={`control-button ${period === p ? 'active' : ''}`}
-                onClick={() => setPeriod(p)}
-              >
-                {p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
+            <div className="control-group duration-controls">
+              {DURATIONS.map(d => (
+                <button
+                  key={d}
+                  className={`control-button ${duration === d ? 'active' : ''}`}
+                  onClick={() => setDuration(d)}
+                >
+                  {d}s
+                </button>
+              ))}
+            </div>
+            <div className="control-group period-controls">
+              {PERIODS.map(p => (
+                <button
+                  key={p}
+                  className={`control-button ${period === p ? 'active' : ''}`}
+                  onClick={() => setPeriod(p)}
+                >
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
 
           {loading && (

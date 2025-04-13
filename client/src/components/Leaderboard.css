@@ -26,7 +26,7 @@ h2 {
 
 .control-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.5rem; /* Spacing within group */
 }
 
@@ -391,9 +391,12 @@ h2 {
   display: flex;
   justify-content: center;
   gap: 0.75rem;
+  max-width: 300px;
 }
 
 .leaderboard-landing-controls-area .period-controls.horizontal .control-button {
+  width: 8vh;
+  padding: 0.75rem 1rem;
   font-size: 1rem;
   letter-spacing: 0.5px;
   font-weight: 600;
@@ -406,7 +409,6 @@ h2 {
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  max-width: 8vh;
 }
 
 .leaderboard-landing-controls-area .period-controls.horizontal .control-button:hover {
@@ -426,9 +428,7 @@ h2 {
 
 /* Duration controls styling - now vertical */
 .leaderboard-landing-controls-area .duration-controls.vertical .control-button {
-  width: 100%;
-  padding: 0.75rem 1.2rem;
-  font-size: 1rem;
+  width: 80%;
   font-weight: 600;
   border-radius: 8px;
   background-color: rgba(58, 58, 58, 0.9);
@@ -437,6 +437,7 @@ h2 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.05);
   text-align: center;
+  align-self: center;
 }
 
 .leaderboard-landing-controls-area .duration-controls.vertical .control-button:hover {
