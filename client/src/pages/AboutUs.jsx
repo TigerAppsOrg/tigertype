@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './AboutUs.css'; // We'll create this next
+import './AboutUs.css';
 
 const CollapsibleSection = ({ title, children }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,31 +20,57 @@ const CollapsibleSection = ({ title, children }) => {
 function AboutUs() {
   return (
     <div className="about-us-container">
+      <header className="about-us-header">
+        <h1>About TigerType</h1>
+        <p className="about-us-subtitle">Meet the team</p>
+      </header>
+
       <section className="developers-section">
-        <h2>Meet the Team</h2>
+        <h2>Our Team</h2>
         <div className="developer-cards-container">
-          <div className="developer-card leader">
-            <h3>Ammaar Alam</h3>
-            <p>Lead Developer</p>
-            <div className="developer-links">
-              <a href="#" target="_blank" rel="noopener noreferrer">[GitHub]</a>
-              <a href="#" target="_blank" rel="noopener noreferrer">[Website]</a>
-            </div>
-          </div>
           <div className="developer-card">
+            <div className="developer-image-container">
+              <div className="developer-image">
+                <img src="https://via.placeholder.com/150" alt="Ryan Chen" />
+              </div>
+            </div>
             <h3>Ryan Chen</h3>
-            <p>Developer</p>
+            <p className="developer-role">Frontend Developer</p>
+            <p className="developer-bio">Princeton '27 - Computer Science</p>
             <div className="developer-links">
-              <a href="#" target="_blank" rel="noopener noreferrer">[GitHub]</a>
-              <a href="#" target="_blank" rel="noopener noreferrer">[Website]</a>
+              <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
             </div>
           </div>
-          <div className="developer-card">
-            <h3>William Guan</h3>
-            <p>Developer</p>
+          
+          <div className="developer-card leader">
+            <div className="developer-image-container">
+              <div className="developer-image">
+                <img src="https://via.placeholder.com/150" alt="Ammaar Alam" />
+              </div>
+              <div className="leader-badge">Team Lead</div>
+            </div>
+            <h3>Ammaar Alam</h3>
+            <p className="developer-role">Lead Developer</p>
+            <p className="developer-bio">Princeton '27 - Computer Science</p>
             <div className="developer-links">
-              <a href="#" target="_blank" rel="noopener noreferrer">[GitHub]</a>
-              <a href="#" target="_blank" rel="noopener noreferrer">[Website]</a>
+              <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            </div>
+          </div>
+          
+          <div className="developer-card">
+            <div className="developer-image-container">
+              <div className="developer-image">
+                <img src="https://via.placeholder.com/150" alt="William Guan" />
+              </div>
+            </div>
+            <h3>William Guan</h3>
+            <p className="developer-role">Frontend Developer</p>
+            <p className="developer-bio">Princeton '27 - Computer Science</p>
+            <div className="developer-links">
+              <a href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="#" target="_blank" rel="noopener noreferrer">LinkedIn</a>
             </div>
           </div>
         </div>
@@ -96,7 +122,7 @@ function AboutUs() {
   );
 }
 
-// Added PropTypes for CollapsibleSection for better type checking
+// PropTypes for collapsible for better type checking
 import PropTypes from 'prop-types';
 
 CollapsibleSection.propTypes = {
