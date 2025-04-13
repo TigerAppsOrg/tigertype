@@ -134,7 +134,7 @@
   background-color: var(--type-container-color);
   padding: 1rem;
   border-radius: 8px;
-  font-size: 1.5rem;
+  font-size: var(--snippet-font-size, 18px);
   line-height: 1.8;
   white-space: pre-wrap;
   position: relative;
@@ -326,7 +326,7 @@
 /* Responsive styles */
 @media (max-width: 768px) {
   .snippet-display {
-    font-size: 1rem;
+    font-size: calc(var(--snippet-font-size, 18px) * 0.85);
     padding: 1.5rem;
   }
 
