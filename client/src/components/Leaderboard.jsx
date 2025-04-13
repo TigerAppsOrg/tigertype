@@ -77,8 +77,8 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                  </button>
                ))}
              </div>
-             {/* Duration Controls (Times) - Separate Row */}
-             <div className="control-group duration-controls horizontal">
+             {/* Duration Controls (Times)*/}
+             <div className="control-group duration-controls vertical">
                {DURATIONS.map(d => (
                  <button
                    key={d}
