@@ -559,11 +559,11 @@ const initialize = (io) => {
         } else if (snippetId) {
            // --- BEGIN DEBUG LOGGING --- 
            console.log(`[DEBUG race:result] Processing as REGULAR race. Snippet ID: ${snippetId}`);
-           console.log(`[DEBUG race:result] Calling RaceModel.saveResult with: userId=${userId}, lobbyId=${lobbyId}, snippetId=${snippetId}, wpm=${wpm}, accuracy=${accuracy}, completion_time=${completion_time}`);
+           console.log(`[DEBUG race:result] Calling RaceModel.recordResult with: userId=${userId}, lobbyId=${lobbyId}, snippetId=${snippetId}, wpm=${wpm}, accuracy=${accuracy}, completion_time=${completion_time}`);
           // --- END DEBUG LOGGING ---
           // Regular race result, save to race_results table
           try {
-            await RaceModel.saveResult(userId, lobbyId, snippetId, wpm, accuracy, completion_time);
+            await RaceModel.recordResult(userId, lobbyId, snippetId, wpm, accuracy, completion_time);
             console.log(`[SUCCESS race:result] Saved regular race result for ${netid} (lobby: ${lobbyId}, snippet: ${snippetId})`);
           } catch (dbError) {
              console.error(`[ERROR race:result] Failed to insert regular race result for user ${userId}:`, dbError);
