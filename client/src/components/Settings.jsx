@@ -17,6 +17,18 @@ function Settings({ isOpen, onClose }) {
     return storedTheme === 'light' ? 'light' : 'dark'; 
   });
 
+  const [fontSize, setFontSize] = useState(() => {
+    // Default to 18px if no font size is stored, or ensure within new range
+    const storedSize = localStorage.getItem('snippetFontSize');
+    if (!storedSize) return 18;
+    
+    // Parse the stored value
+    const parsedSize = parseInt(storedSize, 10);
+    
+    // Ensure it's within our new range (18-64)
+    return Math.max(18, Math.min(64, parsedSize));
+  });
+
   const [defaultCursor, setDefaultCursor] = useState(true);
 
   const modalRef = useRef(); // Create a ref for the modal content
@@ -64,10 +76,15 @@ function Settings({ isOpen, onClose }) {
       '--current-color',
       theme === 'light' ? 'black' : 'white'
     );
+
+    // Set the snippet font size CSS variable
+    document.documentElement.style.setProperty('--snippet-font-size', `${fontSize}px`);
+    
     localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
     localStorage.setItem('theme', theme); // Store theme string
-  }, [whichFont, typingSound, theme]); // Depend on theme state
+    localStorage.setItem('snippetFontSize', fontSize.toString()); // Store font size
+  }, [whichFont, typingSound, theme, fontSize]); // Add fontSize to dependencies
 
   useEffect(() => {
     const color = defaultCursor ? "#3a506b" : "none";
@@ -128,6 +145,10 @@ function Settings({ isOpen, onClose }) {
     setTheme(e.target.value);
   };
 
+  const handleFontSizeChange = (e) => {
+    setFontSize(parseInt(e.target.value, 10));
+  };
+
   return (
     <div className="settings-overlay">
       <div className="settings-modal" ref={modalRef}>
@@ -153,6 +174,22 @@ function Settings({ isOpen, onClose }) {
               <option value="JetBrains Mono, monospace">JetBrains Mono</option>
               <option value="Monaco, monospace">Monaco</option>
             </select>
+          </div>
+          <div className="setting-item">
+            <label htmlFor="font-size-slider">Font Size</label>
+            <div className="slider-container">
+              <input
+                id="font-size-slider"
+                type="range"
+                min="18"
+                max="64"
+                step="2"
+                value={fontSize}
+                onChange={handleFontSizeChange}
+                className="font-size-slider"
+              />
+              <span className="font-size-value">{fontSize}px</span>
+            </div>
           </div>
           <div className="setting-item">
             <label htmlFor="block-cursor-toggle">Block Cursor</label>

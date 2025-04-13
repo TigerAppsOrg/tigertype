@@ -66,9 +66,9 @@
   grid-column: 1 / -1;
   font-size: 1.2rem;
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.2rem;
   color: var(--mode-text-color);
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.3rem;
   border-bottom: 1px solid var(--hover-color);
 }
 
@@ -200,4 +200,60 @@ input:checked + .slider:before {
 
 .cursor-setting {
   margin-right: 0;
+}
+
+/* Font size slider styles */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.font-size-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 5px;
+  border-radius: 5px;
+  background: var(--background-color);
+  border: 1px solid #F58025;
+  outline: none;
+}
+
+.font-size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #F58025;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.font-size-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #F58025;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s;
+}
+
+.font-size-slider::-webkit-slider-thumb:hover,
+.font-size-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+.font-size-slider:active::-webkit-slider-thumb,
+.font-size-slider:active::-moz-range-thumb {
+  transform: scale(1.2);
+}
+
+.font-size-value {
+  font-size: 0.9rem;
+  color: #F58025;
+  min-width: 45px;
+  text-align: right;
 }
