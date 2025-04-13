@@ -10,6 +10,10 @@ const initDB = async () => {
   try {
     console.log('Initializing database...');
     
+    // Set the database timezone to EST
+    await pool.query('SET timezone = "America/New_York"');
+    console.log('Database timezone set to America/New_York (EST)');
+    
     // Run all pending migrations
     await runMigrations();
     

@@ -8,6 +8,22 @@ import defaultProfileImage from '../assets/default-profile.svg';
 const DURATIONS = [15, 30, 60, 120];
 const PERIODS = ['daily', 'alltime'];
 
+// Helper function to format relative time
+const formatRelativeTime = (timestamp) => {
+  const now = new Date();
+  const createdAt = new Date(timestamp);
+  const diffInMinutes = Math.floor((now - createdAt) / (1000 * 60));
+  
+  if (diffInMinutes < 1) return 'Just now';
+  if (diffInMinutes < 60) return `${diffInMinutes} ${diffInMinutes === 1 ? 'min' : 'mins'} ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+  
+  // For timestamps older than 24 hours (shouldn't happen in daily view, but just in case)
+  return createdAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+};
+
 function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMode = 'modal' }) {
   const { socket } = useSocket();
   const { user } = useAuth();
@@ -118,7 +134,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
             {error && <p className="error-message">Error: {error}</p>}
             {!loading && !error && (
               <div className="leaderboard-list">
-                {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <span className="leaderboard-netid">{entry.netid}</span> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
+                {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <span className="leaderboard-netid">{entry.netid}</span> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? formatRelativeTime(entry.created_at) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
               </div>
             )}
           </div>
@@ -190,7 +206,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                       <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span>
                       <span className="leaderboard-date">
                         {period === 'daily' 
-                          ? new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                          ? formatRelativeTime(entry.created_at)
                           : new Date(entry.created_at).toLocaleDateString()
                         }
                       </span>

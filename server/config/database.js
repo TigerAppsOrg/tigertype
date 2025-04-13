@@ -31,7 +31,8 @@ if (isProduction && connectionString) {
     // Idle timeout of 10 seconds
     idleTimeoutMillis: 10000,
     // Max clients in the pool
-    max: 20
+    max: 20,
+    timezone: 'America/New_York'
   };
 } else {
   // Development configuration using individual parameters
@@ -46,12 +47,23 @@ if (isProduction && connectionString) {
     // Idle timeout of 10 seconds
     idleTimeoutMillis: 10000,
     // Max clients in the pool
-    max: 20
+    max: 20,
+    timezone: 'America/New_York'
   };
 }
 
 // Create a connection pool for Postgres
 const pool = new Pool(poolConfig);
+
+// Set timezone for each client when it's acquired from the pool
+pool.on('connect', async (client) => {
+  try {
+    await client.query('SET timezone = "America/New_York"');
+    console.log('Timezone set to America/New_York (EST)');
+  } catch (err) {
+    console.error('Error setting timezone:', err);
+  }
+});
 
 // Event listener for connection errors
 pool.on('error', (err) => {
