@@ -1,3 +1,4 @@
+// [AI-DISCLAIMER: THE COLLAPSIBLE SECTION TEXT AI GENERATED]
 import React, { useState } from 'react';
 import './AboutUs.css';
 
@@ -31,7 +32,7 @@ function AboutUs() {
           <div className="developer-card">
             <div className="developer-image-container">
               <div className="developer-image">
-                <img src="https://via.placeholder.com/150" alt="Ryan Chen" />
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Ryan Chen" />
               </div>
             </div>
             <h3>Ryan Chen</h3>
@@ -48,10 +49,10 @@ function AboutUs() {
               <div className="developer-image">
                 <img src="https://media.licdn.com/dms/image/v2/D4E03AQF2NVaZwBFgtg/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1718231509781?e=1750291200&v=beta&t=YPYS9f3_3ptRrCgKTFV4djUvZAsgKRzLeEAU0ygNoqo" alt="Ammaar Alam" />
               </div>
-              <div className="leader-badge">Team Lead</div>
+              <div className="leader-badge">Project Lead</div>
             </div>
             <h3>Ammaar Alam</h3>
-            <p className="developer-role">Lead Developer</p>
+            <p className="developer-role">Full Stack Developer</p>
             <p className="developer-bio">Princeton '27 - Computer Science</p>
             <div className="developer-links">
               <a href="https://github.com/ammaar-alam" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -79,6 +80,7 @@ function AboutUs() {
       <section className="info-section">
         <h2>Learn More</h2>
 
+        {/* [AI-DISCLAIMER] THE FOLLOWING TEXT WAS AI GENERATED */}
         <CollapsibleSection title="About TigerType">
           <p>
             TigerType is a real-time typing competition platform developed as a final project for Princeton University's COS 333 course. 
