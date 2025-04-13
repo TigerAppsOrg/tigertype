@@ -243,7 +243,7 @@ router.get('/stats', async (req, res) => {
         (SELECT COUNT(*) FROM race_results) AS total_races,
         (SELECT SUM(word_count) FROM snippets JOIN race_results ON snippets.id = race_results.snippet_id) AS total_words_typed,
         (SELECT ROUND(AVG(wpm)) FROM race_results) AS avg_wpm,
-        (SELECT COUNT(*) FROM users WHERE races_completed > 0) AS active_users
+        (SELECT COUNT(*) FROM users) AS active_users
     `;
     
     const result = await pool.query(statsQuery);
@@ -253,8 +253,8 @@ router.get('/stats', async (req, res) => {
     const formattedStats = {
       total_races: parseInt(stats.total_races).toLocaleString(),
       total_words_typed: stats.total_words_typed ?
-        (parseInt(stats.total_words_typed) / 1000000).toFixed(1) + 'M+' :
-        '1.2M+', // Fallback if word_count is not available
+        (parseInt(stats.total_words_typed)) :
+        '', // Fallback if word_count is not available
       avg_wpm: parseInt(stats.avg_wpm) || 68, // Fallback if no data
       active_users: parseInt(stats.active_users).toLocaleString() || 842 // Fallback if no data
     };
@@ -265,7 +265,7 @@ router.get('/stats', async (req, res) => {
     // Return fallback data if there's an error
     res.json({
       total_races: '10,482',
-      total_words_typed: '1.2M+',
+      total_words_typed: '',
       avg_wpm: '68',
       active_users: '842'
     });
