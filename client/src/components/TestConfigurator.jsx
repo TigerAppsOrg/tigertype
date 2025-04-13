@@ -110,13 +110,19 @@ function TestConfigurator({
     
     // If we're in timed mode, update raceState and reload the test
     if (testMode === 'timed') {
+      // Force reset race state completely 
       setRaceState(prev => ({
         ...prev,
         timedTest: {
           ...prev.timedTest,
           enabled: true,
           duration: duration
-        }
+        },
+        // Reset these values to force a "fresh start" even if selecting the same duration
+        startTime: null,
+        inProgress: false,
+        completed: false,
+        manuallyStarted: false
       }));
       
       // Reload with the new duration
