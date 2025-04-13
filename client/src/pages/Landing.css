@@ -53,9 +53,12 @@ body {
   align-items: flex-start; 
   justify-content: center;
   width: 100%;
-  max-width: 1200px;
-  gap: 5rem;
+  max-width: fit-content;
+  gap: 5em;
   flex-grow: 1;
+  max-height: fit-content;  
+  padding-bottom: 3vh;
+  padding-top: 0vh;
 }
 
 /* Left Column */
@@ -105,14 +108,10 @@ body {
 .landing-data-section {
   display: flex;
   width: 100%;
-  max-width: 1200px;
+  max-width: 120vh;
   gap: 1.5rem;
   margin-top: 1rem;
   margin-bottom: 1rem;
-}
-
-.landing-stats-container {
-  flex: 4; /* 40% width */
 }
 
 .landing-leaderboard-container {
@@ -130,10 +129,6 @@ body {
   max-height: fit-content; /* Added as suggested to fix extra space */
 }
 
-.landing-main-content {
-  margin-bottom: 0.5rem; /* Reduced margin to tighten spacing */
-}
-
 /* Ensure leaderboard list within this section scrolls if needed */
 .landing-leaderboard-container .leaderboard-list {
   max-height: 25vh; /* Reduced height to fit better */
@@ -145,8 +140,8 @@ body {
   flex-direction: column;
   align-items: flex-start;
   flex-basis: 60%; 
-  justify-content: flex-start; 
-  margin-top: 10vh;
+  justify-content: flex-start;
+  align-self: anchor-center
 }
 
 .landing-right-column h2 {

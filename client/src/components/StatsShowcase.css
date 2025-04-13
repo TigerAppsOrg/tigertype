@@ -13,9 +13,6 @@
 .stats-heading {
   text-align: center;
   color: var(--princeton-orange, #F58025);
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
   font-weight: bold;
 }
 

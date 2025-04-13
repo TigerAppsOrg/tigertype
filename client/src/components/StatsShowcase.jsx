@@ -88,7 +88,7 @@ function StatsShowcase() {
 
   return (
     <div className="stats-showcase">
-      <h2 className="stats-heading">TigerType by the Numbers</h2>
+      <h2 className="stats-heading">Statistics</h2>
       <div className="stats-container">
         {loading ? (
           <div className="stats-loading">Loading statistics...</div>

@@ -26,6 +26,7 @@ h2 {
 
 .control-group {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem; /* Spacing within group */
 }
 
