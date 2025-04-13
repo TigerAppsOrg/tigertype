@@ -202,6 +202,56 @@ const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) =>
   }
 };
 
+/**
+ * Get total statistics including both regular races and timed sessions
+ * This function returns combined statistics including:
+ * - Total races (race_results + timed_leaderboard)
+ * - Total words typed (from snippets + calculated from timed sessions)
+ * - Average WPM (across both types)
+ * - Active users
+ */
+const getTotalPlatformStats = async () => {
+  try {
+    const statsQuery = `
+      SELECT
+        (
+          -- Regular races from race_results
+          (SELECT COUNT(*) FROM race_results)
+          +
+          -- Timed mode sessions
+          (SELECT COUNT(*) FROM timed_leaderboard)
+        ) AS total_races,
+        (
+          -- Words from regular snippets
+          (SELECT COALESCE(SUM(word_count), 0) FROM snippets JOIN race_results ON snippets.id = race_results.snippet_id)
+          +
+          -- Words from timed mode calculated based on WPM and duration
+          (SELECT COALESCE(SUM(ROUND(wpm * (duration::decimal / 60))), 0) FROM timed_leaderboard)
+        ) AS total_words_typed,
+        (
+          -- Combined average WPM from both regular races and timed sessions
+          (SELECT ROUND(
+            (
+              (SELECT COALESCE(SUM(wpm), 0) FROM race_results) + 
+              (SELECT COALESCE(SUM(wpm), 0) FROM timed_leaderboard)
+            ) / 
+            (
+              (SELECT COUNT(*) FROM race_results) + 
+              (SELECT COUNT(*) FROM timed_leaderboard)
+            )
+          ))
+        ) AS avg_wpm,
+        (SELECT COUNT(*) FROM users) AS active_users
+    `;
+    
+    const result = await pool.query(statsQuery);
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error fetching platform statistics:', error);
+    throw error;
+  }
+};
+
 // --- End Timed Leaderboard Functions ---
 
 module.exports = {
@@ -223,5 +273,6 @@ module.exports = {
   updateUserStats,
   updateFastestWpm,
   insertTimedResult,
-  getTimedLeaderboard
+  getTimedLeaderboard,
+  getTotalPlatformStats
 };

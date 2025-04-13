@@ -271,25 +271,14 @@ router.get('/leaderboard', requireAuth, async (req, res) => {
 // Get platform statistics (for landing page)
 router.get('/stats', async (req, res) => {
   try {
-    const { pool } = require('../config/database');
-    
-    // Query to get platform statistics
-    const statsQuery = `
-      SELECT
-        (SELECT COUNT(*) FROM race_results) AS total_races,
-        (SELECT SUM(word_count) FROM snippets JOIN race_results ON snippets.id = race_results.snippet_id) AS total_words_typed,
-        (SELECT ROUND(AVG(wpm)) FROM race_results) AS avg_wpm,
-        (SELECT COUNT(*) FROM users) AS active_users
-    `;
-    
-    const result = await pool.query(statsQuery);
-    const stats = result.rows[0];
+    const { getTotalPlatformStats } = require('../db');
+    const stats = await getTotalPlatformStats();
     
     // Format the numbers for display
     const formattedStats = {
       total_races: parseInt(stats.total_races).toLocaleString(),
       total_words_typed: stats.total_words_typed ?
-        (parseInt(stats.total_words_typed)) :
+        (parseInt(stats.total_words_typed)).toLocaleString() :
         '', // Fallback if word_count is not available
       avg_wpm: parseInt(stats.avg_wpm) || 68, // Fallback if no data
       active_users: parseInt(stats.active_users).toLocaleString() || 842 // Fallback if no data
