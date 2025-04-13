@@ -130,7 +130,7 @@ body {
 
 /* Ensure leaderboard list within this section scrolls if needed */
 .landing-leaderboard-container .leaderboard-list {
-  max-height: 25vh; /* Reduced height to fit better */
+  max-height: 36vh; /* PLEASE FOR THE LOVE OF GOD FIND A WAY TO MAKE THIS REPSONSIVE W/O MOVING THE DIV */
 }
 
 /* Right Column */
