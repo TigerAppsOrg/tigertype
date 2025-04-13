@@ -5,11 +5,11 @@ function Settings({ isOpen, onClose }) {
 
   // Define our font size options as 5 distinct sizes
   const fontSizeOptions = [
-    { value: 18, label: 'S' },
-    { value: 24, label: 'M' },
-    { value: 36, label: 'L' },
-    { value: 48, label: 'XL' },
-    { value: 64, label: 'XXL' }
+    { value: 18, label: 'XS' },
+    { value: 24, label: 'S' },
+    { value: 36, label: 'M' },
+    { value: 48, label: 'L' },
+    { value: 64, label: 'XL' }
   ];
 
   const [whichFont, setWhichFont] = useState(() => {
