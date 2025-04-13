@@ -3,6 +3,15 @@ import { useState, useEffect, useRef } from 'react';
 
 function Settings({ isOpen, onClose }) {
 
+  // Define our font size options as 5 distinct sizes
+  const fontSizeOptions = [
+    { value: 18, label: 'S' },
+    { value: 24, label: 'M' },
+    { value: 36, label: 'L' },
+    { value: 48, label: 'XL' },
+    { value: 64, label: 'XXL' }
+  ];
+
   const [whichFont, setWhichFont] = useState(() => {
     return localStorage.getItem('preferredFont') || 'Fira Code, monospace';
   });
@@ -18,15 +27,17 @@ function Settings({ isOpen, onClose }) {
   });
 
   const [fontSize, setFontSize] = useState(() => {
-    // Default to 18px if no font size is stored, or ensure within new range
+    // Get stored font size or use default medium (24px)
     const storedSize = localStorage.getItem('snippetFontSize');
-    if (!storedSize) return 18;
+    if (!storedSize) return 24; // Default to medium
     
-    // Parse the stored value
+    // Find the closest size in our options
     const parsedSize = parseInt(storedSize, 10);
+    const sizeOption = fontSizeOptions.reduce((prev, curr) => {
+      return Math.abs(curr.value - parsedSize) < Math.abs(prev.value - parsedSize) ? curr : prev;
+    }, fontSizeOptions[1]); // Start with medium as default comparison
     
-    // Ensure it's within our new range (18-64)
-    return Math.max(18, Math.min(64, parsedSize));
+    return sizeOption.value;
   });
 
   const [defaultCursor, setDefaultCursor] = useState(true);
@@ -146,7 +157,20 @@ function Settings({ isOpen, onClose }) {
   };
 
   const handleFontSizeChange = (e) => {
-    setFontSize(parseInt(e.target.value, 10));
+    // Convert the slider value (0-4) to the corresponding font size
+    const index = parseInt(e.target.value, 10);
+    setFontSize(fontSizeOptions[index].value);
+  };
+
+  // Get font size label for display
+  const getFontSizeLabel = () => {
+    const option = fontSizeOptions.find(opt => opt.value === fontSize) || fontSizeOptions[1];
+    return option.label;
+  };
+
+  // Get slider index value (0-4) from the current font size
+  const getSliderValue = () => {
+    return fontSizeOptions.findIndex(opt => opt.value === fontSize);
   };
 
   return (
@@ -159,7 +183,7 @@ function Settings({ isOpen, onClose }) {
         <div className="settings-content">
           {/* Customization Category */}
           <h3>Customization</h3>
-          <div className="setting-item">
+          <div className="setting-item setting-item-select">
             <label htmlFor="font-select">Fonts</label>
             <select 
               id="font-select"
@@ -175,28 +199,40 @@ function Settings({ isOpen, onClose }) {
               <option value="Monaco, monospace">Monaco</option>
             </select>
           </div>
-          <div className="setting-item">
+          <div className="setting-item setting-item-slider">
             <label htmlFor="font-size-slider">Font Size</label>
             <div className="slider-container">
               <input
                 id="font-size-slider"
                 type="range"
-                min="18"
-                max="64"
-                step="2"
-                value={fontSize}
+                min="0"
+                max="4"
+                step="1"
+                value={getSliderValue()}
                 onChange={handleFontSizeChange}
                 className="font-size-slider"
+                list="font-size-options"
               />
+              <datalist id="font-size-options">
+                {fontSizeOptions.map((_, index) => (
+                  <option key={index} value={index} />
+                ))}
+              </datalist>
+              <div className="font-size-markers">
+                {fontSizeOptions.map((option, index) => (
+                  <span key={index} className="size-marker">{option.label}</span>
+                ))}
+              </div>
               <span className="font-size-value">{fontSize}px</span>
             </div>
           </div>
-          <div className="setting-item">
+          <div className="setting-item setting-item-toggle">
             <label htmlFor="block-cursor-toggle">Block Cursor</label>
             <div className="toggle">
               <label className="switch">
                 <input 
                   className='cursor-setting' 
+                  id="block-cursor-toggle"
                   type='checkbox' 
                   checked={defaultCursor} 
                   onChange={handleDefaultCursor} />
@@ -205,7 +241,7 @@ function Settings({ isOpen, onClose }) {
               <span className="sound-label">{defaultCursor ? ' On' : ' Off'}</span>
             </div>
           </div>
-          <div className="setting-item">
+          <div className="setting-item setting-item-toggle">
             <label htmlFor="sound-toggle">Typing Sound</label>
             <div className="toggle">
               <label className="switch">
@@ -221,7 +257,7 @@ function Settings({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div className="setting-item">
+          <div className="setting-item setting-item-select">
             <label htmlFor="theme-select">Theme</label>
             <select
               id="theme-select"
