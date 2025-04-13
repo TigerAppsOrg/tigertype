@@ -1,6 +1,5 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'; // Import useLocation
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import './App.css';
 
 // Context Providers
@@ -11,6 +10,8 @@ import { RaceProvider } from './context/RaceContext';
 // Components
 import Navbar from './components/Navbar';
 import Loading from './components/Loading';
+import Modal from './components/Modal';
+import Leaderboard from './components/Leaderboard';
 
 // Lazy-loaded pages for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
@@ -36,12 +37,38 @@ const ProtectedRoute = ({ children }) => {
 // Helper component to conditionally render Navbar
 const ConditionalNavbar = () => {
   const location = useLocation();
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const { login } = useAuth();
+  
   // Don't render Navbar on the landing page
   if (location.pathname === '/') {
     return null;
   }
+  
+  const handleOpenLeaderboard = () => setIsLeaderboardOpen(true);
+  const handleCloseLeaderboard = () => setIsLeaderboardOpen(false);
+  
   // Render Navbar on all other pages
-  return <Navbar />;
+  return (
+    <>
+      <Navbar 
+        onOpenLeaderboard={handleOpenLeaderboard}
+        onLoginClick={login}
+      />
+      
+      {/* Leaderboard Modal */}
+      {isLeaderboardOpen && (
+        <Modal
+          isOpen={isLeaderboardOpen}
+          onClose={handleCloseLeaderboard}
+          isLarge={true}
+          showCloseButton={true}
+        >
+          <Leaderboard defaultDuration={15} defaultPeriod="alltime" layoutMode="modal" />
+        </Modal>
+      )}
+    </>
+  );
 };
 
 function AppRoutes() {

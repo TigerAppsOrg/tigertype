@@ -23,6 +23,13 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
     navigate('/home');
   };
 
+  // Style to ensure no border appears
+  const buttonStyle = {
+    border: 'none',
+    outline: 'none',
+    boxShadow: 'none'
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-logo">
@@ -43,15 +50,19 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
       <nav className="navbar-links">
         {authenticated ? (
           <>
+            {/* Common items for both logged-in and logged-out states */}
+            <a href="#" onClick={onOpenLeaderboard} className="navbar-link">Leaderboard</a>
+            <a href="#" className="navbar-link">About Us</a>
+            
+            {/* Logged-in specific items */}
             <button onClick={logout} className="logout-button">Logout</button>
             <ProfileWidget user={user}/>
           </>
         ) : (
           <>
             {/* Logged-out Navbar items */}
-            <button onClick={onOpenLeaderboard} className="navbar-button">Leaderboard</button>
+            <a href="#" onClick={onOpenLeaderboard} className="navbar-link">Leaderboard</a>
             <a href="#" className="navbar-link">About Us</a>
-            <a href="#" className="navbar-link">Contact Us</a>
             <button onClick={onLoginClick} className="login-nav-button">Log In</button>
           </>
         )}
