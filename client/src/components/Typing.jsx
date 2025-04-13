@@ -216,6 +216,12 @@ function Typing({
       if (inputRef.current) {
         inputRef.current.value = '';
       }
+      
+      // Scroll the snippet container back to the top when a new snippet is loaded
+      const snippetContainer = document.querySelector('.snippet-display');
+      if (snippetContainer) {
+        snippetContainer.scrollTop = 0;
+      }
     }
   }, [raceState.snippet, snippetId]);
 
@@ -353,6 +359,12 @@ function Typing({
         setInput('');
         if (inputRef.current) {
           inputRef.current.value = '';
+        }
+        
+        // Scroll the snippet container back to the top before loading new snippet
+        const snippetContainer = document.querySelector('.snippet-display');
+        if (snippetContainer) {
+          snippetContainer.scrollTop = 0;
         }
         
         // Request new snippet
