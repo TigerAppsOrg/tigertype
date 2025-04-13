@@ -72,6 +72,42 @@ router.get('/landing-snippet', async (req, res) => {
   }
 });
 
+// Public endpoint for timed leaderboard (no authentication required)
+router.get('/public/leaderboard/timed', async (req, res) => {
+  try {
+    const { duration, period } = req.query;
+    
+    // Validate parameters
+    const durationInt = parseInt(duration);
+    if (![15, 30, 60, 120].includes(durationInt)) {
+      return res.status(400).json({ error: 'Invalid duration. Must be 15, 30, 60, or 120.' });
+    }
+    
+    if (!['daily', 'alltime'].includes(period)) {
+      return res.status(400).json({ error: 'Invalid period. Must be "daily" or "alltime".' });
+    }
+    
+    const { getTimedLeaderboard } = require('../db');
+    
+    // Get leaderboard data
+    const leaderboardData = await getTimedLeaderboard(durationInt, period);
+    
+    // Get avatars for each user
+    const leaderboardWithAvatars = await Promise.all(leaderboardData.map(async (entry) => {
+      const user = await UserModel.findById(entry.user_id);
+      return {
+        ...entry,
+        avatar_url: user?.avatar_url || null
+      };
+    }));
+    
+    res.json({ leaderboard: leaderboardWithAvatars });
+  } catch (err) {
+    console.error('Error fetching public timed leaderboard:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- Authenticated Profile Routes ---
 // All profile routes require authentication + are mounted under /profile
 router.use('/profile', requireAuth, profileRoutes);
