@@ -212,6 +212,7 @@ input:checked + .slider:before {
   background: #F58025;
   cursor: pointer;
   transition: transform 0.1s;
+  margin-top: -15px;
 }
 
 .font-size-slider::-moz-range-thumb {
@@ -222,16 +223,23 @@ input:checked + .slider:before {
   cursor: pointer;
   border: none;
   transition: transform 0.1s;
+  transform: translateY(-2px);
 }
 
-.font-size-slider::-webkit-slider-thumb:hover,
-.font-size-slider::-moz-range-thumb:hover {
+.font-size-slider::-webkit-slider-thumb:hover {
   transform: scale(1.1);
 }
 
-.font-size-slider:active::-webkit-slider-thumb,
-.font-size-slider:active::-moz-range-thumb {
+.font-size-slider::-moz-range-thumb:hover {
+  transform: translateY(-2px) scale(1.1);
+}
+
+.font-size-slider:active::-webkit-slider-thumb {
   transform: scale(1.2);
+}
+
+.font-size-slider:active::-moz-range-thumb {
+  transform: translateY(-2px) scale(1.2);
 }
 
 .font-size-markers {
@@ -239,6 +247,7 @@ input:checked + .slider:before {
   justify-content: space-between;
   width: 100%;
   padding: 0 2px;
+  margin-top: 6px;
 }
 
 .size-marker {
@@ -252,7 +261,7 @@ input:checked + .slider:before {
   content: '';
   position: absolute;
   width: 1px;
-  height: 8px;
+  height: 6px;
   background-color: #F58025;
   top: -10px;
   left: 50%;
