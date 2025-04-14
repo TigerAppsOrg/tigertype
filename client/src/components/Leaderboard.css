@@ -2,7 +2,6 @@
 h2 {
   color: #F58025; /* Orange */
   margin-top: 0;
-  margin-bottom: 1.5rem;
   font-size: 1.8rem;
   font-weight: bold;
   text-align: center;
@@ -64,7 +63,8 @@ h2 {
   background-color: rgba(30, 30, 30, 0.4); /* Slightly darker but still transparent */
   border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 0.5rem;
-  max-height: 50vh;
+  max-height: 40vh;
+  min-height: 40vh;
 }
 
 .leaderboard-item {
@@ -206,6 +206,8 @@ h2 {
   text-align: center;
   padding: 2rem;
   font-style: italic;
+  position: sticky;
+  top: 35%;
 }
 
 /* Avatar Modal Styles (Copied & adapted from Results.css) */
@@ -363,6 +365,14 @@ h2 {
   height: 3px;
   background-color: rgba(245, 128, 37, 0.6);
   border-radius: 3px;
+}
+
+.leaderboard-subtitle {
+  color: #aaa;
+  font-size: 0.85rem;
+  text-align: center;
+  font-style: italic;
+  padding: 1vh;
 }
 
 /* Horizontal control groups for period options (Daily/Alltime) */

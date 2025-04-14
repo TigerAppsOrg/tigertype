@@ -104,9 +104,6 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
           {/* Combined Controls Area */}
           <div className="leaderboard-landing-controls-area">
              <h2>Leaderboards</h2>
-             {period === 'daily' && (
-               <p className="leaderboard-subtitle">Resets daily at 12:00 AM EST</p>
-             )}
              {/* Period Controls (Daily/Alltime) - Separate Row */}
              <div className="control-group period-controls horizontal">
                {PERIODS.map(p => (
@@ -140,12 +137,12 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                 {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <span className="leaderboard-netid">{entry.netid}</span> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? formatRelativeTime(entry.created_at) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
               </div>
             )}
+            <p className="leaderboard-subtitle">Resets daily at 12:00 AM EST</p>
           </div>
         </div>
       ) : (
         <>
-          <h2>Timed Leaderboards</h2>
-          
+          <h2>Timed Leaderboards</h2>          
           <div className="leaderboard-controls">
             <div className="control-group duration-controls">
               {DURATIONS.map(d => (
@@ -170,7 +167,6 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
               ))}
             </div>
           </div>
-
           {loading && (
             <div className="loading-indicator">
               <div className="spinner-border text-orange" role="status">
@@ -221,6 +217,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
               )}
             </div>
           )}
+          <p className="leaderboard-subtitle">Resets daily at 12:00 AM EST</p>
         </>
       )}
 
