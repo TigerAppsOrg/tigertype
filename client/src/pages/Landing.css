@@ -125,7 +125,8 @@ body {
   border-radius: 8px;
   border: 1px solid var(--hover-color, #3a3a3a);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  padding: 1.5rem;
+  padding: 1rem;
+  padding-bottom: 0rem;
 }
 
 .landing-container {

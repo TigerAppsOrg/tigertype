@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './PlayerStatusBar.css';
-import defaultProfileImage from '../assets/default-profile.svg';
+import defaultProfileImage from '../assets/icons/default-profile.svg';
 
 function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick }) {
   const [enlargedAvatar, setEnlargedAvatar] = useState(null);

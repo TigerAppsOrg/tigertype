@@ -18,14 +18,16 @@
     font-size: 2.5rem;
     font-weight: bold;
     left: 7%;
-    gap: 1rem;
+    gap: 1.5rem;
   }
 
   .settings-icon {
-    font-size: 32px;
+    font-size: 28px;
     color: #F58025;
     cursor: pointer;
     transition: transform 0.2s ease;
+    position: relative;
+    top: 0;
   }
 
   .settings-icon:hover {
@@ -33,18 +35,32 @@
   }
   
   .navbar-logo button {
-    color: #F58025; /* Princeton orange */
-    background-color: var(--background-color);
+    color: #F58025;
+    background: none;
     text-decoration: none;
-    padding: 0;
+    padding: 0.5rem;
     font-weight: bold;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+  }
+  
+  .navbar-logo button:hover {
+    background-color: rgba(245, 128, 37, 0.1);
+  }
+  
+  .navbar-logo button:hover img {
+    transform: scale(1.05);
   }
   
   .navbar-links {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 2.5rem; /* Increased gap */
+    gap: 2.5rem;
     right: 5%;
   }
   
@@ -52,15 +68,17 @@
     background-color: transparent;
     border: 1px solid #F58025;
     color: #F58025;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 1.2rem;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
+    font-weight: 500;
   }
   
   .logout-button:hover {
     background-color: #F58025;
-    color: white;
+    color: #121212;
+    box-shadow: 0 2px 4px rgba(245, 128, 37, 0.3);
   }
   
   .user-info {
@@ -74,7 +92,8 @@
   
   @media (max-width: 768px) {
     .navbar {
-      padding: 0 1rem;
+      padding: 0 1.5rem;
+      height: 65px;
     }
     
     .navbar-links {
@@ -84,35 +103,72 @@
     .navbar-logo {
       font-size: 1.5rem;
     }
+
+    .navbar-logo img {
+      max-height: 45px;
+    }
   }
 
   .settings-button {
     background: none;
     border: none;
-    padding: 0;
+    padding: 0.5rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
 }
 
-/* Keep existing settings-icon styles */
-.settings-icon {
-    font-size: 32px;
-    color: #F58025;
-    transition: transform 0.2s ease;
+.settings-button:hover {
+    background-color: rgba(245, 128, 37, 0.1);
 }
 
 .settings-button:hover .settings-icon {
     transform: rotate(90deg);
 }
 
-.navbar-logo button:hover {
-  background-color: var(--background-color);
-  /* border-color: transparent; */
+.navbar-logo img {
+  max-height: 75px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.2s ease;
 }
 
-.settings-button:hover {
-    background: none;
-    /* border-color: transparent; */
+.navbar-link {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.navbar-link:after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: #F58025;
+  transition: width 0.3s ease;
+}
+
+.navbar-link:hover:after {
+  width: 100%;
+}
+
+.login-nav-button {
+  background-color: #F58025;
+  color: #121212;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.login-nav-button:hover {
+  background-color: #e67016;
+  box-shadow: 0 2px 4px rgba(245, 128, 37, 0.3);
 }

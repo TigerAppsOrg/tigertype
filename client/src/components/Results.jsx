@@ -3,7 +3,7 @@ import { useRace } from '../context/RaceContext';
 import { useAuth } from '../context/AuthContext';
 import { useState, useCallback, useEffect } from 'react';
 import './Results.css';
-import defaultProfileImage from '../assets/default-profile.svg';
+import defaultProfileImage from '../assets/icons/default-profile.svg';
 import PropTypes from 'prop-types';
 
 function Results({ onShowLeaderboard }) {

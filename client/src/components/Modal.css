@@ -23,7 +23,7 @@
   border-radius: 8px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
   position: relative;
-  padding: 1.5rem 2rem;
+  padding: 1rem;
   width: 90%;
   max-width: 500px;
   animation: scaleIn 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
@@ -44,7 +44,6 @@
 }
 
 .modal-container.modal-large .modal-body {
-  padding: 1.5rem;
   flex-grow: 1;
   overflow-y: auto;
   background-color: #222222;
