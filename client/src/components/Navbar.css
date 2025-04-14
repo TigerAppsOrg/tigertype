@@ -26,6 +26,8 @@
     color: #F58025;
     cursor: pointer;
     transition: transform 0.2s ease;
+    position: relative;
+    top: 3px;
   }
 
   .settings-icon:hover {
@@ -96,23 +98,14 @@
     justify-content: center;
 }
 
-/* Keep existing settings-icon styles */
-.settings-icon {
-    font-size: 32px;
-    color: #F58025;
-    transition: transform 0.2s ease;
-}
-
 .settings-button:hover .settings-icon {
     transform: rotate(90deg);
 }
 
 .navbar-logo button:hover {
   background-color: var(--background-color);
-  /* border-color: transparent; */
 }
 
 .settings-button:hover {
-    background: none;
-    /* border-color: transparent; */
+  background: none;
 }
