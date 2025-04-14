@@ -94,7 +94,36 @@ function AboutUs() {
           </p>
         </CollapsibleSection>
 
-        <CollapsibleSection title="How It Works">
+        <CollapsibleSection title="Typing Mechanics">
+          <p>
+            Our typing interface provides:
+          </p>
+          <ul>
+            <li><strong>Real-time Feedback:</strong> Immediate visual cues highlight correct and incorrect keystrokes</li>
+            <li><strong>Error Handling:</strong> Option to require error correction or continue typing despite mistakes</li>
+            <li><strong>Audio Feedback:</strong> Customizable keyboard sounds enhance the typing experience</li>
+            <li><strong>Visible Progress:</strong> Clear indication of your position within the current text</li>
+          </ul>
+          
+          <h4>Keyboard Shortcuts</h4>
+          <p>
+            TigerType offers several keyboard shortcuts to enhance your experience:
+          </p>
+          <ul>
+            <li><strong>Tab:</strong> In practice mode, press Tab to get a new random snippet. Your previous progress will be recorded as a partial session for statistical purposes.</li>
+            <li><strong>Escape:</strong> In practice mode, press Escape to restart the current snippet.</li>
+            <li><strong>Ctrl+Backspace (or Cmd+Backspace on Mac):</strong> Delete the entire word you're currently typing.</li>
+          </ul>
+          
+          <h4>Inactivity and System Rules</h4>
+          <ul>
+            <li><strong>Player Minimum:</strong> Quick Match and Private Lobbies require a minimum of 2 players to start a race.</li>
+            <li><strong>Ready Status:</strong> All players must click "Ready" to begin a race.</li>
+            <li><strong>Inactivity Warning:</strong> If you are the only player who has not clicked "Ready" for 60 seconds, you will receive an inactivity warning.</li>
+            <li><strong>Inactivity Kick:</strong> If you remain inactive for an additional 45 seconds after the warning, you will be automatically removed from the lobby to prevent holding up other players.</li>
+            <li><strong>Anti-Cheat Measures:</strong> Pasting text is disabled during races to maintain fair competition.</li>
+          </ul>
+
           <h4>Stats Calculation</h4>
           <p>
             Your typing performance is measured primarily by Words Per Minute (WPM) and Accuracy.
@@ -102,22 +131,49 @@ function AboutUs() {
           <ul>
             <li><strong>WPM:</strong> Calculated based on the standard definition where one 'word' equals 5 characters (including spaces and punctuation). We count the number of correct characters you type and divide by 5, then normalize this to a per-minute rate based on the time elapsed.</li>
             <li><strong>Accuracy:</strong> Calculated as the percentage of correctly typed characters out of the total characters attempted in the snippet.</li>
+            <li><strong>Partial Sessions:</strong> Even if you don't complete a typing test (e.g., pressing Tab to restart), we still record the words you typed for your personal statistics and the platform's overall statistics.</li>
           </ul>
           
-          <h4>Quick Match</h4>
+          <h4>Creating a Private Lobby</h4>
           <p>
-            Want to race against random opponents? Select "Quick Match" to join a public queue. The system will automatically match you with other available Princeton users for a real-time race.
+            To race specifically against friends:
           </p>
+          <ul>
+            <li>Select "Create Lobby" from the main menu</li>
+            <li>Customize your race settings (if desired)</li>
+            <li>Click "Create"</li>
+            <li>You'll receive a unique 6-character invite code (e.g., "A7B2C9")</li>
+            <li>Share this code with friends who can use it to join your private race</li>
+            <li>Once everyone has joined, all players must click "Ready"</li>
+            <li>When all players are ready, a 5-second countdown will begin</li>
+          </ul>
 
-          <h4>Private Lobbies</h4>
+          <h4>Joining a Quick Match</h4>
           <p>
-            To race specifically against friends, use the "Create Lobby" option. You'll receive a unique invite code that you can share. Friends can use this code to join your private race lobby.
+            To race against random opponents:
           </p>
+          <ul>
+            <li>Select "Quick Match" from the main menu</li>
+            <li>You'll be placed in a public queue with other users</li>
+            <li>Once at least one other player joins, click "Ready"</li>
+            <li>When all players are ready, a 5-second countdown will begin</li>
+            <li>If you don't click "Ready" within 60 seconds, you'll receive an inactivity warning</li>
+            <li>If you remain inactive for an additional 45 seconds, you'll be removed from the lobby</li>
+          </ul>
 
-          <h4>Leaderboards</h4>
+          <h4>Typing Content</h4>
           <p>
-            Track your progress and see how you stack up against the competition! The leaderboards rank users based on performance metrics like WPM and accuracy over different time periods.
+            TigerType features a diverse collection of typing material:
           </p>
+          <ul>
+            <li><strong>Princeton-Themed Texts:</strong> Snippets about Princeton's history, traditions, and campus life</li>
+            <li><strong>Course Reviews:</strong> Real course reviews from fellow Princeton students</li>
+            <li><strong>Daily Prince Articles:</strong> Selected excerpts from Princeton's student newspaper</li>
+            <li><strong>Academic Quotes:</strong> Statements from professors and renowned academics</li>
+            <li><strong>Literary Passages:</strong> Excerpts from classic and contemporary literature</li>
+            <li><strong>Code Snippets:</strong> Programming examples in various languages for technical typing practice</li>
+            <li><strong>Difficulty Levels:</strong> Content is categorized by complexity and length, allowing progressive skill development</li>
+          </ul>
         </CollapsibleSection>
         
         <CollapsibleSection title="Understanding Statistics">
