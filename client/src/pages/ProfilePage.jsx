@@ -286,7 +286,7 @@ function ProfilePage() {
               accept="image/jpeg, image/png, image/gif, image/webp"
             />
             {isUploading && <div className="upload-overlay">Uploading...</div>}
-            {uploadError && <div className="error-message">{uploadError}</div>}
+            {uploadError && <div className="profile-error-message">{uploadError}</div>}
             {uploadSuccess && <div className="success-message">{uploadSuccess}</div>}
           </div>
 
@@ -377,4 +377,4 @@ function ProfilePage() {
   );
 }
 
-export default ProfilePage; 
+export default ProfilePage;
