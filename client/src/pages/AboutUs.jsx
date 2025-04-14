@@ -119,6 +119,55 @@ function AboutUs() {
             Track your progress and see how you stack up against the competition! The leaderboards rank users based on performance metrics like WPM and accuracy over different time periods.
           </p>
         </CollapsibleSection>
+        
+        <CollapsibleSection title="Understanding Statistics">
+          <h4>Platform Statistics</h4>
+          <p>
+            Our platform showcases the following key statistics on the landing page:
+          </p>
+          <ul>
+            <li><strong>Races Completed:</strong> The total number of typing races and timed tests that have been fully completed by all users. This counts only sessions where users typed the entire text or finished the timed duration.</li>
+            <li><strong>Tests Started:</strong> The total number of typing sessions initiated by all users, including both completed sessions and those that weren't finished. This includes when a user starts typing but presses TAB to restart or abandons a session before completion.</li>
+            <li><strong>Words Typed:</strong> The total number of words typed across all sessions on TigerType. We count words from both completed races and partial sessions, so every word you type contributes to this statistic, even if you don't finish a test.</li>
+            <li><strong>Avg. WPM:</strong> The average typing speed across all completed tests on the platform.</li>
+            <li><strong>Active Tigers:</strong> The number of Princeton users who have registered on TigerType.</li>
+          </ul>
+
+          <h4>Personal Statistics</h4>
+          <p>
+            Your profile page shows both standard and detailed statistics:
+          </p>
+          
+          <p><strong>Standard Stats:</strong></p>
+          <ul>
+            <li><strong>Races Completed:</strong> The number of typing tests you've fully completed.</li>
+            <li><strong>Average WPM:</strong> Your average typing speed across all completed tests.</li>
+            <li><strong>Average Accuracy:</strong> Your average typing accuracy across all completed tests.</li>
+            <li><strong>Fastest Speed:</strong> Your highest recorded WPM from any completed test.</li>
+          </ul>
+          
+          <p><strong>Detailed Stats:</strong></p>
+          <ul>
+            <li><strong>Total Sessions Started:</strong> All typing sessions you've initiated, whether completed or not.</li>
+            <li><strong>Sessions Completed:</strong> The number of tests you've finished without restarting.</li>
+            <li><strong>Total Words Typed:</strong> All words you've typed on TigerType, including those from sessions you didn't complete. Each keystroke counts!</li>
+            <li><strong>Completion Rate:</strong> The percentage of started tests that you've completed. This is calculated as (Sessions Completed / Total Sessions Started) × 100%.</li>
+          </ul>
+          
+          <h4>How Data Is Tracked</h4>
+          <p>
+            TigerType carefully tracks your typing activity using several methods:
+          </p>
+          <ul>
+            <li><strong>Completed Tests:</strong> When you finish a typing test, we record your WPM, accuracy, completion time, and the snippet you typed.</li>
+            <li><strong>Timed Tests:</strong> For timed mode, we track how many words you successfully typed during the set duration.</li>
+            <li><strong>Partial Sessions:</strong> When you press TAB to restart a test or otherwise abandon a session before completion, we still count the words you typed up to that point. This ensures you get credit for all your typing practice, even if you decide to restart.</li>
+          </ul>
+          
+          <p>
+            All these metrics help you understand your typing performance comprehensively and show your improvement over time.
+          </p>
+        </CollapsibleSection>
       </section>
     </div>
   );
