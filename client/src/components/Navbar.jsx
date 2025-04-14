@@ -6,6 +6,7 @@ import Settings from './Settings';
 import './Navbar.css';
 import { useRace } from '../context/RaceContext';
 import PropTypes from 'prop-types'; // Import PropTypes
+import navbarLogo from '../assets/logos/navbar-logo.png';
 
 function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -39,7 +40,9 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
   return (
     <header className="navbar">
       <div className="navbar-logo">
-        <button type='text' onClick={handleLogo}>TigerType</button>
+        <button type='' onClick={handleLogo}>
+          <img src={navbarLogo} alt="TigerType" />
+        </button>
         {/* Conditionally render settings button only when authenticated */}
         {authenticated && (
           <button
@@ -52,7 +55,6 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
           </button>
         )}
       </div>
-      
       <nav className="navbar-links">
         {authenticated ? (
           <>
