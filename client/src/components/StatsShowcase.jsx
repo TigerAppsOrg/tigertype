@@ -20,7 +20,7 @@ function StatsShowcase() {
     },
     {
       id: 'sessions',
-      label: 'Sessions Started',
+      label: 'Tests Started',
       icon: '🚀',
       dataKey: 'total_sessions_started'
     },

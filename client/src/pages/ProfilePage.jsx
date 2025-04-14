@@ -353,7 +353,7 @@ function ProfilePage() {
         ) : (
           <div className="stats-grid">
             <div className="stat-card">
-              <h3>Total Sessions Started</h3>
+              <h3>Total Tests Started</h3>
               <p>{formatNumber(detailedStats.sessions_started)}</p>
             </div>
             <div className="stat-card">
