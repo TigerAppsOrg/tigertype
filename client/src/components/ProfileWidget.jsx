@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import './ProfileWidget.css';
 
 // Default profile image
-import defaultProfileImage from '../assets/default-profile.svg';
+import defaultProfileImage from '../assets/icons/default-profile.svg';
 
 function ProfileWidget({ user }) {
   // Parse numeric value to handle string or number

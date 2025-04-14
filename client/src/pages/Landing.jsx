@@ -5,7 +5,7 @@ import Modal from '../components/Modal';
 import Leaderboard from '../components/Leaderboard';
 import StatsShowcase from '../components/StatsShowcase';
 import './Landing.css';
-import tigerLogo from '../assets/tigertype-logo.png';
+import tigerLogo from '../assets/logos/tigertype-logo.png';
 
 const HONOR_CODE = "I pledge my honour that I have not violated the honour code during this examination.";
 const TYPING_SPEED_MS = 80;

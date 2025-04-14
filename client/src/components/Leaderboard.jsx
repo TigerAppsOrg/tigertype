@@ -3,7 +3,7 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
 import './Leaderboard.css';
-import defaultProfileImage from '../assets/default-profile.svg';
+import defaultProfileImage from '../assets/icons/default-profile.svg';
 
 const DURATIONS = [15, 30, 60, 120];
 const PERIODS = ['daily', 'alltime'];

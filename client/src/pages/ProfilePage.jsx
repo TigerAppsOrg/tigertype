@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import './ProfilePage.css';
-import defaultProfileImage from '../assets/default-profile.svg'
-import userEdit from '../assets/edit.png'
+import defaultProfileImage from '../assets/icons/default-profile.svg'
+import userEdit from '../assets/icons/edit.png'
 
 function ProfilePage() {
   const { user, loading, setUser } = useAuth();
