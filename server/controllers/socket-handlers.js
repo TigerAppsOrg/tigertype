@@ -222,6 +222,146 @@ const initialize = (io) => {
       }
     });
     
+    // Handle inviting a user to a private lobby by NetID
+    socket.on('lobby:invite_by_netid', async (data = {}) => {
+      try {
+        const { netid: targetNetid, lobbyCode } = data;
+        if (!userId || !targetNetid || !lobbyCode) {
+          socket.emit('error', { message: 'Missing required fields for invite.' });
+          return;
+        }
+
+        // Find the lobby in memory
+        const race = activeRaces.get(lobbyCode);
+        if (!race || race.type !== 'private') {
+          socket.emit('error', { message: 'Lobby not found or not private.' });
+          return;
+        }
+
+        // Only allow host to invite
+        if (race.hostId !== userId) {
+          socket.emit('error', { message: 'Only the host can invite players.' });
+          return;
+        }
+
+        // Find the user by netid
+        const targetUser = await UserModel.findByNetid(targetNetid);
+        if (!targetUser) {
+          socket.emit('error', { message: 'User not found.' });
+          return;
+        }
+
+        // Find the target user's socket (must be online)
+        let targetSocket = null;
+        for (const [id, s] of io.sockets.sockets) {
+          if (s.userInfo && s.userInfo.user === targetNetid) {
+            targetSocket = s;
+            break;
+          }
+        }
+        if (!targetSocket) {
+          socket.emit('error', { message: 'User is not online.' });
+          return;
+        }
+
+        // Send invite event to the target user
+        targetSocket.emit('lobby:invited', {
+          lobbyCode,
+          inviterNetid: netid
+        });
+
+        socket.emit('invite:sent', { netid: targetNetid });
+      } catch (err) {
+        console.error('Error inviting user by NetID:', err);
+        socket.emit('error', { message: 'Failed to invite user.' });
+      }
+    });
+
+    // Handle creating a private lobby
+    socket.on('lobby:create', async (options = {}) => {
+      try {
+        // Only authenticated users can create lobbies
+        if (!userId) {
+          socket.emit('error', { message: 'Authentication required to create a private lobby.' });
+          return;
+        }
+
+        // Get snippet for the lobby (use provided or random)
+        let snippet;
+        if (options.snippetId) {
+          snippet = await SnippetModel.findById(options.snippetId);
+        } else {
+          snippet = await SnippetModel.getRandom();
+        }
+        if (!snippet) {
+          socket.emit('error', { message: 'Failed to load snippet for private lobby.' });
+          return;
+        }
+
+        // Create the private lobby with host_id
+        const lobby = await RaceModel.create('private', snippet.id, userId);
+
+        // Initialize in-memory state
+        activeRaces.set(lobby.code, {
+          id: lobby.id,
+          code: lobby.code,
+          snippet: {
+            id: snippet.id,
+            text: snippet.text
+          },
+          status: 'waiting',
+          type: 'private',
+          hostId: userId,
+          startTime: null
+        });
+
+        // Add host as first player
+        racePlayers.set(lobby.code, [{
+          id: socket.id,
+          netid,
+          userId,
+          ready: false,
+          lobbyId: lobby.id,
+          snippetId: snippet.id
+        }]);
+
+        // Join the socket room
+        socket.join(lobby.code);
+
+        // Add player to lobby_players table
+        await RaceModel.addPlayerToLobby(lobby.id, userId, false);
+
+        // Send lobby info to creator
+        socket.emit('race:joined', {
+          code: lobby.code,
+          type: 'private',
+          lobbyId: lobby.id,
+          snippet: {
+            id: snippet.id,
+            text: snippet.text
+          },
+          hostId: userId,
+          players: [{
+            netid,
+            ready: false,
+            avatar_url: playerAvatars.get(socket.id) || null
+          }]
+        });
+
+        // Broadcast player list to lobby
+        io.to(lobby.code).emit('race:playersUpdate', {
+          players: [{
+            netid,
+            ready: false,
+            avatar_url: playerAvatars.get(socket.id) || null
+          }]
+        });
+      } catch (err) {
+        console.error('Error creating private lobby:', err);
+        socket.emit('error', { message: 'Failed to create private lobby.' });
+      }
+    });
+
     // Handle joining public lobby
     socket.on('public:join', async () => {
       try {
@@ -568,12 +708,18 @@ const initialize = (io) => {
           } catch (dbError) {
              console.error(`[ERROR race:result] Failed to insert regular race result for user ${userId}:`, dbError);
           }
-          
+
           // Use UserModel correctly for stats updates
           try {
-            await UserModel.updateStats(userId, wpm, accuracy, false);
-            await UserModel.updateFastestWpm(userId, wpm);
-             console.log(`[DEBUG race:result] Updated user stats (if applicable) for ${netid}`);
+            // For private lobbies, only increment races_completed (words typed is tracked via race_results)
+            if (race && race.type === 'private') {
+              await UserModel.incrementPrivateRaceStats(userId);
+              console.log(`[DEBUG race:result] Incremented private race stats for ${netid}`);
+            } else {
+              await UserModel.updateStats(userId, wpm, accuracy, false);
+              await UserModel.updateFastestWpm(userId, wpm);
+              console.log(`[DEBUG race:result] Updated user stats (if applicable) for ${netid}`);
+            }
           } catch (statsError) {
              console.error(`[ERROR race:result] Failed to update user stats for ${userId} after regular result:`, statsError);
           }

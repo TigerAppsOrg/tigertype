@@ -19,6 +19,7 @@ const Home = lazy(() => import('./pages/Home'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const Race = lazy(() => import('./pages/Race'));
 const AboutUs = lazy(() => import('./pages/AboutUs')); // Add lazy import for AboutUs
+const Lobby = lazy(() => import('./pages/Lobby'));
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -95,6 +96,11 @@ function AppRoutes() {
             </ProtectedRoute>
           } />
           <Route path="/about" element={<AboutUs />} /> {/* Add route for About Us page */}
+          <Route path="/lobby/:code" element={
+            <ProtectedRoute>
+              <Lobby />
+            </ProtectedRoute>
+          } />
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
