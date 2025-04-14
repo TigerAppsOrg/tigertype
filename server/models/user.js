@@ -236,6 +236,76 @@ const User = {
     }
   },
 
+  // Get a user's detailed stats including partial sessions
+  async getDetailedStats(userId) {
+    try {
+      // Get sessions completed (races)
+      const completedQuery = `
+        SELECT 
+          COUNT(*) as races_completed,
+          COALESCE(SUM(CASE WHEN s.word_count IS NOT NULL THEN s.word_count ELSE 0 END), 0) as words_completed
+        FROM race_results rr
+        LEFT JOIN snippets s ON rr.snippet_id = s.id
+        WHERE rr.user_id = $1
+      `;
+      
+      // Get timed sessions completed
+      const timedQuery = `
+        SELECT 
+          COUNT(*) as timed_completed,
+          COALESCE(SUM(ROUND(wpm * (duration::decimal / 60))), 0) as timed_words
+        FROM timed_leaderboard
+        WHERE user_id = $1
+      `;
+      
+      // Get partial sessions
+      const partialQuery = `
+        SELECT 
+          COUNT(*) as partial_sessions,
+          COALESCE(SUM(words_typed), 0) as partial_words
+        FROM partial_sessions
+        WHERE user_id = $1
+      `;
+      
+      // Run all queries
+      const [completedResult, timedResult, partialResult] = await Promise.all([
+        db.query(completedQuery, [userId]),
+        db.query(timedQuery, [userId]),
+        db.query(partialQuery, [userId])
+      ]);
+      
+      // Extract data
+      const { races_completed, words_completed } = completedResult.rows[0];
+      const { timed_completed, timed_words } = timedResult.rows[0];
+      const { partial_sessions, partial_words } = partialResult.rows[0];
+      
+      // Calculate totals
+      const totalSessionsStarted = parseInt(races_completed) + parseInt(timed_completed) + parseInt(partial_sessions);
+      const totalSessionsCompleted = parseInt(races_completed) + parseInt(timed_completed);
+      const totalWordsTyped = parseInt(words_completed) + parseInt(timed_words) + parseInt(partial_words);
+      
+      return {
+        sessions_started: totalSessionsStarted,
+        sessions_completed: totalSessionsCompleted, 
+        races_completed: parseInt(races_completed),
+        timed_completed: parseInt(timed_completed),
+        words_typed: totalWordsTyped,
+        partial_sessions: parseInt(partial_sessions)
+      };
+    } catch (err) {
+      console.error('Error getting detailed user stats:', err);
+      // Return default values on error
+      return {
+        sessions_started: 0,
+        sessions_completed: 0,
+        races_completed: 0,
+        timed_completed: 0,
+        words_typed: 0,
+        partial_sessions: 0
+      };
+    }
+  },
+
   // Get a user's stats summary
   async getStats(userId) {
     try {

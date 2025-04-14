@@ -17,6 +17,8 @@ function ProfilePage() {
   const [imageError, setImageError] = useState(false);
   const [timestamp, setTimestamp] = useState(Date.now()); // Timestamp for cache (i have no idea what else is causing images to not refresh)
   const fileInputRef = useRef(null);
+  const [detailedStats, setDetailedStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   // Function to add cache busting parameter to image URL (this is so scuffed, even if it works pls refine ammaar)
   const getCacheBustedImageUrl = (url) => {
@@ -25,6 +27,31 @@ function ProfilePage() {
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}t=${timestamp}`;
   };
+
+  // Fetch detailed stats when component mounts
+  useEffect(() => {
+    const fetchDetailedStats = async () => {
+      try {
+        setLoadingStats(true);
+        const response = await fetch('/api/user/detailed-stats', {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch detailed stats');
+        }
+        
+        const data = await response.json();
+        setDetailedStats(data);
+      } catch (error) {
+        console.error('Error fetching detailed stats:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    
+    fetchDetailedStats();
+  }, []);
 
   useEffect(() => {
     // Initialize bio from user data when loaded
@@ -47,6 +74,11 @@ function ProfilePage() {
   const parseNumericValue = (value) => {
     if (value === null || value === undefined) return 0;
     return typeof value === 'string' ? parseFloat(value) : value;
+  };
+
+  // Format large numbers with commas
+  const formatNumber = (num) => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   const handleBack = () => {
@@ -306,6 +338,37 @@ function ProfilePage() {
             <div className="stat-card">
               <h3>Fastest Speed</h3>
               <p>{parseNumericValue(user.fastest_wpm).toFixed(2)} WPM</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Detailed Stats Section */}
+      <div className="profile-stats">
+        <h2>Detailed Stats</h2>
+        {loadingStats ? (
+          <div className="stats-loading">Loading detailed stats...</div>
+        ) : !detailedStats ? (
+          <div className="stats-loading">No detailed stats available</div>
+        ) : (
+          <div className="stats-grid">
+            <div className="stat-card">
+              <h3>Total Sessions Started</h3>
+              <p>{formatNumber(detailedStats.sessions_started)}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Sessions Completed</h3>
+              <p>{formatNumber(detailedStats.sessions_completed)}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Total Words Typed</h3>
+              <p>{formatNumber(detailedStats.words_typed)}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Completion Rate</h3>
+              <p>{detailedStats.sessions_started > 0 
+                ? (detailedStats.sessions_completed / detailedStats.sessions_started * 100).toFixed(1) 
+                : 0}%</p>
             </div>
           </div>
         )}

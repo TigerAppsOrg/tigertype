@@ -207,10 +207,68 @@ const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) =>
 };
 
 /**
+ * Record words typed in a partial session when a user cancels (presses TAB)
+ * @param {number} userId The user ID
+ * @param {string} sessionType Type of session ('snippet' or 'timed')
+ * @param {number} wordsTyped The number of words typed before canceling
+ * @param {number} charactersTyped The number of characters typed before canceling
+ * @returns {Promise<Object>} Result of the query
+ */
+const recordPartialSession = async (userId, sessionType, wordsTyped, charactersTyped) => {
+  try {
+    if (!userId || !sessionType || wordsTyped < 0 || charactersTyped < 0) {
+      console.error('Invalid data for recordPartialSession:', { userId, sessionType, wordsTyped, charactersTyped });
+      return null;
+    }
+    
+    const result = await pool.query(
+      `INSERT INTO partial_sessions (user_id, session_type, words_typed, characters_typed)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [userId, sessionType, wordsTyped, charactersTyped]
+    );
+    
+    console.log(`Recorded partial session for user ${userId}, type ${sessionType}: ${wordsTyped} words, ${charactersTyped} characters`);
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error recording partial session:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get total started sessions (both completed and partial)
+ * @returns {Promise<number>} The total number of started sessions
+ */
+const getTotalSessionsStarted = async () => {
+  try {
+    const statsQuery = `
+      SELECT
+        (
+          -- Regular races from race_results
+          (SELECT COUNT(*) FROM race_results)
+          +
+          -- Timed mode sessions
+          (SELECT COUNT(*) FROM timed_leaderboard)
+          +
+          -- Partial sessions
+          (SELECT COUNT(*) FROM partial_sessions)
+        ) AS total_sessions_started
+    `;
+    
+    const result = await pool.query(statsQuery);
+    return result.rows[0].total_sessions_started || 0;
+  } catch (error) {
+    console.error('Error getting total sessions started:', error);
+    return 0;
+  }
+};
+
+/**
  * Get total statistics including both regular races and timed sessions
  * This function returns combined statistics including:
  * - Total races (race_results + timed_leaderboard)
- * - Total words typed (from snippets + calculated from timed sessions)
+ * - Total sessions started (race_results + timed_leaderboard + partial_sessions)
+ * - Total words typed (from snippets + calculated from timed sessions + partial sessions)
  * - Average WPM (across both types)
  * - Active users
  */
@@ -226,11 +284,22 @@ const getTotalPlatformStats = async () => {
           (SELECT COUNT(*) FROM timed_leaderboard)
         ) AS total_races,
         (
+          -- Regular races + timed sessions + partial sessions
+          (SELECT COUNT(*) FROM race_results)
+          +
+          (SELECT COUNT(*) FROM timed_leaderboard)
+          +
+          (SELECT COUNT(*) FROM partial_sessions)
+        ) AS total_sessions_started,
+        (
           -- Words from regular snippets
           (SELECT COALESCE(SUM(word_count), 0) FROM snippets JOIN race_results ON snippets.id = race_results.snippet_id)
           +
           -- Words from timed mode calculated based on WPM and duration
           (SELECT COALESCE(SUM(ROUND(wpm * (duration::decimal / 60))), 0) FROM timed_leaderboard)
+          +
+          -- Words from partial sessions
+          (SELECT COALESCE(SUM(words_typed), 0) FROM partial_sessions)
         ) AS total_words_typed,
         (
           -- Combined average WPM from both regular races and timed sessions
@@ -250,9 +319,16 @@ const getTotalPlatformStats = async () => {
     
     const result = await pool.query(statsQuery);
     return result.rows[0];
-  } catch (error) {
-    console.error('Error fetching platform statistics:', error);
-    throw error;
+  } catch (err) {
+    console.error('Error fetching platform statistics:', err);
+    // Return default values if there's an error
+    return {
+      total_races: 0,
+      total_sessions_started: 0,
+      total_words_typed: 0,
+      avg_wpm: 0,
+      active_users: 0
+    };
   }
 };
 
@@ -278,5 +354,7 @@ module.exports = {
   updateFastestWpm,
   insertTimedResult,
   getTimedLeaderboard,
-  getTotalPlatformStats
+  getTotalPlatformStats,
+  recordPartialSession,
+  getTotalSessionsStarted
 };

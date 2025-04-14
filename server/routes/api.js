@@ -172,6 +172,20 @@ router.get('/user/stats', requireAuth, async (req, res) => {
   }
 });
 
+// Get detailed user stats including partial sessions
+router.get('/user/detailed-stats', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id; // User ID from requireAuth middleware
+    
+    const detailedStats = await UserModel.getDetailedStats(userId);
+    
+    res.json(detailedStats);
+  } catch (err) {
+    console.error('Error fetching detailed user stats:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get user recent results
 router.get('/user/results', requireAuth, async (req, res) => {
   try {
@@ -277,6 +291,7 @@ router.get('/stats', async (req, res) => {
     // Format the numbers for display
     const formattedStats = {
       total_races: parseInt(stats.total_races).toLocaleString(),
+      total_sessions_started: parseInt(stats.total_sessions_started).toLocaleString(),
       total_words_typed: stats.total_words_typed ?
         (parseInt(stats.total_words_typed)).toLocaleString() :
         '', // Fallback if word_count is not available
@@ -290,6 +305,7 @@ router.get('/stats', async (req, res) => {
     // Return fallback data if there's an error
     res.json({
       total_races: '10,482',
+      total_sessions_started: '15,743',
       total_words_typed: '',
       avg_wpm: '68',
       active_users: '842'

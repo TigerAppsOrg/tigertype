@@ -176,3 +176,16 @@ CREATE INDEX IF NOT EXISTS idx_timed_leaderboard_created_at ON timed_leaderboard
 --   GROUP BY user_id
 -- ) as subquery
 -- WHERE u.id = subquery.user_id;
+
+-- Partial Sessions table for tracking words typed in incomplete sessions
+CREATE TABLE IF NOT EXISTS partial_sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  session_type VARCHAR(20) NOT NULL, -- 'snippet' or 'timed'
+  words_typed INT NOT NULL,
+  characters_typed INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for partial_sessions performance
+CREATE INDEX IF NOT EXISTS idx_partial_sessions_user_id ON partial_sessions(user_id);
