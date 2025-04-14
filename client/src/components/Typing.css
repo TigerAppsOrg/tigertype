@@ -231,10 +231,13 @@
   20%, 40%, 60%, 80% { transform: translateX(1px); }
 }
 
-.error-message {
+.snippet-display .error-message {
   position: absolute;
   top: -1vh;
   left: 50%;
+  width: auto;
+  min-width: 0;
+  max-width: 90vw;
   transform: translateX(-50%);
   background-color: rgba(255, 65, 47, 0.8);
   color: white;
@@ -246,6 +249,8 @@
   animation: errorFadeInOut 2s forwards;
   z-index: 100;
   box-shadow: 0 2px 10px rgba(255, 65, 47, 0.5);
+  text-align: left;
+  display: inline-block;
 }
 
 @keyframes errorFadeInOut {
