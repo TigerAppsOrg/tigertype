@@ -74,7 +74,7 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
               onMouseEnter={() => setHoveredLink('about')}
               onMouseLeave={() => setHoveredLink(null)}
             >
-              About Us
+              About Us / FAQ
             </Link>
             
             {/* Logged-in specific items */}
@@ -101,7 +101,7 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
               onMouseEnter={() => setHoveredLink('about')}
               onMouseLeave={() => setHoveredLink(null)}
             >
-              About Us
+              About Us / FAQ
             </Link>
             <button onClick={onLoginClick} className="login-nav-button">Log In</button>
           </>
