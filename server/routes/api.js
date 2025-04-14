@@ -172,6 +172,20 @@ router.get('/user/stats', requireAuth, async (req, res) => {
   }
 });
 
+// Get detailed user stats including partial sessions
+router.get('/user/detailed-stats', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id; // User ID from requireAuth middleware
+    
+    const detailedStats = await UserModel.getDetailedStats(userId);
+    
+    res.json(detailedStats);
+  } catch (err) {
+    console.error('Error fetching detailed user stats:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get user recent results
 router.get('/user/results', requireAuth, async (req, res) => {
   try {
