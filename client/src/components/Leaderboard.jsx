@@ -104,6 +104,9 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
           {/* Combined Controls Area */}
           <div className="leaderboard-landing-controls-area">
              <h2>Leaderboards</h2>
+             {period === 'daily' && (
+               <p className="leaderboard-subtitle">Resets daily at 12:00 AM EST</p>
+             )}
              {/* Period Controls (Daily/Alltime) - Separate Row */}
              <div className="control-group period-controls horizontal">
                {PERIODS.map(p => (
