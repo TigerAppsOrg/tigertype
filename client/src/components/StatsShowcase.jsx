@@ -19,6 +19,12 @@ function StatsShowcase() {
       dataKey: 'total_races'
     },
     {
+      id: 'sessions',
+      label: 'Sessions Started',
+      icon: '🚀',
+      dataKey: 'total_sessions_started'
+    },
+    {
       id: 'words',
       label: 'Words Typed',
       icon: '📝',
@@ -67,9 +73,10 @@ function StatsShowcase() {
         const fallbackStats = statsConfig.map(config => {
           let fallbackValue = '0';
           if (config.id === 'races') fallbackValue = '10,482';
-          if (config.id === 'words') fallbackValue = '1.2M+';
-          if (config.id === 'wpm') fallbackValue = '68';
-          if (config.id === 'users') fallbackValue = '842';
+          if (config.id === 'sessions') fallbackValue = '15,743';
+          if (config.id === 'words') fallbackValue = '10,141';
+          if (config.id === 'wpm') fallbackValue = '117';
+          if (config.id === 'users') fallbackValue = '312';
           
           return {
             ...config,

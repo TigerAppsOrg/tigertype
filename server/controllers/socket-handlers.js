@@ -5,7 +5,7 @@
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
 const UserModel = require('../models/user');
-const { insertTimedResult, getTimedLeaderboard } = require('../db');
+const { insertTimedResult, getTimedLeaderboard, recordPartialSession } = require('../db');
 const analytics = require('../utils/analytics');
 const { createTimedTestSnippet, generateTimedText } = require('../utils/timed-test');
 
@@ -719,6 +719,61 @@ const initialize = (io) => {
       
       // Clean up stored avatar
       playerAvatars.delete(socket.id);
+    });
+
+    // Handle player canceling a race (pressing TAB to restart)
+    socket.on('race:cancel', async (progressData) => {
+      const { user: netid, userId } = socket.userInfo;
+      console.log(`User ${netid} canceled race with progress:`, progressData);
+      
+      try {
+        // Find the race the player is in
+        let raceCode = null;
+        let sessionType = 'snippet'; // Default
+        let isTimed = false;
+        
+        for (const [code, players] of racePlayers.entries()) {
+          const playerInRace = players.find(p => p.id === socket.id);
+          if (playerInRace) {
+            raceCode = code;
+            
+            // Check if this is a timed test
+            const race = activeRaces.get(code);
+            if (race && race.snippet && race.snippet.is_timed_test) {
+              sessionType = 'timed';
+              isTimed = true;
+            }
+            
+            break;
+          }
+        }
+        
+        if (!raceCode) {
+          console.log(`User ${netid} not found in any race, can't record partial session`);
+          return;
+        }
+        
+        // Calculate words and characters typed from progress data
+        if (progressData && progressData.typedLength) {
+          const charactersTyped = progressData.typedLength || 0;
+          
+          // Estimate words typed (using the common average of 5 characters per word)
+          const avgCharsPerWord = 5;
+          const wordsTyped = Math.max(0, Math.floor(charactersTyped / avgCharsPerWord));
+          
+          // Record partial session data
+          await recordPartialSession(
+            userId, 
+            sessionType, 
+            wordsTyped, 
+            charactersTyped
+          );
+          
+          console.log(`Recorded partial session for user ${netid}: ${wordsTyped} words, ${charactersTyped} characters`);
+        }
+      } catch (err) {
+        console.error(`Error recording partial session for user ${netid}:`, err);
+      }
     });
   });
 };

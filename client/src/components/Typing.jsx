@@ -373,6 +373,17 @@ function Typing({
         // This is the key fix to prevent duplicate lobbies without limiting spam ability
         if (e.type !== 'keydown') return;
         
+        // Get current progress data before clearing input
+        const progressData = {
+          typedLength: input.length,
+          input: input
+        };
+        
+        // Send race:cancel event with progress data to track partial words
+        if (socket && input.length > 0) {
+          socket.emit('race:cancel', progressData);
+        }
+        
         // Clear input immediately
         setInput('');
         if (inputRef.current) {

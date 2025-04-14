@@ -163,6 +163,31 @@ const MIGRATIONS = [
       `);
       console.log('Successfully created timed_leaderboard table and indexes.');
     }
+  },
+  {
+    version: 5,
+    description: 'Create partial_sessions table',
+    up: async (client) => {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS partial_sessions (
+          id SERIAL PRIMARY KEY,
+          user_id INT REFERENCES users(id) ON DELETE CASCADE,
+          session_type VARCHAR(20) NOT NULL, -- 'snippet' or 'timed'
+          words_typed INT NOT NULL,
+          characters_typed INT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_partial_sessions_user_id ON partial_sessions(user_id);
+      `);
+      console.log('Migration complete: Created partial_sessions table');
+    },
+    down: async (client) => {
+      await client.query(`
+        DROP TABLE IF EXISTS partial_sessions;
+      `);
+      console.log('Migration reverted: Dropped partial_sessions table');
+    }
   }
 ];
 
