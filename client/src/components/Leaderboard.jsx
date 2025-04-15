@@ -10,9 +10,13 @@ const PERIODS = ['daily', 'alltime'];
 
 // Helper function to format relative time
 const formatRelativeTime = (timestamp) => {
-  const now = new Date();
-  const createdAt = new Date(timestamp);
-  const diffInMinutes = Math.floor((now - createdAt) / (1000 * 60));
+  const nowUtc = Date.now(); // Current time in UTC milliseconds since epoch
+  const createdAt = new Date(timestamp); // Parse the timestamp string
+  const createdAtUtc = createdAt.getTime(); // Get timestamp time in UTC milliseconds since epoch
+  
+  // Calculate difference purely in UTC milliseconds
+  const diffInMs = nowUtc - createdAtUtc;
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
   
   if (diffInMinutes < 1) return 'Just now';
   if (diffInMinutes < 60) return `${diffInMinutes} ${diffInMinutes === 1 ? 'min' : 'mins'} ago`;

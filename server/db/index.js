@@ -168,8 +168,8 @@ const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) =>
 
   let timeFilter = '';
   if (period === 'daily') {
-    // Times now reset at 00:00 EST
-    timeFilter = 'AND tl.created_at >= DATE_TRUNC(\'day\', CURRENT_TIMESTAMP)';
+    // Explicitly truncate the current timestamp to the start of the day in New York time
+    timeFilter = `AND tl.created_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'America/New_York')`;
   }
 
   // Query to get the best score per user for the given duration and period
