@@ -447,20 +447,24 @@ function Typing({
           if (elapsed >= duration && !raceState.completed) {
             console.log('Timed test completed due to time limit');
 
-            // Capture final WPM and Accuracy from typingState at the moment of completion
-            const finalWpm = typingState.wpm;
+            // Recalculate final WPM using fixed duration and total characters typed
+            const durationInMinutes = duration / 60;
+            // Use typingState.position which reflects the total chars typed, consistent with live WPM
+            const finalWords = typingState.position / 5;
+            const finalWpm = durationInMinutes > 0 ? (finalWords / durationInMinutes) : 0;
+            // Capture accuracy at the moment of completion
             const finalAccuracy = typingState.accuracy;
             
             // Mark as completed locally
             setRaceState(prev => ({
               ...prev,
               completed: true,
-              // Store results directly in state using captured values
+              // Store results directly in state using correctly calculated final values
               results: [{
                 netid: user?.netid,
-                wpm: finalWpm,          
-                accuracy: finalAccuracy, 
-                completion_time: elapsed // Use final elapsed time
+                wpm: finalWpm,          // Use correctly calculated WPM
+                accuracy: finalAccuracy, // Use captured Accuracy
+                completion_time: duration // Use fixed duration as completion time
               }]
             }));
 
@@ -470,11 +474,11 @@ function Typing({
                 code: raceState.code,
                 lobbyId: null, // Practice mode lobbyId is null/irrelevant here
                 snippetId: raceState.snippet?.id, // ex: 'timed-15'
-                wpm: finalWpm, // Use captured WPM
+                wpm: finalWpm, // Use correctly calculated WPM
                 accuracy: finalAccuracy, // Use captured Accuracy
-                completion_time: elapsed // Use final elapsed time
+                completion_time: duration // Use fixed duration as completion time
               });
-              console.log('[Typing.jsx] Emitted race:result for timed test completion (time limit)');
+              console.log(`[Typing.jsx] Emitted race:result for timed test completion (time limit) with WPM: ${finalWpm}`);
             } else {
               console.warn('[Typing.jsx] Cannot emit race:result - socket / race code missing, or not a timed test.');
             }

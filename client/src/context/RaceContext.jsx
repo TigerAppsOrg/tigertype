@@ -553,33 +553,50 @@ export const RaceProvider = ({ children }) => {
       
       // Check if race is completed (input exactly matches the text)
       if (isCompleted) {
-        // Mark as completed locally
-        setRaceState(prev => ({
-          ...prev,
-          completed: true,
-          // For practice mode, store results directly in state
-          results: prev.type === 'practice' ? [{
-            netid: user?.netid,
-            wpm,
-            accuracy,
-            completion_time: elapsedSeconds
-          }] : prev.results
-        }));
-        
-        // Send completion to server for multiplayer races OR timed practice tests
         const isMultiplayer = raceState.type !== 'practice';
         const isTimedPractice = raceState.type === 'practice' && raceState.snippet?.is_timed_test;
         
+        let finalWpm = wpm;
+        let finalCompletionTime = elapsedSeconds;
+        
+        // For TIMED tests, calculate final WPM and completion time based on fixed duration
+        if (isTimedPractice && raceState.snippet?.duration) {
+          const durationInMinutes = raceState.snippet.duration / 60;
+          // Use correctChars from the current scope, which reflects the final count
+          const finalWords = correctChars / 5;
+          finalWpm = durationInMinutes > 0 ? (finalWords / durationInMinutes) : 0;
+          finalCompletionTime = raceState.snippet.duration; // Use fixed duration
+        } else {
+           // For regular races (non-timed), use the WPM calculated based on elapsed time
+           finalWpm = wpm;
+           finalCompletionTime = elapsedSeconds;
+        }
+          
+        // Mark as completed locally, ensuring the results array gets the correctly calculated final values
+        setRaceState(prev => ({
+          ...prev,
+          completed: true,
+          // For practice mode, store the CORRECTLY calculated final results directly in state
+          results: prev.type === 'practice' ? [{
+            netid: user?.netid,
+            wpm: finalWpm, // Use final calculated WPM
+            accuracy,
+            completion_time: finalCompletionTime // Use final calculated time (duration for timed tests)
+          }] : prev.results // Keep existing results for multiplayer
+        }));
+        
+        // Send completion to server for multiplayer races OR timed practice tests
+        // The finalWpm and finalCompletionTime calculated above are used here
         if (socket && connected && (isMultiplayer || isTimedPractice)) {
           socket.emit('race:result', {
             code: raceState.code,
             lobbyId: raceState.lobbyId, // Will be null for practice, that's okay
             snippetId: raceState.snippet?.id, // Will be like 'timed-15' for timed tests
-            wpm,
+            wpm: finalWpm, // Use the correctly calculated final WPM
             accuracy,
-            completion_time: elapsedSeconds
+            completion_time: finalCompletionTime // Send fixed duration or actual time
           });
-          console.log(`Emitted race:result for ${isMultiplayer ? 'multiplayer' : 'timed practice'} race ${raceState.code}`);
+          console.log(`Emitted race:result for ${isMultiplayer ? 'multiplayer' : 'timed practice'} race ${raceState.code} with WPM: ${finalWpm}`);
         }
       }
     }
