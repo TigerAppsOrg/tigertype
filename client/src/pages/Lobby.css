@@ -1,0 +1,588 @@
+/* Lobby Page Styles */
+.lobby-page {
+  padding-top: 5vh;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.lobby-container {
+  background-color: var(--container-color);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Reduced gap */
+}
+
+/* Header */
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+  /* margin-bottom: 1rem; Removed margin, handled by main content gap */
+}
+
+.lobby-header h1 {
+  color: var(--princeton-orange);
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.lobby-code-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--type-container-color);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+}
+
+.lobby-code-display span {
+  color: var(--subtle-text-color);
+}
+
+.lobby-code-display strong {
+  font-family: monospace;
+  font-size: 1.1rem;
+  color: var(--princeton-orange);
+  letter-spacing: 1px;
+}
+
+.lobby-code-display button {
+  background: none;
+  border: none;
+  color: var(--subtle-text-color);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0 0.3rem;
+  transition: color 0.2s;
+}
+
+.lobby-code-display button:hover {
+  color: var(--princeton-orange);
+}
+
+.copied-message {
+  font-size: 0.8rem;
+  color: var(--success-color);
+  margin-left: 0.5rem;
+  animation: fadeInOut 2s forwards;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.leave-lobby-button {
+  background-color: var(--danger-bg-color);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.leave-lobby-button:hover {
+  background-color: var(--danger-color);
+}
+
+/* Countdown Display */
+.lobby-countdown {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--princeton-orange);
+  padding: 2rem 0;
+  animation: pulse 1s infinite; /* Reuse pulse from Typing.css */
+}
+
+.lobby-countdown .countdown-value {
+  font-size: 3rem;
+  margin-left: 0.5rem;
+}
+
+
+/* Main Content Layout */
+.lobby-main-content {
+  display: flex;
+  gap: 2rem; /* Gap between columns */
+  align-items: flex-start; /* Align items at the top */
+}
+
+.lobby-left-column {
+  flex: 1; /* Adjust flex ratio as needed, e.g., 1 for settings */
+  min-width: 300px; /* Minimum width for settings */
+  padding: 1.5rem;
+  background-color: var(--type-container-color);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: visible;
+}
+
+.lobby-right-column {
+  flex: 2; /* Adjust flex ratio, e.g., 2 for players/controls */
+  display: flex;
+  flex-direction: column; /* Stack players and controls vertically */
+  gap: 1.5rem; /* Gap within the right column */
+  padding: 1.5rem;
+  background-color: var(--type-container-color);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+
+/* Settings Area */
+.lobby-settings {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  min-height: 50px;
+}
+
+.lobby-settings h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--heading-color);
+  font-size: 1.3rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+/* --- TestConfigurator Overrides for Lobby --- */
+.lobby-settings .test-configurator {
+  padding: 0;
+  box-shadow: none;
+  border: none;
+  background-color: transparent;
+  width: 100%;
+  justify-content: flex-start;
+  overflow: visible;
+  flex-direction: column; /* Stack sections vertically */
+  align-items: stretch;
+  gap: 10px;
+  margin: 0; /* Reset margins */
+}
+
+.lobby-settings .test-configurator .config-section {
+  width: 100%; /* Make sections take full width */
+  justify-content: flex-start; /* Align items left */
+}
+
+.lobby-settings .test-configurator .conditional-options-container {
+  position: static; /* Override absolute positioning */
+  height: auto;
+  width: 100%;
+  overflow: visible;
+  margin-top: 10px; /* Space above options */
+  min-width: unset; /* Remove min-width */
+  flex-grow: unset; /* Remove flex-grow */
+}
+
+.lobby-settings .test-configurator .options-wrapper {
+  position: static; /* Override absolute */
+  transform: none; /* Override transform */
+  opacity: 1; /* Force visible */
+  height: auto; /* Force auto height */
+  overflow: visible; /* Ensure content visible */
+  width: 100%;
+  display: block; /* Change display */
+  pointer-events: auto; /* Ensure interaction */
+  margin-top: 5px; /* Space below mode buttons */
+}
+
+/* Ensure inner wrappers are visible and wrap */
+.lobby-settings .test-configurator .snippet-filters-inner,
+.lobby-settings .test-configurator .duration-selection-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 5px 0;
+  justify-content: flex-start;
+  width: 100%; /* Take full width */
+}
+
+/* Hide separators in vertical layout */
+.lobby-settings .test-configurator .config-separator {
+  display: none;
+}
+.lobby-settings .test-configurator .config-separator-inner {
+   margin: 0 5px;
+}
+
+/* Adjust leaderboard button */
+.lobby-settings .test-configurator .leaderboard-button-section {
+  margin-top: 15px; /* More space above leaderboard */
+  justify-content: flex-start;
+}
+/* --- End TestConfigurator Overrides --- */
+
+
+.read-only-settings {
+  color: var(--subtle-text-color);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: rgba(0,0,0,0.1);
+  border-radius: 4px;
+}
+
+.read-only-settings p {
+  margin: 0.5rem 0;
+}
+
+.read-only-settings i {
+  color: var(--princeton-orange);
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Player Grid Area */
+.lobby-players {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.lobby-players h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--heading-color);
+  font-size: 1.3rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.player-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5 columns */
+  gap: 1rem;
+  max-width: 100%;
+}
+
+.player-card {
+  background-color: var(--container-color);
+  border-radius: 6px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: relative;
+  min-height: 120px;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.player-card:hover:not(.empty-slot) {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Make profile widget clickable */
+.profile-widget-clickable {
+  cursor: pointer;
+  width: 100%;
+}
+
+.player-card.empty-slot {
+  border: 2px dashed var(--border-color);
+  background-color: transparent;
+  color: var(--subtle-text-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-style: italic;
+  box-shadow: none;
+  min-height: 120px;
+}
+
+.player-card .profile-widget {
+  margin-bottom: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+.player-card .profile-widget:hover {
+  text-decoration: none;
+}
+
+
+.player-status {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.host-tag, .ready-tag, .not-ready-tag {
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.host-tag {
+  background-color: rgba(245, 128, 37, 0.2);
+  color: var(--princeton-orange);
+  border: 1px solid rgba(245, 128, 37, 0.4);
+}
+
+.ready-tag {
+  background-color: rgba(40, 167, 69, 0.2);
+  color: var(--success-color);
+  border: 1px solid rgba(40, 167, 69, 0.4);
+}
+
+.not-ready-tag {
+  background-color: rgba(108, 117, 125, 0.2);
+  color: var(--subtle-text-color);
+  border: 1px solid rgba(108, 117, 125, 0.4);
+}
+
+.kick-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(220, 53, 69, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  transition: background-color 0.2s, transform 0.2s;
+  padding: 0;
+  opacity: 0.6;
+}
+
+.player-card:hover .kick-button {
+  opacity: 1;
+}
+
+
+.kick-button:hover {
+  background-color: var(--danger-color);
+  transform: scale(1.1);
+}
+
+/* Controls Area */
+.lobby-controls {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto; /* Push controls to the bottom of the right column */
+}
+
+.start-race-button, .ready-button {
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.start-race-button {
+  background-color: var(--princeton-orange);
+  color: white;
+}
+
+.start-race-button:hover:not(:disabled) {
+  background-color: #e0701b; /* Darker orange */
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.start-race-button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.ready-button {
+  background-color: var(--subtle-bg-color);
+  color: var(--mode-text-color);
+  border: 1px solid var(--border-color);
+}
+
+.ready-button:hover {
+  background-color: var(--hover-bg-color);
+  border-color: var(--princeton-orange);
+}
+
+.ready-button.is-ready {
+  background-color: var(--success-bg-color);
+  color: var(--success-color);
+  border-color: var(--success-color);
+  font-weight: bold;
+}
+
+/* Race/Results Area */
+.lobby-race-area {
+  /* Styles for the container holding Typing or Results below the columns */
+  margin-top: 2rem; /* Space above this section */
+}
+
+.lobby-race-active, .lobby-results {
+  padding: 1.5rem;
+  background-color: var(--type-container-color);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.lobby-results h2 {
+  text-align: center;
+  color: var(--princeton-orange);
+  margin-bottom: 1.5rem;
+}
+
+.lobby-results button {
+   margin-top: 1rem;
+   /* Add styles similar to start/ready buttons */
+   padding: 0.7rem 1.5rem;
+   font-size: 1rem;
+   font-weight: 500;
+   border-radius: 5px;
+   cursor: pointer;
+   transition: all 0.2s ease;
+   border: 1px solid var(--border-color);
+   background-color: var(--subtle-bg-color);
+   color: var(--mode-text-color);
+   display: block; /* Make button block level */
+   margin-left: auto;
+   margin-right: auto; /* Center button */
+}
+
+.lobby-results button:hover {
+   background-color: var(--hover-bg-color);
+   border-color: var(--princeton-orange);
+}
+
+/* Error Page Specific */
+.error-page {
+  text-align: center;
+  padding: 3rem;
+}
+.error-page h2 {
+  color: var(--danger-color);
+}
+.error-page button {
+  /* Style similar to leave button */
+  background-color: var(--princeton-orange);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+.error-page button:hover {
+  background-color: #e0701b;
+}
+
+/* Player Stats Modal Content */
+.player-stats-modal-content {
+  padding: 1rem;
+  line-height: 1.7;
+}
+.player-stats-modal-content p {
+  margin: 0.6rem 0;
+  font-size: 1rem;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 992px) { /* Adjust breakpoint for two columns */
+  .lobby-main-content {
+    flex-direction: column; /* Stack columns on smaller screens */
+    gap: 1.5rem;
+  }
+  .lobby-left-column, .lobby-right-column {
+    min-width: 100%; /* Allow columns to take full width */
+    flex: none; /* Reset flex property */
+    padding: 1.5rem; /* Add padding back */
+    background-color: var(--type-container-color); /* Add background back */
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+  }
+  .lobby-right-column {
+     gap: 1rem;
+  }
+  .player-grid {
+     /* Adjust grid for potentially smaller width */
+     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+  /* Adjust TestConfigurator layout for stacked view */
+  .lobby-settings .test-configurator {
+    flex-direction: row; /* Go back to row */
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping */
+  }
+  .lobby-settings .test-configurator .config-separator {
+     display: block; /* Show separators again */
+  }
+  .lobby-settings .test-configurator .conditional-options-container {
+     width: auto; /* Allow width to adjust */
+     margin-top: 0;
+  }
+  .lobby-settings .test-configurator .options-wrapper {
+     margin-top: 0;
+     display: flex; /* Back to flex */
+     width: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .lobby-container {
+    padding: 1.5rem;
+  }
+  .lobby-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .lobby-code-display {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .player-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Further adjust grid */
+    gap: 0.8rem;
+  }
+  .player-card {
+    padding: 0.8rem;
+    min-height: 110px; /* Further reduce height */
+  }
+  .lobby-left-column, .lobby-right-column {
+     padding: 1rem; /* Reduce padding */
+  }
+}

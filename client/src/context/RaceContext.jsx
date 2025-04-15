@@ -63,12 +63,13 @@ export const RaceProvider = ({ children }) => {
   
   // Race state
   const [raceState, setRaceState] = useState({
-    code: savedRaceState?.code || null,     // Code of the race
-    type: savedRaceState?.type || null,     // Type of race (practice, public, custom)
+    code: savedRaceState?.code || null,     // Code of the race/lobby
+    type: savedRaceState?.type || null,     // Type of race (practice, public, private)
     lobbyId: savedRaceState?.lobbyId || null, // ID of the lobby
+    hostNetId: null,        // NetID of the host (for private lobbies)
     snippet: null,          // Snippet of the race
-    players: [],            // Array of objects with netid, ready status  
-    startTime: null,        // Timestamp when the race started/is starting    
+    players: [],            // Array of objects { netid, ready, avatar_url }
+    startTime: null,        // Timestamp when the race started/is starting
     inProgress: false,      // Whether the race is currently in progress
     completed: false,       // Whether the race has been completed
     results: [],            // Array of objects with netid, wpm, accuracy, completion_time
@@ -81,9 +82,14 @@ export const RaceProvider = ({ children }) => {
       difficulty: 'all',
       type: 'all',
       department: 'all'
+    },
+    settings: {             // Settings for the current lobby/race
+      testMode: 'snippet',
+      testDuration: 15,
+      // Add other potential settings here
     }
   });
-  
+
   // Local typing state
   const [typingState, setTypingState] = useState({
     input: '',
@@ -161,7 +167,9 @@ export const RaceProvider = ({ children }) => {
         code: data.code,
         type: data.type,
         lobbyId: data.lobbyId,
+        hostNetId: data.hostNetId || null, // Explicitly store hostNetId
         snippet: data.snippet,
+        settings: data.settings || prev.settings, // Store settings from server
         players: data.players || []
       }));
     };
@@ -270,6 +278,50 @@ export const RaceProvider = ({ children }) => {
       });
     };
 
+    // --- New Lobby Event Handlers ---
+    const handleLobbySettingsUpdated = (data) => {
+      console.log('Lobby settings updated:', data);
+      setRaceState(prev => ({
+        ...prev,
+        settings: data.settings,
+        snippet: data.snippet // Update snippet as it might change with settings
+      }));
+      // Reset typing state if snippet changed
+      if (data.snippet?.id !== raceState.snippet?.id) {
+         setTypingState({
+           input: '', position: 0, correctChars: 0, errors: 0,
+           completed: false, wpm: 0, accuracy: 0, lockedPosition: 0
+         });
+      }
+    };
+
+    const handleLobbyKicked = (data) => {
+      console.log('Kicked from lobby:', data.reason);
+      // Show a message to the user
+      setInactivityState(prev => ({
+        ...prev,
+        kicked: true, // Reuse kicked state for general kicks
+        kickMessage: data.reason || 'You have been removed from the lobby.',
+        redirectToHome: true // Force redirect to home after kick
+      }));
+      // Reset race state locally
+      resetRace(); // Call resetRace without notifying server
+    };
+
+    const handleLobbyTerminated = (data) => {
+       console.log('Lobby terminated:', data.reason);
+       // Show a message
+       setInactivityState(prev => ({
+         ...prev,
+         kicked: true, // Reuse kicked state
+         kickMessage: data.reason || 'The lobby has been terminated.',
+         redirectToHome: true
+       }));
+       resetRace();
+    };
+    // --- End New Lobby Event Handlers ---
+
+
     // Register event listeners
     socket.on('race:joined', handleRaceJoined);
     socket.on('race:playersUpdate', handlePlayersUpdate);
@@ -280,8 +332,13 @@ export const RaceProvider = ({ children }) => {
     
     // Register inactivity event listeners
     socket.on('inactivity:warning', handleInactivityWarning);
-    socket.on('inactivity:kicked', handleInactivityKicked);
-    
+    socket.on('inactivity:kicked', handleInactivityKicked); // Keep existing inactivity kick handler
+
+    // Register new lobby event listeners
+    socket.on('lobby:settingsUpdated', handleLobbySettingsUpdated);
+    socket.on('lobby:kicked', handleLobbyKicked);
+    socket.on('lobby:terminated', handleLobbyTerminated);
+
     // Clean up on unmount
     return () => {
       socket.off('race:joined', handleRaceJoined);
@@ -294,8 +351,14 @@ export const RaceProvider = ({ children }) => {
       // Clean up inactivity event listeners
       socket.off('inactivity:warning', handleInactivityWarning);
       socket.off('inactivity:kicked', handleInactivityKicked);
+
+      // Clean up new lobby event listeners
+      socket.off('lobby:settingsUpdated', handleLobbySettingsUpdated);
+      socket.off('lobby:kicked', handleLobbyKicked);
+      socket.off('lobby:terminated', handleLobbyTerminated);
     };
-  }, [socket, connected, raceState.type, raceState.manuallyStarted]);
+    // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
+  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id]); 
 
   // Methods for race actions
   const joinPracticeMode = () => {
@@ -585,11 +648,19 @@ export const RaceProvider = ({ children }) => {
     }
   };
 
-  const resetRace = () => {
+  const resetRace = (notifyServer = false) => { // Added optional param
+    // Optionally notify server about leaving (e.g., for private lobbies)
+    if (notifyServer && socket && connected && raceState.code) {
+       // TODO: Implement a specific 'lobby:leave' event if needed,
+       // otherwise disconnect handles cleanup. For now, rely on disconnect.
+       console.log(`Resetting race state for ${raceState.code}, server cleanup handled by disconnect or explicit leave event.`);
+    }
+
     setRaceState({
       code: null,
       type: null,
       lobbyId: null,
+      hostNetId: null, // Clear hostNetId
       snippet: null,
       players: [],
       startTime: null,
@@ -605,9 +676,13 @@ export const RaceProvider = ({ children }) => {
         difficulty: 'all',
         type: 'all',
         department: 'all'
+      },
+      settings: { // Reset settings
+        testMode: 'snippet',
+        testDuration: 15,
       }
     });
-    
+
     setTypingState({
       input: '',
       position: 0,
@@ -622,6 +697,85 @@ export const RaceProvider = ({ children }) => {
     // Clear race state from session storage
     sessionStorage.removeItem('raceState');
   };
+
+  // --- Private Lobby Actions ---
+  const createPrivateLobby = (options = {}) => {
+    if (!socket || !connected) return;
+    console.log('Creating private lobby with options:', options);
+    // Include current test settings from raceState if not overridden in options
+    const lobbyOptions = {
+      testMode: options.testMode || raceState.settings.testMode,
+      testDuration: options.testDuration || raceState.settings.testDuration,
+      // snippetFilters: options.snippetFilters || raceState.snippetFilters // If filtering is added
+    };
+    socket.emit('private:create', lobbyOptions, (response) => {
+      if (!response.success) {
+        console.error('Failed to create private lobby:', response.error);
+        // TODO: Show error to user
+      } else {
+        console.log('Private lobby created successfully:', response.lobby);
+        // raceState will be updated by the 'race:joined' listener
+      }
+    });
+  };
+
+  const joinPrivateLobby = (joinData) => { // joinData = { code } or { hostNetId }
+    if (!socket || !connected) return;
+    console.log('Joining private lobby with data:', joinData);
+    socket.emit('private:join', joinData, (response) => {
+      if (!response.success) {
+        console.error('Failed to join private lobby:', response.error);
+        // TODO: Show error to user (e.g., lobby full, not found)
+      } else {
+        console.log('Joined private lobby successfully:', response.lobby);
+        // raceState will be updated by the 'race:joined' listener
+      }
+    });
+  };
+
+  const kickPlayer = (targetNetId) => {
+    if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
+    console.log(`Attempting to kick player ${targetNetId} from lobby ${raceState.code}`);
+    socket.emit('lobby:kick', { code: raceState.code, targetNetId }, (response) => {
+      if (!response.success) {
+        console.error(`Failed to kick player ${targetNetId}:`, response.error);
+        // TODO: Show error to host
+      } else {
+        console.log(`Player ${targetNetId} kicked successfully.`);
+        // Player list update handled by 'race:playersUpdate' listener
+      }
+    });
+  };
+
+  const updateLobbySettings = (newSettings) => {
+    if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
+    console.log(`Attempting to update lobby ${raceState.code} settings:`, newSettings);
+    socket.emit('lobby:updateSettings', { code: raceState.code, settings: newSettings }, (response) => {
+      if (!response.success) {
+        console.error('Failed to update lobby settings:', response.error);
+        // TODO: Show error to host
+      } else {
+        console.log('Lobby settings updated successfully:', response);
+        // State update handled by 'lobby:settingsUpdated' listener
+      }
+    });
+  };
+
+  const startPrivateRace = () => {
+    if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
+    console.log(`Attempting to start race for private lobby ${raceState.code}`);
+    socket.emit('lobby:startRace', { code: raceState.code }, (response) => {
+      if (!response.success) {
+        console.error('Failed to start private race:', response.error);
+        // TODO: Show error to host
+      } else {
+        console.log('Private race countdown initiated successfully.');
+        // Race start handled by 'race:countdown' and 'race:start' listeners
+      }
+    });
+  };
+  // --- End Private Lobby Actions ---
+
 
   // Methods for inactivity
   const dismissInactivityWarning = () => {
@@ -654,6 +808,11 @@ export const RaceProvider = ({ children }) => {
         setInactivityState,
         joinPracticeMode,
         joinPublicRace,
+        createPrivateLobby, // Add new actions to value
+        joinPrivateLobby,
+        kickPlayer,
+        updateLobbySettings,
+        startPrivateRace,
         setPlayerReady,
         handleInput,
         updateProgress,

@@ -12,10 +12,12 @@ import './Home.css';
 function Home() {
   const { user, authenticated, loading, fetchUserProfile } = useAuth();
   const { 
-    joinPracticeMode, 
-    joinPublicRace, 
-    raceState, 
-    inactivityState, 
+    joinPracticeMode,
+    joinPublicRace,
+    createPrivateLobby, // Add createPrivateLobby
+    // joinPrivateLobby, // Add joinPrivateLobby (if needed later)
+    raceState,
+    inactivityState,
     dismissInactivityKick,
     setInactivityState
   } = useRace();
@@ -45,13 +47,17 @@ function Home() {
     }
   }, [searchParams, setSearchParams, setInactivityState]);
   
-  // Handle race joining
+  // Handle race/lobby joining navigation
   useEffect(() => {
-    // If race is joined, navigate to race page
+    // If a race/lobby code exists, navigate to the appropriate page
     if (raceState.code) {
-      navigate('/race');
+      if (raceState.type === 'private') {
+        navigate(`/lobby/${raceState.code}`); // Navigate to lobby page for private
+      } else {
+        navigate('/race'); // Navigate to race page for public/practice
+      }
     }
-  }, [raceState.code, navigate]);
+  }, [raceState.code, raceState.type, navigate]);
 
   useEffect(() => {
     if (searchParams.get('refreshUser') === 'true') {
@@ -75,15 +81,16 @@ function Home() {
       id: 2, 
       name: 'Quick Match', 
       description: 'Race against other Princeton students', 
-      action: joinPublicRace 
+      action: joinPublicRace
     },
-    { 
-      id: 3, 
-      name: 'Custom Lobby', 
-      description: 'Coming soon! Create a private lobby with friends', 
-      action: null,
-      disabled: true
+    {
+      id: 3,
+      name: 'Private Match', // Rename
+      description: 'Create or join a private lobby with friends', // Update description
+      action: createPrivateLobby, // Set action to create lobby
+      // disabled: false // Remove disabled state (or ensure it's false)
     }
+    // TODO: Add a separate "Join Lobby" option/modal if desired
   ];
   
   return (
