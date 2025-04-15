@@ -1,9 +1,10 @@
+const { commonWords } = require('../../client/src/lib/commonWords.cjs');
+
 /**
  * Timed test generator utility
  * 
  * Creates random word sequences for timed typing tests using common English words
  */
-
 
 /**
  * Generates a random text for timed typing tests
