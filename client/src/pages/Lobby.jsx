@@ -77,7 +77,16 @@ function Lobby() {
     }
   }, [inactivityState.kicked, inactivityState.redirectToHome, raceState.code, isLoading, navigate, lobbyCode, resetRace]); // Added lobbyCode/resetRace
 
-  // Countdown display handled by Typing component – no local countdown logic needed now
+  useEffect(() => {
+    // Only trigger navigation if we have successfully joined this lobby
+    if (raceState.code !== lobbyCode) return;
+
+    // When countdown begins (raceState.countdown becomes a number) or
+    // the race is already marked as in progress / completed, navigate.
+    if (raceState.countdown !== null || raceState.inProgress || raceState.completed) {
+      navigate('/race', { replace: true });
+    }
+  }, [raceState.countdown, raceState.inProgress, raceState.completed, raceState.code, lobbyCode, navigate]);
 
 
   // --- TestConfigurator State ---
