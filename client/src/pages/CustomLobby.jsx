@@ -4,6 +4,7 @@ import { useRace } from '../context/RaceContext';
 import './CustomLobby.css';
 import Modal from '../components/Modal';
 import ProfileWidget from '../components/ProfileWidget';
+import Leaderboard from '../components/Leaderboard';
 import PlayerStatusBar from '../components/PlayerStatusBar';
 
 function CustomLobby() {
@@ -49,6 +50,19 @@ function CustomLobby() {
         resetRace();
         navigate('/home');
     };
+
+    // Render tips before race starts
+  const getTips = () => {
+    return (
+      <div className="stats tips-stats">
+        <div className="tool-tip tip-item">
+          <span className={`tip-text ${tipVisible ? 'tip-visible tip-pulsing' : 'tip-hidden'}`}>
+            {tipContentRef.current}
+          </span>
+        </div>
+      </div>
+    );
+  };
 
     return(
         <div className="lobby-page">
@@ -96,8 +110,9 @@ function CustomLobby() {
                     </button>
                 </div>
                 <h1 className="lobby-name">User1's Custom Lobby</h1>
-                <h3 className="player-count">Players: 3/6</h3>
                 <div className="private-lobby-code">Lobby Code: {raceState.code}</div>
+
+                <h3 className="player-count">Players: 3/6</h3>
                 <div className="players-container">
                     <div id="placeholders-inlobby" className="lobby-players-container">
                         <div className="player-placeholder" />
@@ -117,6 +132,45 @@ function CustomLobby() {
                         <ProfileWidget className="player-inlobby" />
                     </div>
                 </div>
+
+
+                <div className="lobby-race-settings">
+                    <h3>Lobby Settings</h3>
+                    <div />
+                    <div>
+                        <label htmlFor="font-select">Snippet Mode</label>
+                        <br />
+                        <select 
+                        id="font-select"
+                        className="font-select" 
+                        >
+                        <option>General</option>
+                        <option>Course Reviews</option>
+                        <option>Princeton</option>
+                        </select>
+                    </div>
+                    <div>
+                        Placeholder Race Setting
+                    </div>
+                    <div>
+                        Placeholder Race Setting
+                    </div>
+                    <div>
+                        Placeholder Race Setting
+                    </div>
+                    <div>
+                        Placeholder Race Setting
+                    </div>
+                    <div>
+                        Placeholder Race Setting
+                    </div>
+                </div>
+
+                {/* Only the lobby owner can edit the race settings & bring players into the race screen */}
+                {/* Could gray-out the button if user is not lobby admin */}
+                <button className="ready-start-button">
+                    {isLobbyAdmin ? "Start Game" : "Waiting for Game Start"}
+                </button>
             </div>
             }
         </div>
