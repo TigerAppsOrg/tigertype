@@ -306,7 +306,7 @@ export const RaceProvider = ({ children }) => {
       console.log('Lobby settings updated:', data);
       setRaceState(prev => ({
         ...prev,
-        settings: data.settings,
+        settings: { ...prev.settings, ...data.settings },
         snippet: data.snippet // Update snippet as it might change with settings
       }));
       // Reset typing state if snippet changed
