@@ -1113,34 +1113,53 @@ const initialize = (io) => {
 
           // --- Handle Host Disconnecting from Private Lobby ---
           if (race && race.type === 'private' && race.hostId === player.userId) {
-            console.log(`Host ${netid} disconnected from private lobby ${code}. Terminating lobby.`);
+            console.log(`Host ${netid} disconnected from private lobby ${code}. Attempting host reassignment.`);
 
-            // Notify remaining players that the lobby is terminated
-            socket.to(code).emit('lobby:terminated', { reason: `Host (${netid}) disconnected.` });
+            // Remove host player from list (already about to be removed below as part of splice, but ensure)
+            // players.splice(playerIndex, 1);  // will be executed after this block
 
-            // Make all remaining players leave the room and clean up their state
-            players.forEach(p => {
-              if (p.id !== socket.id) { // Don't try to kick the disconnected socket
-                const remainingSocket = io.sockets.sockets.get(p.id);
-                if (remainingSocket) {
-                  remainingSocket.leave(code);
-                }
-                // Clean up progress/timers for remaining players too
-                playerProgress.delete(p.id);
-                lastProgressUpdate.delete(p.id);
-                clearInactivityTimers(code, p.id);
-                playerAvatars.delete(p.id);
+            // Filter out the disconnecting host to derive remaining players
+            const remainingPlayers = players.filter(p => p.id !== socket.id);
+
+            if (remainingPlayers.length === 0) {
+              // No one left – terminate lobby as before
+              console.log(`No players left in lobby ${code} after host disconnect. Terminating lobby.`);
+
+              socket.to(code).emit('lobby:terminated', { reason: 'Lobby empty after host disconnected.' });
+
+              // Clean up memory structures
+              racePlayers.delete(code);
+              activeRaces.delete(code);
+
+              // Soft‑terminate in DB for consistency (best‑effort)
+              try {
+                await RaceModel.softTerminate(race.id);
+              } catch (e) {
+                console.error(`Error soft‑terminating lobby ${code}:`, e);
               }
-            });
 
-            // Clean up the entire race from memory
-            racePlayers.delete(code);
-            activeRaces.delete(code);
+              continue; // Done with this lobby
+            }
 
-            // Optionally update DB status to finished/aborted (can be complex, maybe just rely on cleanup)
-            // try { await RaceModel.updateStatus(race.id, 'finished'); } catch(e) {}
+            // Choose the oldest remaining player (index 0 after filtering) as new host
+            const newHost = remainingPlayers[0];
 
-            continue; // Skip the rest of the standard disconnect logic for this race
+            race.hostId = newHost.userId;
+            race.hostNetId = newHost.netid;
+            activeRaces.set(code, race);
+
+            // Persist new host in DB (best‑effort)
+            try {
+              await RaceModel.reassignHost(race.id, newHost.userId);
+            } catch (e) {
+              console.error(`Failed to reassign host in DB for lobby ${code}:`, e);
+            }
+
+            // Inform clients in the lobby
+            io.to(code).emit('lobby:newHost', { newHostNetId: newHost.netid });
+
+            console.log(`Reassigned host of lobby ${code} to ${newHost.netid}`);
+            // Continue with standard disconnect handling (player list has been adjusted already below)
           }
           // --- End Host Disconnect Handling ---
 
@@ -1323,7 +1342,7 @@ const startPracticeCountdown = async (io, code) => {
     }
     
     // Broadcast countdown start - 3 seconds for practice mode
-    io.to(code).emit('race:countdown', { seconds: 3 });
+    io.to(code).emit('race:countdown', { seconds: 3, code });
     
     // Wait 3 seconds and start the race
     setTimeout(() => startRace(io, code), 3000);
@@ -1357,7 +1376,7 @@ const startCountdown = async (io, code) => {
     }
     
     // Broadcast countdown start - 5 seconds for multiplayer races
-    io.to(code).emit('race:countdown', { seconds: 5 });
+    io.to(code).emit('race:countdown', { seconds: 5, code });
     
     // Wait 5 seconds and start the race
     setTimeout(() => startRace(io, code), 5000);

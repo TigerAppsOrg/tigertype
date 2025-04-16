@@ -1,5 +1,7 @@
 const db = require('../config/database');
 const crypto = require('crypto');
+const SERIALIZABLE = 'SERIALIZABLE';   // isolation level constant
+
 
 // Race/Lobby model for managing race sessions
 const Race = {
@@ -302,6 +304,68 @@ const Race = {
       throw err;
     }
   },
+
+  /* ------------------------------------------------------------------ *
+   *  softTerminate(lobbyId, reason='terminated')
+   *      • sets status = 'finished'
+   *      • sets finished_at = now()
+   * ------------------------------------------------------------------ */
+   async softTerminate (lobbyId) {
+      await db.query(
+        `UPDATE lobbies
+            SET status      = 'finished',
+                finished_at = CURRENT_TIMESTAMP,
+                version     = version + 1
+          WHERE id = $1`,
+        [lobbyId],
+      );
+    },
+
+  /* ------------------------------------------------------------------ *
+   *  incrementVersion – optimistic‑concurrency helper
+   * ------------------------------------------------------------------ */
+  async incrementVersion (lobbyId) {
+    await db.query(
+      `UPDATE lobbies
+          SET version = version + 1
+        WHERE id = $1`,
+      [lobbyId],
+    );
+  },
+
+    /* ------------------------------------------------------------------ *
+   *  reassignHost(lobbyId, newHostUserId)  →  updated lobby row
+   * ------------------------------------------------------------------ */
+    async reassignHost (lobbyId, newHostUserId) {
+      return this.atomic(async (c) => {
+        const { rows } = await c.query(
+          `UPDATE lobbies
+             SET host_id = $2, version = version + 1
+           WHERE id = $1
+           RETURNING *`,
+          [lobbyId, newHostUserId],
+        );
+        return rows[0];
+      });
+    },
+
+    async atomic (fn) {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const client = await db.getClient();
+        try {
+          await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE;');
+          const res = await fn(client);
+          await client.query('COMMIT;');
+          return res;
+        } catch (e) {
+          await client.query('ROLLBACK;');
+          if (e.code === '40001' && attempt < 2) continue;          // serialization failure → retry
+          throw e;
+        } finally {
+          client.release();
+        }
+      }
+    },
   
   // Remove a player from a lobby
   async removePlayerFromLobby(lobbyId, userId) {

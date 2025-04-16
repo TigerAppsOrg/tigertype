@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'; // Added useRef
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRace } from '../context/RaceContext';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,7 @@ import Modal from '../components/Modal';
 import Loading from '../components/Loading';
 import PlayerStatusBar from '../components/PlayerStatusBar'; // Import PlayerStatusBar
 import './Lobby.css';
+import './Race.css';
 
 function Lobby() {
   const { lobbyCode } = useParams();
@@ -37,8 +38,6 @@ function Lobby() {
   // Remove state for the simple stats modal
   // const [showStatsModal, setShowStatsModal] = useState(false);
   // const [selectedPlayerStats, setSelectedPlayerStats] = useState(null);
-  const [countdown, setCountdown] = useState(null);
-  const countdownIntervalRef = useRef(null); // Ref to manage interval
 
   // Check if the current user is the host
   const isHost = user?.netid === raceState.hostNetId;
@@ -78,58 +77,7 @@ function Lobby() {
     }
   }, [inactivityState.kicked, inactivityState.redirectToHome, raceState.code, isLoading, navigate, lobbyCode, resetRace]); // Added lobbyCode/resetRace
 
-  // Effect to handle countdown events directly from socket
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleCountdown = (data) => {
-      // Ensure countdown is for the current lobby
-      if (data.code === raceState.code) {
-        console.log('Lobby component received countdown:', data);
-        setCountdown(data.seconds);
-
-        // Clear any existing interval
-        if (countdownIntervalRef.current) {
-          clearInterval(countdownIntervalRef.current);
-        }
-
-        // Start new interval
-        countdownIntervalRef.current = setInterval(() => {
-          setCountdown(prev => {
-            if (prev !== null && prev <= 1) {
-              clearInterval(countdownIntervalRef.current);
-              countdownIntervalRef.current = null;
-              // Race should start via race:start event handled by context
-              return null; // Clear countdown display
-            }
-            return prev !== null ? prev - 1 : null;
-          });
-        }, 1000);
-      }
-    };
-
-    socket.on('race:countdown', handleCountdown);
-
-    // Cleanup: remove listener and clear interval
-    return () => {
-      socket.off('race:countdown', handleCountdown);
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-    };
-    // Add raceState.code dependency to re-register if lobby changes
-  }, [socket, raceState.code]);
-
-  // Reset countdown if race is no longer in progress or completed
-  useEffect(() => {
-    if (!raceState.inProgress || raceState.completed) {
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-      setCountdown(null);
-    }
-  }, [raceState.inProgress, raceState.completed]);
+  // Countdown display handled by Typing component – no local countdown logic needed now
 
 
   // --- TestConfigurator State ---
@@ -256,15 +204,10 @@ function Lobby() {
           <button className="leave-lobby-button" onClick={handleLeaveLobby}>Leave Lobby</button>
         </div>
 
-        {/* Countdown Display */}
-        {countdown !== null && countdown > 0 && (
-          <div className="lobby-countdown">
-            Starting in... <span className="countdown-value">{countdown}</span>
-          </div>
-        )}
+        {/* Countdown handled by Typing component (overlay) */}
 
         {/* Conditional Content: Lobby UI OR Race UI OR Results */}
-        {!raceState.inProgress && !raceState.completed && countdown === null && (
+        {!raceState.inProgress && !raceState.completed && (
           /* --- Lobby Waiting UI --- */
           <div className="lobby-main-content">
             {/* Left Column: Settings */}
@@ -357,19 +300,25 @@ function Lobby() {
 
         {/* --- Race Active UI --- */}
         {raceState.inProgress && !raceState.completed && (
-          <div className="lobby-race-active">
-            {raceState.players && raceState.players.length > 0 && (
-              <PlayerStatusBar
-                players={raceState.players}
-                isRaceInProgress={raceState.inProgress}
-                currentUser={user}
-              />
-            )}
-            <Typing
-              // Pass props based on current raceState settings if needed by Typing
-              testMode={currentSettings.testMode}
-              testDuration={currentSettings.testDuration}
-            />
+          <div className="lobby-race-active race-content">
+            <div className="race-info">
+              <div className="race-content-container">
+                <Typing
+                  testMode={currentSettings.testMode}
+                  testDuration={currentSettings.testDuration}
+                />
+              </div>
+
+              {raceState.players && raceState.players.length > 0 && (
+                <div className="player-status-container">
+                  <PlayerStatusBar
+                    players={raceState.players}
+                    isRaceInProgress={raceState.inProgress}
+                    currentUser={user}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 

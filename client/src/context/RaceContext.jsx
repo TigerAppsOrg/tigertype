@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
 
@@ -123,6 +123,25 @@ export const RaceProvider = ({ children }) => {
   useEffect(() => {
     saveRaceState(raceState);
   }, [raceState.code, raceState.type, raceState.lobbyId]);
+
+  /* ------------------------------------------------------------------ *
+   *  joinPrivateLobby – moved above first usage to avoid TDZ error
+   *    joinData can be { code } or { hostNetId }
+   * ------------------------------------------------------------------ */
+
+  const joinPrivateLobby = useCallback((joinData) => {
+    if (!socket || !connected) return;
+    console.log('Joining private lobby with data:', joinData);
+    socket.emit('private:join', joinData, (response) => {
+      if (!response.success) {
+        console.error('Failed to join private lobby:', response.error);
+        // TODO: Show error to user (e.g., lobby full, not found)
+      } else {
+        console.log('Joined private lobby successfully:', response.lobby);
+        // raceState will be updated by the "race:joined" listener
+      }
+    });
+  }, [socket, connected]);
   
   // Handle reconnection to races when socket connects
   useEffect(() => {
@@ -130,17 +149,19 @@ export const RaceProvider = ({ children }) => {
     if (!socket || !connected || !raceState.code) return;
     
     // Check if we don't have snippet data (which means we need to rejoin)
-    if (raceState.code && !raceState.snippet) {
-      console.log('Reconnecting to race after page refresh/connection loss:', raceState.code);
-      
-      // Rejoin the same race based on type
-      if (raceState.type === 'practice') {
-        socket.emit('practice:join');
-      } else if (raceState.type === 'public') {
-        socket.emit('public:join');
-      }
+      if (raceState.code && !raceState.snippet) {
+        console.log('Reconnecting to race after page refresh/connection loss:', raceState.code);
+
+        // Rejoin the same race based on type
+        if (raceState.type === 'practice') {
+          socket.emit('practice:join');
+        } else if (raceState.type === 'public') {
+          socket.emit('public:join');
+        } else if (raceState.type === 'private') {
+          joinPrivateLobby({ code: raceState.code });
+        }
     }
-  }, [socket, connected, raceState.code, raceState.snippet, raceState.type]);
+  }, [socket, connected, raceState.code, raceState.snippet, raceState.type, joinPrivateLobby]);
 
   // Handle inactivity redirection
   useEffect(() => {
@@ -719,19 +740,7 @@ export const RaceProvider = ({ children }) => {
     });
   };
 
-  const joinPrivateLobby = (joinData) => { // joinData = { code } or { hostNetId }
-    if (!socket || !connected) return;
-    console.log('Joining private lobby with data:', joinData);
-    socket.emit('private:join', joinData, (response) => {
-      if (!response.success) {
-        console.error('Failed to join private lobby:', response.error);
-        // TODO: Show error to user (e.g., lobby full, not found)
-      } else {
-        console.log('Joined private lobby successfully:', response.lobby);
-        // raceState will be updated by the 'race:joined' listener
-      }
-    });
-  };
+  // joinPrivateLobby is declared earlier with useCallback to avoid TDZ
 
   const kickPlayer = (targetNetId) => {
     if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
