@@ -276,7 +276,7 @@
   max-width: 100%;
 }
 
-.player-card {
+.lobby-page .player-card {
   background-color: var(--container-color);
   border-radius: 6px;
   padding: 1rem;
@@ -292,18 +292,18 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.player-card:hover:not(.empty-slot) {
+.lobby-page .player-card:hover:not(.empty-slot) {
   transform: translateY(-3px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Make profile widget clickable */
-.profile-widget-clickable {
+.lobby-page .profile-widget-clickable {
   cursor: pointer;
   width: 100%;
 }
 
-.player-card.empty-slot {
+.lobby-page .player-card.empty-slot {
   border: 2px dashed var(--border-color);
   background-color: transparent;
   color: var(--subtle-text-color);
@@ -315,17 +315,17 @@
   min-height: 120px;
 }
 
-.player-card .profile-widget {
+.lobby-page .player-card .profile-widget {
   margin-bottom: 0.5rem;
   text-decoration: none;
   color: inherit;
 }
-.player-card .profile-widget:hover {
+.lobby-page .player-card .profile-widget:hover {
   text-decoration: none;
 }
 
 
-.player-status {
+.lobby-page .player-status {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
@@ -333,26 +333,26 @@
   font-weight: 500;
 }
 
-.host-tag, .ready-tag, .not-ready-tag {
+.lobby-page .host-tag, .lobby-page .ready-tag, .lobby-page .not-ready-tag {
   padding: 0.2rem 0.5rem;
   border-radius: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.host-tag {
+.lobby-page .host-tag {
   background-color: rgba(245, 128, 37, 0.2);
   color: var(--princeton-orange);
   border: 1px solid rgba(245, 128, 37, 0.4);
 }
 
-.ready-tag {
+.lobby-page .ready-tag {
   background-color: rgba(40, 167, 69, 0.2);
   color: var(--success-color);
   border: 1px solid rgba(40, 167, 69, 0.4);
 }
 
-.not-ready-tag {
+.lobby-page .not-ready-tag {
   background-color: rgba(108, 117, 125, 0.2);
   color: var(--subtle-text-color);
   border: 1px solid rgba(108, 117, 125, 0.4);
@@ -399,7 +399,7 @@
   margin-top: auto; /* Push controls to the bottom of the right column */
 }
 
-.start-race-button, .ready-button {
+.start-race-button, .lobby-page .ready-button {
   padding: 0.8rem 2rem;
   font-size: 1.1rem;
   font-weight: 600;
@@ -426,18 +426,18 @@
   opacity: 0.7;
 }
 
-.ready-button {
+.lobby-page .ready-button {
   background-color: var(--subtle-bg-color);
   color: var(--mode-text-color);
   border: 1px solid var(--border-color);
 }
 
-.ready-button:hover {
+.lobby-page .ready-button:hover {
   background-color: var(--hover-bg-color);
   border-color: var(--princeton-orange);
 }
 
-.ready-button.is-ready {
+.lobby-page .ready-button.is-ready {
   background-color: var(--success-bg-color);
   color: var(--success-color);
   border-color: var(--success-color);

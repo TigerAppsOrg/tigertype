@@ -4,12 +4,9 @@ import { useRace } from '../context/RaceContext';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext'; // Import useSocket
 import TestConfigurator from '../components/TestConfigurator';
-import Typing from '../components/Typing';
-import Results from '../components/Results';
 import ProfileWidget from '../components/ProfileWidget';
 import Modal from '../components/Modal';
 import Loading from '../components/Loading';
-import PlayerStatusBar from '../components/PlayerStatusBar'; // Import PlayerStatusBar
 import './Lobby.css';
 import './Race.css';
 
@@ -304,42 +301,8 @@ function Lobby() {
         )}
 
         {/* --- Race Active UI --- */}
-        {(raceState.countdown !== null || (raceState.inProgress && !raceState.completed)) && (
-          <div className="lobby-race-active race-content">
-            <div className="race-info">
-              <div className="race-content-container">
-                {raceState.countdown !== null && (
-                  <div className="lobby-countdown-display">
-                    <h2 className="countdown-number">{raceState.countdown}</h2>
-                  </div>
-                )}
-                <Typing
-                  testMode={currentSettings.testMode}
-                  testDuration={currentSettings.testDuration}
-                />
-              </div>
-
-              {raceState.players && raceState.players.length > 0 && (
-                <div className="player-status-container">
-                  <PlayerStatusBar
-                    players={raceState.players}
-                    isRaceInProgress={raceState.inProgress}
-                    currentUser={user}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* --- Results UI --- */}
-        {raceState.completed && (
-           <div className="lobby-results">
-             <h2>Race Finished!</h2>
-             <Results />
-             <button onClick={() => resetRace()}>Return to Home</button>
-             {/* TODO: Add a "Play Again" button that maybe resets state but keeps players/settings? */}
-           </div>
+        {false && (
+          <div></div>
         )}
       </div>
     </div>
