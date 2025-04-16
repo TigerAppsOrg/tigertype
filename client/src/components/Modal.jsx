@@ -11,7 +11,8 @@ const Modal = ({
   children,
   showCloseButton = false,
   isLarge = false,
-  customFooter = null
+  customFooter = null,
+  onEnter = null
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -29,6 +30,9 @@ const Modal = ({
       if (event.key === 'Escape') {
         onClose();
       }
+      if (event.key === 'Enter') {
+        onEnter();
+      }
     };
 
     if (isOpen) {
@@ -38,7 +42,7 @@ const Modal = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, onEnter]);
 
   if (!isOpen) return null;
 
@@ -92,6 +96,7 @@ Modal.propTypes = {
   showCloseButton: PropTypes.bool,
   isLarge: PropTypes.bool,
   customFooter: PropTypes.node,
+  onEnter: PropTypes.func
 };
 
 export default Modal; 

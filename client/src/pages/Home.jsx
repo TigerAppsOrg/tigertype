@@ -105,6 +105,13 @@ function Home() {
         <div className="modes-section">
           <Modes modes={gameModes} />
         </div>
+
+        {/* Delete this button after integrating front-end */}
+        <button onClick={() => {
+            navigate('/lobby');
+          }}>
+          Test for Custom Lobby
+        </button>
         
         <div className="home-footer">
           <p>Select a mode to get started!</p>
