@@ -20,9 +20,21 @@ function JoinLobbyPanel({ className = '' }) {
     e.preventDefault();
     if (!input.trim()) return;
 
-    const value = input.trim();
+    // Trim input and extract lobby code if a full URL was provided
+    let value = input.trim();
     setSubmitting(true);
     setError('');
+    try {
+      // Parse as URL and extract code segment after '/lobby/' in path
+      const parsed = new URL(value);
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      const idx = parts.findIndex(p => p.toLowerCase() === 'lobby');
+      if (idx !== -1 && parts[idx + 1]) {
+        value = parts[idx + 1];
+      }
+    } catch (_) {
+      // Not a URL, ignore
+    }
 
     // Decide whether the input is a lobby code or a netid.
     // Very simply done bc i am no very smart: 
@@ -58,7 +70,7 @@ function JoinLobbyPanel({ className = '' }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={submitting}
-          maxLength={32}
+          maxLength={64}
         />
         <button
           type="submit"

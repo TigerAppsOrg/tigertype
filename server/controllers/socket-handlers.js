@@ -973,10 +973,12 @@ const initialize = (io) => {
 
         console.log(`Received result from ${netid}: WPM ${wpm}, Acc ${accuracy}, Time ${completion_time}`);
 
-        // Check if the player is in the specified race
+        // Retrieve race and player info
         const players = racePlayers.get(code);
         const player = players?.find(p => p.id === socket.id);
         const race = activeRaces.get(code);
+        // Skip base stat updates for private lobbies
+        const isPrivate = race?.type === 'private';
         
         // --- BEGIN DEBUG LOGGING --- 
         console.log(`[DEBUG race:result] Found player: ${!!player}, Found race: ${!!race}`);
@@ -1005,13 +1007,15 @@ const initialize = (io) => {
             // Optionally emit an error back to client if needed
           }
           
-          // Use UserModel correctly for stats updates
+          // Update base stats only for non-private lobbies
           try {
-            await UserModel.updateStats(userId, wpm, accuracy, true); 
-            await UserModel.updateFastestWpm(userId, wpm); 
-            console.log(`[DEBUG race:result] Updated user stats (if applicable) for ${netid}`);
+            if (!isPrivate) {
+              await UserModel.updateStats(userId, wpm, accuracy, true);
+              await UserModel.updateFastestWpm(userId, wpm);
+              console.log(`[DEBUG race:result] Updated user stats for ${netid}`);
+            }
           } catch (statsError) {
-             console.error(`[ERROR race:result] Failed to update user stats for ${userId} after timed result:`, statsError);
+            console.error(`[ERROR race:result] Failed to update user stats for ${userId} after timed result:`, statsError);
           }
 
         } else if (snippetId) {
@@ -1027,13 +1031,15 @@ const initialize = (io) => {
              console.error(`[ERROR race:result] Failed to insert regular race result for user ${userId}:`, dbError);
           }
           
-          // Use UserModel correctly for stats updates
+          // Update base stats only for non-private lobbies
           try {
-            await UserModel.updateStats(userId, wpm, accuracy, false);
-            await UserModel.updateFastestWpm(userId, wpm);
-             console.log(`[DEBUG race:result] Updated user stats (if applicable) for ${netid}`);
+            if (!isPrivate) {
+              await UserModel.updateStats(userId, wpm, accuracy, false);
+              await UserModel.updateFastestWpm(userId, wpm);
+              console.log(`[DEBUG race:result] Updated user stats for ${netid}`);
+            }
           } catch (statsError) {
-             console.error(`[ERROR race:result] Failed to update user stats for ${userId} after regular result:`, statsError);
+            console.error(`[ERROR race:result] Failed to update user stats for ${userId} after regular result:`, statsError);
           }
         } else {
           console.warn(`[WARN race:result] Result from ${netid} for race ${code} has no snippetId and is not a timed test.`);

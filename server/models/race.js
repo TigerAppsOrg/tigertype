@@ -102,11 +102,7 @@ const Race = {
          JOIN users u ON lp.user_id = u.id
          LEFT JOIN snippets s ON l.snippet_id = s.id
          LEFT JOIN users h ON l.host_id = h.id
-<<<<<<< Updated upstream
          WHERE u.netid = $1 AND l.type = 'private' AND l.status = 'waiting'
-=======
-         WHERE LOWER(u.netid) = LOWER($1) AND l.type = 'private' AND l.status = 'waiting'
->>>>>>> Stashed changes
          ORDER BY l.created_at DESC
          LIMIT 1`,
         [netId]
