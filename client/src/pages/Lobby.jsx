@@ -103,7 +103,7 @@ function Lobby() {
   //     always receives a complete picture of the desired configuration.
   //     This avoids edge‑cases where only one of the two values is sent which
   //     previously prevented the backend from regenerating a new timed‑test
-  //     snippet when the duration alone was changed.
+  //     snippet when the duration alone was changed
   const handleSettingChange = (setter) => (value) => {
     if (!isHost) return; // Only the host may change settings
 
@@ -112,7 +112,7 @@ function Lobby() {
     // Build a new settings object beginning with the current ones so that we
     // always send BOTH testMode and testDuration together (the backend logic
     // relies on having the mode when deciding whether to regenerate a timed
-    // snippet).
+    // snippet)
     let updatedSettings = { ...current };
 
     switch (setter) {

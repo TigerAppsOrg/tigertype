@@ -8,6 +8,7 @@ import Modes from '../components/Modes';
 import ProfileWidget from '../components/ProfileWidget';
 import Modal from '../components/Modal';
 import './Home.css';
+import JoinLobbyPanel from '../components/JoinLobbyPanel';
 
 function Home() {
   const { user, authenticated, loading, fetchUserProfile } = useAuth();
@@ -110,7 +111,9 @@ function Home() {
         </div>
         
         <div className="modes-section">
-          <Modes modes={gameModes} />
+          <Modes modes={gameModes}>
+            <JoinLobbyPanel />
+          </Modes>
         </div>
         
         <div className="home-footer">

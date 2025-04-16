@@ -92,6 +92,32 @@ const Race = {
     }
   },
 
+  // Find an active private lobby (waiting) that contains a particular player's netid
+  async findByPlayerNetId(netId) {
+    try {
+      const result = await db.query(
+        `SELECT l.*, s.text AS snippet_text, h.netid AS host_netid
+         FROM lobbies l
+         JOIN lobby_players lp ON lp.lobby_id = l.id
+         JOIN users u ON lp.user_id = u.id
+         LEFT JOIN snippets s ON l.snippet_id = s.id
+         LEFT JOIN users h ON l.host_id = h.id
+<<<<<<< Updated upstream
+         WHERE u.netid = $1 AND l.type = 'private' AND l.status = 'waiting'
+=======
+         WHERE LOWER(u.netid) = LOWER($1) AND l.type = 'private' AND l.status = 'waiting'
+>>>>>>> Stashed changes
+         ORDER BY l.created_at DESC
+         LIMIT 1`,
+        [netId]
+      );
+      return result.rows[0];
+    } catch (err) {
+      console.error('Error finding lobby by player NetID:', err);
+      throw err;
+    }
+  },
+
   // Find a public lobby with 'waiting' status
   async findPublicLobby() {
     try {

@@ -502,7 +502,7 @@ const initialize = (io) => {
     // Handle joining a private lobby
     socket.on('private:join', async (data, callback) => {
       const { user: netid, userId } = socket.userInfo;
-      const { code, hostNetId } = data; // Can join by code OR hostNetId
+      const { code, hostNetId, playerNetId } = data; // Can join by code, host netId, or any player's netId
 
       try {
         console.log(`User ${netid} attempting to join private lobby via:`, data);
@@ -515,8 +515,10 @@ const initialize = (io) => {
           lobby = await RaceModel.findByCode(code);
         } else if (hostNetId) {
           lobby = await RaceModel.findByHostNetId(hostNetId);
+        } else if (playerNetId) {
+          lobby = await RaceModel.findByPlayerNetId(playerNetId);
         } else {
-          throw new Error('Lobby code or host NetID required to join.');
+          throw new Error('Lobby code or NetID required to join.');
         }
 
         if (!lobby || lobby.type !== 'private') {

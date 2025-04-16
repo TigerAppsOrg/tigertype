@@ -130,17 +130,21 @@ export const RaceProvider = ({ children }) => {
    *    joinData can be { code } or { hostNetId }
    * ------------------------------------------------------------------ */
 
-  const joinPrivateLobby = useCallback((joinData) => {
-    if (!socket || !connected) return;
+  // Attempt to join a private lobby. Accepts optional callback to receive
+  // the raw server response so that calling components (e.g. JoinLobbyPanel)
+  // can surface errors directly in the UI.
+  const joinPrivateLobby = useCallback((joinData, cb) => {
+    if (!socket || !connected) {
+      cb?.({ success: false, error: 'Not connected.' });
+      return;
+    }
     console.log('Joining private lobby with data:', joinData);
     socket.emit('private:join', joinData, (response) => {
       if (!response.success) {
         console.error('Failed to join private lobby:', response.error);
-        // TODO: Show error to user (e.g., lobby full, not found)
-      } else {
-        console.log('Joined private lobby successfully:', response.lobby);
-        // raceState will be updated by the "race:joined" listener
       }
+      cb?.(response);
+      // Successful join will be handled by race:joined listener
     });
   }, [socket, connected]);
   

@@ -1,0 +1,86 @@
+.join-lobby-panel {
+  /* Positioning & layout */
+  margin: 1rem 0 0;
+  padding: 1.5rem 2rem;
+  width: 100%;
+  max-width: 100%;
+
+  /* Visuals */
+  background-color: var(--type-container-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+
+  /* Flex layout */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  grid-column: 1 / -1;
+}
+
+.join-lobby-panel .panel-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-color);
+  text-align: center;
+}
+
+.join-lobby-panel .join-form {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.join-lobby-panel .join-input {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--container-color);
+  color: var(--mode-text-color);
+}
+
+.join-lobby-panel .join-input:focus {
+  outline: none;
+  border-color: var(--princeton-orange);
+  box-shadow: 0 0 0 2px rgba(245, 128, 37, 0.25);
+}
+
+.join-lobby-panel .join-button {
+  background-color: var(--princeton-orange);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.join-lobby-panel .join-button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.join-lobby-panel .join-button:not(:disabled):hover {
+  background-color: #e0701b;
+  transform: translateY(-1px);
+}
+
+.join-lobby-panel .join-error {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .join-lobby-panel {
+    padding: 1rem 1.2rem;
+  }
+}
