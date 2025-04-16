@@ -127,9 +127,6 @@ function CustomLobby() {
                         {/* Should either be ProfileWidgets that direct to the profile modal or ProfileStatusBars */}
                         {/* I was thinking that we could do a white highlight fadein/fadeout animation for when 
                             a user fills in a placeholder slot and a red one when they leave the lobby */}
-                        <ProfileWidget className="player-inlobby" />
-                        <ProfileWidget className="player-inlobby" />
-                        <ProfileWidget className="player-inlobby" />
                     </div>
                 </div>
 
@@ -148,21 +145,6 @@ function CustomLobby() {
                         <option>Course Reviews</option>
                         <option>Princeton</option>
                         </select>
-                    </div>
-                    <div>
-                        Placeholder Race Setting
-                    </div>
-                    <div>
-                        Placeholder Race Setting
-                    </div>
-                    <div>
-                        Placeholder Race Setting
-                    </div>
-                    <div>
-                        Placeholder Race Setting
-                    </div>
-                    <div>
-                        Placeholder Race Setting
                     </div>
                 </div>
 
