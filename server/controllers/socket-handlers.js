@@ -714,11 +714,17 @@ const initialize = (io) => {
           };
           snippetChanged = true;
         }
-        // If mode changed to timed or duration changed within timed mode
-        else if (settings.testMode === 'timed' && (race.settings.testMode !== 'timed' || settings.testDuration !== race.settings.testDuration)) {
-          const duration = parseInt(settings.testDuration) || 30;
+        // If mode changed to timed OR duration changed while already in timed mode
+        else if (
+          (settings.testMode === 'timed' && (race.settings.testMode !== 'timed' || settings.testDuration !== race.settings.testDuration)) ||
+          // When only the duration is provided (without testMode) but we are already in timed mode
+          (typeof settings.testMode === 'undefined' && typeof settings.testDuration !== 'undefined' && race.settings.testMode === 'timed' && settings.testDuration !== race.settings.testDuration)
+        ) {
+          const duration = parseInt(settings.testDuration) || parseInt(race.settings.testDuration) || 30;
           newSnippet = createTimedTestSnippet(duration);
           snippetChanged = true;
+          // Ensure race.settings will reflect timed mode even if testMode was omitted
+          settings.testMode = 'timed';
         }
         // If mode changed back to snippet from timed
         else if (settings.testMode === 'snippet' && race.settings.testMode === 'timed') {

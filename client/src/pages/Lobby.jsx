@@ -96,38 +96,48 @@ function Lobby() {
   // --- ---
 
   // Handler for settings changes (only host can trigger)
+  // Generic handler factory that maps a particular setter (identified by a string
+  // rather than the actual function reference) to a callback that
+  //  1. Updates any local UI state (for filters that are still local‑only)
+  //  2. Builds a full settings object (mode + duration) so that the server
+  //     always receives a complete picture of the desired configuration.
+  //     This avoids edge‑cases where only one of the two values is sent which
+  //     previously prevented the backend from regenerating a new timed‑test
+  //     snippet when the duration alone was changed.
   const handleSettingChange = (setter) => (value) => {
-    if (!isHost) return;
+    if (!isHost) return; // Only the host may change settings
 
-    let newSettings = {};
-    // Map local state setters to keys in raceState.settings
-    if (setter === 'setTestMode') {
-      newSettings = { testMode: value };
-    } else if (setter === 'setTestDuration') {
-      newSettings = { testDuration: parseInt(value, 10) || 15 }; // Ensure it's a number
-    } else if (setter === 'setSnippetDifficulty') {
-       setSnippetDifficulty(value); // Update local filter state
-       // TODO: Add snippetDifficulty to settings if needed on backend
-       // newSettings = { snippetDifficulty: value };
-       return; // Don't emit for filters yet
-    } else if (setter === 'setSnippetType') {
-       setSnippetType(value); // Update local filter state
-       // TODO: Add snippetType to settings if needed on backend
-       // newSettings = { snippetType: value };
-       return; // Don't emit for filters yet
-    } else if (setter === 'setSnippetDepartment') {
-       setSnippetDepartment(value); // Update local filter state
-       // TODO: Add snippetDepartment to settings if needed on backend
-       // newSettings = { snippetDepartment: value };
-       return; // Don't emit for filters yet
-    } else {
-       return; // Unknown setter
+    const current = raceState.settings || { testMode: 'snippet', testDuration: 15 };
+
+    // Build a new settings object beginning with the current ones so that we
+    // always send BOTH testMode and testDuration together (the backend logic
+    // relies on having the mode when deciding whether to regenerate a timed
+    // snippet).
+    let updatedSettings = { ...current };
+
+    switch (setter) {
+      case 'setTestMode':
+        updatedSettings.testMode = value;
+        break;
+      case 'setTestDuration':
+        updatedSettings.testDuration = parseInt(value, 10) || 15;
+        break;
+      case 'setSnippetDifficulty':
+        // Filters are still client‑only for now – update local state and exit
+        setSnippetDifficulty(value);
+        return;
+      case 'setSnippetType':
+        setSnippetType(value);
+        return;
+      case 'setSnippetDepartment':
+        setSnippetDepartment(value);
+        return;
+      default:
+        return; // Unknown setter – do nothing
     }
 
-    // Emit update to server if settings changed
-    if (Object.keys(newSettings).length > 0) {
-       updateLobbySettings(newSettings);
-    }
+    // Send the updated settings to the server
+    updateLobbySettings(updatedSettings);
   };
 
   // --- Profile Modal Trigger ---
