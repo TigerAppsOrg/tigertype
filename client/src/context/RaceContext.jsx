@@ -87,7 +87,8 @@ export const RaceProvider = ({ children }) => {
       testMode: 'snippet',
       testDuration: 15,
       // Add other potential settings here
-    }
+    },
+    countdown: null // Track countdown seconds
   });
 
   // Local typing state
@@ -210,7 +211,8 @@ export const RaceProvider = ({ children }) => {
         setRaceState(prev => ({
           ...prev,
           startTime: data.startTime,
-          inProgress: true
+          inProgress: true,
+          countdown: null
         }));
         
         // Reset typing state
@@ -340,8 +342,11 @@ export const RaceProvider = ({ children }) => {
        }));
        resetRace();
     };
-    // --- End New Lobby Event Handlers ---
 
+    const handleRaceCountdown = (data) => {
+      console.log('Received race countdown:', data);
+      setRaceState(prev => ({ ...prev, countdown: data.seconds }));
+    };
 
     // Register event listeners
     socket.on('race:joined', handleRaceJoined);
@@ -359,6 +364,7 @@ export const RaceProvider = ({ children }) => {
     socket.on('lobby:settingsUpdated', handleLobbySettingsUpdated);
     socket.on('lobby:kicked', handleLobbyKicked);
     socket.on('lobby:terminated', handleLobbyTerminated);
+    socket.on('race:countdown', handleRaceCountdown);
 
     // Clean up on unmount
     return () => {
@@ -377,6 +383,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('lobby:settingsUpdated', handleLobbySettingsUpdated);
       socket.off('lobby:kicked', handleLobbyKicked);
       socket.off('lobby:terminated', handleLobbyTerminated);
+      socket.off('race:countdown', handleRaceCountdown);
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
   }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id]); 
@@ -701,7 +708,8 @@ export const RaceProvider = ({ children }) => {
       settings: { // Reset settings
         testMode: 'snippet',
         testDuration: 15,
-      }
+      },
+      countdown: null
     });
 
     setTypingState({
@@ -805,6 +813,21 @@ export const RaceProvider = ({ children }) => {
     // Clear from session storage too
     sessionStorage.removeItem('inactivityState');
   };
+
+  // Decrement countdown every second
+  useEffect(() => {
+    if (raceState.countdown == null) return;
+    const interval = setInterval(() => {
+      setRaceState(prev => {
+        if (prev.countdown <= 1) {
+          clearInterval(interval);
+          return { ...prev, countdown: null };
+        }
+        return { ...prev, countdown: prev.countdown - 1 };
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [raceState.countdown]);
 
   return (
     <RaceContext.Provider

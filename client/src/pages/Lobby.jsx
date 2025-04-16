@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRace } from '../context/RaceContext';
 import { useAuth } from '../context/AuthContext';
@@ -185,10 +185,6 @@ function Lobby() {
         onClose={dismissInactivityKick} // Context handles redirect
       />
 
-      {/* Placeholder for the future Profile Modal */}
-      {/* <Modal isOpen={showProfileModal} onClose={handleCloseProfileModal} ... > ... </Modal> */}
-
-
       <div className="lobby-container">
         {/* Header - Always visible */}
         <div className="lobby-header">
@@ -299,10 +295,15 @@ function Lobby() {
         )}
 
         {/* --- Race Active UI --- */}
-        {raceState.inProgress && !raceState.completed && (
+        {(raceState.countdown !== null || (raceState.inProgress && !raceState.completed)) && (
           <div className="lobby-race-active race-content">
             <div className="race-info">
               <div className="race-content-container">
+                {raceState.countdown !== null && (
+                  <div className="lobby-countdown-display">
+                    <h2 className="countdown-number">{raceState.countdown}</h2>
+                  </div>
+                )}
                 <Typing
                   testMode={currentSettings.testMode}
                   testDuration={currentSettings.testDuration}
