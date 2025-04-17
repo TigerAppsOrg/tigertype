@@ -12,13 +12,22 @@ into the `public.snippets` PostgreSQL table.
        DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASSWORD
 """
 
-import json, os, re, sys
+import json, os, re, sys, argparse
 from pathlib import Path
 from datetime import datetime
 
 import psycopg2
 from psycopg2.extras import execute_values
 from dotenv import load_dotenv
+
+# ── ARG PARSING ───────────────────────────────────────────────────────────────
+parser = argparse.ArgumentParser(description='Import snippets into database.')
+parser.add_argument(
+    '--production',
+    action='store_true',
+    help='Connect to the production database using DATABASE_URL from .env'
+)
+args = parser.parse_args()
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 PROCESSED_FILE = "processed_snippets.json"
@@ -29,17 +38,27 @@ dotenv_path = (SCRIPT_DIR / ".." / ".." / ".env").resolve()
 if dotenv_path.exists():
     load_dotenv(dotenv_path)
 
-DB_PARAMS = dict(
-    host     = os.getenv("DB_HOST", "localhost"),
-    port     = int(os.getenv("DB_PORT", 5432)),
-    dbname   = os.getenv("DB_NAME"),
-    user     = os.getenv("DB_USER"),
-    password = os.getenv("DB_PASSWORD"),
-)
-# Check required parameters, allowing password to be missing/empty
-if not all(DB_PARAMS[k] for k in ["host", "port", "dbname", "user"]):
-    print("❌  Set DB_HOST, DB_PORT, DB_NAME, DB_USER in env/.env (DB_PASSWORD optional)")
-    sys.exit(1)
+DB_PARAMS = {}
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if args.production:
+    if not DATABASE_URL:
+        print("❌  --production flag set, but DATABASE_URL not found in environment/.env")
+        sys.exit(1)
+    print("🔹 Targeting PRODUCTION database.")
+else:
+    print("🔹 Targeting LOCAL database.")
+    DB_PARAMS = dict(
+        host     = os.getenv("DB_HOST", "localhost"),
+        port     = int(os.getenv("DB_PORT", 5432)),
+        dbname   = os.getenv("DB_NAME"),
+        user     = os.getenv("DB_USER"),
+        password = os.getenv("DB_PASSWORD"),
+    )
+    # Check required local parameters, allowing password to be missing/empty
+    if not all(DB_PARAMS[k] for k in ["host", "port", "dbname", "user"]):
+        print("❌  Set DB_HOST, DB_PORT, DB_NAME, DB_USER in env/.env for local connection (DB_PASSWORD optional)")
+        sys.exit(1)
 
 # ── helper funcs ──────────────────────────────────────────────────────────────
 def term_and_course_from_url(url: str):
@@ -102,16 +121,23 @@ cols = ("text", "source", "category", "difficulty",
         "princeton_course_url", "term_code", "course_id", "course_name")
 
 insert_sql = f"""
-INSERT INTO public.snippets ({', '.join(cols)})
+INSERT INTO public.snippets ({", ".join(cols)})
 VALUES %s
 ON CONFLICT (text)           -- treat duplicate text as identical snippet
 DO NOTHING;
 """
 
 try:
-    with psycopg2.connect(**DB_PARAMS) as conn, conn.cursor() as cur:
-        execute_values(cur, insert_sql, rows, page_size=100)
-        print("✅  Inserted (or skipped dupes) successfully.")
+    if args.production:
+        # Connect using DATABASE_URL string
+        with psycopg2.connect(DATABASE_URL) as conn, conn.cursor() as cur:
+            execute_values(cur, insert_sql, rows, page_size=100)
+            print(f"✅  Inserted (or skipped dupes) successfully into Production DB.")
+    else:
+        # Connect using DB_PARAMS dictionary
+        with psycopg2.connect(**DB_PARAMS) as conn, conn.cursor() as cur:
+            execute_values(cur, insert_sql, rows, page_size=100)
+            print(f"✅  Inserted (or skipped dupes) successfully into Local DB.")
 except Exception as e:
     print(f"❌  DB error: {e}")
     sys.exit(1)
