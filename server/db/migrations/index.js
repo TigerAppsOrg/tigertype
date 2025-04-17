@@ -29,7 +29,7 @@ const MIGRATIONS = [
 
         CREATE TABLE IF NOT EXISTS snippets (
           id SERIAL PRIMARY KEY,
-          text TEXT NOT NULL,
+          text TEXT NOT NULL UNIQUE,
           source VARCHAR(255),
           category VARCHAR(100),
           difficulty INT DEFAULT 1,
@@ -266,6 +266,42 @@ const MIGRATIONS = [
           DROP COLUMN IF EXISTS course_name;
       `);
        console.log('Successfully removed Princeton course columns from snippets table.');
+    }
+  },
+  {
+    version: 8,
+    description: 'Ensure unique constraint on snippets.text',
+    up: async (client) => {
+      console.log('Running migration to ensure unique constraint on snippets.text...');
+      // Check if the constraint already exists
+      const constraintExists = await client.query(`
+        SELECT constraint_name
+        FROM information_schema.table_constraints
+        WHERE table_schema = 'public'
+          AND table_name = 'snippets'
+          AND constraint_type = 'UNIQUE'
+          AND constraint_name = 'snippets_text_key'; -- Use a specific name
+      `);
+
+      if (constraintExists.rowCount === 0) {
+        console.log('Unique constraint snippets_text_key not found on snippets.text, adding it...');
+        await client.query(`
+          ALTER TABLE public.snippets
+          ADD CONSTRAINT snippets_text_key UNIQUE (text);
+        `);
+        console.log('Successfully added UNIQUE constraint snippets_text_key to snippets.text.');
+      } else {
+        console.log('Unique constraint snippets_text_key already exists on snippets.text.');
+      }
+    },
+    down: async (client) => {
+      // Optional: Drop the constraint if it exists
+      console.log('Reverting migration to remove unique constraint from snippets.text...');
+      await client.query(`
+        ALTER TABLE public.snippets
+        DROP CONSTRAINT IF EXISTS snippets_text_key;
+      `);
+      console.log('Successfully removed unique constraint snippets_text_key from snippets.text (if it existed).');
     }
   }
 ];

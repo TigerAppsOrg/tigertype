@@ -22,10 +22,10 @@ PROCESSED_SNIPPETS_FILE = "processed_snippets.json"
 DEFAULT_SOURCE    = "Princeton Course Reviews"
 DEFAULT_CATEGORY  = "course-reviews"
 
-MODEL_ID        = "gpt-4.1"
+MODEL_ID        = "gpt-4.1" # can't wait to try out new model hehe
 MAX_RETRIES     = 3
-INITIAL_DELAY   = 1         # seconds between retry back‑off
-FLUSH_INTERVAL  = 1       # write files after every N comments (set 1 = every)
+INITIAL_DELAY   = 1     # seconds between retry back‑off
+FLUSH_INTERVAL  = 1     # write files after every N comments (set 1 = every)
 
 TMP_SUFFIX        = ".tmp"  # for atomic writes
 
@@ -153,21 +153,28 @@ def call_ai_to_extract_snippets(comment_text):
 
             # Accept either list of objects or dict with a list inside
             if isinstance(parsed, dict):
+                found_list = False
                 # common wrapper keys
                 for k in ("snippets", "list", "results", "data"):
                     if k in parsed and isinstance(parsed[k], list):
                         parsed = parsed[k]
+                        found_list = True
                         break
+                # If it's a dict but not a wrapper, check if it's a single snippet
+                if not found_list and "text" in parsed and "difficulty" in parsed:
+                    print("🔹 AI returned a single snippet object, wrapping in list.")
+                    parsed = [parsed]
 
+            # Ensure we have a list before proceeding
             if not isinstance(parsed, list):
-                # Debug: if parsed output is not a list, show its structure
-                print(f"🔹 Parsed AI output (not list): {parsed!r}")
-                print("⚠️  AI did not return list – skipping")
+                print(f"🔹 Parsed AI output is not a list: {parsed!r}")
+                print("⚠️  Unexpected AI response format – skipping")
                 return []
 
             cleaned = []
             for item in parsed:
                 if not isinstance(item, dict):
+                    print(f"⚠️  Skipping non-dict item in list: {item!r}")
                     continue
                 txt  = re.sub(r"\s+", " ", str(item.get("text", ""))).strip()
                 diff = int(item.get("difficulty", 0)) if str(item.get("difficulty", "")).isdigit() else None

@@ -36,8 +36,9 @@ DB_PARAMS = dict(
     user     = os.getenv("DB_USER"),
     password = os.getenv("DB_PASSWORD"),
 )
-if not all(DB_PARAMS.values()):
-    print("❌  Set DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD in env/.env")
+# Check required parameters, allowing password to be missing/empty
+if not all(DB_PARAMS[k] for k in ["host", "port", "dbname", "user"]):
+    print("❌  Set DB_HOST, DB_PORT, DB_NAME, DB_USER in env/.env (DB_PASSWORD optional)")
     sys.exit(1)
 
 # ── helper funcs ──────────────────────────────────────────────────────────────
