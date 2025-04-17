@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// [AI DISCLAIMER: AI WAS USED TO HELP DEBUG THIS SCRIPT]
 /**
  * -------------------------------------------------------------
  *  fetch_courses.js   –   TigerType scraping helper
@@ -14,7 +15,7 @@
  * Otherwise put these **three** vars in .env or your shell:
  *   PRINCETON_CONSUMER_KEY
  *   PRINCETON_CONSUMER_SECRET  
- *   PRINCETON_SCOPE         # usually "student-app" (this is act not necessary i realize now)
+ *   PRINCETON_SCOPE  # usually "student-app" (this is act not necessary i realize now)
  */
 
 const fs       = require('fs');
@@ -44,7 +45,7 @@ const API_BASE = 'https://api.princeton.edu/student-app';
 
 /* -------------------------------------------------- helpers */
 async function getBearerToken () {
-  if (BEARER) return BEARER;         // already provided
+  if (BEARER) return BEARER; // already provided
 
   if (!CK || !CS) {
     throw new Error(

@@ -1,43 +1,75 @@
-import json
-import re
-import os
-import time
+#!/usr/bin/env python3
+"""
+process_evals.py  – extracts “typing‑game” snippets from Princeton course reviews
+and saves progress continuously so you can stop / restart at any time
+
+Files it maintains (in the same directory):
+
+  • raw_evaluations.json       – remaining comments still to process
+  • processed_snippets.json    – all extracted / validated snippets so far
+"""
+# [AI DISCLAIMER: AI WAS USED TO HELP DEBUG THIS SCRIPT]
+
+import json, os, re, signal, sys, time
+from pathlib import Path
 from openai import OpenAI, RateLimitError, APIError
 from dotenv import load_dotenv
 
-# --- Configuration ---
-RAW_DATA_FILE = 'raw_evaluations.json'
-PROCESSED_SNIPPETS_FILE = 'processed_snippets.json'
-DEFAULT_SOURCE = "Princeton Course Reviews"
-DEFAULT_CATEGORY = "course-reviews"
-MODEL_ID = "gpt-4.1"
-MAX_RETRIES = 3
-INITIAL_DELAY = 1 # seconds
+# ── CONFIGURATION ──────────────────────────────────────────────────────────────
+RAW_DATA_FILE           = "raw_evaluations.json"
+PROCESSED_SNIPPETS_FILE = "processed_snippets.json"
 
-# --- Load Environment Variables ---
-# Assuming .env might be in the parent directory (project root) relative to server/scraping
-script_dir = os.path.dirname(os.path.abspath(__file__))
-dotenv_path = os.path.join(script_dir, '..', '..', '.env') # Adjust path if .env is elsewhere
-if not os.path.exists(dotenv_path):
-    # Fallback to checking the current directory
-    dotenv_path = os.path.join(script_dir, '.env')
+DEFAULT_SOURCE    = "Princeton Course Reviews"
+DEFAULT_CATEGORY  = "course-reviews"
 
-if os.path.exists(dotenv_path):
+MODEL_ID          = "gpt-4.1"
+MAX_RETRIES       = 3
+INITIAL_DELAY   = 1            # seconds between retry back‑off
+FLUSH_INTERVAL    = 1            # write files after every N comments (set 1 = every)
+
+TMP_SUFFIX        = ".tmp"       # for atomic writes
+
+# ── ENV / OPENAI SETUP ─────────────────────────────────────────────────────────
+script_dir  = Path(__file__).resolve().parent
+
+# load .env (either at project root or script directory)
+dotenv_path = (script_dir / ".." / ".." / ".env").resolve()
+if not dotenv_path.exists():
+    dotenv_path = script_dir / ".env"
+if dotenv_path.exists():
     print(f"Loading environment variables from: {dotenv_path}")
-    load_dotenv(dotenv_path=dotenv_path)
+    load_dotenv(dotenv_path)
 else:
-    print("Warning: .env file not found in script directory or project root.")
+    print("⚠️  .env not found – relying on shell env vars")
 
-# --- Initialize OpenAI Client ---
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
-    print("Error: OPENAI_API_KEY environment variable not set.")
-    print("Please set the key in your .env file or environment.")
-    exit(1)
+    print("❌  OPENAI_API_KEY not set.")
+    sys.exit(1)
 
 client = OpenAI(api_key=api_key)
 
-# --- AI Snippet Extraction Function ---
+# ── SMALL UTILS ───────────────────────────────────────────────────────────────
+def atomic_write(obj, path: Path):
+    """Safely dump JSON → path by writing to *.tmp then os.replace()."""
+    tmp = path.with_suffix(path.suffix + TMP_SUFFIX)
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(obj, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, path)                # atomic on POSIX
+
+def load_json(path: Path, default):
+    if path.exists():
+        try:
+            with path.open(encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"⚠️  Could not load {path}: {e}")
+    return default
+
+def word_count(txt):      return len(txt.split())
+def char_count(txt):      return len(txt)
+
+# ── AI CALL ────────────────────────────────────────────────────────────────────
 def call_ai_to_extract_snippets(comment_text):
     """
     Calls the OpenAI API to analyze the comment, extract engaging snippets,
@@ -102,8 +134,8 @@ def call_ai_to_extract_snippets(comment_text):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": comment_text}
                 ],
-                temperature=0.5,
-                max_tokens=500, # Increased token limit slightly more for object structure
+                temperature=0.8, # mess with temp later 
+                max_tokens=1024, 
                 response_format={ "type": "json_object" }
             )
 
@@ -178,115 +210,78 @@ def call_ai_to_extract_snippets(comment_text):
     print(f"Failed to get response from OpenAI after {MAX_RETRIES} retries.")
     return []
 
-# --- Helper Functions ---
-def calculate_word_count(text):
-    """Calculates the number of words in a string."""
-    return len(text.split())
 
-def calculate_character_count(text):
-    """Calculates the number of characters in a string."""
-    return len(text)
+# ── STATE LOAD ────────────────────────────────────────────────────────────────
+raw_path       = script_dir / RAW_DATA_FILE
+processed_path = script_dir / PROCESSED_SNIPPETS_FILE
 
-# --- Main Processing Logic ---
-def process_raw_evaluations():
-    """
-    Reads raw evaluations, calls OpenAI API to extract snippets and difficulties,
-    formats them, and writes to the output file.
-    """
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    raw_file_path = os.path.join(script_dir, RAW_DATA_FILE)
-    processed_file_path = os.path.join(script_dir, PROCESSED_SNIPPETS_FILE)
+raw_evals      = load_json(raw_path, [])
+processed_snip = load_json(processed_path, [])
 
-    print(f"Reading raw evaluations from: {raw_file_path}")
-    try:
-        with open(raw_file_path, 'r', encoding='utf-8') as f:
-            raw_data = json.load(f)
-    except FileNotFoundError:
-        print(f"Error: Raw data file not found at {raw_file_path}")
-        print("Please run the scrape_evals.js script first.")
-        return
-    except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from {raw_file_path}. Is the file empty or corrupt?")
-        return
+print(f"🔹 Loaded {len(raw_evals)} pending comments from {raw_path}")
+print(f"🔹 Loaded {len(processed_snip)} snippets already processed")
 
-    print(f"Found {len(raw_data)} raw evaluation entries to process.")
-    processed_snippets_final = []
-    processed_comments_count = 0
-    total_snippets_extracted = 0
+# ── graceful Ctrl‑C ───────────────────────────────────────────────────────────
+interrupted = False
+def _handle_sigint(sig, frame):
+    global interrupted
+    interrupted = True
+    print("\n⚠️  Ctrl‑C detected – finishing current comment then saving…",
+          file=sys.stderr)
+signal.signal(signal.SIGINT, _handle_sigint)
 
-    # Limit processing for testing if needed:
-    # raw_data = raw_data[:5]
 
-    for entry in raw_data:
-        processed_comments_count += 1
-        comment_text = entry.get('comment_text', '')
-        course_id = entry.get('course_id', 'N/A')
-        term = entry.get('term', 'N/A')
-        print(f"\nProcessing comment {processed_comments_count}/{len(raw_data)} (Course: {course_id}, Term: {term})...")
+# ── MAIN LOOP ─────────────────────────────────────────────────────────────────
+start_time = time.perf_counter()
+for idx, comment in enumerate(raw_evals[:]):  # iterate over *copy*
+    if interrupted:
+        break
 
-        if not comment_text:
-            print("\tSkipping empty comment.")
-            continue
+    comment_text = comment.get("comment_text", "").strip()
+    if not comment_text:
+        raw_evals.remove(comment) # discard empty entry
+        continue
 
-        print("\tCalling OpenAI API...")
-        # Returns list of dicts: [{'text': '...', 'difficulty': N}, ...]
-        extracted_snippets_data = call_ai_to_extract_snippets(comment_text)
-        print(f"\tAPI returned {len(extracted_snippets_data)} potential snippets.")
+    cid   = comment.get("course_id", "N/A")
+    term  = comment.get("term",      "N/A")
+    print(f"\n[{idx+1}/{len(raw_evals)}] Course {cid} ({term}) – extracting…")
 
-        if not extracted_snippets_data:
-            print("\tNo suitable snippets found or validated by AI.")
-            continue
+    snippets = call_ai_to_extract_snippets(comment_text)
+    print(f"    → {len(snippets)} snippet(s)")
 
-        # Process each snippet dictionary returned by the AI
-        for snippet_data in extracted_snippets_data:
-            snippet_text = snippet_data.get('text')
-            difficulty = snippet_data.get('difficulty')
+    for snip in snippets:
+        txt  = re.sub(r"\s+", " ", snip["text"]).strip()
+        diff = snip["difficulty"]
+        processed_snip.append({
+            "text"              : txt,
+            "source"            : DEFAULT_SOURCE,
+            "category"          : DEFAULT_CATEGORY,
+            "difficulty"        : diff,
+            "word_count"        : word_count(txt),
+            "character_count"   : char_count(txt),
+            "is_princeton_themed": True,
+            "original_url"      : comment.get("evaluation_url"),
+            "original_course_id": cid,
+            "original_term_id"  : term
+        })
 
-            # Double check we have valid data
-            if not snippet_text or difficulty not in [1, 2, 3]:
-                print(f"\tSkipping invalid snippet data from AI: {snippet_data}")
-                continue
+    # remove this comment so won’t revisit it next run
+    raw_evals.remove(comment)
 
-            word_count = calculate_word_count(snippet_text)
-            char_count = calculate_character_count(snippet_text)
+    # flush progress periodically
+    if (idx + 1) % FLUSH_INTERVAL == 0:
+        atomic_write(raw_evals,   raw_path)
+        atomic_write(processed_snip, processed_path)
+        print("    💾 progress saved")
 
-            # Basic check for snippet quality
-            if word_count < 3 or char_count < 15:
-                print(f"\tSkipping very short AI snippet: '{snippet_text[:50]}...'")
-                continue
+    # polite spacing between OpenAI calls
+    time.sleep(1)
 
-            print(f"\tAdding snippet (Difficulty: {difficulty}): '{snippet_text[:80]}...'")
-            # Format the snippet for the database using AI-provided difficulty
-            formatted_snippet = {
-                "text": snippet_text,
-                "source": DEFAULT_SOURCE,
-                "category": DEFAULT_CATEGORY,
-                "difficulty": difficulty, # Use difficulty from AI
-                "word_count": word_count,
-                "character_count": char_count,
-                "is_princeton_themed": True,
-                # Carry forward original source information
-                "original_url": entry.get('evaluation_url', None),
-                "original_course_id": entry.get('course_id', None),
-                "original_term_id": entry.get('term', None)
-            }
-            processed_snippets_final.append(formatted_snippet)
-            total_snippets_extracted += 1
+# ── FINAL SAVE ────────────────────────────────────────────────────────────────
+atomic_write(raw_evals,   raw_path)
+atomic_write(processed_snip, processed_path)
 
-        # Optional delay between API calls
-        time.sleep(1)
-
-    print(f"\nFinished processing {processed_comments_count} comments.")
-    print(f"Extracted a total of {total_snippets_extracted} snippets.")
-    print(f"Writing processed snippets to: {processed_file_path}")
-
-    try:
-        with open(processed_file_path, 'w', encoding='utf-8') as f:
-            json.dump(processed_snippets_final, f, indent=2, ensure_ascii=False)
-        print("Successfully wrote processed snippets.")
-    except IOError as e:
-        print(f"Error writing processed snippets file: {e}")
-
-# --- Script Entry Point ---
-if __name__ == "__main__":
-    process_raw_evaluations() 
+elapsed = time.perf_counter() - start_time
+print(f"\n✅ Done. Remaining comments: {len(raw_evals)} "
+      f"| total snippets: {len(processed_snip)} "
+      f"| runtime: {elapsed:0.1f}s")
