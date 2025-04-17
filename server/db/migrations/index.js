@@ -250,9 +250,9 @@ const MIGRATIONS = [
       await client.query(`
         ALTER TABLE public.snippets
           ADD COLUMN IF NOT EXISTS princeton_course_url TEXT,
-          ADD COLUMN IF NOT EXISTS term_code            VARCHAR(4),
-          ADD COLUMN IF NOT EXISTS course_id            VARCHAR(6),
-          ADD COLUMN IF NOT EXISTS course_name          TEXT;
+          ADD COLUMN IF NOT EXISTS term_code VARCHAR(4),
+          ADD COLUMN IF NOT EXISTS course_id VARCHAR(6),
+          ADD COLUMN IF NOT EXISTS course_name TEXT;
       `);
       console.log('Successfully added Princeton course columns to snippets table.');
     },
