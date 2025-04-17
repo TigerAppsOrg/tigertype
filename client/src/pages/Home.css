@@ -7,7 +7,6 @@
   display: flex;
   flex-direction: column;
   margin-top: 5%;
-  gap: 2rem;
 }
 
 /* header stacks title + tagline centrally */
@@ -35,52 +34,43 @@
   margin: 2rem 0;
 }
 
-/* New styles for the custom layout */
 .modes-layout-section {
   display: flex;
-  gap: 2rem; /* Gap between standard modes column and private stack column */
-  align-items: stretch; /* Make columns equal height */
-  /* Center the section */
-  max-width: 1000px; /* Or adjust as needed */
-  margin: 2rem auto; /* Add auto margins for centering */
+  align-items: stretch;
+  max-width: 1000px;
+  margin: 2rem auto;
+  gap: 2rem;
 }
 
 .standard-modes-container {
   flex: 2; /* Takes up 2/3 of the space */
-  /* Uses the .modes-container grid defined in Modes.css */
-  /* Ensure its internal grid also stretches */
-  display: flex; /* Override the grid display from Modes.css here */
+  display: flex;
   gap: 2rem;
 }
 
-.standard-modes-container > * { /* Target the Modes component's div */
-  display: contents; /* Allow children to be direct flex items */
+.standard-modes-container > * { 
+  display: contents; 
 }
 
 .standard-modes-container .mode-box {
-  flex: 1; /* Each standard box takes half the space */
+  flex: 1;
 }
 
 .private-modes-stack {
   flex: 1; /* Takes up 1/3 of the space */
   display: flex;
   flex-direction: column;
-  gap: 2rem; /* Gap between Create and Join boxes */
-  /* Uses the .modes-container grid (implicitly via Modes component) */
-  /* We need to ensure the Modes component inside handles this well */
+  gap: 2rem; 
 }
 
-/* Adjust the Modes component's container when inside the stack */
 .private-modes-stack .modes-container {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Fill the container height */
-  gap: 2rem; /* Consistent gap */
+  height: 100%; 
+  gap: 2rem; 
 }
 
-/* Ensure mode boxes inside the stack take up half the height */
 .private-modes-stack .modes-container .mode-box {
-  flex: 1; /* Each takes equal space in the column */
-  min-height: unset; /* Override default min-height if needed */
-  /* Height will be determined by flex layout */
+  flex: 1; 
+  min-height: unset; 
 }

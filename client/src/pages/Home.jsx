@@ -78,14 +78,14 @@ function Home() {
       name: 'Create Private Match',
       description: 'Create a private lobby to play with friends',
       action: createPrivateLobby,
-      iconClass: 'bi bi-people'
+      iconClass: 'bi bi-person-lock'
     },
     {
       id: 4,
       name: 'Join Private Match',
       description: "Enter a code or NetID to join a friend's lobby",
       subComponent: <JoinLobbyPanel />,
-      iconClass: 'bi bi-people'
+      iconClass: 'bi bi-key'
     }
   ];
 
