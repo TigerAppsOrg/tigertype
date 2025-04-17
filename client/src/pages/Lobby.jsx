@@ -228,8 +228,8 @@ function Lobby() {
                 <h2>Settings</h2>
                 {isHost ? (
                   <TestConfigurator
-                    testMode={currentSettings.testMode}
-                    testDuration={currentSettings.testDuration}
+                    testMode={currentSettings.testMode ?? 'snippet'}
+                    testDuration={currentSettings.testDuration ?? 15}
                     snippetDifficulty={snippetDifficulty} // Still local state
                     snippetType={snippetType}           // Still local state
                     snippetDepartment={snippetDepartment} // Still local state
