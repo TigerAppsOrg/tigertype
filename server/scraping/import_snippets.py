@@ -12,6 +12,8 @@ into the `public.snippets` PostgreSQL table.
        DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASSWORD
 """
 
+# [AI DISCLAIMER: AI WAS USED TO HELP DEBUG THIS SCRIPT]
+
 import json, os, re, sys, argparse
 from pathlib import Path
 from datetime import datetime

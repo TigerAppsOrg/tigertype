@@ -16,6 +16,8 @@
 //     node scrape_evals.js --term 1252 --subject COS
 // ---------------------------------------------------------------------------
 
+// [AI DISCLAIMER: AI WAS USED TO HELP DEBUG / POLISH THIS SCRIPT (mainly the comment documentation)]
+
 const fs       = require('fs');
 const axios    = require('axios');
 const cheerio  = require('cheerio');
