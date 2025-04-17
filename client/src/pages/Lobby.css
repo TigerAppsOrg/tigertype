@@ -13,17 +13,18 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Reduced gap */
+  gap: 1rem;
 }
 
-/* Header */
+/* ──────────────────────────────────────────────────────────────── */
+/* Header                                                          */
+/* ──────────────────────────────────────────────────────────────── */
 .lobby-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 1rem;
-  /* margin-bottom: 1rem; Removed margin, handled by main content gap */
 }
 
 .lobby-header h1 {
@@ -105,7 +106,7 @@
   font-weight: bold;
   color: var(--princeton-orange);
   padding: 2rem 0;
-  animation: pulse 1s infinite; /* Reuse pulse from Typing.css */
+  animation: pulse 1s infinite;
 }
 
 .lobby-countdown .countdown-value {
@@ -113,163 +114,123 @@
   margin-left: 0.5rem;
 }
 
-
-/* Main Content Layout */
+/* ──────────────────────────────────────────────────────────────── */
+/* Main Content Layout                                             */
+/* ──────────────────────────────────────────────────────────────── */
 .lobby-main-content {
   display: flex;
-  gap: 2rem; /* Gap between columns */
-  align-items: flex-start; /* Align items at the top */
+  gap: 2rem;
+  align-items: flex-start;
 }
 
+/* ──────────────────────────────────────────────────────────────── */
+/* Settings Column                                                 */
+/* ──────────────────────────────────────────────────────────────── */
 .lobby-left-column {
-  flex: 1; /* Adjust flex ratio as needed, e.g., 1 for settings */
-  min-width: 300px; /* Minimum width for settings */
+  flex: 1;
+  min-width: 300px;
   padding: 1.5rem;
   background-color: var(--type-container-color);
   border-radius: 6px;
   border: 1px solid var(--border-color);
   position: relative;
-  overflow: visible;
 }
 
-.lobby-right-column {
-  flex: 2; /* Adjust flex ratio, e.g., 2 for players/controls */
-  display: flex;
-  flex-direction: column; /* Stack players and controls vertically */
-  gap: 1.5rem; /* Gap within the right column */
-  padding: 1.5rem;
-  background-color: var(--type-container-color);
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-}
-
-
-/* Settings Area */
 .lobby-settings {
   background-color: transparent;
   padding: 0;
   border: none;
   border-radius: 0;
-  min-height: 50px;
 }
 
 .lobby-settings h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
+  margin: 0 0 1.2rem 0;
   color: var(--heading-color);
   font-size: 1.3rem;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.6rem;
 }
 
-/* --- TestConfigurator Overrides for Lobby --- */
+/* --- TestConfigurator overrides for vertical lobby layout --- */
 .lobby-settings .test-configurator {
   padding: 0;
   box-shadow: none;
   border: none;
   background-color: transparent;
   width: 100%;
-  justify-content: flex-start;
-  overflow: visible;
-  flex-direction: column; /* Stack sections vertically */
-  align-items: stretch;
-  gap: 10px;
-  margin: 0; /* Reset margins */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.lobby-settings .test-configurator .config-section {
-  width: 100%; /* Make sections take full width */
-  justify-content: flex-start; /* Align items left */
+/* Mode button cluster */
+.lobby-settings .test-configurator .mode-selection {
+  gap: 18px;
 }
 
-.lobby-settings .test-configurator .conditional-options-container {
-  position: static; /* Override absolute positioning */
-  height: auto;
-  width: 100%;
-  overflow: visible;
-  margin-top: 10px; /* Space above options */
-  min-width: unset; /* Remove min-width */
-  flex-grow: unset; /* Remove flex-grow */
+/* Remove horizontal separator from original horizontal bar */
+.lobby-settings .test-configurator .config-separator {
+  display: none;
 }
 
-/*
-  IMPORTANT VISIBILITY FIX
-  ----------------------------------
-  We need the conditional option wrappers (snippet-options & timed-options) to
-  respect their "visible" class so that only the relevant controls render.
-  The original override displayed BOTH wrappers at all times which led to the
-  "15s 30s 60s 120s" duration buttons showing even when Snippets mode was
-  selected, and vice‑versa.
-*/
+/* Base state for conditional option wrappers — hidden */
 .lobby-settings .test-configurator .options-wrapper {
-  /* Baseline: hide everything */
-  position: static;
-  transform: none;
-  display: none;          /* hide */
+  max-height: 0;
   opacity: 0;
-  height: 0;
   overflow: hidden;
-  width: 100%;
+  transform: translateY(-12px);
+  transition: max-height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
   pointer-events: none;
-  margin-top: 5px;
-  transition: opacity 0.25s ease-out, height 0.25s ease-out;
 }
 
-/* Only show the wrapper when the component adds the .visible class */
+/* Visible state when React adds .visible */
 .lobby-settings .test-configurator .options-wrapper.visible {
-  display: block;         /* switch to block for vertical layout */
+  max-height: 400px;
   opacity: 1;
-  height: auto;
-  overflow: visible;
+  transform: translateY(0);
   pointer-events: auto;
 }
 
-/* Ensure inner wrappers are visible and wrap */
+/* Inner rows */
 .lobby-settings .test-configurator .snippet-filters-inner,
 .lobby-settings .test-configurator .duration-selection-inner {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 5px 0;
-  justify-content: flex-start;
-  width: 100%; /* Take full width */
+  gap: 12px 16px;
+  padding: 2px 0;
+  align-items: center;
 }
 
-/* Hide separators in vertical layout */
-.lobby-settings .test-configurator .config-separator {
-  display: none;
+/* Fine‑tune dropdown pills */
+.lobby-settings .test-configurator .config-select {
+  min-width: 130px;
 }
+
+/* Vertical separator inside filter rows */
 .lobby-settings .test-configurator .config-separator-inner {
-   margin: 0 5px;
+  width: 1px;
+  height: 16px;
+  background-color: var(--border-color-light);
 }
 
-/* Adjust leaderboard button */
+/* Leaderboard button */
 .lobby-settings .test-configurator .leaderboard-button-section {
-  margin-top: 15px; /* More space above leaderboard */
+  margin-top: 18px;
   justify-content: flex-start;
 }
-/* --- End TestConfigurator Overrides --- */
 
-
-.read-only-settings {
-  color: var(--subtle-text-color);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: rgba(0,0,0,0.1);
-  border-radius: 4px;
-}
-
-.read-only-settings p {
-  margin: 0.5rem 0;
-}
-
-.read-only-settings i {
-  color: var(--princeton-orange);
-  display: block;
-  margin-top: 1rem;
-  font-size: 0.9rem;
+/* ──────────────────────────────────────────────────────────────── */
+/* Players / Controls Column                                       */
+/* ──────────────────────────────────────────────────────────────── */
+.lobby-right-column {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background-color: var(--type-container-color);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
 }
 
 /* Player Grid Area */
@@ -291,7 +252,7 @@
 
 .player-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 5 columns */
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
   max-width: 100%;
 }
@@ -344,7 +305,6 @@
   text-decoration: none;
 }
 
-
 .lobby-page .player-status {
   display: flex;
   gap: 0.5rem;
@@ -353,7 +313,9 @@
   font-weight: 500;
 }
 
-.lobby-page .host-tag, .lobby-page .ready-tag, .lobby-page .not-ready-tag {
+.lobby-page .host-tag,
+.lobby-page .ready-tag,
+.lobby-page .not-ready-tag {
   padding: 0.2rem 0.5rem;
   border-radius: 10px;
   text-transform: uppercase;
@@ -404,7 +366,6 @@
   opacity: 1;
 }
 
-
 .kick-button:hover {
   background-color: var(--danger-color);
   transform: scale(1.1);
@@ -416,10 +377,11 @@
   justify-content: center;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
-  margin-top: auto; /* Push controls to the bottom of the right column */
+  margin-top: auto;
 }
 
-.start-race-button, .lobby-page .ready-button {
+.start-race-button,
+.lobby-page .ready-button {
   padding: 0.8rem 2rem;
   font-size: 1.1rem;
   font-weight: 600;
@@ -464,13 +426,15 @@
   font-weight: bold;
 }
 
-/* Race/Results Area */
+/* ──────────────────────────────────────────────────────────────── */
+/* Race/Results Containers                                         */
+/* ──────────────────────────────────────────────────────────────── */
 .lobby-race-area {
-  /* Styles for the container holding Typing or Results below the columns */
-  margin-top: 2rem; /* Space above this section */
+  margin-top: 2rem;
 }
 
-.lobby-race-active, .lobby-results {
+.lobby-race-active,
+.lobby-results {
   padding: 1.5rem;
   background-color: var(--type-container-color);
   border-radius: 6px;
@@ -484,37 +448,39 @@
 }
 
 .lobby-results button {
-   margin-top: 1rem;
-   /* Add styles similar to start/ready buttons */
-   padding: 0.7rem 1.5rem;
-   font-size: 1rem;
-   font-weight: 500;
-   border-radius: 5px;
-   cursor: pointer;
-   transition: all 0.2s ease;
-   border: 1px solid var(--border-color);
-   background-color: var(--subtle-bg-color);
-   color: var(--mode-text-color);
-   display: block; /* Make button block level */
-   margin-left: auto;
-   margin-right: auto; /* Center button */
+  margin-top: 1rem;
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+  background-color: var(--subtle-bg-color);
+  color: var(--mode-text-color);
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .lobby-results button:hover {
-   background-color: var(--hover-bg-color);
-   border-color: var(--princeton-orange);
+  background-color: var(--hover-bg-color);
+  border-color: var(--princeton-orange);
 }
 
-/* Error Page Specific */
+/* ──────────────────────────────────────────────────────────────── */
+/* Error Page                                                      */
+/* ──────────────────────────────────────────────────────────────── */
 .error-page {
   text-align: center;
   padding: 3rem;
 }
+
 .error-page h2 {
   color: var(--danger-color);
 }
+
 .error-page button {
-  /* Style similar to leave button */
   background-color: var(--princeton-orange);
   color: white;
   border: none;
@@ -525,71 +491,70 @@
   transition: background-color 0.2s;
   margin-top: 1rem;
 }
+
 .error-page button:hover {
   background-color: #e0701b;
 }
 
-/* Player Stats Modal Content */
+/* ──────────────────────────────────────────────────────────────── */
+/* Player Stats Modal Content                                      */
+/* ──────────────────────────────────────────────────────────────── */
 .player-stats-modal-content {
   padding: 1rem;
   line-height: 1.7;
 }
+
 .player-stats-modal-content p {
   margin: 0.6rem 0;
   font-size: 1rem;
 }
 
-
-/* Responsive adjustments */
-@media (max-width: 992px) { /* Adjust breakpoint for two columns */
+/* ──────────────────────────────────────────────────────────────── */
+/* Responsive Adjustments                                          */
+/* ──────────────────────────────────────────────────────────────── */
+@media (max-width: 992px) { /* two‑column to stacked */
   .lobby-main-content {
-    flex-direction: column; /* Stack columns on smaller screens */
+    flex-direction: column;
     gap: 1.5rem;
   }
-  .lobby-left-column, .lobby-right-column {
-    min-width: 100%; /* Allow columns to take full width */
-    flex: none; /* Reset flex property */
-    padding: 1.5rem; /* Add padding back */
-    background-color: var(--type-container-color); /* Add background back */
+
+  .lobby-left-column,
+  .lobby-right-column {
+    min-width: 100%;
+    flex: none;
+    padding: 1.5rem;
+    background-color: var(--type-container-color);
     border-radius: 6px;
     border: 1px solid var(--border-color);
   }
+
   .lobby-right-column {
-     gap: 1rem;
+    gap: 1rem;
   }
+
   .player-grid {
-     /* Adjust grid for potentially smaller width */
-     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   }
-  /* Adjust TestConfigurator layout for stacked view */
+
+  /* Convert TestConfigurator back to horizontal row on tablets */
   .lobby-settings .test-configurator {
-    flex-direction: row; /* Go back to row */
-    align-items: center;
-    flex-wrap: wrap; /* Allow wrapping */
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px 20px;
   }
-  .lobby-settings .test-configurator .config-separator {
-     display: block; /* Show separators again */
-  }
-  .lobby-settings .test-configurator .conditional-options-container {
-     width: auto; /* Allow width to adjust */
-     margin-top: 0;
-  }
-  /* IMPORTANT: maintain same visibility logic on smaller screens */
+
   .lobby-settings .test-configurator .options-wrapper {
-     display: none;
-     opacity: 0;
-     height: 0;
-     overflow: hidden;
-     pointer-events: none;
-     margin-top: 0;
-     width: auto;
+    width: 100%;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-10px);
   }
+
   .lobby-settings .test-configurator .options-wrapper.visible {
-     display: flex; /* Flexible row layout on smaller screens */
-     opacity: 1;
-     height: auto;
-     overflow: visible;
-     pointer-events: auto;
+    max-height: 350px;
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -597,24 +562,42 @@
   .lobby-container {
     padding: 1.5rem;
   }
+
   .lobby-header {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
   }
+
   .lobby-code-display {
     width: 100%;
     justify-content: space-between;
   }
+
   .player-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Further adjust grid */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 0.8rem;
   }
+
   .player-card {
     padding: 0.8rem;
-    min-height: 110px; /* Further reduce height */
+    min-height: 110px;
   }
-  .lobby-left-column, .lobby-right-column {
-     padding: 1rem; /* Reduce padding */
+
+  .lobby-left-column,
+  .lobby-right-column {
+    padding: 1rem;
+  }
+
+  .lobby-settings .test-configurator {
+    gap: 10px;
+  }
+
+  .lobby-settings .test-configurator .mode-selection {
+    gap: 14px;
+  }
+
+  .lobby-settings .test-configurator .config-select {
+    min-width: 0;
   }
 }
