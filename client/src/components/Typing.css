@@ -272,16 +272,16 @@
   visibility: var(--line-cursor);
   position: absolute;
   content: "|";
-  transform: scale(1.8, 1);
   color: var(--princeton-orange)!important;
-  right: 0.4rem;
-  animation: slide 0.05s ease-out;
+  animation: slide 0.06s ease-out;
+  right: 70%;
+  transform: scale(180%, 1);
 }
 
 /* Animation for smooth line-cursor */
 @keyframes slide {
-  from { right: 0.7rem; }
-  to   { right: 0.4rem; }
+  from { right: 140%; }
+  to   { right: 70%; }
 }
 
 @keyframes blink {
