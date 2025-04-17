@@ -278,6 +278,7 @@
   animation: slide 0.05s ease-out;
 }
 
+/* Animation for smooth line-cursor */
 @keyframes slide {
   from { right: 0.7rem; }
   to   { right: 0.4rem; }
