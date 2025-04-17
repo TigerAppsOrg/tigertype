@@ -189,6 +189,34 @@ const MIGRATIONS = [
       console.log('Migration reverted: Dropped partial_sessions table');
     }
   }
+  ,
+  {
+    version: 6,
+    description: 'Add optimistic concurrency version column to lobbies table',
+    up: async (client) => {
+      // Add a harmless integer column used for optimistic concurrency control.
+      // We keep the default at 0 so legacy rows start with a defined value.
+      await client.query(`
+        ALTER TABLE lobbies
+        ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;
+      `);
+      // Create an index to make look‑ups on (id, version) fast if the pattern is
+      // ever used in the future.  This is safe to run even if the index already
+      // exists thanks to the IF NOT EXISTS flag.
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_lobbies_version ON lobbies(version);
+      `);
+      console.log('Migration complete: added version column to lobbies table');
+    },
+    down: async (client) => {
+      await client.query(`
+        ALTER TABLE lobbies
+        DROP COLUMN IF EXISTS version;
+      `);
+      await client.query('DROP INDEX IF EXISTS idx_lobbies_version;');
+      console.log('Migration reverted: removed version column from lobbies table');
+    }
+  }
 ];
 
 // Create migrations table if it doesn't exist
