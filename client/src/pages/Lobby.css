@@ -192,16 +192,36 @@
   flex-grow: unset; /* Remove flex-grow */
 }
 
+/*
+  IMPORTANT VISIBILITY FIX
+  ----------------------------------
+  We need the conditional option wrappers (snippet-options & timed-options) to
+  respect their "visible" class so that only the relevant controls render.
+  The original override displayed BOTH wrappers at all times which led to the
+  "15s 30s 60s 120s" duration buttons showing even when Snippets mode was
+  selected, and vice‑versa.
+*/
 .lobby-settings .test-configurator .options-wrapper {
-  position: static; /* Override absolute */
-  transform: none; /* Override transform */
-  opacity: 1; /* Force visible */
-  height: auto; /* Force auto height */
-  overflow: visible; /* Ensure content visible */
+  /* Baseline: hide everything */
+  position: static;
+  transform: none;
+  display: none;          /* hide */
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
   width: 100%;
-  display: block; /* Change display */
-  pointer-events: auto; /* Ensure interaction */
-  margin-top: 5px; /* Space below mode buttons */
+  pointer-events: none;
+  margin-top: 5px;
+  transition: opacity 0.25s ease-out, height 0.25s ease-out;
+}
+
+/* Only show the wrapper when the component adds the .visible class */
+.lobby-settings .test-configurator .options-wrapper.visible {
+  display: block;         /* switch to block for vertical layout */
+  opacity: 1;
+  height: auto;
+  overflow: visible;
+  pointer-events: auto;
 }
 
 /* Ensure inner wrappers are visible and wrap */
@@ -554,10 +574,22 @@
      width: auto; /* Allow width to adjust */
      margin-top: 0;
   }
+  /* IMPORTANT: maintain same visibility logic on smaller screens */
   .lobby-settings .test-configurator .options-wrapper {
+     display: none;
+     opacity: 0;
+     height: 0;
+     overflow: hidden;
+     pointer-events: none;
      margin-top: 0;
-     display: flex; /* Back to flex */
      width: auto;
+  }
+  .lobby-settings .test-configurator .options-wrapper.visible {
+     display: flex; /* Flexible row layout on smaller screens */
+     opacity: 1;
+     height: auto;
+     overflow: visible;
+     pointer-events: auto;
   }
 }
 
