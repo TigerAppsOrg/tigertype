@@ -18,6 +18,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 const Home = lazy(() => import('./pages/Home'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const Race = lazy(() => import('./pages/Race'));
+const Lobby = lazy(() => import('./pages/Lobby')); // Lazy load Lobby page
 const AboutUs = lazy(() => import('./pages/AboutUs')); // Add lazy import for AboutUs
 const Lobby = lazy(() => import('./pages/Lobby'));
 
@@ -93,6 +94,11 @@ function AppRoutes() {
           <Route path="/race" element={
             <ProtectedRoute>
               <Race />
+            </ProtectedRoute>
+          } />
+          <Route path="/lobby/:lobbyCode" element={ // Add route for Lobby page with code param
+            <ProtectedRoute>
+              <Lobby />
             </ProtectedRoute>
           } />
           <Route path="/about" element={<AboutUs />} /> {/* Add route for About Us page */}

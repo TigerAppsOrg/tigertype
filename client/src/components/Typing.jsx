@@ -47,8 +47,6 @@ function Typing({
   const [lastTabPress, setLastTabPress] = useState(0);
   const [snippetId, setSnippetId] = useState(null);
   const [tipIndex, setTipIndex] = useState(Math.floor(Math.random() * TYPING_TIPS.length));
-  const [countdown, setCountdown] = useState(null);
-  const countdownRef = useRef(null);
   const [tipVisible, setTipVisible] = useState(true);
   const tipContentRef = useRef(TYPING_TIPS[tipIndex]);
   const [isShaking, setIsShaking] = useState(false);
@@ -99,7 +97,7 @@ function Typing({
   
   // Rotate through random tips every 5 seconds before race starts
   useEffect(() => {
-    if (raceState.type !== 'practice' && !raceState.inProgress && !countdown) {
+    if (raceState.type !== 'practice' && !raceState.inProgress && !raceState.countdown) {
       const tipInterval = setInterval(() => {
         // Step 1: Hide the current tip
         setTipVisible(false);
@@ -124,7 +122,7 @@ function Typing({
       
       return () => clearInterval(tipInterval);
     }
-  }, [raceState.type, raceState.inProgress, countdown, tipIndex]);
+  }, [raceState.type, raceState.inProgress, raceState.countdown, tipIndex]);
   
   // Update tip content ref when tipIndex changes
   useEffect(() => {
@@ -137,32 +135,16 @@ function Typing({
     
     const handleCountdown = (data) => {
       console.log('Countdown received:', data);
-      setCountdown(data.seconds);
-      
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
-      
-      countdownRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownRef.current);
-            countdownRef.current = null;
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      setRaceState(prev => ({
+        ...prev,
+        countdown: data.seconds
+      }));
     };
 
     socket.on('race:countdown', handleCountdown);
     
     return () => {
       socket.off('race:countdown', handleCountdown);
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-      }
     };
   }, [socket, raceState.type, raceState.inProgress, raceState.completed]);
   
@@ -196,9 +178,6 @@ function Typing({
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-      }
     };
   }, []);
 
@@ -447,20 +426,24 @@ function Typing({
           if (elapsed >= duration && !raceState.completed) {
             console.log('Timed test completed due to time limit');
 
-            // Capture final WPM and Accuracy from typingState at the moment of completion
-            const finalWpm = typingState.wpm;
+            // Recalculate final WPM using fixed duration and total characters typed
+            const durationInMinutes = duration / 60;
+            // Use typingState.position which reflects the total chars typed, consistent with live WPM
+            const finalWords = typingState.position / 5;
+            const finalWpm = durationInMinutes > 0 ? (finalWords / durationInMinutes) : 0;
+            // Capture accuracy at the moment of completion
             const finalAccuracy = typingState.accuracy;
             
             // Mark as completed locally
             setRaceState(prev => ({
               ...prev,
               completed: true,
-              // Store results directly in state using captured values
+              // Store results directly in state using correctly calculated final values
               results: [{
                 netid: user?.netid,
-                wpm: finalWpm,          
-                accuracy: finalAccuracy, 
-                completion_time: elapsed // Use final elapsed time
+                wpm: finalWpm,          // Use correctly calculated WPM
+                accuracy: finalAccuracy, // Use captured Accuracy
+                completion_time: duration // Use fixed duration as completion time
               }]
             }));
 
@@ -470,11 +453,11 @@ function Typing({
                 code: raceState.code,
                 lobbyId: null, // Practice mode lobbyId is null/irrelevant here
                 snippetId: raceState.snippet?.id, // ex: 'timed-15'
-                wpm: finalWpm, // Use captured WPM
+                wpm: finalWpm, // Use correctly calculated WPM
                 accuracy: finalAccuracy, // Use captured Accuracy
-                completion_time: elapsed // Use final elapsed time
+                completion_time: duration // Use fixed duration as completion time
               });
-              console.log('[Typing.jsx] Emitted race:result for timed test completion (time limit)');
+              console.log(`[Typing.jsx] Emitted race:result for timed test completion (time limit) with WPM: ${finalWpm}`);
             } else {
               console.warn('[Typing.jsx] Cannot emit race:result - socket / race code missing, or not a timed test.');
             }
@@ -794,7 +777,7 @@ function Typing({
     return (
       <div className="stats countdown-stats">
         <div className="stat-item countdown-item">
-          <span className="countdown-value">{countdown}</span>
+          <span className="countdown-value">{raceState.countdown}</span>
         </div>
       </div>
     );
@@ -839,7 +822,7 @@ function Typing({
     } 
     // For race mode
     else {
-      if (countdown !== null) {
+      if (raceState.countdown !== null) {
         return getCountdown();
       } else if (!raceState.inProgress) {
         return getTips();

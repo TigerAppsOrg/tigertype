@@ -168,11 +168,12 @@ const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) =>
 
   let timeFilter = '';
   if (period === 'daily') {
-    // Times now reset at 00:00 EST
-    timeFilter = 'AND tl.created_at >= DATE_TRUNC(\'day\', CURRENT_TIMESTAMP)';
+    // Explicitly truncate the current timestamp to the start of the day in New York time
+    timeFilter = `AND tl.created_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'America/New_York')`;
   }
 
   // Query to get the best score per user for the given duration and period
+  // Calculate adjusted_wpm and order by it
   const query = `
     WITH RankedScores AS (
       SELECT
@@ -180,8 +181,9 @@ const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) =>
         u.netid,
         tl.wpm,
         tl.accuracy,
+        (tl.wpm * tl.accuracy / 100.0) AS adjusted_wpm, -- Calculate adjusted WPM
         tl.created_at,
-        ROW_NUMBER() OVER(PARTITION BY tl.user_id ORDER BY tl.wpm DESC, tl.created_at DESC) as rn
+        ROW_NUMBER() OVER(PARTITION BY tl.user_id ORDER BY (tl.wpm * tl.accuracy / 100.0) DESC, tl.created_at DESC) as rn -- Rank by adjusted WPM
       FROM timed_leaderboard tl
       JOIN users u ON tl.user_id = u.id
       WHERE tl.duration = $1 ${timeFilter}
@@ -191,10 +193,11 @@ const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) =>
       netid,
       wpm,
       accuracy,
+      adjusted_wpm, -- Select the calculated adjusted WPM
       created_at
     FROM RankedScores
     WHERE rn = 1
-    ORDER BY wpm DESC, created_at ASC
+    ORDER BY adjusted_wpm DESC, created_at ASC -- Order by adjusted WPM
     LIMIT $2;
   `;
 
