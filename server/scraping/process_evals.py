@@ -115,7 +115,7 @@ def call_ai_to_extract_snippets(comment_text):
     system_prompt = (
         "You are an *EXTREMELY SELECTIVE* assistant tasked with identifying ONLY the MOST engaging, funny, or uniquely phrased snippets from Princeton course reviews, suitable for a typing game."
         "Your primary goal is QUALITY over quantity. Be very critical: it is better to return NOTHING than to return a bland snippet or something that would not be fun to type."
-        "The only users of the app are Princeton students, so consider that the snippets, on top of being fun to type, should contain information useful for students deciding whether to take a course."
+        "The only users of the app are Princeton students so consider that the snippets, on top of being fun to type, should contain information useful for students deciding whether to take a course."
         "Focus on extracting short, self‑contained, interesting, humorous, witty, strongly opinionated, or insightful phrases/sentences (15‑150 words)."
         "AVOID generic advice, mundane praise/criticism, boilerplate, or personal info unless the *wording* itself is gold. More generic advice is only good if it's phrased in a way that's fun to type, or if it is useful information for the course."
         "For EACH snippet include a difficulty rating: 1 (easy), 2 (medium), 3 (hard). "
@@ -124,7 +124,7 @@ def call_ai_to_extract_snippets(comment_text):
         "\nNow analyze the following review:"
         "\n\n[REVIEW START]\n{review}\n[REVIEW END]\n\n"
         "Output ONLY a JSON list, e.g. "
-        "[{\"text\":\"…\",\"difficulty\":2}, {\"text\":\"…\",\"difficulty\":1}] or []."
+        "[{{\"text\":\"…\",\"difficulty\":2}}, {{\"text\":\"…\",\"difficulty\":1}}] or []."
     ).replace("{review}", "{review}")  # keep literal placeholder for f‑string below
 
     retries = 0
@@ -143,6 +143,8 @@ def call_ai_to_extract_snippets(comment_text):
             )
 
             raw_json = response.choices[0].message.content
+            # Debug: show the raw AI response before parsing
+            print(f"🔹 Raw AI response: {raw_json}")
             try:
                 parsed = json.loads(raw_json)
             except json.JSONDecodeError:
@@ -158,6 +160,8 @@ def call_ai_to_extract_snippets(comment_text):
                         break
 
             if not isinstance(parsed, list):
+                # Debug: if parsed output is not a list, show its structure
+                print(f"🔹 Parsed AI output (not list): {parsed!r}")
                 print("⚠️  AI did not return list – skipping")
                 return []
 
