@@ -23,7 +23,7 @@ DEFAULT_SOURCE    = "Princeton Course Reviews"
 DEFAULT_CATEGORY  = "course-reviews"
 
 MODEL_ID        = "gpt-4.1" # can't wait to try out new model hehe
-MAX_RETRIES     = 3
+MAX_RETRIES     = 5     # increased from 3 to help w rate limiting
 INITIAL_DELAY   = 1     # seconds between retry back‑off
 FLUSH_INTERVAL  = 1     # write files after every N comments (set 1 = every)
 
