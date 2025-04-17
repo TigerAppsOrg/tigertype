@@ -48,7 +48,6 @@ function JoinLobbyPanel({ className = '' }) {
       onClick={stopBubbling}
       onMouseDown={stopBubbling}
     >
-      <h3 className="panel-title">Join a Lobby</h3>
       <form className="join-form" onSubmit={handleSubmit}>
         <input
           type="text"
