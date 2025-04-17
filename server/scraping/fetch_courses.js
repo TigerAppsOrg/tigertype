@@ -13,8 +13,8 @@
  *
  * Otherwise put these **three** vars in .env or your shell:
  *   PRINCETON_CONSUMER_KEY
- *   PRINCETON_CONSUMER_SECRET
- *   PRINCETON_SCOPE         # usually "student-app"
+ *   PRINCETON_CONSUMER_SECRET  
+ *   PRINCETON_SCOPE         # usually "student-app" (this is act not necessary i realize now)
  */
 
 const fs       = require('fs');
