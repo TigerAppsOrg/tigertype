@@ -3,64 +3,51 @@ import PropTypes from 'prop-types';
 import { useRace } from '../context/RaceContext';
 import './JoinLobbyPanel.css';
 
-/* ------------------------------------------------------
- *  JoinLobbyPanel – allows users to quickly join a lobby
- *  by entering either the lobby code OR the netID of any
- *  player that is currently inside a lobby.
- * ---------------------------------------------------- */
-
 function JoinLobbyPanel({ className = '' }) {
   const { joinPrivateLobby } = useRace();
 
-  const [input, setInput] = useState('');
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [input, setInput]   = useState('');
+  const [error, setError]   = useState('');
+  const [busy,  setBusy]    = useState(false);
+
+  /* click inside → never trigger outer Mode onClick */
+  const stopBubbling = (e) => e.stopPropagation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    // Trim input and extract lobby code if a full URL was provided
     let value = input.trim();
-    setSubmitting(true);
+    setBusy(true);
     setError('');
+
+    /* extract code if pasted a whole URL */
     try {
-      // Parse as URL and extract code segment after '/lobby/' in path
       const parsed = new URL(value);
-      const parts = parsed.pathname.split('/').filter(Boolean);
-      const idx = parts.findIndex(p => p.toLowerCase() === 'lobby');
-      if (idx !== -1 && parts[idx + 1]) {
-        value = parts[idx + 1];
-      }
-    } catch (_) {
-      // Not a URL, ignore
-    }
+      const parts  = parsed.pathname.split('/').filter(Boolean);
+      const idx    = parts.findIndex((p) => p.toLowerCase() === 'lobby');
+      if (idx !== -1 && parts[idx + 1]) value = parts[idx + 1];
+    } catch (_) { /* not a URL – ignore */ }
 
-    // Decide whether the input is a lobby code or a netid.
-    // Very simply done bc i am no very smart: 
-    // valid lobby codes in TigerType are
-    // 4–6 alphanumeric (uppercase ignored) whereas NetIDs are
-    // typically >= 6 characters and may contain numbers but must
-    // start with a letter.
-    const codeRegex = /^[A-Za-z0-9]{4,6}$/; // this regex is wrong, come back and fix later
+    const codeRegex = /^[A-Za-z0-9]{4,6}$/;
+    const isCode    = codeRegex.test(value);
+    const payload   = isCode
+      ? { code: value.toUpperCase() }
+      : { playerNetId: value.toLowerCase() };
 
-    const isCode = codeRegex.test(value);
-
-    const payload = isCode ? { code: value.toUpperCase() } : { playerNetId: value.toLowerCase() };
-
-    joinPrivateLobby(payload, (response) => {
-      setSubmitting(false);
-      if (!response.success) {
-        setError(response.error || 'Lobby not found.');
-      } else {
-        // If successful the RaceContext will navigate to the lobby/race; clear input.
-        setInput('');
-      }
+    joinPrivateLobby(payload, (res) => {
+      setBusy(false);
+      if (!res.success) setError(res.error || 'Lobby not found.');
+      else setInput('');
     });
   };
 
   return (
-    <div className={`join-lobby-panel ${className}`}>
+    <div
+      className={`join-lobby-panel ${className}`}
+      onClick={stopBubbling}
+      onMouseDown={stopBubbling}
+    >
       <h3 className="panel-title">Join a Lobby</h3>
       <form className="join-form" onSubmit={handleSubmit}>
         <input
@@ -69,13 +56,13 @@ function JoinLobbyPanel({ className = '' }) {
           placeholder="Enter lobby code or player NetID"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={submitting}
+          disabled={busy}
           maxLength={64}
         />
         <button
           type="submit"
           className="join-button"
-          disabled={!input.trim() || submitting}
+          disabled={!input.trim() || busy}
         >
           Join
         </button>
@@ -85,8 +72,5 @@ function JoinLobbyPanel({ className = '' }) {
   );
 }
 
-JoinLobbyPanel.propTypes = {
-  className: PropTypes.string,
-};
-
+JoinLobbyPanel.propTypes = { className: PropTypes.string };
 export default JoinLobbyPanel;

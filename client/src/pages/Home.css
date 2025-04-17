@@ -1,36 +1,86 @@
 .home-page {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .home-container {
-    display: flex;
-    flex-direction: column;
-    margin-top: 15%;
-    gap: 2rem;
-  }
-  
-  .home-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(245, 128, 37, 0.3);
-  }
-  
-  .home-header h1 {
-    color: #F58025;
-    font-size: 2.5rem;
-    margin: 0;
-  }
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
-  .modes-section {
-    margin: 2rem 0;
-  }
-  
-  .home-footer {
-    text-align: center;
-    margin-top: 2rem;
-    color: #888;
-    font-size: 1.1rem;
-  }
+.home-container {
+  display: flex;
+  flex-direction: column;
+  margin-top: 15%;
+  gap: 2rem;
+}
+
+/* header stacks title + tagline centrally */
+.home-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(245, 128, 37, 0.3);
+}
+
+.home-header h1 {
+  color: #F58025;
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.home-header .home-tagline {
+  font-size: 1.15rem;
+  color: var(--text-color-secondary);
+}
+
+.modes-section {
+  margin: 2rem 0;
+}
+
+/* New styles for the custom layout */
+.modes-layout-section {
+  display: flex;
+  gap: 2rem; /* Gap between standard modes column and private stack column */
+  align-items: stretch; /* Make columns equal height */
+  /* Center the section */
+  max-width: 1000px; /* Or adjust as needed */
+  margin: 2rem auto; /* Add auto margins for centering */
+}
+
+.standard-modes-container {
+  flex: 2; /* Takes up 2/3 of the space */
+  /* Uses the .modes-container grid defined in Modes.css */
+  /* Ensure its internal grid also stretches */
+  display: flex; /* Override the grid display from Modes.css here */
+  gap: 2rem;
+}
+
+.standard-modes-container > * { /* Target the Modes component's div */
+  display: contents; /* Allow children to be direct flex items */
+}
+
+.standard-modes-container .mode-box {
+  flex: 1; /* Each standard box takes half the space */
+}
+
+.private-modes-stack {
+  flex: 1; /* Takes up 1/3 of the space */
+  display: flex;
+  flex-direction: column;
+  gap: 2rem; /* Gap between Create and Join boxes */
+  /* Uses the .modes-container grid (implicitly via Modes component) */
+  /* We need to ensure the Modes component inside handles this well */
+}
+
+/* Adjust the Modes component's container when inside the stack */
+.private-modes-stack .modes-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Fill the container height */
+  gap: 2rem; /* Consistent gap */
+}
+
+/* Ensure mode boxes inside the stack take up half the height */
+.private-modes-stack .modes-container .mode-box {
+  flex: 1; /* Each takes equal space in the column */
+  min-height: unset; /* Override default min-height if needed */
+  /* Height will be determined by flex layout */
+}
