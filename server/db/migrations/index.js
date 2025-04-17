@@ -241,6 +241,32 @@ const MIGRATIONS = [
       await client.query('DROP INDEX IF EXISTS idx_lobbies_version;');
       console.log('Migration reverted: removed version column from lobbies table');
     }
+  },
+  {
+    version: 7,
+    description: 'Add Princeton course details to snippets table',
+    up: async (client) => {
+      console.log('Running migration to add Princeton course details to snippets table...');
+      await client.query(`
+        ALTER TABLE public.snippets
+          ADD COLUMN IF NOT EXISTS princeton_course_url TEXT,
+          ADD COLUMN IF NOT EXISTS term_code            VARCHAR(4),
+          ADD COLUMN IF NOT EXISTS course_id            VARCHAR(6),
+          ADD COLUMN IF NOT EXISTS course_name          TEXT;
+      `);
+      console.log('Successfully added Princeton course columns to snippets table.');
+    },
+    down: async (client) => {
+      console.log('Reverting migration to remove Princeton course details from snippets table...');
+      await client.query(`
+        ALTER TABLE public.snippets
+          DROP COLUMN IF EXISTS princeton_course_url,
+          DROP COLUMN IF EXISTS term_code,
+          DROP COLUMN IF EXISTS course_id,
+          DROP COLUMN IF EXISTS course_name;
+      `);
+       console.log('Successfully removed Princeton course columns from snippets table.');
+    }
   }
 ];
 
