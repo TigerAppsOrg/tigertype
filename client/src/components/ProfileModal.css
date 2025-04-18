@@ -85,7 +85,7 @@
 }
 
 .profile-title h2{
-  font-size: 2.5rem;
+  font-size: 2rem;
 }
 
 .profile-header {
@@ -408,7 +408,7 @@
 .profile-stats h2 {
   color: #F58025;
   margin-bottom: 1.5rem;
-  font-size: 1.5rem;
+  font-size: 2rem;
 }
 
 .primary-stats {
@@ -423,7 +423,7 @@
 
 .stat-card {
   background-color: rgba(223, 223, 223, 0.7);
-  padding: 1.5rem;
+  padding: 1.4rem;
   border-radius: 6px;
   text-align: center;
   transition: transform 0.2s ease;
@@ -437,11 +437,11 @@
 .stat-card h3 {
   color: #222222;
   margin-bottom: 0.5rem;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
 }
 
 .stat-card p {
   color: #333333;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: bold;
 }
