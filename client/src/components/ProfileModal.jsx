@@ -18,12 +18,6 @@ function ProfileModal({ isOpen, onClose }) {
   const [loadingStats, setLoadingStats] = useState(true);
   const [selectedTitle, setSelectedTitle] =useState('');
 
-  const [badges, setBadges] = useState([
-    { id: 1, name: 'Placeholder 1', icon: '🔥', color: '#ff7700' },
-    { id: 2, name: 'Placeholder 2', icon: '🎯', color: '#00aaff' },
-    { id: 3, name: 'Placeholder 3', icon: '🐯', color: '#f58025' }
-  ]);
-
   // Function to add cache busting parameter to image URL (this is so scuffed, even if it works pls refine ammaar)
   const getCacheBustedImageUrl = (url) => {
     if (!url) return defaultProfileImage;
@@ -303,27 +297,12 @@ function ProfileModal({ isOpen, onClose }) {
                     onChange={(e) => setSelectedTitle(e.target.value)}
                     className="title-select"
                   >
-                    <option value="" disabled hidden>Title</option>
-                    <option value="placeholder-1">Placeholder 1</option>
-                    <option value="placeholder-2">Placeholder 2</option>
-                    <option value="placeholder-3">Placeholder 3</option>
-                    <option value="placeholder-4">Placeholder 4</option>
+
                   </select>
 
                 <div className="user-badges">
                   <h3>Badges</h3>
-                  <div className="badges-container">
-                    {badges.map(badge => (
-                      <div 
-                        key={badge.id} 
-                        className="badge-item" 
-                        style={{ borderColor: badge.color }}
-                        title={badge.name}
-                      >
-                        <span className="badge-icon">{badge.icon}</span>
-                      </div>
-                    ))}
-                  </div>
+            
                 </div>
                 </div>
               </div>
@@ -351,67 +330,6 @@ function ProfileModal({ isOpen, onClose }) {
             <div className='match-history'>
               <h2>Match History</h2>
 
-              <div className="match-history-list">
-                <div className="match-history-card">
-                  <div className="match-date">
-                    Apr 15, 2025
-                  </div>
-                  <div className="match-details">
-                    <div className="match-type">
-                      Practice
-                    </div>
-                    <div className="match-stats">
-                      <span>76 WPM </span>
-                      <span>96.8% Acc</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="match-history-card">
-                  <div className="match-date">
-                    Apr 15, 2025
-                  </div>
-                  <div className="match-details">
-                    <div className="match-type">
-                      Practice
-                    </div>
-                    <div className="match-stats">
-                      <span>76 WPM </span>
-                      <span>96.8% Acc</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="match-history-card">
-                  <div className="match-date">
-                    Apr 15, 2025
-                  </div>
-                  <div className="match-details">
-                    <div className="match-type">
-                      Practice
-                    </div>
-                    <div className="match-stats">
-                      <span>76 WPM </span>
-                      <span>96.8% Acc</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="match-history-card">
-                  <div className="match-date">
-                    Apr 15, 2025
-                  </div>
-                  <div className="match-details">
-                    <div className="match-type">
-                      Practice
-                    </div>
-                    <div className="match-stats">
-                      <span>76 WPM </span>
-                      <span>96.8% Acc</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -423,7 +341,7 @@ function ProfileModal({ isOpen, onClose }) {
           {!user ? (
             <div className="stats-loading">No stats available</div>
           ) : (
-            <div className="stats-grid">
+            <div className="stats-grid primary-stats">
               <div className="stat-card">
                 <h3>Races Completed</h3>
                 <p>{parseNumericValue(user.races_completed) || 0}</p>
@@ -442,12 +360,8 @@ function ProfileModal({ isOpen, onClose }) {
               </div>
             </div>
           )}
-        </div>
 
-        {/* Detailed Stats Section */}
-        <div className="profile-stats">
-          <h2>Detailed Stats</h2>
-          {loadingStats ? (
+            {loadingStats ? (
             <div className="stats-loading">Loading detailed stats...</div>
           ) : !detailedStats ? (
             <div className="stats-loading">No detailed stats available</div>
@@ -472,8 +386,9 @@ function ProfileModal({ isOpen, onClose }) {
                   : 0}%</p>
               </div>
             </div>
-          )}
+          )}    
         </div>
+       
       </div>
     </div>
   );

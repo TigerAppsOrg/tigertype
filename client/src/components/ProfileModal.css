@@ -1,3 +1,5 @@
+/* alignment debugged with ai */
+
 .profile-overlay {
   position: fixed;
   top: 0;
@@ -13,8 +15,8 @@
 }
 
 .profile-container {
-  width: 120%;
-  height: 110%;
+  width: 100%;
+  height: 100%;
   position: absolute;
   margin: 2rem auto;
   padding: 2rem;
@@ -24,7 +26,7 @@
   border-radius: 30px;
   border-color: #F58025;
   align-items: center;
-  scale: 70%;
+  scale: 80%;
 }
 
 .loading-container {
@@ -64,14 +66,15 @@
   display: flex;     
   align-items: center;
   z-index: 1;
+  font-size: 1.5rem;
 }
 
-.back-button span {
+.back-button-profile span {
   margin-right: 0.5rem;
-  height: 1.3rem;
+  height: 2.2rem;
 }
 
-.back-button:hover {
+.back-button-profile:hover {
   background-color: rgba(245, 128, 37, 0.1);
 }
 
@@ -81,9 +84,13 @@
   color: var(--mode-text-color);
 }
 
+.profile-title h2{
+  font-size: 2.5rem;
+}
+
 .profile-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 
@@ -115,12 +122,13 @@
   border-radius: 30px;
   border: solid;
   border-color: #f8f9fa;
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
   position: relative;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .profile-page-image:hover {
@@ -179,9 +187,32 @@
 
 .selectable-info {
   padding-left: 1.875rem;
-  display: grid;
-  height: fit-content;
-  width: fit-content;
+  display: flex;         
+  flex-direction: column; 
+  width: 100%;     
+  padding-right: 2rem;      
+}
+
+.selectable-info select {
+  background-color: var(--background-color);
+  color: var(--mode-text-color);
+  border: 1px solid #F58025;
+  border-radius: 4px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23F58025%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E');
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 0.65em auto;
+  transition: border-color 0.2s ease;
+  height: 3rem;
+}
+
+.selectable-info select:hover {
+  border-color: var(--mode-text-color);
 }
 
 .username-info {
@@ -190,14 +221,18 @@
   justify-content: space-between;
 }
 
+.username-info h2 {
+  font-size: 2rem;
+}
+
 .title-select {
   height: 2rem;
-  font-size: 20px;
   margin-bottom: 1rem;
 }
 
 .user-badges h3{
   text-align: left;
+  font-size: 1.8rem;
 }
 
 .badges-container {
@@ -224,9 +259,6 @@
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 }
 
-.badge-icon {
-  font-size: 1.5rem;
-}
 
 .profile-user-edit {
   width: 1.875rem;
@@ -246,12 +278,12 @@
   border-radius: 15px;
   padding: 10px;
   width: 100%;
-  height: 218px;
+  height: 200px;
   background-color: var(--hover-color);
   color: #f8f9fa;
   border: 1px solid #444;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.5rem;
   margin-bottom: 10px;
   flex-grow: 1;
 }
@@ -282,6 +314,7 @@
   cursor: pointer;
   transition: all 0.2s;
   font-weight: bold;
+  font-size: 1.2rem;
 }
 
 .save-bio-btn:hover {
@@ -294,10 +327,11 @@
 }
 
 .bio-success, .bio-error {
-  margin-left: 10px;
+  margin-left: 20px;
   padding: 5px 10px;
   border-radius: 4px;
-  font-size: 0.9rem;
+  font-size: 1.5rem;
+  margin-right: 20px;
 }
 
 .bio-success {
@@ -312,6 +346,11 @@
 
 .match-history {
   width: 50%;
+  font-size: 2rem;
+}
+
+.match-history h2{
+  font-size: 2rem;
 }
 
 .match-history h2 {
@@ -339,7 +378,7 @@
 }
 
 .match-date {
-  font-size: 0.8rem;
+  font-size: 1.2rem;
   color: var(--mode-text-color);
   margin-bottom: 0.5rem;
 }
@@ -350,7 +389,7 @@
 }
 
 .match-type {
-  font-size: 20px;
+  font-size: 1.5rem;
   color: var(--mode-text-color);
 }
 
@@ -361,17 +400,18 @@
 }
 
 .match-stats span {
-  font-size: 0.9rem;
+  font-size: 1.5rem;
   color: #F58025;
   margin-bottom: 0.2rem;
 }
 
-.profile-stats {
-  margin-bottom: 1.5rem;
-}
-
 .profile-stats h2 {
   color: #F58025;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.primary-stats {
   margin-bottom: 1.5rem;
 }
 
@@ -387,6 +427,7 @@
   border-radius: 6px;
   text-align: center;
   transition: transform 0.2s ease;
+  height: 100%;
 }
 
 .stat-card:hover {
@@ -396,7 +437,7 @@
 .stat-card h3 {
   color: #222222;
   margin-bottom: 0.5rem;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
 }
 
 .stat-card p {
