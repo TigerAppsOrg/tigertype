@@ -681,9 +681,9 @@ export const RaceProvider = ({ children }) => {
           }] : prev.results // Keep existing results for multiplayer
         }));
         
-        // Send completion to server for multiplayer races OR timed practice tests
+        // Send completion to server for all race types (multiplayer, timed practice, and snippet practice)
         // The finalWpm and finalCompletionTime calculated above are used here
-        if (socket && connected && (isMultiplayer || isTimedPractice)) {
+        if (socket && connected) {
           socket.emit('race:result', {
             code: raceState.code,
             lobbyId: raceState.lobbyId, // Will be null for practice, that's okay
@@ -692,7 +692,7 @@ export const RaceProvider = ({ children }) => {
             accuracy,
             completion_time: finalCompletionTime // Send fixed duration or actual time
           });
-          console.log(`Emitted race:result for ${isMultiplayer ? 'multiplayer' : 'timed practice'} race ${raceState.code} with WPM: ${finalWpm}`);
+          console.log(`Emitted race:result for ${raceState.type} race ${raceState.code} with WPM: ${finalWpm}`);
         }
       }
     }

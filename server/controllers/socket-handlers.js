@@ -246,7 +246,9 @@ const initialize = (io) => {
             id: snippet.id,
             text: snippet.text,
             is_timed_test: snippet.is_timed_test || false,
-            duration: snippet.duration || null
+            duration: snippet.duration || null,
+            princeton_course_url: snippet.princeton_course_url || null,
+            course_name: snippet.course_name || null
           },
           status: 'waiting',
           type: 'practice',
@@ -262,7 +264,9 @@ const initialize = (io) => {
             id: snippet.id,
             text: snippet.text,
             is_timed_test: snippet.is_timed_test || false,
-            duration: snippet.duration || null
+            duration: snippet.duration || null,
+            princeton_course_url: snippet.princeton_course_url || null,
+            course_name: snippet.course_name || null
           }
           // No players array needed for practice mode join confirmation
         });
@@ -302,7 +306,9 @@ const initialize = (io) => {
             code: lobby.code,
             snippet: {
               id: snippet.id,
-              text: snippet.text
+              text: snippet.text,
+              princeton_course_url: snippet.princeton_course_url || null,
+              course_name: snippet.course_name || null
             },
             status: 'waiting',
             type: 'public',
@@ -324,7 +330,9 @@ const initialize = (io) => {
               code: lobby.code,
               snippet: {
                 id: lobby.snippet_id,
-                text: lobby.snippet_text
+                text: lobby.snippet_text,
+                princeton_course_url: lobby.princeton_course_url || null,
+                course_name: lobby.course_name || null
               },
               status: lobby.status || 'waiting',
               type: lobby.type,
@@ -377,7 +385,9 @@ const initialize = (io) => {
           lobbyId: lobby.id,
           snippet: {
             id: race.snippet.id,
-            text: race.snippet.text
+            text: race.snippet.text,
+            princeton_course_url: race.snippet.princeton_course_url || null,
+            course_name: race.snippet.course_name || null
           },
           players: clientPlayersPublicJoin // Use resolved data
         });
@@ -459,7 +469,9 @@ const initialize = (io) => {
             id: snippet?.id, // Use optional chaining as timed snippet has no DB id
             text: snippet.text,
             is_timed_test: snippet.is_timed_test || false,
-            duration: snippet.duration || null
+            duration: snippet.duration || null,
+            princeton_course_url: snippet.princeton_course_url || null,
+            course_name: snippet.course_name || null
           },
           status: 'waiting',
           type: 'private',
@@ -571,7 +583,9 @@ const initialize = (io) => {
                text: fullLobby.snippet_text,
                // Assuming private lobbies don't start with timed tests unless explicitly set later
                is_timed_test: false,
-               duration: null
+               duration: null,
+               princeton_course_url: fullLobby.princeton_course_url || null,
+               course_name: fullLobby.course_name || null
              },
              status: fullLobby.status,
              type: 'private',
@@ -712,7 +726,9 @@ const initialize = (io) => {
             id: dbSnippet.id,
             text: dbSnippet.text,
             is_timed_test: false, // Assume regular snippet
-            duration: null
+            duration: null,
+            princeton_course_url: dbSnippet.princeton_course_url || null,
+            course_name: dbSnippet.course_name || null
           };
           snippetChanged = true;
         }
@@ -737,7 +753,9 @@ const initialize = (io) => {
             id: randomSnippet.id,
             text: randomSnippet.text,
             is_timed_test: false,
-            duration: null
+            duration: null,
+            princeton_course_url: randomSnippet.princeton_course_url || null,
+            course_name: randomSnippet.course_name || null
           };
           snippetChanged = true;
         }
@@ -1138,7 +1156,7 @@ const initialize = (io) => {
 
             if (remainingPlayers.length === 0) {
               // No one left – terminate lobby as before
-              console.log(`No players left in lobby ${code} after host disconnect. Terminating lobby.`);
+              console.log(`No players left in lobby ${code} after host disconnected. Terminating lobby.`);
 
               socket.to(code).emit('lobby:terminated', { reason: 'Lobby empty after host disconnected.' });
 

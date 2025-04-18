@@ -716,7 +716,14 @@ function Typing({
   
   // Render stats placeholder (before practice starts)
   const getStatsPlaceholder = () => {
-    // Restore original placeholder structure and class name
+    // Determine if user's in a timed‑test placeholder state
+    const isTimedTest = raceState.snippet?.is_timed_test && raceState.snippet?.duration;
+
+    // If it is a timed test, default the display to the full duration (ex: 15.00s left)
+    const defaultTimeDisplay = isTimedTest
+      ? `${parseFloat(raceState.snippet.duration).toFixed(2)}s`
+      : '0.00s';
+
     return (
       <div className="stats practice-placeholder">
         <div className="stat-item">
@@ -729,7 +736,7 @@ function Typing({
         </div>
         <div className="stat-item">
           <span className="stat-label">Time</span>
-          <span className="stat-value">0.00s</span>
+          <span className="stat-value">{defaultTimeDisplay}</span>
         </div>
       </div>
     );
