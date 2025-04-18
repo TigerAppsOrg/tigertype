@@ -12,6 +12,12 @@ function Results({ onShowLeaderboard }) {
   const { user } = useAuth();
   const [enlargedAvatar, setEnlargedAvatar] = useState(null);
   
+  // --- DEBUG LOG --- 
+  useEffect(() => {
+    console.log('[Results Component Render] raceState.snippet:', raceState.snippet);
+  }, [raceState.snippet]);
+  // --- END DEBUG LOG --- 
+  
   // Handle back button
   const handleBack = () => {
     resetRace();
@@ -126,6 +132,25 @@ function Results({ onShowLeaderboard }) {
       <div className="practice-results">
         <h3>Practice Results</h3>
         {statsContent}
+        {/* Snippet Source Info */}
+        {raceState.snippet && (
+          <div className="snippet-info">
+            Where is this excerpt from?{' '}
+            <strong>{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</strong>
+          </div>
+        )}
+        {/* Course Review Button */}
+        {raceState.snippet?.princeton_course_url && (
+          <a
+            href={raceState.snippet.princeton_course_url}
+            className="course-review-btn"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <i className="bi bi-book"></i>
+            View Course Review
+          </a>
+        )}
         <div className="keyboard-shortcuts">
           <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
         </div>
@@ -225,6 +250,26 @@ function Results({ onShowLeaderboard }) {
             </div>
           ))}
         </div>
+        
+        {/* Snippet Source Info */}
+        {raceState.snippet && (
+          <div className="snippet-info">
+            Where is this excerpt from?{' '}
+            <strong>{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</strong>
+          </div>
+        )}
+        {/* Course Review Button for multiplayer results */}
+        {raceState.snippet?.princeton_course_url && (
+          <a
+            href={raceState.snippet.princeton_course_url}
+            className="course-review-btn"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <i className="bi bi-book"></i>
+            View Course Review
+          </a>
+        )}
       </>
     );
   };
