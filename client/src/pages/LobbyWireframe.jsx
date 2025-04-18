@@ -115,21 +115,18 @@ function CustomLobby() {
                 <h3 className="player-count">Players: 3/6</h3>
                 <div className="players-container">
                     <div id="placeholders-inlobby" className="lobby-players-container">
-                        <div className="player-placeholder" />
-                        <div className="player-placeholder" />
-                        <div className="player-placeholder" />
-                        <div className="player-placeholder" />
-                        <div className="player-placeholder" />
-                        <div className="player-placeholder" />
+                        <div className="player-frame" />
+                        <div className="player-frame" />
+                        <div className="player-frame" />
+                        <div className="player-frame" />
+                        <div className="player-frame" />
+                        <div className="player-frame" />
                     </div>
 
                     <div id="players-inlobby" className="lobby-players-container">
                         {/* Should either be ProfileWidgets that direct to the profile modal or ProfileStatusBars */}
                         {/* I was thinking that we could do a white highlight fadein/fadeout animation for when 
                             a user fills in a placeholder slot and a red one when they leave the lobby */}
-                        <ProfileWidget className="player-inlobby" />
-                        <ProfileWidget className="player-inlobby" />
-                        <ProfileWidget className="player-inlobby" />
                     </div>
                 </div>
 
@@ -148,21 +145,6 @@ function CustomLobby() {
                         <option>Course Reviews</option>
                         <option>Princeton</option>
                         </select>
-                    </div>
-                    <div>
-                        Placeholder Race Setting
-                    </div>
-                    <div>
-                        Placeholder Race Setting
-                    </div>
-                    <div>
-                        Placeholder Race Setting
-                    </div>
-                    <div>
-                        Placeholder Race Setting
-                    </div>
-                    <div>
-                        Placeholder Race Setting
                     </div>
                 </div>
 
