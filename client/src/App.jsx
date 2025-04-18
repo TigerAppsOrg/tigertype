@@ -20,7 +20,6 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const Race = lazy(() => import('./pages/Race'));
 const Lobby = lazy(() => import('./pages/Lobby')); // Lazy load Lobby page
 const AboutUs = lazy(() => import('./pages/AboutUs')); // Add lazy import for AboutUs
-const Lobby = lazy(() => import('./pages/Lobby'));
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
