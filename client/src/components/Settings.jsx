@@ -52,6 +52,7 @@ function Settings({ isOpen, onClose }) {
   const [defaultCursor, setDefaultCursor] = useState(true);
 
   const modalRef = useRef(); // Create a ref for the modal content
+  const typingInputRef = document.querySelector('.typing-input-container input');
 
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
@@ -238,6 +239,11 @@ function Settings({ isOpen, onClose }) {
       // Close if clicked outside the modal content area
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         onClose();
+        setTimeout(() => {
+          if (typingInputRef) {
+            typingInputRef.focus();
+          }
+        }, 10);
       }
     };
 

@@ -19,6 +19,8 @@ function ProfileModal({ isOpen, onClose }) {
   const [selectedTitle, setSelectedTitle] =useState('');
 
   const modalRef = useRef();
+  const typingInputRef = document.querySelector('.typing-input-container input');
+
 
   // Function to add cache busting parameter to image URL (this is so scuffed, even if it works pls refine ammaar)
   const getCacheBustedImageUrl = (url) => {
@@ -34,6 +36,11 @@ function ProfileModal({ isOpen, onClose }) {
       // Close if clicked outside the modal content area
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         onClose();
+        setTimeout(() => {
+          if (typingInputRef) {
+            typingInputRef.focus();
+          }
+        }, 10);
       }
     };
 
