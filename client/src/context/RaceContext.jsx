@@ -535,18 +535,19 @@ export const RaceProvider = ({ children }) => {
       }
     }
     
-    // Count correct characters up to firstErrorPosition
-    for (let i = 0; i < input.length && i < text.length; i++) {
-      if (i < firstErrorPosition) {
-        // All characters before the first error are correct by definition
-        correctChars++;
-      } else if (input[i] === text[i]) {
-        // After the first error, only count matching characters
-        // but we don't count this for accuracy - just for WPM
-        correctChars++;
-      } else {
-        currentErrors++;
-      }
+    // Count only the contiguous correct characters from the start of the snippet.
+    // As soon as an error is encountered we stop counting further characters.
+    if (!hasError) {
+      // No error – all typed characters are correct up to input length (bounded by snippet length)
+      correctChars = Math.min(input.length, text.length);
+    } else {
+      // Error present – only count chars before the first error index
+      correctChars = firstErrorPosition;
+    }
+
+    // Count current error characters (everything typed after first error is considered incorrect)
+    if (hasError) {
+      currentErrors = input.length - firstErrorPosition;
     }
     
     // Get previous total errors (persist even after fixes)
@@ -573,9 +574,9 @@ export const RaceProvider = ({ children }) => {
     const totalCharsForAccuracy = Math.min(firstErrorPosition, input.length) + totalErrors;
     const accuracyCorrectChars = Math.min(firstErrorPosition, input.length);
     
-    // Calculate WPM using all correctly typed characters
-    const words = correctChars / 5; // standard definition: 1 word = 5 chars
-    const wpm = (words / elapsedSeconds) * 60;
+    // Calculate WPM using only correctly typed characters (prevents inflation)
+    const words = correctChars / 5; // Standard definition: 1 word = 5 correct chars
+    const wpm = elapsedSeconds > 0 ? (words / elapsedSeconds) * 60 : 0;
     
     // Calculate accuracy using only valid characters (before first error) plus cumulative errors
     const accuracy = totalCharsForAccuracy > 0 ? (accuracyCorrectChars / totalCharsForAccuracy) * 100 : 100;
@@ -657,7 +658,7 @@ export const RaceProvider = ({ children }) => {
         // For TIMED tests, calculate final WPM and completion time based on fixed duration
         if (isTimedPractice && raceState.snippet?.duration) {
           const durationInMinutes = raceState.snippet.duration / 60;
-          // Use correctChars from the current scope, which reflects the final count
+          // Use correctChars which contains only valid characters
           const finalWords = correctChars / 5;
           finalWpm = durationInMinutes > 0 ? (finalWords / durationInMinutes) : 0;
           finalCompletionTime = raceState.snippet.duration; // Use fixed duration

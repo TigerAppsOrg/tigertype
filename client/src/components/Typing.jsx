@@ -428,8 +428,8 @@ function Typing({
 
             // Recalculate final WPM using fixed duration and total characters typed
             const durationInMinutes = duration / 60;
-            // Use typingState.position which reflects the total chars typed, consistent with live WPM
-            const finalWords = typingState.position / 5;
+            // Use typingState.correctChars to prevent inflation from incorrect inputs
+            const finalWords = typingState.correctChars / 5;
             const finalWpm = durationInMinutes > 0 ? (finalWords / durationInMinutes) : 0;
             // Capture accuracy at the moment of completion
             const finalAccuracy = typingState.accuracy;
@@ -490,7 +490,8 @@ function Typing({
       wpmInterval = setInterval(() => {
         const time = (Date.now() - raceState.startTime) / 1000;
         const minutes = time / 60;
-        const charCount = typingState.position; // Use pos from typingState
+        // Use only correctly typed characters to calculate WPM
+        const charCount = typingState.correctChars; // Use correctChars to prevent inflation from incorrect inputs
         const words = charCount / 5;
         const currentWpm = minutes > 0 ? Math.round(words / minutes) : 0;
         setDisplayedWpm(currentWpm);
@@ -504,7 +505,7 @@ function Typing({
     return () => {
       if (wpmInterval) clearInterval(wpmInterval);
     };
-  }, [raceState.inProgress, raceState.startTime, raceState.completed, typingState.position]); // Include typingState.position
+  }, [raceState.inProgress, raceState.startTime, raceState.completed, typingState.correctChars]); // Include typingState.correctChars
 
   // Handle typing input with word locking
   const handleComponentInput = (e) => {
