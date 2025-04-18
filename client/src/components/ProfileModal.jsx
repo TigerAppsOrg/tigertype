@@ -18,6 +18,8 @@ function ProfileModal({ isOpen, onClose }) {
   const [loadingStats, setLoadingStats] = useState(true);
   const [selectedTitle, setSelectedTitle] =useState('');
 
+  const modalRef = useRef();
+
   // Function to add cache busting parameter to image URL (this is so scuffed, even if it works pls refine ammaar)
   const getCacheBustedImageUrl = (url) => {
     if (!url) return defaultProfileImage;
@@ -25,6 +27,41 @@ function ProfileModal({ isOpen, onClose }) {
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}t=${timestamp}`;
   };
+
+  // Handle closing modal on outside click or ESC key
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      // Close if clicked outside the modal content area
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    const handleEscapeKey = (event) => {
+      // Close if Escape key is pressed
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      // Add event listeners when the modal is open
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleEscapeKey);
+    } else {
+      // Clean up listeners when modal is closed
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscapeKey);
+    }
+
+    // Cleanup function to remove listeners when the component unmounts or isOpen changes
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isOpen, onClose]); // Re-run effect if isOpen or onClose changes
+
+  if (!isOpen) {return null};
 
   // Fetch detailed stats when component mounts
   useEffect(() => {
@@ -252,7 +289,7 @@ function ProfileModal({ isOpen, onClose }) {
 
   return (
     <div className="profile-overlay">
-      <div className="profile-container">
+      <div className="profile-container" ref={modalRef}>
 
         <div className="back-button-container">
           <button className="back-button-profile" onClick={onClose}>

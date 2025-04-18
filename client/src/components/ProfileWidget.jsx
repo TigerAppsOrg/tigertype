@@ -1,3 +1,5 @@
+// merge conflict debugged with ai
+
 import PropTypes from 'prop-types';
 import ProfileModal from './ProfileModal.jsx';
 import { useState } from 'react';
