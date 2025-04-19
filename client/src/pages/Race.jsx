@@ -88,7 +88,8 @@ function Race() {
           <button className="back-button" onClick={handleBack}>
             <span>⟵</span> Back
           </button>
-          {raceState.type !== 'practice' && raceState.code && (
+          {/* Only show lobby code for private lobbies */}
+          {raceState.type === 'private' && raceState.code && (
             <div className="lobby-code">Lobby Code: {raceState.code}</div>
           )}
         </div>

@@ -101,6 +101,11 @@ function AppRoutes() {
             </ProtectedRoute>
           } />
           <Route path="/about" element={<AboutUs />} /> {/* Add route for About Us page */}
+          <Route path="/lobby/:code" element={
+            <ProtectedRoute>
+              <Lobby />
+            </ProtectedRoute>
+          } />
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
