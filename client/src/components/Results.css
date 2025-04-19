@@ -400,6 +400,7 @@
 
   .leaderboard-shortcut-btn i {
     font-size: 1.1em;
+    margin-right: 0.5rem;
   }
   
   /* Highlight highest value */
@@ -534,4 +535,59 @@
     color: #F58025;
     width: 2.5rem;
     height: 2.5rem;
+  }
+
+  /* --------------------------------------- */
+  /* Course Review Button – polished style  */
+  /* --------------------------------------- */
+
+  .course-review-btn {
+    margin-top: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background-color: transparent; /* Subtle ghost‑style */
+    color: #cfcfcf;
+    border: 1px solid #555;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    box-shadow: none;
+  }
+
+  .course-review-btn:hover,
+  .course-review-btn:focus {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: #777;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .course-review-btn:active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #888;
+  }
+
+  .course-review-btn i {
+    font-size: 1rem;
+  }
+
+  /* --------------------------------------- */
+  /* Snippet Source Label                    */
+  /* --------------------------------------- */
+
+  .snippet-info {
+    margin-top: 0.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .snippet-info strong {
+    color: #F58025;
+    font-weight: 600;
   }

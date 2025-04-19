@@ -390,6 +390,23 @@ const User = {
     } catch (error) {
       console.error(`Error updating fastest_wpm for user ${userId}:`, error);
     }
+  },
+
+  // Increment only races_completed for private lobbies (words typed is tracked via race_results)
+  async incrementPrivateRaceStats(userId) {
+    if (!userId) return;
+    try {
+      const user = await User.findById(userId);
+      if (!user) return;
+      const newRacesCompleted = (user.races_completed || 0) + 1;
+      await pool.query(
+        'UPDATE users SET races_completed = $1 WHERE id = $2',
+        [newRacesCompleted, userId]
+      );
+      console.log(`Incremented races_completed for user ${userId} (private lobby) to ${newRacesCompleted}`);
+    } catch (error) {
+      console.error(`Error incrementing private race stats for user ${userId}:`, error);
+    }
   }
 };
 
