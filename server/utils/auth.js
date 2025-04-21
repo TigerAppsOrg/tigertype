@@ -90,11 +90,17 @@ function casAuth(req, res, next) {
   // check for CAS ticket in query params
   const ticket = req.query.ticket;
   
+  // Get the host and protocol from the request
+  const host = req.get('host');
+  // Always use HTTPS for type.tigerapps.org
+  const protocol = host === 'type.tigerapps.org' ? 'https' : (req.get('X-Forwarded-Proto') || req.protocol);
+  
   if (!ticket) {
     // redirect to CAS login if no ticket is present
     console.debug('No CAS ticket found, redirecting to CAS login...');
     try {
-      const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString(); // Use URL constructor
+      // Construct service URL consistently using the same protocol and host from the request
+      const serviceUrl = `${protocol}://${host}/auth/login`;
       const loginUrl = new URL('login', CAS_URL);
       loginUrl.searchParams.set('service', serviceUrl);
       console.debug('Redirecting to:', loginUrl.toString());
@@ -108,10 +114,8 @@ function casAuth(req, res, next) {
   console.debug('CAS ticket found, validating ticket:', ticket);
   
   // Construct the original request URL correctly for validation
-  // Use req.protocol, req.get('host'), and req.originalUrl to reflect the actual request URL
-  // Prioritize X-Forwarded-Proto header for accurate protocol detection behind proxies
-  const protocol = req.get('X-Forwarded-Proto') || req.protocol; 
-  const requestUrl = `${protocol}://${req.get('host')}${req.originalUrl}`;
+  // Always use HTTPS for type.tigerapps.org
+  const requestUrl = `${protocol}://${host}${req.originalUrl}`;
   
   // validate the ticket
   validate(ticket, requestUrl)
@@ -120,7 +124,8 @@ function casAuth(req, res, next) {
         // if ticket invalid, redirect to CAS login again
         console.debug('Invalid CAS ticket, redirecting to CAS login...');
         try {
-          const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
+          // Use the same consistent service URL construction
+          const serviceUrl = `${protocol}://${host}/auth/login`;
           const loginUrl = new URL('login', CAS_URL);
           loginUrl.searchParams.set('service', serviceUrl);
           return res.redirect(loginUrl.toString());
