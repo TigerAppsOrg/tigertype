@@ -168,15 +168,15 @@ function casAuth(req, res, next) {
             // Optionally update session with userId if needed later, but session is already saved
             // req.session.userInfo.userId = user.id; // This would require another save()
             
-            // 4. Redirect to home page
-            const homeUrl = new URL('/home', FRONTEND_URL).toString();
+            // 4. Redirect to home page using the same protocol and host
+            const homeUrl = `${protocol}://${host}/home`;
             console.debug('Redirecting to home after DB operation:', homeUrl);
             res.redirect(homeUrl);
           })
           .catch(dbErr => {
             console.error('Error creating/finding user in database (session already saved):', dbErr);
             // Session is saved, so user is logged in. Redirect to home even on DB error.
-            const homeUrl = new URL('/home', FRONTEND_URL).toString();
+            const homeUrl = `${protocol}://${host}/home`;
             console.debug('Redirecting to home despite DB error:', homeUrl);
             res.redirect(homeUrl);
           });
