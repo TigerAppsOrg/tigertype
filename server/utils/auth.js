@@ -90,17 +90,11 @@ function casAuth(req, res, next) {
   // check for CAS ticket in query params
   const ticket = req.query.ticket;
   
-  // Get the host and protocol from the request
-  const host = req.get('host');
-  // Always use HTTPS for type.tigerapps.org
-  const protocol = host === 'type.tigerapps.org' ? 'https' : (req.get('X-Forwarded-Proto') || req.protocol);
-  
   if (!ticket) {
     // redirect to CAS login if no ticket is present
     console.debug('No CAS ticket found, redirecting to CAS login...');
     try {
-      // Construct service URL consistently using the same protocol and host from the request
-      const serviceUrl = `${protocol}://${host}/auth/login`;
+      const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString(); // Use URL constructor
       const loginUrl = new URL('login', CAS_URL);
       loginUrl.searchParams.set('service', serviceUrl);
       console.debug('Redirecting to:', loginUrl.toString());
@@ -114,9 +108,16 @@ function casAuth(req, res, next) {
   console.debug('CAS ticket found, validating ticket:', ticket);
   
   // Construct the original request URL correctly for validation
-  // Always use HTTPS for type.tigerapps.org
-  const requestUrl = `${protocol}://${host}${req.originalUrl}`;
-  
+  let requestUrl;
+  try {
+    // req.originalUrl might contain leading slashes we need to handle
+    const pathName = req.originalUrl.startsWith('//') ? req.originalUrl.substring(1) : req.originalUrl;
+    requestUrl = new URL(pathName, FRONTEND_URL).toString();
+  } catch (error) {
+    console.error("Error constructing request URL for validation:", error);
+    return res.status(500).send('Authentication error');
+  }
+
   // validate the ticket
   validate(ticket, requestUrl)
     .then(userInfo => {
@@ -124,8 +125,7 @@ function casAuth(req, res, next) {
         // if ticket invalid, redirect to CAS login again
         console.debug('Invalid CAS ticket, redirecting to CAS login...');
         try {
-          // Use the same consistent service URL construction
-          const serviceUrl = `${protocol}://${host}/auth/login`;
+          const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
           const loginUrl = new URL('login', CAS_URL);
           loginUrl.searchParams.set('service', serviceUrl);
           return res.redirect(loginUrl.toString());
@@ -168,15 +168,15 @@ function casAuth(req, res, next) {
             // Optionally update session with userId if needed later, but session is already saved
             // req.session.userInfo.userId = user.id; // This would require another save()
             
-            // 4. Redirect to home page using the same protocol and host
-            const homeUrl = `${protocol}://${host}/home`;
+            // 4. Redirect to home page
+            const homeUrl = new URL('/home', FRONTEND_URL).toString();
             console.debug('Redirecting to home after DB operation:', homeUrl);
             res.redirect(homeUrl);
           })
           .catch(dbErr => {
             console.error('Error creating/finding user in database (session already saved):', dbErr);
             // Session is saved, so user is logged in. Redirect to home even on DB error.
-            const homeUrl = `${protocol}://${host}/home`;
+            const homeUrl = new URL('/home', FRONTEND_URL).toString();
             console.debug('Redirecting to home despite DB error:', homeUrl);
             res.redirect(homeUrl);
           });
