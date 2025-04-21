@@ -109,8 +109,9 @@ function casAuth(req, res, next) {
   
   // Construct the original request URL correctly for validation
   // Use req.protocol, req.get('host'), and req.originalUrl to reflect the actual request URL
-  // This honors 'trust proxy' settings for protocol and host
-  const requestUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  // Prioritize X-Forwarded-Proto header for accurate protocol detection behind proxies
+  const protocol = req.get('X-Forwarded-Proto') || req.protocol; 
+  const requestUrl = `${protocol}://${req.get('host')}${req.originalUrl}`;
   
   // validate the ticket
   validate(ticket, requestUrl)
