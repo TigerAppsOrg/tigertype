@@ -74,7 +74,7 @@ const sessionMiddleware = session({
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
+    httpOnly: false,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     // explicitly set domain for production to avoid ambiguity with custom domains
