@@ -108,16 +108,10 @@ function casAuth(req, res, next) {
   console.debug('CAS ticket found, validating ticket:', ticket);
   
   // Construct the original request URL correctly for validation
-  let requestUrl;
-  try {
-    // req.originalUrl might contain leading slashes we need to handle
-    const pathName = req.originalUrl.startsWith('//') ? req.originalUrl.substring(1) : req.originalUrl;
-    requestUrl = new URL(pathName, FRONTEND_URL).toString();
-  } catch (error) {
-    console.error("Error constructing request URL for validation:", error);
-    return res.status(500).send('Authentication error');
-  }
-
+  // Use req.protocol, req.get('host'), and req.originalUrl to reflect the actual request URL
+  // This honors 'trust proxy' settings for protocol and host
+  const requestUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  
   // validate the ticket
   validate(ticket, requestUrl)
     .then(userInfo => {
