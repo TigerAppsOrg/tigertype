@@ -164,4 +164,35 @@ exports.uploadAvatar = (req, res) => {
       res.status(500).json({ message: 'Error processing avatar upload.' });
     }
   });
+};
+
+// Mark the tutorial as completed for the logged-in user
+exports.markTutorialComplete = async (req, res) => {
+  const userId = req.user.id;
+
+  if (!userId) {
+    // This should technically be caught by ensureAuthenticated, but good practice
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
+  try {
+    const result = await UserModel.markTutorialAsCompleted(userId);
+    if (!result) {
+      // Handle case where user doesn't exist (shouldn't happen if authenticated)
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    // Successfully updated the flag
+    console.log(`User ${userId} marked tutorial as complete.`);
+    // Send back minimal confirmation, perhaps updated user flag status if needed by frontend
+    res.status(200).json({ 
+        message: 'Tutorial marked as complete.', 
+        user: { 
+            id: result.id, 
+            has_completed_tutorial: result.has_completed_tutorial 
+        }
+    }); 
+  } catch (error) {
+    console.error(`Error marking tutorial complete for user ${userId}:`, error);
+    res.status(500).json({ message: 'Error updating tutorial completion status.' });
+  }
 }; 

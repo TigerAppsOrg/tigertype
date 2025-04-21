@@ -21,6 +21,7 @@ const fs = require('fs');
 const pgSession = require('connect-pg-simple')(session);
 const { pool } = require('./server/config/database');
 const { initDB, logDatabaseState } = require('./server/db');
+const { runMigrations } = require('./server/db/migrations');
 
 // Initialize Express app
 const app = express();
@@ -243,10 +244,15 @@ const startServer = async () => {
       
       // Run database initialization
       await db.initDB();
+      console.log('Database initialized successfully.');
+
+      // Run pending database migrations
+      console.log('Running database migrations...');
+      await runMigrations();
+      console.log('Database migrations completed.');
       
       // Check for discrepancies in fastest_wpm values and fix if needed
       try {
-        const { pool } = require('./server/config/database');
         const client = await pool.connect();
         
         try {

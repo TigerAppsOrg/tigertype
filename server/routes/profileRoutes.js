@@ -10,4 +10,7 @@ router.post('/bio', ensureAuthenticated, profileController.updateBio);
 // Route to upload user avatar (requires auth)
 router.post('/avatar', ensureAuthenticated, profileController.uploadAvatar);
 
+// Route to mark tutorial as complete (requires auth)
+router.put('/tutorial-complete', ensureAuthenticated, profileController.markTutorialComplete);
+
 module.exports = router; 

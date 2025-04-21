@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
   avg_wpm NUMERIC(5,2) DEFAULT 0,
   avg_accuracy NUMERIC(5,2) DEFAULT 0,
   races_completed INTEGER DEFAULT 0,
-  fastest_wpm NUMERIC(5,2) DEFAULT 0
+  fastest_wpm NUMERIC(5,2) DEFAULT 0,
+  has_completed_tutorial BOOLEAN DEFAULT false
 );
 
 -- Snippets table for storing text that users will type

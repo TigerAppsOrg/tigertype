@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'; // Import useLocation
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import './App.css';
 
 // Context Providers
@@ -36,11 +36,21 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Helper component to conditionally render Navbar
+// Helper component to conditionally render Navbar and manage Tutorial
 const ConditionalNavbar = () => {
   const location = useLocation();
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
-  const { login } = useAuth();
+  const { login, authenticated, user, loading } = useAuth();
+  const [isTutorialRunning, setTutorialRunning] = useState(false);
+
+  // Effect to auto-start tutorial for new users
+  useEffect(() => {
+    // Check only when auth loading is complete and user is authenticated
+    if (!loading && authenticated && user && !user.has_completed_tutorial) {
+      console.log('User logged in and has not completed tutorial. Starting tutorial automatically.');
+      setTutorialRunning(true);
+    }
+  }, [authenticated, user, loading]); // Depend on auth state, user object, and loading status
   
   // Don't render Navbar on the landing page
   if (location.pathname === '/') {
@@ -56,6 +66,8 @@ const ConditionalNavbar = () => {
       <Navbar 
         onOpenLeaderboard={handleOpenLeaderboard}
         onLoginClick={login}
+        isTutorialRunning={isTutorialRunning}
+        setTutorialRunning={setTutorialRunning}
       />
       
       {/* Leaderboard Modal */}

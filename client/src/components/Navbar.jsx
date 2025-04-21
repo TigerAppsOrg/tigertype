@@ -7,10 +7,11 @@ import './Navbar.css';
 import { useRace } from '../context/RaceContext';
 import PropTypes from 'prop-types'; // Import PropTypes
 import navbarLogo from '../assets/logos/navbar-logo.png';
+import TutorialGuide from './TutorialGuide'; // Import TutorialGuide
 
-function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
+function Navbar({ onOpenLeaderboard, onLoginClick, isTutorialRunning, setTutorialRunning }) { // Added tutorial props
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { authenticated, user, logout } = useAuth();
+  const { authenticated, user, logout, markTutorialComplete } = useAuth();
   const navigate = useNavigate();
   const {
     raceState,
@@ -37,22 +38,44 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
     };
   };
 
+  // Function to handle the end of the tutorial (called by TutorialGuide)
+  const handleTutorialEnd = () => {
+    setTutorialRunning(false);
+    // No need to call markTutorialComplete here, TutorialGuide handles it
+  };
+
+  // Function to start the tutorial replay
+  const startTutorialReplay = () => {
+    setTutorialRunning(true);
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-logo">
-        <button type='' onClick={handleLogo}>
+        <button type='button' onClick={handleLogo} className="logo-button"> {/* Added className */} 
           <img src={navbarLogo} alt="TigerType" />
         </button>
-        {/* Conditionally render settings button only when authenticated */}
+        {/* Buttons container */} 
         {authenticated && (
-          <button
-            className="settings-button"
-            onClick={() => setIsSettingsOpen(true)}
-            aria-label="Open settings"
-            tabIndex={0}
-          >
-            <span className="material-icons settings-icon">settings</span>
-          </button>
+          <div className="navbar-icons"> {/* Added container for icons */} 
+            <button
+              className="settings-button navbar-settings-icon" // Added identifier class
+              onClick={() => setIsSettingsOpen(true)}
+              aria-label="Open settings"
+              tabIndex={0}
+            >
+              <span className="material-icons">settings</span>
+            </button>
+            {/* Tutorial Replay Button */} 
+            <button
+              className="tutorial-replay-button"
+              onClick={startTutorialReplay}
+              aria-label="Replay tutorial"
+              tabIndex={0}
+            >
+              <span className="material-icons">help_outline</span> {/* Question mark icon */}
+            </button>
+          </div>
         )}
       </div>
       <nav className="navbar-links">
@@ -114,6 +137,14 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)}
       />
+      
+      {/* Render TutorialGuide conditionally based on authenticated status */} 
+      {authenticated && (
+        <TutorialGuide 
+          isTutorialRunning={isTutorialRunning} 
+          handleTutorialEnd={handleTutorialEnd} 
+        />
+      )}
     </header>
   );
 }
@@ -122,6 +153,8 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
 Navbar.propTypes = {
   onOpenLeaderboard: PropTypes.func,
   onLoginClick: PropTypes.func,
+  isTutorialRunning: PropTypes.bool.isRequired, // Added prop type
+  setTutorialRunning: PropTypes.func.isRequired, // Added prop type
 };
 
 export default Navbar;
