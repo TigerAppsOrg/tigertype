@@ -37,8 +37,8 @@ const io = socketIO(server, {
 });
 
 // --- Trust Proxy --- 
-// Required for secure cookies to work correctly behind Heroku's proxy
-app.set('trust proxy', 1); 
+// Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
+app.set('trust proxy', true); 
 
 // // Force HTTPS redirect in production
 // if (process.env.NODE_ENV === 'production') {
