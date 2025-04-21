@@ -40,19 +40,19 @@ const io = socketIO(server, {
 // Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
 app.set('trust proxy', true); 
 
-// Force HTTPS redirect in production
-if (process.env.NODE_ENV === 'production') {
-  app.use((req, res, next) => {
-    if (req.secure) {
-      // Request is alr secure, proceed
-      next();
-    } else {
-      // Redirect to HTTPS with 301 permanent redirect
-      const httpsUrl = 'https://' + req.headers.host + req.url;
-      res.redirect(301, httpsUrl);
-    }
-  });
-}
+// // Force HTTPS redirect in production
+// if (process.env.NODE_ENV === 'production') {
+//   app.use((req, res, next) => {
+//     if (req.secure) {
+//       // Request is alr secure, proceed
+//       next();
+//     } else {
+//       // Redirect to HTTPS with 301 permanent redirect
+//       const httpsUrl = 'https://' + req.headers.host + req.url;
+//       res.redirect(301, httpsUrl);
+//     }
+//   });
+// }
 
 // Configure CORS
 const corsOptions = {
