@@ -117,26 +117,44 @@ export const AuthProvider = ({ children }) => {
 
   // Function to mark the tutorial as completed
   const markTutorialComplete = useCallback(async () => {
+    // Wait briefly if user is not loaded yet (e.g., right after login/refresh)
     if (!user || !user.id) {
-      console.error('Cannot mark tutorial complete: user not loaded or missing ID.');
-      return;
+      console.log('User data not immediately available for markTutorialComplete, waiting 500ms...');
+      await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+      // Re-check after waiting
+      const currentUser = window.user; // Check the potentially updated window.user
+      if (!currentUser || !currentUser.id) {
+        console.error('Cannot mark tutorial complete: User data still not available after waiting.');
+        return;
+      }
+      // Proceed with the potentially updated user object
+      try {
+        const response = await axios.put('/api/user/tutorial-complete');
+        if (response.status === 200 && response.data.user) {
+          updateUser({ has_completed_tutorial: true });
+          console.log('Tutorial marked as complete locally and on backend.');
+        } else {
+          console.error('Backend failed to mark tutorial as complete.', response.data);
+        }
+      } catch (err) {
+        console.error('Error calling backend to mark tutorial complete:', err);
+      }
+      return; // Exit after handling the delayed case
     }
+
+    // Original logic if user is available immediately
     try {
-      // Call the backend API
       const response = await axios.put('/api/user/tutorial-complete');
       if (response.status === 200 && response.data.user) {
-        // Update local user state to reflect the change
         updateUser({ has_completed_tutorial: true });
         console.log('Tutorial marked as complete locally and on backend.');
       } else {
         console.error('Backend failed to mark tutorial as complete.', response.data);
-        // Optionally set an error state here
       }
     } catch (err) {
       console.error('Error calling backend to mark tutorial complete:', err);
-      // Optionally set an error state here
     }
-  }, [user]); // Depends on the user object (specifically user.id)
+  }, [user]); // Depends on the user object
 
   return (
     <AuthContext.Provider value={{
