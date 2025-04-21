@@ -75,8 +75,12 @@ const sessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    // explicitly set domain for production to avoid ambiguity with custom domains
+    domain: process.env.NODE_ENV === 'production' && process.env.SERVICE_URL 
+            ? new URL(process.env.SERVICE_URL).hostname 
+            : undefined
   }
 });
 
