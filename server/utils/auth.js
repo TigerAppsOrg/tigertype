@@ -32,6 +32,7 @@ function getCookieDomain() {
     
     // For tigerapps.org domain, return the base domain to allow subdomains to share cookies
     if (hostname.includes('tigerapps.org')) {
+      console.debug('Setting cookie domain to .tigerapps.org for tigerapps subdomain');
       return '.tigerapps.org';
     }
     
@@ -46,9 +47,12 @@ function getCookieDomain() {
 // Export cookie settings for use in session configuration
 const cookieSettings = {
   domain: getCookieDomain(),
-  secure: process.env.NODE_ENV !== 'development', // Secure in production
-  sameSite: 'lax' // Allow cookies to be sent on redirects from CAS
+  secure: false, // Allow non-secure cookies for now to debug
+  sameSite: 'none', // Use 'none' to allow cross-site cookies
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
 };
+
+console.debug('Cookie settings configured:', cookieSettings);
 
 /**
  * strip ticket parameter from URL
@@ -177,8 +181,12 @@ function casAuth(req, res, next) {
       const netid = userInfo.user; // Extract netid earlier
 
       // Set appropriate cookie settings for our domain
-      if (req.session.cookie && cookieSettings.domain) {
-        req.session.cookie.domain = cookieSettings.domain;
+      if (req.session.cookie) {
+        console.debug('Applying cookie settings to session:', cookieSettings);
+        if (cookieSettings.domain) req.session.cookie.domain = cookieSettings.domain;
+        if (cookieSettings.secure !== undefined) req.session.cookie.secure = cookieSettings.secure;
+        if (cookieSettings.sameSite) req.session.cookie.sameSite = cookieSettings.sameSite;
+        if (cookieSettings.maxAge) req.session.cookie.maxAge = cookieSettings.maxAge;
       }
 
       // 2. Save the session *before* database operations
@@ -197,6 +205,8 @@ function casAuth(req, res, next) {
         }
 
         console.debug('Session saved successfully after validation.');
+        console.debug('Session ID:', req.session.id);
+        console.debug('Session cookie:', req.session.cookie);
 
         // 3. Perform database operation (user creation/update) *after* session is saved
         const UserModel = require('../models/user');
@@ -208,9 +218,20 @@ function casAuth(req, res, next) {
             // Optionally update session with userId if needed later, but session is already saved
             // req.session.userInfo.userId = user.id; // This would require another save()
             
-            // 4. Redirect to home page
+            // 4. Redirect to home page with cookies
             const homeUrl = new URL('/home', FRONTEND_URL).toString();
             console.debug('Redirecting to home after DB operation:', homeUrl);
+
+            // Ensure session is persisted by explicitly setting cookie headers
+            res.cookie('connect.sid', req.sessionID, {
+              domain: cookieSettings.domain,
+              secure: cookieSettings.secure,
+              httpOnly: true,
+              maxAge: cookieSettings.maxAge,
+              sameSite: cookieSettings.sameSite,
+              path: '/'
+            });
+
             res.redirect(homeUrl);
           })
           .catch(dbErr => {
@@ -218,6 +239,17 @@ function casAuth(req, res, next) {
             // Session is saved, so user is logged in. Redirect to home even on DB error.
             const homeUrl = new URL('/home', FRONTEND_URL).toString();
             console.debug('Redirecting to home despite DB error:', homeUrl);
+            
+            // Ensure session is persisted by explicitly setting cookie headers
+            res.cookie('connect.sid', req.sessionID, {
+              domain: cookieSettings.domain,
+              secure: cookieSettings.secure,
+              httpOnly: true,
+              maxAge: cookieSettings.maxAge,
+              sameSite: cookieSettings.sameSite,
+              path: '/'
+            });
+            
             res.redirect(homeUrl);
           });
       }); // End of req.session.save()
