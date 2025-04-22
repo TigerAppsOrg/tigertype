@@ -12,61 +12,10 @@ const path = require('path');
 // CAS URL for Princeton authentication
 const CAS_URL = 'https://fed.princeton.edu/cas/';
 
-// Frontend URL for redirects - Use SERVICE_URL in production, fallback if needed
+// Frontend URL for redirects
 const FRONTEND_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:5174'  // Development frontend URL
-  : process.env.SERVICE_URL; // Production frontend URL from Heroku config
-
-// Check if FRONTEND_URL is defined in production
-if (process.env.NODE_ENV === 'production' && !FRONTEND_URL) {
-  console.error('CRITICAL: SERVICE_URL environment variable is not set in production!');
-  // Provide a default or exit if this is critical
-  // process.exit(1);
-}
-console.log(`Auth Module: FRONTEND_URL configured as: ${FRONTEND_URL}`);
-
-/**
- * Get cookie domain based on service URL
- * @returns {string|undefined} Cookie domain or undefined for default behavior
- */
-function getCookieDomain() {
-  if (process.env.NODE_ENV === 'development') {
-    return undefined; // Use default for development
-  }
-  
-  try {
-    // Ensure FRONTEND_URL is valid before parsing
-    if (!FRONTEND_URL || typeof FRONTEND_URL !== 'string') {
-      console.error('Cannot determine cookie domain: FRONTEND_URL is invalid or not set.', FRONTEND_URL);
-      return undefined;
-    }
-    const url = new URL(FRONTEND_URL);
-    const hostname = url.hostname;
-    
-    // For tigerapps.org domain, return the base domain to allow subdomains to share cookies
-    if (hostname.includes('tigerapps.org')) {
-      console.debug('Setting cookie domain to .tigerapps.org for tigerapps subdomain');
-      return '.tigerapps.org';
-    }
-    
-    // For other domains (like heroku), return the exact hostname
-    console.debug('Setting cookie domain to:', hostname);
-    return hostname;
-  } catch (error) {
-    console.error('Error determining cookie domain:', error);
-    return undefined; // Use default behavior on error
-  }
-}
-
-// Export cookie settings for use in session configuration
-const cookieSettings = {
-  domain: getCookieDomain(),
-  secure: process.env.NODE_ENV !== 'development', // MUST be true for sameSite: 'none'
-  sameSite: 'none', // Use 'none' to allow cross-site cookies from CAS
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-};
-
-console.debug('Cookie settings configured:', cookieSettings);
+  : process.env.SERVICE_URL; // Production frontend URL
 
 /**
  * strip ticket parameter from URL
@@ -99,7 +48,6 @@ async function validate(ticket, requestUrl) {
     const serviceUrl = stripTicket(requestUrl);
     const validationUrl = `${CAS_URL}validate?service=${encodeURIComponent(serviceUrl)}&ticket=${encodeURIComponent(ticket)}&format=json`;
     
-    console.debug('Validating CAS ticket with URL:', validationUrl);
     const response = await axios.get(validationUrl);
     const result = response.data;
     
@@ -165,7 +113,6 @@ function casAuth(req, res, next) {
     // req.originalUrl might contain leading slashes we need to handle
     const pathName = req.originalUrl.startsWith('//') ? req.originalUrl.substring(1) : req.originalUrl;
     requestUrl = new URL(pathName, FRONTEND_URL).toString();
-    console.debug('Constructed request URL for validation:', requestUrl);
   } catch (error) {
     console.error("Error constructing request URL for validation:", error);
     return res.status(500).send('Authentication error');
@@ -194,15 +141,6 @@ function casAuth(req, res, next) {
       req.session.userInfo = userInfo;
       const netid = userInfo.user; // Extract netid earlier
 
-      // Set appropriate cookie settings for our domain
-      if (req.session.cookie) {
-        console.debug('Applying cookie settings to session:', cookieSettings);
-        if (cookieSettings.domain) req.session.cookie.domain = cookieSettings.domain;
-        if (cookieSettings.secure !== undefined) req.session.cookie.secure = cookieSettings.secure;
-        if (cookieSettings.sameSite) req.session.cookie.sameSite = cookieSettings.sameSite;
-        if (cookieSettings.maxAge) req.session.cookie.maxAge = cookieSettings.maxAge;
-      }
-
       // 2. Save the session *before* database operations
       req.session.save((err) => {
         if (err) {
@@ -219,8 +157,6 @@ function casAuth(req, res, next) {
         }
 
         console.debug('Session saved successfully after validation.');
-        console.debug('Session ID:', req.session.id);
-        console.debug('Session cookie:', req.session.cookie);
 
         // 3. Perform database operation (user creation/update) *after* session is saved
         const UserModel = require('../models/user');
@@ -232,11 +168,9 @@ function casAuth(req, res, next) {
             // Optionally update session with userId if needed later, but session is already saved
             // req.session.userInfo.userId = user.id; // This would require another save()
             
-            // 4. Redirect to home page with cookies
+            // 4. Redirect to home page
             const homeUrl = new URL('/home', FRONTEND_URL).toString();
             console.debug('Redirecting to home after DB operation:', homeUrl);
-
-            // Rely on express-session's built-in Set-Cookie header (signed) instead of manual cookie
             res.redirect(homeUrl);
           })
           .catch(dbErr => {
@@ -318,6 +252,5 @@ module.exports = {
   isAuthenticated,
   getAuthenticatedUser,
   logoutApp,
-  logoutCAS,
-  cookieSettings // Export cookie settings for use in session configuration
+  logoutCAS
 }; 
