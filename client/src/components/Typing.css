@@ -273,15 +273,15 @@
   position: absolute;
   content: "|";
   color: var(--princeton-orange)!important;
-  animation: slide 0.06s ease-out;
-  right: 70%;
+  animation: slide 0.08s ease-out;
+  right: 50%;
   transform: scale(180%, 1);
 }
 
 /* Animation for smooth line-cursor */
 @keyframes slide {
-  from { right: 140%; }
-  to   { right: 70%; }
+  from { right: 100%; }
+  to   { right: 50%; }
 }
 
 @keyframes blink {
