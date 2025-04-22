@@ -132,12 +132,27 @@ function ProfileModal({ isOpen, onClose }) {
         }
 
         const data = await response.json();
+        console.log('Match history data:', data);
+
         for (let i of data) {
           let temp = String(i['lobby_type']);
           let cap = temp.slice(0, 1);
           cap = cap.toUpperCase();
           temp = cap + temp.slice(1);
           i['lobby_type'] = temp; // Capitalize the first letter of lobby_type
+
+          let temp1 = i['position'];
+          if (temp1 === '1') {
+            temp1 += 'st';
+          } else if (temp1 === '2') {
+            temp1 += 'nd';
+          }
+          else if (temp1 === '3') {
+            temp1 += 'rd';
+          } else if (typeof temp1 === 'string'){
+            temp1 += 'th';
+          }
+          i['position'] = temp1; // Add suffix to position
         }
         console.log('Match history data:', data);
 
