@@ -21,8 +21,8 @@ const PROGRESS_THROTTLE = 100; // ms
 const lastProgressUpdate = new Map();
 
 // Inactivity warning and timeout settings
-const INACTIVITY_WARNING_DELAY = 60000; // 60 seconds before warning
-const INACTIVITY_KICK_DELAY = 30000; // 30 seconds before kick (45 seconds total)
+const INACTIVITY_WARNING_DELAY = 15000; // 60 seconds before warning
+const INACTIVITY_KICK_DELAY = 15000; // 30 seconds before kick (45 seconds total)
 const inactivityTimers = new Map(); // Store timers for inactivity warnings and kicks
 
 // Store user avatar URLs for quicker lookup
