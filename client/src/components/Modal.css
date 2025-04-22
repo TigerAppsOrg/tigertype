@@ -13,11 +13,6 @@
   animation: fadeIn 0.2s ease-out;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .modal-container {
   background-color: var(--secondary-bg-color, #2c2c2c);
   border-radius: 8px;
@@ -26,10 +21,25 @@
   padding: 1rem;
   width: 90%;
   max-width: 500px;
-  animation: scaleIn 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  animation: shake 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
   border: 1px solid var(--border-color, #444);
   display: flex;
   flex-direction: column;
+}
+
+@keyframes shake {
+  0%, 100% { 
+    background-color: var(--secondary-bg-color, #2c2c2c);
+    transform: translateX(0); 
+  }
+  10%, 30%, 50%, 70%, 90% { 
+    background-color: rgba(255, 78, 78, 0.75);
+    transform: translateX(-5px); 
+  }
+  20%, 40%, 60%, 80% { 
+    background-color: rgba(255, 78, 78, 0.75);
+    transform: translateX(5px); 
+  }
 }
 
 .modal-container.modal-large {
@@ -47,11 +57,6 @@
   flex-grow: 1;
   overflow-y: auto;
   background-color: #222222;
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
 }
 
 .modal-close-button {
