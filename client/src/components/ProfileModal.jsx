@@ -17,6 +17,8 @@ function ProfileModal({ isOpen, onClose }) {
   const [detailedStats, setDetailedStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [selectedTitle, setSelectedTitle] =useState('');
+  const [matchHistory, setMatchHistory] = useState([]);
+  const [loadingMatchHistory, setLoadingMatchHistory] = useState(true);
 
   const modalRef = useRef();
   const typingInputRef = document.querySelector('.typing-input-container input');
@@ -111,6 +113,48 @@ function ProfileModal({ isOpen, onClose }) {
       setTimestamp(Date.now());
     }
   }, [user?.avatar_url]);
+
+  // Update the fetch match history function in ProfileModal.jsx
+  useEffect(() => {
+    const fetchMatchHistory = async () => {
+      try {
+        setLoadingMatchHistory(true);
+        console.log('Fetching match history...');
+
+        const response = await fetch('/api/user/results', {
+          credentials: 'include'
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch match history: ${response.status}`);
+        }
+
+        const data = await response.json();
+        for (let i of data) {
+          let temp = String(i['lobby_type']);
+          let cap = temp.slice(0, 1);
+          cap = cap.toUpperCase();
+          temp = cap + temp.slice(1);
+          i['lobby_type'] = temp; // Capitalize the first letter of lobby_type
+        }
+        console.log('Match history data:', data);
+
+        setMatchHistory(data)
+
+      } catch (error) {
+        console.error('Error fetching match history:', error);
+        setMatchHistory([]); // Set to empty array on error
+      } finally {
+        setLoadingMatchHistory(false);
+      }
+    };
+
+    if (isOpen && user) {
+      fetchMatchHistory();
+    }
+  }, [isOpen, user, timestamp]);
 
   // Parse numeric values to check if ints
   const parseNumericValue = (value) => {
@@ -373,6 +417,42 @@ function ProfileModal({ isOpen, onClose }) {
 
             <div className='match-history'>
               <h2>Match History</h2>
+              
+              {loadingMatchHistory ? (
+                <div className="loading-message">Loading match history...</div>
+              ) : matchHistory.length === 0 ? (
+                <div className="no-matches">No race history available yet.</div>
+              ) : (
+                <div className="match-history-list">
+                  {matchHistory.map((match, index) => (
+                    <div key={index} className="match-history-card">
+                      <div className="match-date">
+                        {new Date(match.created_at).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <div className="match-details">
+                        <div className="match-type">  
+                          <div className='match-lobby-type'>
+                            {match.lobby_type}
+                          </div>
+                          <div className='match-category'>
+                            {match.source || match.category || "Race"}
+                          </div>
+                        </div>
+                        <div className='match-position'>
+                            {match.position ? `Position: ${match.position}` : ''}
+                          </div>
+                        <div className="match-stats">
+                          <span>{parseFloat(match.wpm).toFixed(0)} WPM</span>
+                          <span>{parseFloat(match.accuracy).toFixed(0)}% Acc</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
             </div>
           </div>

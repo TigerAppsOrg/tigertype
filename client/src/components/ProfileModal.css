@@ -391,6 +391,13 @@
 .match-type {
   font-size: 1.5rem;
   color: var(--mode-text-color);
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.match-position {
+  margin-right: 3rem;
 }
 
 .match-stats {

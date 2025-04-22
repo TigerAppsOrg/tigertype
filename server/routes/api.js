@@ -215,7 +215,7 @@ router.get('/user/detailed-stats', requireAuth, async (req, res) => {
 router.get('/user/results', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 3;
     
     const results = await UserModel.getRecentResults(userId, limit);
     
