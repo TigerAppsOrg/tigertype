@@ -40,7 +40,7 @@ const io = socketIO(server, {
 
 // --- Trust Proxy --- 
 // Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
-app.set('trust proxy', true); 
+app.set('trust proxy', 1); 
 
 // // Force HTTPS redirect in production
 // if (process.env.NODE_ENV === 'production') {
@@ -76,10 +76,11 @@ const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'tigertype-fallback-secret',
   resave: false,
   saveUninitialized: false,
+  name: 'connect.sid',
   cookie: {
     secure: cookieSettings.secure,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    maxAge: cookieSettings.maxAge,
     sameSite: cookieSettings.sameSite,
     domain: cookieSettings.domain
   }
@@ -87,6 +88,29 @@ const sessionMiddleware = session({
 
 // Use session middleware for Express
 app.use(sessionMiddleware);
+
+// Debug middleware to track session state
+app.use((req, res, next) => {
+  // Don't log for static assets
+  if (!req.path.includes('.') && !req.path.includes('favicon')) {
+    console.debug(`[SESSION DEBUG] Path: ${req.path}, Session ID: ${req.session.id || 'none'}, Authenticated: ${isAuthenticated(req)}`);
+    console.debug(`[COOKIE DEBUG] Cookies: ${JSON.stringify(req.headers.cookie || 'none')}`);
+  }
+  next();
+});
+
+// Log more information about request properties for debugging
+app.use((req, res, next) => {
+  if (req.path === '/auth/login' || req.path === '/home') {
+    console.debug(`[REQUEST INFO] Path: ${req.path}`);
+    console.debug(`[REQUEST INFO] Protocol: ${req.protocol}`);
+    console.debug(`[REQUEST INFO] Host: ${req.get('host')}`);
+    console.debug(`[REQUEST INFO] X-Forwarded-For: ${req.get('x-forwarded-for') || 'none'}`);
+    console.debug(`[REQUEST INFO] X-Forwarded-Proto: ${req.get('x-forwarded-proto') || 'none'}`);
+    console.debug(`[REQUEST INFO] X-Forwarded-Host: ${req.get('x-forwarded-host') || 'none'}`);
+  }
+  next();
+});
 
 // Parse JSON + URL-encoded bodies
 app.use(express.json());
