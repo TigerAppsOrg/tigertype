@@ -15,7 +15,40 @@ const CAS_URL = 'https://fed.princeton.edu/cas/';
 // Frontend URL for redirects
 const FRONTEND_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:5174'  // Development frontend URL
-  : process.env.SERVICE_URL; // Production frontend URL
+  : process.env.SERVICE_URL || 'https://tigertype-09e7d3d0a961.herokuapp.com'; // Use env var or fallback
+
+/**
+ * Get cookie domain based on service URL
+ * @returns {string|undefined} Cookie domain or undefined for default behavior
+ */
+function getCookieDomain() {
+  if (process.env.NODE_ENV === 'development') {
+    return undefined; // Use default for development
+  }
+  
+  try {
+    const url = new URL(FRONTEND_URL);
+    const hostname = url.hostname;
+    
+    // For tigerapps.org domain, return the base domain to allow subdomains to share cookies
+    if (hostname.includes('tigerapps.org')) {
+      return '.tigerapps.org';
+    }
+    
+    // For heroku domain, return the exact hostname
+    return hostname;
+  } catch (error) {
+    console.error('Error determining cookie domain:', error);
+    return undefined; // Use default behavior on error
+  }
+}
+
+// Export cookie settings for use in session configuration
+const cookieSettings = {
+  domain: getCookieDomain(),
+  secure: process.env.NODE_ENV !== 'development', // Secure in production
+  sameSite: 'lax' // Allow cookies to be sent on redirects from CAS
+};
 
 /**
  * strip ticket parameter from URL
@@ -48,6 +81,7 @@ async function validate(ticket, requestUrl) {
     const serviceUrl = stripTicket(requestUrl);
     const validationUrl = `${CAS_URL}validate?service=${encodeURIComponent(serviceUrl)}&ticket=${encodeURIComponent(ticket)}&format=json`;
     
+    console.debug('Validating CAS ticket with URL:', validationUrl);
     const response = await axios.get(validationUrl);
     const result = response.data;
     
@@ -113,6 +147,7 @@ function casAuth(req, res, next) {
     // req.originalUrl might contain leading slashes we need to handle
     const pathName = req.originalUrl.startsWith('//') ? req.originalUrl.substring(1) : req.originalUrl;
     requestUrl = new URL(pathName, FRONTEND_URL).toString();
+    console.debug('Constructed request URL for validation:', requestUrl);
   } catch (error) {
     console.error("Error constructing request URL for validation:", error);
     return res.status(500).send('Authentication error');
@@ -140,6 +175,11 @@ function casAuth(req, res, next) {
       // 1. Store user info in session immediately
       req.session.userInfo = userInfo;
       const netid = userInfo.user; // Extract netid earlier
+
+      // Set appropriate cookie settings for our domain
+      if (req.session.cookie && cookieSettings.domain) {
+        req.session.cookie.domain = cookieSettings.domain;
+      }
 
       // 2. Save the session *before* database operations
       req.session.save((err) => {
@@ -252,5 +292,6 @@ module.exports = {
   isAuthenticated,
   getAuthenticatedUser,
   logoutApp,
-  logoutCAS
+  logoutCAS,
+  cookieSettings // Export cookie settings for use in session configuration
 }; 
