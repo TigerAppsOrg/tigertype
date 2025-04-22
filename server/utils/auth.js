@@ -236,16 +236,7 @@ function casAuth(req, res, next) {
             const homeUrl = new URL('/home', FRONTEND_URL).toString();
             console.debug('Redirecting to home after DB operation:', homeUrl);
 
-            // Ensure session is persisted by explicitly setting cookie headers
-            res.cookie('connect.sid', req.sessionID, {
-              domain: cookieSettings.domain,
-              secure: cookieSettings.secure,
-              httpOnly: true,
-              maxAge: cookieSettings.maxAge,
-              sameSite: cookieSettings.sameSite,
-              path: '/'
-            });
-
+            // Rely on express-session's built-in Set-Cookie header (signed) instead of manual cookie
             res.redirect(homeUrl);
           })
           .catch(dbErr => {
@@ -253,17 +244,6 @@ function casAuth(req, res, next) {
             // Session is saved, so user is logged in. Redirect to home even on DB error.
             const homeUrl = new URL('/home', FRONTEND_URL).toString();
             console.debug('Redirecting to home despite DB error:', homeUrl);
-            
-            // Ensure session is persisted by explicitly setting cookie headers
-            res.cookie('connect.sid', req.sessionID, {
-              domain: cookieSettings.domain,
-              secure: cookieSettings.secure,
-              httpOnly: true,
-              maxAge: cookieSettings.maxAge,
-              sameSite: cookieSettings.sameSite,
-              path: '/'
-            });
-            
             res.redirect(homeUrl);
           });
       }); // End of req.session.save()
