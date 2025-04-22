@@ -12,7 +12,7 @@ const path = require('path');
 const http = require('http');
 const os = require('os');
 const socketIO = require('socket.io');
-const { isAuthenticated, logoutApp, logoutCAS } = require('./server/utils/auth');
+const { isAuthenticated, logoutApp, logoutCAS, cookieSettings } = require('./server/utils/auth');
 const routes = require('./server/routes');
 const socketHandler = require('./server/controllers/socket-handlers');
 const db = require('./server/db');
@@ -27,7 +27,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5174',
+    origin: process.env.NODE_ENV === 'production' 
+      ? [process.env.SERVICE_URL, 'https://type.tigerapps.org'] 
+      : 'http://localhost:5174',
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -56,7 +58,9 @@ app.set('trust proxy', true);
 
 // Configure CORS
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL,
+  origin: process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:5174' 
+    : [process.env.SERVICE_URL, 'https://type.tigerapps.org'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -73,14 +77,11 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: false,
+    secure: cookieSettings.secure,
+    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-    // explicitly set domain for production to avoid ambiguity with custom domains
-    domain: process.env.NODE_ENV === 'production' && process.env.SERVICE_URL 
-            ? new URL(process.env.SERVICE_URL).hostname 
-            : undefined
+    sameSite: cookieSettings.sameSite,
+    domain: cookieSettings.domain
   }
 });
 
