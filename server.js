@@ -12,7 +12,7 @@ const path = require('path');
 const http = require('http');
 const os = require('os');
 const socketIO = require('socket.io');
-const { isAuthenticated, logoutApp, logoutCAS, cookieSettings } = require('./server/utils/auth');
+const { isAuthenticated, logoutApp, logoutCAS, cookieSettings, FRONTEND_URL } = require('./server/utils/auth');
 const routes = require('./server/routes');
 const socketHandler = require('./server/controllers/socket-handlers');
 const db = require('./server/db');
@@ -320,7 +320,7 @@ const startServer = async () => {
     server.listen(port, () => {
       console.log(`Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
-      console.log(`Frontend URL: ${process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5174'}`);
+      console.log(`Frontend URL: ${FRONTEND_URL}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);

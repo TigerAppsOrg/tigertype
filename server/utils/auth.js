@@ -12,10 +12,18 @@ const path = require('path');
 // CAS URL for Princeton authentication
 const CAS_URL = 'https://fed.princeton.edu/cas/';
 
-// Frontend URL for redirects
+// Frontend URL for redirects - Use SERVICE_URL in production, fallback if needed
 const FRONTEND_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:5174'  // Development frontend URL
-  : process.env.SERVICE_URL || 'https://tigertype-09e7d3d0a961.herokuapp.com'; // Use env var or fallback
+  : process.env.SERVICE_URL; // Production frontend URL from Heroku config
+
+// Check if FRONTEND_URL is defined in production
+if (process.env.NODE_ENV === 'production' && !FRONTEND_URL) {
+  console.error('CRITICAL: SERVICE_URL environment variable is not set in production!');
+  // Provide a default or exit if this is critical
+  // process.exit(1);
+}
+console.log(`Auth Module: FRONTEND_URL configured as: ${FRONTEND_URL}`);
 
 /**
  * Get cookie domain based on service URL
@@ -27,6 +35,11 @@ function getCookieDomain() {
   }
   
   try {
+    // Ensure FRONTEND_URL is valid before parsing
+    if (!FRONTEND_URL || typeof FRONTEND_URL !== 'string') {
+      console.error('Cannot determine cookie domain: FRONTEND_URL is invalid or not set.', FRONTEND_URL);
+      return undefined;
+    }
     const url = new URL(FRONTEND_URL);
     const hostname = url.hostname;
     
@@ -36,7 +49,8 @@ function getCookieDomain() {
       return '.tigerapps.org';
     }
     
-    // For heroku domain, return the exact hostname
+    // For other domains (like heroku), return the exact hostname
+    console.debug('Setting cookie domain to:', hostname);
     return hostname;
   } catch (error) {
     console.error('Error determining cookie domain:', error);
@@ -47,8 +61,8 @@ function getCookieDomain() {
 // Export cookie settings for use in session configuration
 const cookieSettings = {
   domain: getCookieDomain(),
-  secure: false, // Allow non-secure cookies for now to debug
-  sameSite: 'none', // Use 'none' to allow cross-site cookies
+  secure: process.env.NODE_ENV !== 'development', // MUST be true for sameSite: 'none'
+  sameSite: 'none', // Use 'none' to allow cross-site cookies from CAS
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 };
 
