@@ -98,6 +98,7 @@ function Home() {
     <div className="home-page">
       <Modal
         isOpen={inactivityState.kicked}
+        isAlert={true}
         title="Removed for Inactivity"
         message={
           inactivityState.kickMessage ||

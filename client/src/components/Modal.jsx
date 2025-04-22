@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './Modal.css';
+// AI DISCLAIMER: "warning.png" was generated using AI 
+import warning from '../assets/logos/warning.png';
 
 const Modal = ({ 
   isOpen, 
@@ -9,6 +11,7 @@ const Modal = ({
   buttonText, 
   onClose, 
   children,
+  isAlert = false,
   showCloseButton = false,
   isLarge = false,
   customFooter = null,
@@ -52,10 +55,11 @@ const Modal = ({
     }
   };
 
-  const modalContainerClass = `modal-container ${isLarge ? 'modal-large' : ''}`;
+  const modalContainerClass = `modal-container${isAlert ? '-shake' : ''} ${isLarge ? 'modal-large' : ''}`;
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
+      {isAlert && <img src={warning} className="warning-background" alt="tigertype-warning" />}
       <div className={modalContainerClass} onClick={(e) => e.stopPropagation()}>
         {showCloseButton && (
           <button className="modal-close-button" onClick={onClose} aria-label="Close modal">
@@ -80,7 +84,7 @@ const Modal = ({
               {buttonText || "I understand"}
             </button>
           </div>
-        ) : null}
+        ) : null}   
       </div>
     </div>
   );
@@ -93,6 +97,7 @@ Modal.propTypes = {
   message: PropTypes.string,
   buttonText: PropTypes.string,
   children: PropTypes.node,
+  isAlert: PropTypes.bool,
   showCloseButton: PropTypes.bool,
   isLarge: PropTypes.bool,
   customFooter: PropTypes.node,
