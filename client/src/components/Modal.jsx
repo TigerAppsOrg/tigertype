@@ -59,7 +59,6 @@ const Modal = ({
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
-      {isAlert && <img src={warning} className="warning-background" alt="tigertype-warning" />}
       <div className={modalContainerClass} onClick={(e) => e.stopPropagation()}>
         {showCloseButton && (
           <button className="modal-close-button" onClick={onClose} aria-label="Close modal">
@@ -72,6 +71,7 @@ const Modal = ({
           </div>
         )}
         <div className="modal-body">
+          {isAlert && <img src={warning} className="warning-background" alt="tigertype-warning" />}
           {children ? children : <p>{message}</p>}
         </div>
         {customFooter ? (

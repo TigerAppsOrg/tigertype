@@ -55,7 +55,6 @@ function Race() {
       {/* Inactivity Warning Modal */}
       <Modal
         isOpen={inactivityState.warning}
-        isAlert={true}
         title="Ready Up Required"
         message={inactivityState.warningMessage || "Please ready up to continue in this lobby."}
         buttonText="Ready Up Now"
