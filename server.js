@@ -302,23 +302,23 @@ const startServer = async () => {
           }
         }, 60 * 60 * 1000); // Every hour
         
-        // Force close idle connections every 6 hours
+        // Force close idle connections every 2 hours
         setInterval(async () => {
           try {
             await dbCleanup.forceCloseIdleConnections();
           } catch (err) {
             console.error('Error in periodic connection cleanup:', err);
           }
-        }, 6 * 60 * 60 * 1000); // Every 6 hours
+        }, 2 * 60 * 60 * 1000); // Every 2 hours
         
-        // Clean up old practice lobbies every 12 hours
+        // Clean up old practice lobbies every 6 hours
         setInterval(async () => {
           try {
             await dbCleanup.cleanupPracticeLobbies();
           } catch (err) {
             console.error('Error in periodic practice lobby cleanup:', err);
           }
-        }, 12 * 60 * 60 * 1000); // Every 12 hours
+        }, 12 * 60 * 60 * 1000); // Every 6 hours
       }
       
       // Check for discrepancies in fastest_wpm values and fix if needed

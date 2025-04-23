@@ -30,6 +30,7 @@ const cleanupExpiredSessions = async () => {
 /**
  * Check for and close idle connections that have been unused for a long time
  * This is a more aggressive approach if you're experiencing connection leaks
+ * (we have been experiencing connection leaks)
  */
 const forceCloseIdleConnections = async () => {
   try {
@@ -49,7 +50,7 @@ const forceCloseIdleConnections = async () => {
     return result.rowCount;
   } catch (err) {
     console.error('Error force closing idle connections:', err);
-    // Don't throw here as this is a maintenance operation
+    // Don't throw here as is a maintenance operation
     return 0;
   }
 };
