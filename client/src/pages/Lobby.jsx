@@ -292,7 +292,7 @@ function Lobby() {
                   <button
                     className="start-race-button"
                     onClick={startPrivateRace}
-                    disabled={raceState.players?.length < 2} // Require 2 players
+                    disabled={raceState.players?.length < 2 && !raceState.players?.every(p => p.ready === true)} // Require 2 players
                     title={raceState.players?.length < 2 ? "Need at least 2 players to start" : "Start the race!"}
                   >
                     Start Race
