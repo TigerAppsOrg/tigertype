@@ -64,6 +64,7 @@ function Race() {
       {/* Kicked for Inactivity Modal */}
       <Modal
         isOpen={inactivityState.kicked}
+        isAlert={true}
         title="Removed for Inactivity"
         message={inactivityState.kickMessage || "You have been removed from the lobby due to inactivity."}
         buttonText="I Understand"
