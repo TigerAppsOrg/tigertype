@@ -8,10 +8,12 @@ import { useRace } from '../context/RaceContext';
 import PropTypes from 'prop-types'; // Import PropTypes
 import navbarLogo from '../assets/logos/navbar-logo.png';
 import TutorialGuide from './TutorialGuide'; // Import TutorialGuide
+import { useTutorial } from '../context/TutorialContext';
 
-function Navbar({ onOpenLeaderboard, onLoginClick, isTutorialRunning, setTutorialRunning }) { // Added tutorial props
+function Navbar({ onOpenLeaderboard, onLoginClick }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { authenticated, user, logout, markTutorialComplete } = useAuth();
+  const { isTutorialRunning, startTutorial, endTutorial } = useTutorial();
   const navigate = useNavigate();
   const {
     raceState,
@@ -40,13 +42,12 @@ function Navbar({ onOpenLeaderboard, onLoginClick, isTutorialRunning, setTutoria
 
   // Function to handle the end of the tutorial (called by TutorialGuide)
   const handleTutorialEnd = () => {
-    setTutorialRunning(false);
-    // No need to call markTutorialComplete here, TutorialGuide handles it
+    endTutorial();
   };
 
   // Function to start the tutorial replay
   const startTutorialReplay = () => {
-    setTutorialRunning(true);
+    startTutorial();
   };
 
   return (
@@ -139,12 +140,7 @@ function Navbar({ onOpenLeaderboard, onLoginClick, isTutorialRunning, setTutoria
       />
       
       {/* Render TutorialGuide conditionally based on authenticated status */} 
-      {authenticated && (
-        <TutorialGuide 
-          isTutorialRunning={isTutorialRunning} 
-          handleTutorialEnd={handleTutorialEnd} 
-        />
-      )}
+      {authenticated && <TutorialGuide />}
     </header>
   );
 }
@@ -153,8 +149,6 @@ function Navbar({ onOpenLeaderboard, onLoginClick, isTutorialRunning, setTutoria
 Navbar.propTypes = {
   onOpenLeaderboard: PropTypes.func,
   onLoginClick: PropTypes.func,
-  isTutorialRunning: PropTypes.bool.isRequired, // Added prop type
-  setTutorialRunning: PropTypes.func.isRequired, // Added prop type
 };
 
 export default Navbar;

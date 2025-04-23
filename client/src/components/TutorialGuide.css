@@ -1,0 +1,257 @@
+/* TigerType Joyride Customization - Dark Theme & Glowing Highlights */
+
+/* Tooltip container */
+.react-joyride__tooltip {
+  background: var(--background-color-secondary, #181818) !important;
+  background-color: var(--background-color-secondary, #181818) !important;
+  color: var(--text-color, #ffb366) !important;
+  border-radius: 14px !important;
+  padding: 24px 28px !important;
+  box-shadow: 0 8px 32px 0 rgba(231, 117, 0, 0.25), 0 1.5px 0 0 var(--primary-color, #E77500) !important;
+  font-family: var(--font-family-main, 'Fira Mono', 'Menlo', 'monospace') !important;
+  max-width: 420px;
+  border: 2px solid var(--primary-color, #E77500) !important;
+  transition: background 0.2s, color 0.2s;
+  z-index: 100000 !important; /* Ensure tooltip is above overlay */
+  opacity: 1 !important;
+}
+
+/* Arrow adjustments */
+.react-joyride__tooltip .__floater__arrow path {
+  fill: var(--background-color-secondary, #181818) !important;
+}
+.react-joyride__tooltip .__floater__arrow {
+  color: var(--background-color-secondary, #181818) !important;
+}
+
+/* Tooltip header */
+.react-joyride__tooltip .__floater__header {
+  border-bottom: 1px solid var(--primary-color, #E77500) !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 10px !important;
+  font-weight: bold !important;
+  color: var(--primary-color, #E77500) !important;
+}
+
+/* Tooltip content */
+.react-joyride__tooltip .__floater__content {
+  font-size: 1.08rem !important;
+  line-height: 1.6 !important;
+  color: var(--text-color, #ffb366) !important;
+}
+
+/* Tooltip footer */
+.react-joyride__tooltip .__floater__footer {
+  margin-top: 24px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* Buttons (Primary - Next/Last) - TigerType Orange! */
+.react-joyride__tooltip button[data-action="primary"],
+.react-joyride__tooltip button[aria-label="Next"],
+.react-joyride__tooltip button[aria-label="Last"] {
+  background: linear-gradient(90deg, #E77500 0%, #F58025 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 10px 26px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px 0 rgba(231, 117, 0, 0.18) !important;
+  transition: background 0.2s, color 0.2s;
+}
+
+.react-joyride__tooltip button[data-action="primary"]:hover,
+.react-joyride__tooltip button[aria-label="Next"]:hover,
+.react-joyride__tooltip button[aria-label="Last"]:hover {
+  background: linear-gradient(90deg, #F58025 0%, #E77500 100%) !important;
+}
+
+/* Back button - Use secondary text color, no red */
+.react-joyride__tooltip button[aria-label="Back"] {
+  background: transparent !important;
+  color: var(--text-color-secondary, #b3b3b3) !important;
+  padding: 10px 14px !important;
+  border: none !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  text-decoration: underline;
+}
+.react-joyride__tooltip button[aria-label="Back"]:hover {
+   color: var(--primary-color, #E77500) !important;
+}
+
+/* Close/Skip button */
+.react-joyride__tooltip button[data-action="skip"],
+.react-joyride__tooltip button[aria-label="Skip"],
+.react-joyride__tooltip button[aria-label="Close"] {
+  background: transparent !important;
+  color: var(--text-color-secondary, #b3b3b3) !important;
+  padding: 10px 14px !important;
+  border: none !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+}
+.react-joyride__tooltip button[data-action="skip"],
+.react-joyride__tooltip button[aria-label="Skip"] {
+   text-decoration: underline;
+}
+.react-joyride__tooltip button[data-action="skip"]:hover,
+.react-joyride__tooltip button[aria-label="Skip"]:hover,
+.react-joyride__tooltip button[aria-label="Close"]:hover {
+  color: var(--primary-color, #E77500) !important;
+}
+
+/* Beacon */
+.react-joyride__beacon span {
+  background: linear-gradient(90deg, #E77500 0%, #F58025 100%) !important;
+  height: 20px !important;
+  width: 20px !important;
+  box-shadow: 0 0 0 4px rgba(231, 117, 0, 0.25) !important;
+  border-radius: 50% !important;
+}
+.react-joyride__beacon span:after {
+    content: '' !important;
+}
+
+/* GLOWING SPOTLIGHT EFFECT */
+.react-joyride__spotlight {
+  box-shadow: 0 0 0 4px #E77500, 0 0 16px 8px #F58025, 0 0 0 9999px rgba(0,0,0,0.7) !important;
+  border-radius: 12px !important;
+  transition: box-shadow 0.2s;
+  outline: 2.5px solid #F58025 !important;
+  outline-offset: 2px !important;
+  z-index: 99999 !important; 
+  position: relative !important;
+}
+
+.react-joyride__spotlight > * {
+  z-index: 99999 !important;
+  position: relative !important;
+}
+
+.react-joyride__overlay {
+  background: rgba(10, 10, 10, 0.20) !important;
+  background-color: rgba(10, 10, 10, 0.20) !important;
+  z-index: 99998 !important;
+  transition: background 0.2s;
+  pointer-events: none !important;
+  mix-blend-mode: normal !important;
+  opacity: 0.5 !important;
+}
+
+/* Ensure overlay stays transparent in all states */
+.react-joyride__overlay[class*="active"],
+.react-joyride__overlay[class*="visible"],
+.react-joyride__overlay--active,
+.react-joyride__overlay--visible {
+  background: rgba(10, 10, 10, 0.20) !important;
+  background-color: rgba(10, 10, 10, 0.20) !important;
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+}
+
+/* Tooltip header */
+.react-joyride__tooltip .__floater__header {
+  border-bottom: 1px solid var(--border-color) !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 10px !important;
+  font-weight: bold !important;
+  color: var(--text-color-highlight) !important;
+}
+
+/* Tooltip content */
+.react-joyride__tooltip .__floater__content {
+  font-size: 0.95rem !important;
+  line-height: 1.5 !important;
+  color: var(--text-color) !important;
+}
+
+/* Tooltip footer */
+.react-joyride__tooltip .__floater__footer {
+  margin-top: 20px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* Buttons (Primary - Next/Last) - Ensure Orange! */
+.react-joyride__tooltip button[data-action="primary"], /* More specific selector */
+.react-joyride__tooltip button[aria-label="Next"],
+.react-joyride__tooltip button[aria-label="Last"] {
+  background-color: var(--primary-color) !important; /* Use theme primary color */
+  color: white !important;
+  border: none !important;
+  padding: 8px 18px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.react-joyride__tooltip button[data-action="primary"]:hover,
+.react-joyride__tooltip button[aria-label="Next"]:hover,
+.react-joyride__tooltip button[aria-label="Last"]:hover {
+  background-color: var(--primary-color-dark) !important; /* Darker on hover */
+}
+
+/* Back button - Use secondary text color, no red */
+.react-joyride__tooltip button[aria-label="Back"] {
+  background-color: transparent !important;
+  color: var(--text-color-secondary) !important; /* Use secondary text color */
+  padding: 8px 10px !important;
+  border: none !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  text-decoration: underline;
+}
+.react-joyride__tooltip button[aria-label="Back"]:hover {
+   color: var(--text-color-highlight) !important; /* Highlight on hover */
+}
+
+
+/* Close/Skip button */
+.react-joyride__tooltip button[data-action="skip"],
+.react-joyride__tooltip button[aria-label="Skip"],
+.react-joyride__tooltip button[aria-label="Close"] {
+  background-color: transparent !important;
+  color: var(--text-color-secondary) !important;
+  padding: 8px 10px !important;
+  border: none !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+}
+.react-joyride__tooltip button[data-action="skip"],
+.react-joyride__tooltip button[aria-label="Skip"] {
+   text-decoration: underline;
+}
+
+
+.react-joyride__tooltip button[data-action="skip"]:hover,
+.react-joyride__tooltip button[aria-label="Skip"]:hover,
+.react-joyride__tooltip button[aria-label="Close"]:hover {
+  color: var(--text-color-highlight) !important;
+}
+
+/* Beacon */
+.react-joyride__beacon span {
+  background-color: var(--primary-color) !important;
+  height: 18px !important;
+  width: 18px !important;
+}
+.react-joyride__beacon span:after {
+    content: '' !important;
+}
+
+
+/* Arrow */
+.react-joyride__tooltip .__floater__arrow path {
+    fill: var(--background-color-secondary) !important;
+}
+.react-joyride__tooltip .__floater__arrow {
+    color: var(--background-color-secondary) !important;
+}

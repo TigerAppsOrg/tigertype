@@ -6,7 +6,6 @@ const path = require('path');
  * Database migration system for TigerType
  */
 
-// Migration versions and their descriptions
 const MIGRATIONS = [
   {
     version: 1,
@@ -282,8 +281,18 @@ const MIGRATIONS = [
       `);
       console.log('Successfully removed has_completed_tutorial column from users table.');
     }
-  }
+  },
 ];
+
+// MIGRATION 9: Add has_completed_tutorial column to users table
+try {
+  const migration9 = require('./009_add_has_completed_tutorial.js');
+  if (!MIGRATIONS.some(m => m.version === migration9.version)) {
+    MIGRATIONS.push(migration9);
+  }
+} catch (e) {
+  console.error('Could not load migration 9:', e);
+}
 
 // Create migrations table if it doesn't exist
 const createMigrationsTable = async (client) => {
@@ -398,4 +407,4 @@ const logDatabaseState = async () => {
 module.exports = {
   runMigrations,
   logDatabaseState
-}; 
+};

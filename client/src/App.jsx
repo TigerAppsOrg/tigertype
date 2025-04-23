@@ -6,6 +6,7 @@ import './App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { RaceProvider } from './context/RaceContext';
+import { TutorialProvider, useTutorial } from './context/TutorialContext';
 
 // Components
 import Navbar from './components/Navbar';
@@ -36,40 +37,42 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Helper component to conditionally render Navbar and manage Tutorial
+/**
+ * Helper component to conditionally render Navbar and manage Tutorial
+ * Uses TutorialContext for global tutorial state
+ */
 const ConditionalNavbar = () => {
   const location = useLocation();
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const { login, authenticated, user, loading } = useAuth();
-  const [isTutorialRunning, setTutorialRunning] = useState(false);
+  const { isTutorialRunning, startTutorial, endTutorial } = useTutorial();
 
   // Effect to auto-start tutorial for new users
   useEffect(() => {
-    // Check only when auth loading is complete and user is authenticated
-    if (!loading && authenticated && user && !user.has_completed_tutorial) {
+    if (!loading && authenticated && user && !user.has_completed_tutorial && !isTutorialRunning) {
       console.log('User logged in and has not completed tutorial. Starting tutorial automatically.');
-      setTutorialRunning(true);
+      startTutorial();
     }
-  }, [authenticated, user, loading]); // Depend on auth state, user object, and loading status
-  
+  }, [authenticated, user, loading, isTutorialRunning, startTutorial]);
+
   // Don't render Navbar on the landing page
   if (location.pathname === '/') {
     return null;
   }
-  
+
   const handleOpenLeaderboard = () => setIsLeaderboardOpen(true);
   const handleCloseLeaderboard = () => setIsLeaderboardOpen(false);
-  
+
   // Render Navbar on all other pages
   return (
     <>
-      <Navbar 
+      <Navbar
         onOpenLeaderboard={handleOpenLeaderboard}
         onLoginClick={login}
         isTutorialRunning={isTutorialRunning}
-        setTutorialRunning={setTutorialRunning}
+        setTutorialRunning={isRunning => isRunning ? startTutorial() : endTutorial()}
       />
-      
+
       {/* Leaderboard Modal */}
       {isLeaderboardOpen && (
         <Modal
@@ -129,11 +132,13 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <SocketProvider>
-        <RaceProvider>
-          <AppRoutes />
-        </RaceProvider>
-      </SocketProvider>
+      <TutorialProvider>
+        <SocketProvider>
+          <RaceProvider>
+            <AppRoutes />
+          </RaceProvider>
+        </SocketProvider>
+      </TutorialProvider>
     </AuthProvider>
   );
 }

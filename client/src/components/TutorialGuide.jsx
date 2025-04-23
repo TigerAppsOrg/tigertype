@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import Joyride, { STATUS, ACTIONS, EVENTS } from 'react-joyride';
+import React, { useState, useEffect, useRef } from 'react';
+import './TutorialGuide.css';
+import Joyride, { STATUS, ACTIONS, EVENTS, LIFECYCLE } from 'react-joyride';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTutorial } from '../context/TutorialContext';
 
 // Helper function to create a step object
 const makeStep = (target, content, placement = 'bottom', extra = {}) => ({
@@ -9,6 +11,7 @@ const makeStep = (target, content, placement = 'bottom', extra = {}) => ({
   content,
   placement,
   disableBeacon: true,
+  disableOverlayClose: true,
   ...extra,
 });
 
@@ -54,15 +57,7 @@ const homeSteps = [
     { 
       spotlightClicks: true,
       hideCloseButton: true,
-      hideBackButton: true,
-      styles: {
-        options: {
-          primaryColor: '#ff7700',
-        },
-        tooltip: {
-          backgroundColor: '#fef9e3',
-        }
-      }
+      hideBackButton: true
     }
   ),
 ];
@@ -82,37 +77,15 @@ const practiceSteps = [
     '.test-configurator',
     'This is the Test Configurator where you can customize your practice session.',
     'top', 
-    { 
-      delay: 500,
-      styles: {
-        spotlight: {
-          borderRadius: '8px',
-          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.75)'
-        }
-      }
-    }
+    { delay: 500 }
   ),
 
   // --- Snippet Mode Explanation ---
   makeStep(
-    '.config-section.mode-selection .config-button:first-child',
+    '[data-testid="mode-snippet"]',
     'Snippet Mode is selected by default. In this mode, you\'ll type real Princeton course evaluations. This helps you see what other students think while practicing your typing!',
     'bottom',
     {
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        }
-      }
-    }
-  ),
-
-  // --- Timed Mode Explanation & Forced Click ---
-  makeStep(
-    '.config-section.mode-selection .config-button:nth-child(2)', 
-    'Timed Mode lets you practice typing for a set duration. Click this button to switch modes and see the timed options.',
-    'bottom',
-    { 
       spotlightClicks: true,
       hideCloseButton: true,
       hideBackButton: true,
@@ -120,14 +93,21 @@ const practiceSteps = [
       styles: {
         spotlight: {
           backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        },
-        options: {
-          primaryColor: '#ff7700', // Use distinct color for interaction steps
-        },
-        tooltip: {
-          backgroundColor: '#fef9e3',
         }
       }
+    }
+  ),
+
+  // --- Timed Mode Explanation ---
+  makeStep(
+    '[data-testid="mode-timed"]', 
+    'Timed Mode lets you practice typing for a set duration. Click this button to switch modes and see the timed options.',
+    'bottom',
+    { 
+      spotlightClicks: true,
+      hideCloseButton: true,
+      hideBackButton: true,
+      disableOverlayClose: true
     }
   ),
 
@@ -136,37 +116,19 @@ const practiceSteps = [
     '.duration-selection-inner',
     'Choose how long you want to type: 15, 30, 60, or 120 seconds. Your scores in timed mode will appear on the leaderboard.',
     'bottom',
-    {
-      delay: 300, // Give options time to appear
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        }
-      }
-    }
+    { delay: 300 }
   ),
 
-  // --- Back to Snippet Mode & Forced Click ---
+  // --- Back to Snippet Mode ---
   makeStep(
-    '.config-section.mode-selection .config-button:first-child',
+    '[data-testid="mode-snippet"]',
     'Let\'s go back to Snippet Mode to try typing a course evaluation. Click the Snippet button to continue.',
     'bottom',
     { 
       spotlightClicks: true,
       hideCloseButton: true,
       hideBackButton: true,
-      disableOverlayClose: true,
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        },
-        options: {
-          primaryColor: '#ff7700', // Use distinct color
-        },
-        tooltip: {
-          backgroundColor: '#fef9e3',
-        }
-      }
+      disableOverlayClose: true
     }
   ),
 
@@ -175,154 +137,102 @@ const practiceSteps = [
     '.snippet-options',
     'Here you can filter snippets by difficulty, type (general or course reviews), and department for course reviews.',
     'top',
-    { 
-      delay: 300, // Short delay for options to be visible
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          borderRadius: '8px'
-        }
-      }
-    }
+    { delay: 300 }
   ),
 
   // --- Leaderboard Button ---
   makeStep(
     '.leaderboard-button-section',
     'The leaderboard button shows top typing scores from timed mode tests. We\'ll look at this more later.',
-    'bottom',
-    {
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        }
-      }
-    }
+    'bottom'
   ),
 
   // --- Race Content Area ---
   makeStep(
     '.race-content',
-    'This area shows the text you need to type. Let\'s learn how the typing works in TigerType.',
+    'This area shows the text you need to type. The text you need to type will be highlighted as you go.',
     'top',
-    {
-      delay: 500, // Add delay for content to load
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          borderRadius: '8px'
-        }
-      }
-    }
+    { delay: 500 }
   ),
 
-  // --- Typing Input - Target Textarea ---
+  // --- Typing Input (First Focus) ---
   makeStep(
-    '.race-input-area textarea', // Target the textarea directly
-    'Click inside this input area to focus it and begin typing.',
+    '.typing-input-container',
+    'Click here to focus the input area. The tutorial will guide you through typing a few characters.',
     'bottom',
     { 
       spotlightClicks: true,
-      disableOverlayClose: true,
-      delay: 600, // Increased delay for textarea to be ready
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        }
+      disableOverlayClose: false,
+      hideCloseButton: false,
+      styles: { 
+        spotlight: { backgroundColor: 'rgba(0, 0, 0, 0.3)' }
       }
     }
   ),
 
-  // --- Typing Instructions - 1 ---
+  // --- Start Typing Guidance ---
   makeStep(
-    '.race-input-area textarea', 
-    'Start typing the text exactly as shown. Type the first few words correctly.',
-    'bottom',
-    {
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        }
-      }
-    }
-  ),
-
-  // --- Making Mistakes Explanation ---
-  makeStep(
-    '.race-input-area textarea',
-    'Now, intentionally type an INCORRECT letter to see what happens. Notice the text turns RED.',
-    'bottom',
-    {
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        }
-      }
-    }
-  ),
-
-  // --- Fixing Mistakes Explanation ---
-  makeStep(
-    '.race-input-area textarea',
-    'You MUST fix mistakes before continuing. Press BACKSPACE to erase the error, then type the correct letter.',
-    'bottom',
-    {
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        }
-      }
-    }
-  ),
-
-  // --- Typing Mechanics ---
-  makeStep(
-    '.race-input-area textarea', 
-    'As you type correctly, your progress is tracked with real-time WPM (Words Per Minute) and accuracy statistics. Continue typing to see the stats update.',
-    'bottom',
-    {
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        }
-      }
-    }
-  ),
-
-  // --- Results Screen Explanation ---
-  makeStep(
-    '.results-container', // Assume results are shown in a container after typing
-    'When you finish typing, you\'ll see your results including WPM, accuracy, and other statistics. For course evaluations, you might also see course details.',
+    '.snippet-display',
+    'Start typing the first few letters shown. After you type a few characters correctly, you\'ll see what happens when you make a mistake.',
     'top',
     {
-      delay: 1000, // Delay for results to appear
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          borderRadius: '8px'
-        }
+      disableOverlayClose: false,
+      styles: { 
+        overlay: { opacity: 0.3, pointerEvents: 'none' }
       }
     }
   ),
 
-  // --- Back to Home & Forced Click ---
+  // --- Mistake Experience --- 
+  makeStep(
+    '.snippet-display',
+    'Notice that the text turned red! This happens when you make a mistake. Click Next to learn how to correct it.',
+    'top',
+    {
+      disableOverlayClose: false,
+      styles: { 
+        overlay: { opacity: 0.3, pointerEvents: 'none' }
+      }
+    }
+  ),
+
+  // --- Fix Error Instruction ---
+  makeStep(
+    '.typing-input-container',
+    'To fix a mistake, press the Backspace key to delete the error, then type the correct letter. Try it now - you\'ll need to fix the error to continue.',
+    'bottom',
+    {
+      disableOverlayClose: false,
+      styles: { 
+        overlay: { opacity: 0.3, pointerEvents: 'none' }
+      }
+    }
+  ),
+
+  // --- Typing Experience Summary ---
+  makeStep(
+    '.stats-container', 
+    'As you type, your WPM (Words Per Minute) and accuracy are tracked in real-time. Continue typing to see these stats update.',
+    'top'
+  ),
+
+  // --- Results Explanation ---
+  makeStep(
+    'body',
+    'When you finish typing, you\'ll see your results including WPM, accuracy, and other statistics. For course evaluations, you might also see course details.',
+    'center'
+  ),
+
+  // --- Back to Home ---
   makeStep(
     '.back-button',
     'Click the Back button to return to the home screen and explore other features.',
     'bottom',
     { 
       spotlightClicks: true,
-      hideCloseButton: true,
-      hideBackButton: true,
       disableOverlayClose: true,
-      styles: {
-        spotlight: {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)'
-        },
-        options: {
-          primaryColor: '#ff7700',
-        }
-      }
+      hideCloseButton: true,
+      hideBackButton: true
     }
   ),
 ];
@@ -351,7 +261,7 @@ const furtherSteps = [
     'top'
   ),
 
-  // --- Leaderboard Nav Link & Forced Click ---
+  // --- Leaderboard Nav Link ---
   makeStep(
     '#leaderboard-nav-link',
     'Click the Leaderboard link in the navbar to see top scores from timed mode tests.',
@@ -360,15 +270,7 @@ const furtherSteps = [
       spotlightClicks: true,
       disableOverlayClose: true,
       hideBackButton: true,
-      hideCloseButton: true,
-      styles: {
-        options: {
-          primaryColor: '#ff7700',
-        },
-        tooltip: {
-          backgroundColor: '#fef9e3',
-        }
-      }
+      hideCloseButton: true
     }
   ),
 
@@ -380,7 +282,7 @@ const furtherSteps = [
     { delay: 700 }
   ),
 
-  // --- Profile Widget & Forced Click ---
+  // --- Profile Widget ---
   makeStep(
     '.profile-widget',
     'Click your profile picture or NetID to view and edit your profile details.',
@@ -389,15 +291,7 @@ const furtherSteps = [
       spotlightClicks: true,
       disableOverlayClose: true,
       hideBackButton: true,
-      hideCloseButton: true,
-      styles: {
-        options: {
-          primaryColor: '#ff7700',
-        },
-        tooltip: {
-          backgroundColor: '#fef9e3',
-        }
-      }
+      hideCloseButton: true
     }
   ),
 
@@ -431,7 +325,7 @@ const furtherSteps = [
   ),
 ];
 
-const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
+const TutorialGuide = () => {
   const { markTutorialComplete } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -439,6 +333,190 @@ const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
   const [currentPath, setCurrentPath] = useState(location.pathname); 
   const [currentSection, setCurrentSection] = useState('home'); 
   const [isJoyrideRunningInternal, setIsJoyrideRunningInternal] = useState(false);
+  const joyrideRef = useRef(null);
+  
+  // Track auto-advance state
+  const [shouldAutoAdvanceToMode, setShouldAutoAdvanceToMode] = useState(null);
+  const { isTutorialRunning, endTutorial } = useTutorial();
+
+  // Function to guide the user through typing and deliberately make a mistake
+  const prepareForTyping = () => {
+    // We need different behavior depending on which step we're on
+    const currentStep = getActiveSteps()[stepIndex];
+    const isFirstTypingStep = currentStep?.target === '.typing-input-container';
+    const isStartTypingStep = currentStep?.target === '.snippet-display' && currentStep?.content.includes('Start typing');
+    const isMistakeStep = currentStep?.content.includes('Notice that the text turned red');
+    const isFixErrorStep = currentStep?.content.includes('Backspace key');
+    
+    // First step: just focus the input
+    if (isFirstTypingStep) {
+      const inputEl = document.querySelector('.typing-input-container input');
+      if (inputEl) {
+        // Focus and make sure user can see the cursor
+        setTimeout(() => {
+          inputEl.focus();
+          // Automatically advance to next step after 2 seconds
+          setTimeout(() => {
+            if (joyrideRef.current && joyrideRef.current.helpers) {
+              joyrideRef.current.helpers.next();
+            }
+          }, 2000);
+        }, 500);
+      }
+    }
+    // Second step: help user start typing correctly
+    else if (isStartTypingStep) {
+      const inputEl = document.querySelector('.typing-input-container input');
+      if (inputEl) {
+        // Make overlay semi-transparent and allow typing
+        const overlay = document.querySelector('.react-joyride__overlay');
+        if (overlay) {
+          overlay.style.opacity = '0.3';
+          overlay.style.pointerEvents = 'none';
+        }
+        
+        // Focus the input element so user can start typing immediately
+        inputEl.focus();
+        
+        // Track if user has typed at least 3 characters correctly
+        let hasUserStartedTyping = false;
+        let correctCharCount = 0;
+        const snippetText = document.querySelector('.snippet-display')?.textContent || '';
+        
+        // Listen for typing and advance after typing a few characters correctly
+        const typingHandler = (e) => {
+          hasUserStartedTyping = true;
+          const currentInput = inputEl.value;
+          const isCorrect = snippetText.startsWith(currentInput);
+          
+          if (isCorrect) {
+            correctCharCount = currentInput.length;
+            
+            // After typing several characters correctly, deliberately introduce an error
+            if (correctCharCount >= 3) {
+              // Remove this listener
+              inputEl.removeEventListener('input', typingHandler);
+              
+              // Wait a moment, then simulate a mistake
+              setTimeout(() => {
+                // Add a wrong character
+                inputEl.value = currentInput + 'x';
+                inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Advance to the mistake step
+                setTimeout(() => {
+                  if (joyrideRef.current && joyrideRef.current.helpers) {
+                    joyrideRef.current.helpers.next();
+                  }
+                }, 1000);
+              }, 500);
+            }
+          }
+        };
+        
+        // Set up the typing handler
+        inputEl.addEventListener('input', typingHandler);
+        
+        // Don't auto-advance - wait for user to type and trigger the handler
+      }
+    }
+    // Third step: show error state
+    else if (isMistakeStep) {
+      const overlay = document.querySelector('.react-joyride__overlay');
+      if (overlay) {
+        overlay.style.opacity = '0.3';
+        overlay.style.pointerEvents = 'none';
+      }
+      
+      // Focus the input again
+      const inputEl = document.querySelector('.typing-input-container input');
+      if (inputEl) {
+        inputEl.focus();
+      }
+      
+      // Do NOT advance automatically - let user see the error for as long as they want
+      // They'll need to click Next to continue
+    }
+    // Fourth step: guide user to fix the error
+    else if (isFixErrorStep) {
+      const inputEl = document.querySelector('.typing-input-container input');
+      const overlay = document.querySelector('.react-joyride__overlay');
+      
+      if (overlay) {
+        overlay.style.opacity = '0.3';
+        overlay.style.pointerEvents = 'none';
+      }
+      
+      if (inputEl) {
+        inputEl.focus();
+        
+        // Listen for backspace and correct typing
+        const fixHandler = (e) => {
+          const currentInput = inputEl.value;
+          const snippetText = document.querySelector('.snippet-display')?.textContent || '';
+          
+          // Check if error is fixed (user backspaced and typed correct character)
+          if (snippetText.startsWith(currentInput) && currentInput.length >= 4) {
+            // Remove this listener
+            inputEl.removeEventListener('input', fixHandler);
+            
+            // Advance to next step after they fix the error
+            setTimeout(() => {
+              if (joyrideRef.current && joyrideRef.current.helpers) {
+                joyrideRef.current.helpers.next();
+              }
+            }, 1000);
+          }
+        };
+        
+        // Set up the fix error handler
+        inputEl.addEventListener('input', fixHandler);
+      }
+    }
+  };
+
+  // Effect to enable clicking through tutorial overlay when in typing steps
+  useEffect(() => {
+    const currentStep = getActiveSteps()[stepIndex];
+    const isTypingStep = currentStep?.target.includes('typing');
+    
+    const overlay = document.querySelector('.react-joyride__overlay');
+    if (overlay && isTypingStep) {
+      overlay.style.pointerEvents = 'none';
+    } else if (overlay) {
+      overlay.style.pointerEvents = 'auto';
+    }
+    
+    return () => {
+      const overlay = document.querySelector('.react-joyride__overlay');
+      if (overlay) {
+        overlay.style.pointerEvents = 'auto';
+      }
+    };
+  }, [stepIndex, currentSection]);
+
+  // Check if mode buttons are clicked and auto-advance
+  useEffect(() => {
+    if (!isJoyrideRunningInternal || !shouldAutoAdvanceToMode) return;
+    
+    const handleModeClick = (e) => {
+      const target = e.target.closest(`[data-testid="${shouldAutoAdvanceToMode}"]`);
+      if (target) {
+        // Reset auto-advance state
+        setShouldAutoAdvanceToMode(null);
+        
+        // Wait for mode switch animation
+        setTimeout(() => {
+          if (joyrideRef.current && joyrideRef.current.helpers) {
+            joyrideRef.current.helpers.next();
+          }
+        }, 300);
+      }
+    };
+    
+    document.addEventListener('click', handleModeClick);
+    return () => document.removeEventListener('click', handleModeClick);
+  }, [shouldAutoAdvanceToMode, isJoyrideRunningInternal]);
 
   // Effect to sync external running state with internal state
   useEffect(() => {
@@ -452,9 +530,10 @@ const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
 
       setCurrentSection(initialSection);
       setStepIndex(0);
-      console.log(`Tutorial externally started/replayed on path ${path}, resetting to section ${initialSection} at step 0`);
+      setShouldAutoAdvanceToMode(null);
+      console.log(`Tutorial started on path ${path}, section ${initialSection} at step 0`);
     }
-  }, [isTutorialRunning]);
+  }, [isTutorialRunning, location.pathname]);
 
   // Effect to handle navigation changes
   useEffect(() => {
@@ -463,7 +542,7 @@ const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
     if (path !== currentPath) {
       const previousPath = currentPath;
       setCurrentPath(path);
-      console.log('TutorialGuide: Path changed from', previousPath, 'to', path);
+      console.log('Path changed from', previousPath, 'to', path);
 
       // Only adjust section/step if the tutorial is internally running
       if (isJoyrideRunningInternal) {
@@ -488,13 +567,13 @@ const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
         }
         
         if (sectionChanged) {
-          console.log(`Navigation detected: ${previousPath} -> ${path}. Switching to section ${newSection} at step ${newStepIndex}`);
+          console.log(`Navigation detected: switching to section ${newSection} at step ${newStepIndex}`);
           setCurrentSection(newSection);
           setStepIndex(newStepIndex);
         }
       }
     }
-  }, [location.pathname, isJoyrideRunningInternal, currentPath]); // Add currentPath dependency
+  }, [location.pathname, isJoyrideRunningInternal, currentPath, currentSection]);
 
   // Get the appropriate steps based on current section
   const getActiveSteps = () => {
@@ -508,31 +587,65 @@ const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
 
   // Handle Joyride callback events
   const handleJoyrideCallback = (data) => {
-    const { status, action, index, type, lifecycle } = data;
+    const { status, action, index, type, lifecycle, step } = data;
     const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
-
+    
     console.log(`Joyride callback: Index: ${index}, Status: ${status}, Type: ${type}, Action: ${action}, Lifecycle: ${lifecycle}, Section: ${currentSection}`);
 
+    // Handle the correct sequence of events for each step
+    if (type === EVENTS.STEP_BEFORE) {
+      // Pre-step actions
+      
+      // Auto-advance mode selectors
+      if (step && step.target === '[data-testid="mode-timed"]' && lifecycle === LIFECYCLE.READY) {
+        console.log('Setting auto-advance for timed mode');
+        setShouldAutoAdvanceToMode('mode-timed');
+      }
+      else if (step && step.target === '[data-testid="mode-snippet"]' && lifecycle === LIFECYCLE.READY && index > 3) {
+        console.log('Setting auto-advance for snippet mode');
+        setShouldAutoAdvanceToMode('mode-snippet');
+      }
+      
+      // Typing experience steps need special handling
+      if (step && (
+          step.target === '.typing-input-container' || 
+          step.target === '.snippet-display' || 
+          step.content.includes('Backspace key') ||
+          step.content.includes('text turned red')
+      ) && lifecycle === LIFECYCLE.READY) {
+        console.log('Preparing for typing step:', step.target);
+        setTimeout(prepareForTyping, 500);
+      }
+    }
+    
+    // Handle target clicks for mode buttons
+    if (type === EVENTS.TARGET_CLICK) {
+      console.log('Target clicked:', step?.target);
+      // For mode buttons, we let the click handler advance the tutorial
+      if (step?.target.includes('data-testid="mode-')) {
+        // Don't advance here, the click handler will do it
+        return;
+      }
+    }
+    
     // Update stepIndex for tracking progress
     if ((type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) && action !== ACTIONS.CLOSE) {
-        const newStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
-        // Prevent advancing past the last step
-        if (newStepIndex >= 0 && newStepIndex < getActiveSteps().length) {
-           setStepIndex(newStepIndex);
-           console.log(`Advanced to step ${newStepIndex} in section ${currentSection}`);
-        } else if (newStepIndex >= getActiveSteps().length && status !== STATUS.FINISHED) {
-          console.log(`Attempted to advance past last step (${getActiveSteps().length -1}) in section ${currentSection}.`);
-          // If this happens and it's not the final section, could transition or end.
-          // For now, just log. It might indicate a logic flaw if a section ends unexpectedly.
-        }
+      const newStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
+      // Prevent advancing past the last step
+      if (newStepIndex >= 0 && newStepIndex < getActiveSteps().length) {
+         setStepIndex(newStepIndex);
+         console.log(`Advanced to step ${newStepIndex} in section ${currentSection}`);
+      } else if (newStepIndex >= getActiveSteps().length && status !== STATUS.FINISHED) {
+        console.log(`Attempted to advance past last step (${getActiveSteps().length -1}) in section ${currentSection}.`);
+      }
     }
 
     // Handle tutorial completion
     if (finishedStatuses.includes(status)) {
-      console.log('Tutorial finished or skipped via Joyride status. Marking as complete...');
-      setIsJoyrideRunningInternal(false); // Stop internal tracking
+      console.log('Tutorial finished or skipped. Marking as complete...');
+      setIsJoyrideRunningInternal(false);
       markTutorialComplete();
-      handleTutorialEnd(); // Call parent handler to update external state
+      endTutorial();
     } 
     // Handle target not found errors gracefully
     else if (type === EVENTS.TARGET_NOT_FOUND) {
@@ -545,17 +658,16 @@ const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
         setStepIndex(index + 1);
       } else {
         console.log('No more steps available after target not found, ending tutorial section');
-        // If we're in the final section, end the tutorial
         if (currentSection === 'further') {
           setIsJoyrideRunningInternal(false);
-          handleTutorialEnd();
+          endTutorial();
         }
       }
     } 
     else if (type === EVENTS.ERROR) {
       console.error('Joyride error:', data);
       setIsJoyrideRunningInternal(false);
-      handleTutorialEnd();
+      endTutorial();
     }
   };
 
@@ -563,52 +675,36 @@ const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
   
   return (
     <>
-      {/* Removed repetitive render log */}
       <Joyride
-        // key={`tutorial-${currentSection}`} // Simplify key or remove if still causing issues
+        ref={joyrideRef}
         steps={steps}
         stepIndex={stepIndex}
-        run={isJoyrideRunningInternal} // Control Joyride with internal state
+        run={isJoyrideRunningInternal}
         continuous={true}
         showProgress={true}
         showSkipButton={true}
         callback={handleJoyrideCallback}
-        debug={true}
-        disableOverlayClose={false}
-        disableCloseOnEsc={false}
+        debug={false}
+        disableOverlayClose={true}
+        disableCloseOnEsc={true}
+        floaterProps={{
+          disableAnimation: true,
+        }}
+        spotlightPadding={8}
         styles={{
           options: {
+            overlayColor: 'rgba(0, 0, 0, 0.2)',
+            backgroundColor: '#181818',
             primaryColor: '#E77500',
-            textColor: '#333',
-            zIndex: 10000,
-            arrowColor: '#fef9e3'
-          },
-          spotlight: {
-            backgroundColor: 'rgba(0, 0, 0, 0.7)'
+            textColor: '#ffb366',
+            zIndex: 100000,
           },
           overlay: {
-            backgroundColor: 'rgba(0, 0, 0, 0.5)'
+            mixBlendMode: 'normal',
+            opacity: 0.4,
           },
           tooltip: {
-            fontSize: '15px',
-            padding: '15px',
-            maxWidth: '420px',
-            backgroundColor: '#fef9e3',
-            color: '#333',
-            boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)'
-          },
-          tooltipContainer: {
-            textAlign: 'center'
-          },
-          buttonNext: {
-            backgroundColor: '#E77500',
-            fontSize: '14px',
-            padding: '8px 15px'
-          },
-          buttonBack: {
-            color: '#555',
-            fontSize: '14px',
-            padding: '8px 15px'
+            opacity: 1,
           }
         }}
       />
@@ -616,4 +712,4 @@ const TutorialGuide = ({ isTutorialRunning, handleTutorialEnd }) => {
   );
 };
 
-export default TutorialGuide; 
+export default TutorialGuide;
