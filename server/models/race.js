@@ -298,7 +298,7 @@ const Race = {
   // Add a player to a lobby, checking capacity
   async addPlayerToLobby(lobbyId, userId, isReady = false) {
     const client = await db.getClient(); // Use a client for transaction
-    try {
+    try { // Start try block immediately after acquisition
       await client.query('BEGIN');
 
       // Check current player count
@@ -310,6 +310,7 @@ const Race = {
 
       // Check if lobby is full (max 10 players)
       if (playerCount >= 10) {
+        // Rollback before throwing ensures transaction state is clean
         await client.query('ROLLBACK');
         throw new Error('Lobby is full.'); // Throw specific error
       }
@@ -318,17 +319,30 @@ const Race = {
       const result = await client.query(
         `INSERT INTO lobby_players (lobby_id, user_id, is_ready, join_time)
          VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-         ON CONFLICT (lobby_id, user_id) 
+         ON CONFLICT (lobby_id, user_id)
          DO UPDATE SET is_ready = $3, join_time = CURRENT_TIMESTAMP
          RETURNING *`,
         [lobbyId, userId, isReady]
       );
-      
+
       await client.query('COMMIT');
       return result.rows[0];
     } catch (err) {
+      // Attempt rollback if an error occurred (might fail if already rolled back)
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackErr) {
+        console.error('Error during rollback attempt:', rollbackErr);
+      }
       console.error('Error adding player to lobby:', err);
+      // Re-throw the original error after attempting rollback
       throw err;
+    } finally {
+      // ALWAYS RELEASE CLIENT
+      if (client) { // Check if client was successfully acquired
+          client.release();
+          console.debug('Client released in addPlayerToLobby');
+      }
     }
   },
   

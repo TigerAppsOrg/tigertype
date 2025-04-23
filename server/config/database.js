@@ -50,7 +50,7 @@ if (isProduction && connectionString) {
     connectionTimeoutMillis: 60000,
     // Reduce idle timeout to prevent connections from staying open too long
     idleTimeoutMillis: 5000,
-    // Set max clients to match Heroku upgraded plan capacity
+    // Set max clients to match Heroku upgraded plan capacity (half of 40 limit)
     max: 20,
     // Add min to ensure pool is properly initialized
     min: 2,
