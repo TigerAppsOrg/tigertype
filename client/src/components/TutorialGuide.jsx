@@ -52,7 +52,7 @@ const homeSteps = [
   // --- Let's try Practice Mode ---
   makeStep(
     '.standard-modes-container .mode-box:first-child',
-    'Let\'s first check out Practice Mode. CLICK THIS BOX NOW to continue the tutorial. The tutorial will wait for you on the Practice screen.',
+    'Let\'s first check out Practice Mode. Click the Solo Practice Mode button to continue the tutorial. The tutorial will wait for you on the Practice screen.',
     'bottom',
     { 
       spotlightClicks: true,
