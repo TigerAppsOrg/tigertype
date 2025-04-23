@@ -26,12 +26,16 @@ if (isProduction && connectionString) {
     ssl: {
       rejectUnauthorized: false // Required for Heroku PostgreSQL
     },
-    // Connection timeout of.30 seconds
-    connectionTimeoutMillis: 30000,
-    // Idle timeout of 10 seconds
-    idleTimeoutMillis: 10000,
-    // Max clients in the pool
+    // Increase connection timeout to 60 seconds
+    connectionTimeoutMillis: 60000,
+    // Reduce idle timeout to prevent connections from staying open too long
+    idleTimeoutMillis: 5000,
+    // Half of heroku's updated capacity
     max: 20,
+    // Add min to ensure pool is properly initialized
+    min: 2,
+    // Add statement timeout to prevent long-running queries
+    statement_timeout: 30000,
     timezone: 'America/New_York'
   };
 } else {
@@ -42,12 +46,16 @@ if (isProduction && connectionString) {
     database: process.env.DB_NAME || 'tigertype',
     password: process.env.DB_PASSWORD || '',
     port: process.env.DB_PORT || 5432,
-    // Connection timeout of 30 seconds
-    connectionTimeoutMillis: 30000,
-    // Idle timeout of 10 seconds
-    idleTimeoutMillis: 10000,
-    // Max clients in the pool
+    // Increase connection timeout to 60 seconds
+    connectionTimeoutMillis: 60000,
+    // Reduce idle timeout to prevent connections from staying open too long
+    idleTimeoutMillis: 5000,
+    // Set max clients to match Heroku upgraded plan capacity
     max: 20,
+    // Add min to ensure pool is properly initialized
+    min: 2,
+    // Add statement timeout to prevent long-running queries
+    statement_timeout: 30000,
     timezone: 'America/New_York'
   };
 }
@@ -59,7 +67,6 @@ const pool = new Pool(poolConfig);
 pool.on('connect', async (client) => {
   try {
     await client.query('SET timezone = "America/New_York"');
-    console.log('Timezone set to America/New_York (EST)');
   } catch (err) {
     console.error('Error setting timezone:', err);
   }
@@ -72,11 +79,22 @@ pool.on('error', (err) => {
   // Not exiting process so the server can continue running even with DB issues
 });
 
+// Event listener for pool creation (helpful for debugging)
+pool.on('connect', () => {
+  console.debug('New database connection established');
+});
+
+// Event listener for connection release
+pool.on('release', () => {
+  console.debug('Database connection released back to pool');
+});
+
 // Helper to run a query with error handling
 const query = async (text, params) => {
+  const client = await pool.connect();
   try {
     const start = Date.now();
-    const res = await pool.query(text, params);
+    const res = await client.query(text, params);
     const duration = Date.now() - start;
     
     // Log slow queries (over 100ms)
@@ -88,6 +106,9 @@ const query = async (text, params) => {
   } catch (err) {
     console.error('Query error:', err);
     throw err;
+  } finally {
+    // Ensure connection is always released back to the pool
+    client.release();
   }
 };
 
@@ -96,7 +117,7 @@ const getClient = async () => {
   const client = await pool.connect();
   const originalRelease = client.release;
   
-  // Override the release method to log duration
+  // Override the release method to log duration and ensure proper release
   client.release = () => {
     client.query_count = 0;
     originalRelease.apply(client);
