@@ -67,7 +67,8 @@ app.use(cors(corsOptions));
 const sessionMiddleware = session({
   store: new pgSession({
     pool: pool,
-    tableName: 'user_sessions'
+    tableName: 'user_sessions',
+    pruneSessionInterval: 60 * 15 // Prune expired sessions every 15 minutes
   }),
   secret: process.env.SESSION_SECRET || 'tigertype-fallback-secret',
   resave: false,
@@ -86,6 +87,27 @@ const sessionMiddleware = session({
 
 // Use session middleware for Express
 app.use(sessionMiddleware);
+
+// Set up a periodic session cleanup for expired sessions
+// This is a backup in case the pruneSessionInterval doesn't work properly
+if (process.env.NODE_ENV === 'production') {
+  const sessionStore = sessionMiddleware.store;
+  const sessionCleanupInterval = 1000 * 60 * 60; // 1 hour
+  
+  // Initial cleanup when server starts
+  if (sessionStore && typeof sessionStore.pruneSessions === 'function') {
+    console.log('Running initial session cleanup');
+    sessionStore.pruneSessions();
+  }
+  
+  // Regular cleanup
+  setInterval(() => {
+    console.log('Running periodic session cleanup');
+    if (sessionStore && typeof sessionStore.pruneSessions === 'function') {
+      sessionStore.pruneSessions();
+    }
+  }, sessionCleanupInterval);
+}
 
 // Parse JSON + URL-encoded bodies
 app.use(express.json());
@@ -247,6 +269,57 @@ const startServer = async () => {
       
       // Run database initialization
       await db.initDB();
+      
+      // Import database cleanup utilities
+      const dbCleanup = require('./server/utils/db-cleanup');
+      
+      // Perform initial cleanup on server start
+      try {
+        console.log('Running initial database maintenance tasks...');
+        await dbCleanup.cleanupExpiredSessions();
+        
+        // Only force close connections in production as it's more aggressive
+        if (process.env.NODE_ENV === 'production') {
+          await dbCleanup.forceCloseIdleConnections();
+        }
+        
+        // Clean up practice lobbies on startup
+        const cleanedLobbies = await dbCleanup.cleanupPracticeLobbies();
+        console.log(`Initial practice lobby cleanup removed ${cleanedLobbies} lobbies`);
+      } catch (cleanupErr) {
+        console.error('Error during initial database cleanup:', cleanupErr);
+        // Continue server startup despite cleanup errors
+      }
+      
+      // Set up periodic database maintenance in production
+      if (process.env.NODE_ENV === 'production') {
+        // Clean up expired sessions every hour
+        setInterval(async () => {
+          try {
+            await dbCleanup.cleanupExpiredSessions();
+          } catch (err) {
+            console.error('Error in periodic session cleanup:', err);
+          }
+        }, 60 * 60 * 1000); // Every hour
+        
+        // Force close idle connections every 6 hours
+        setInterval(async () => {
+          try {
+            await dbCleanup.forceCloseIdleConnections();
+          } catch (err) {
+            console.error('Error in periodic connection cleanup:', err);
+          }
+        }, 6 * 60 * 60 * 1000); // Every 6 hours
+        
+        // Clean up old practice lobbies every 12 hours
+        setInterval(async () => {
+          try {
+            await dbCleanup.cleanupPracticeLobbies();
+          } catch (err) {
+            console.error('Error in periodic practice lobby cleanup:', err);
+          }
+        }, 12 * 60 * 60 * 1000); // Every 12 hours
+      }
       
       // Check for discrepancies in fastest_wpm values and fix if needed
       try {
