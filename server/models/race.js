@@ -6,51 +6,74 @@ const SERIALIZABLE = 'SERIALIZABLE';   // isolation level constant
 // Race/Lobby model for managing race sessions
 const Race = {
   // Generate a unique lobby code
-  generateCode() {
-    // Generate a 6-character alphanumeric code
-    return crypto.randomBytes(3).toString('hex').toUpperCase();
+  generateCode(length = 6) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
   },
 
-  // Create a new race lobby
-  async create(type, snippetId, hostId = null) { // Added hostId parameter
-    try {
-      const code = this.generateCode();
-      let query;
-      let params;
+  // Create a new race lobby with retry logic for code collisions
+  async create(type, snippetId, hostId = null, maxRetries = 5) { 
+    let retries = 0;
+    while (retries < maxRetries) {
+      try {
+        const code = this.generateCode();
+        let query;
+        let params;
 
-      // Base columns and values
-      const columns = ['code', 'type', 'status'];
-      const values = [code, type, 'waiting'];
-      let valuePlaceholders = ['$1', '$2', '$3'];
+        // Base columns and values
+        const columns = ['code', 'type', 'status'];
+        const values = [code, type, 'waiting'];
+        let valuePlaceholders = ['$1', '$2', '$3'];
 
-      // Add snippet_id if provided (not null/undefined)
-      if (snippetId != null) {
-        columns.push('snippet_id');
-        values.push(snippetId);
-        valuePlaceholders.push(`$${values.length}`);
+        // Add snippet_id if provided (not null/undefined)
+        if (snippetId != null) {
+          columns.push('snippet_id');
+          values.push(snippetId);
+          valuePlaceholders.push(`$${values.length}`);
+        }
+
+        // Add host_id if type is 'private' and hostId is provided
+        if (type === 'private' && hostId != null) {
+          columns.push('host_id');
+          values.push(hostId);
+          valuePlaceholders.push(`$${values.length}`);
+        }
+        
+        // Construct the query dynamically
+        query = `
+          INSERT INTO lobbies (${columns.join(', ')})
+          VALUES (${valuePlaceholders.join(', ')})
+          RETURNING *
+        `;
+        params = values;
+        
+        const result = await db.query(query, params);
+        // If insert succeeds, return the result
+        return result.rows[0]; 
+      } catch (err) {
+        // Check if the error is a unique constraint violation (PostgreSQL code 23505)
+        if (err.code === '23505' && err.constraint === 'lobbies_code_key') {
+          retries++;
+          console.warn(`Lobby code collision detected (attempt ${retries}/${maxRetries}). Retrying...`);
+          if (retries >= maxRetries) {
+            console.error('Max retries reached for lobby code generation.');
+            throw new Error('Failed to generate a unique lobby code after multiple attempts.');
+          }
+          // Wait a very short time before retrying to avoid tight loops
+          await new Promise(resolve => setTimeout(resolve, 50)); 
+        } else {
+          // If it's a different error, re-throw it immediately
+          console.error('Error creating race lobby:', err);
+          throw err;
+        }
       }
-
-      // Add host_id if type is 'private' and hostId is provided
-      if (type === 'private' && hostId != null) {
-        columns.push('host_id');
-        values.push(hostId);
-        valuePlaceholders.push(`$${values.length}`);
-      }
-      
-      // Construct the query dynamically
-      query = `
-        INSERT INTO lobbies (${columns.join(', ')})
-        VALUES (${valuePlaceholders.join(', ')})
-        RETURNING *
-      `;
-      params = values;
-      
-      const result = await db.query(query, params);
-      return result.rows[0];
-    } catch (err) {
-      console.error('Error creating race lobby:', err);
-      throw err;
     }
+    // This part should technically be unreachable if maxRetries > 0
+    throw new Error('Failed to create lobby after multiple retries.'); 
   },
 
   // Find a race lobby by code, including host netid
@@ -275,7 +298,7 @@ const Race = {
   // Add a player to a lobby, checking capacity
   async addPlayerToLobby(lobbyId, userId, isReady = false) {
     const client = await db.getClient(); // Use a client for transaction
-    try {
+    try { // Start try block immediately after acquisition
       await client.query('BEGIN');
 
       // Check current player count
@@ -287,6 +310,7 @@ const Race = {
 
       // Check if lobby is full (max 10 players)
       if (playerCount >= 10) {
+        // Rollback before throwing ensures transaction state is clean
         await client.query('ROLLBACK');
         throw new Error('Lobby is full.'); // Throw specific error
       }
@@ -295,17 +319,30 @@ const Race = {
       const result = await client.query(
         `INSERT INTO lobby_players (lobby_id, user_id, is_ready, join_time)
          VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-         ON CONFLICT (lobby_id, user_id) 
+         ON CONFLICT (lobby_id, user_id)
          DO UPDATE SET is_ready = $3, join_time = CURRENT_TIMESTAMP
          RETURNING *`,
         [lobbyId, userId, isReady]
       );
-      
+
       await client.query('COMMIT');
       return result.rows[0];
     } catch (err) {
+      // Attempt rollback if an error occurred (might fail if already rolled back)
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackErr) {
+        console.error('Error during rollback attempt:', rollbackErr);
+      }
       console.error('Error adding player to lobby:', err);
+      // Re-throw the original error after attempting rollback
       throw err;
+    } finally {
+      // ALWAYS RELEASE CLIENT
+      if (client) { // Check if client was successfully acquired
+          client.release();
+          console.debug('Client released in addPlayerToLobby');
+      }
     }
   },
   
