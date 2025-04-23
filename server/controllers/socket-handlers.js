@@ -21,8 +21,8 @@ const PROGRESS_THROTTLE = 100; // ms
 const lastProgressUpdate = new Map();
 
 // Inactivity warning and timeout settings
-const INACTIVITY_WARNING_DELAY = 15000; // 60 seconds before warning
-const INACTIVITY_KICK_DELAY = 15000; // 30 seconds before kick (45 seconds total)
+const INACTIVITY_WARNING_DELAY = 60000; // 60 seconds before warning
+const INACTIVITY_KICK_DELAY = 30000; // 30 seconds before kick (45 seconds total)
 const inactivityTimers = new Map(); // Store timers for inactivity warnings and kicks
 
 // Store user avatar URLs for quicker lookup
@@ -187,7 +187,7 @@ const initialize = (io) => {
 
     // Handle joining practice mode
     socket.on('practice:join', async (options = {}) => {
-      const { user: netid, userId } = socket.userInfo; // Get user info
+      const { user: netid, userId } = socket.userInfo;
       try {
         console.log(`User ${netid} joining practice mode with options:`, options);
 
@@ -195,84 +195,82 @@ const initialize = (io) => {
         await leaveCurrentRace(io, socket, netid);
 
         let snippet;
-        let lobby;
+        let practiceCode = `PRACTICE-${socket.id}-${Date.now()}`.slice(0, 16); // Generate an ephemeral code
+        let snippetId = null;
+        let isTimedTest = options.testMode === 'timed';
+        let duration = isTimedTest ? (parseInt(options.testDuration) || 15) : null;
 
-        // Handle timed test mode
-        if (options.testMode === 'timed' && options.testDuration) {
-          // Create a timed test snippet
-          const duration = parseInt(options.testDuration) || 30;
+        // Get or create snippet text
+        if (isTimedTest) {
           snippet = createTimedTestSnippet(duration);
-
-          // Since this is a virtual snippet, create a practice lobby without a snippet ID
-          lobby = await RaceModel.create('practice', null);
-
+          snippetId = `timed-${duration}`; // Use a special ID for timed tests in memory
           console.log(`Created timed test (${duration}s) for practice mode`);
         } else {
-          // Standard snippet mode - get a random snippet from database
+          // TODO: Implement snippet filtering based on options.snippetFilters
           snippet = await SnippetModel.getRandom();
-
-          if (!snippet) {
-            console.error('Failed to load snippet for practice mode');
-            socket.emit('error', { message: 'Failed to load snippet' });
-            return;
-          }
-
-          console.log(`Loaded snippet ID ${snippet.id} for practice mode`);
-
-          // Create a practice lobby
-          lobby = await RaceModel.create('practice', snippet.id);
+          if (!snippet) throw new Error('Failed to load snippet');
+          snippetId = snippet.id;
+          console.log(`Loaded snippet ID ${snippetId} for practice mode`);
         }
 
-        console.log(`Created practice lobby with code ${lobby.code}`);
+        // --- Start: Manage Practice Lobby In-Memory ONLY --- 
+        // NO LONGER creating a lobby in the database for practice
+        // console.log(`Created practice lobby with code ${practiceCode}`); // Optional: log the ephemeral code
 
-        // Join the socket room
-        socket.join(lobby.code);
-
-        // Add player to race
-        racePlayers.set(lobby.code, [{
-          id: socket.id,
-          netid,
-          userId,
-          ready: true,
-          lobbyId: lobby.id,
-          snippetId: snippet.id
-        }]);
-
-        // Active race info
-        activeRaces.set(lobby.code, {
-          id: lobby.id,
-          code: lobby.code,
+        // Store active practice race info in memory
+        activeRaces.set(practiceCode, {
+          // No database ID needed for practice lobbies
+          id: null, // Explicitly null to indicate no DB lobby ID
+          code: practiceCode, 
           snippet: {
-            id: snippet.id,
+            id: snippetId, // Use DB ID or special timed ID
             text: snippet.text,
-            is_timed_test: snippet.is_timed_test || false,
-            duration: snippet.duration || null,
+            is_timed_test: isTimedTest,
+            duration: duration,
             princeton_course_url: snippet.princeton_course_url || null,
             course_name: snippet.course_name || null
           },
-          status: 'waiting',
+          status: 'waiting', // Practice starts in waiting, then immediately starts countdown/race
           type: 'practice',
-          startTime: null
+          startTime: null,
+          settings: { // Store settings used for this practice session
+            testMode: options.testMode || 'snippet',
+            testDuration: duration || 15, 
+          }
         });
 
-        // Send race info to player
+        // Add player to the in-memory player list
+        const player = {
+          id: socket.id,
+          netid,
+          userId,
+          ready: true, // Player is always ready in practice
+          lobbyId: null, // No DB lobby ID
+          snippetId: snippetId // Store snippetId used
+        };
+        racePlayers.set(practiceCode, [player]);
+        // --- End: Manage Practice Lobby In-Memory ONLY ---
+
+        // Join the socket room (using the ephemeral code)
+        socket.join(practiceCode);
+
+        // Fetch avatar 
+        await fetchUserAvatar(userId, socket.id);
+        const playerClientData = await getPlayerClientData(player);
+
+        // Send practice info back to the player
         socket.emit('race:joined', {
-          code: lobby.code,
+          code: practiceCode,
           type: 'practice',
-          lobbyId: lobby.id,
-          snippet: {
-            id: snippet.id,
-            text: snippet.text,
-            is_timed_test: snippet.is_timed_test || false,
-            duration: snippet.duration || null,
-            princeton_course_url: snippet.princeton_course_url || null,
-            course_name: snippet.course_name || null
-          }
-          // No players array needed for practice mode join confirmation
+          lobbyId: null, // No DB lobby ID
+          snippet: activeRaces.get(practiceCode).snippet,
+          settings: activeRaces.get(practiceCode).settings,
+          players: [playerClientData]
         });
+
       } catch (err) {
-        console.error('Error joining practice:', err);
-        socket.emit('error', { message: 'Failed to join practice mode' });
+        console.error(`Error joining practice mode for ${netid}:`, err);
+        socket.emit('error', { message: err.message || 'Failed to start practice mode' });
       }
     });
 

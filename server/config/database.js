@@ -105,38 +105,8 @@ const getClient = async () => {
   return client;
 };
 
-// Monitor pool status
-const getPoolStatus = () => {
-  return {
-    total: pool.totalCount,
-    idle: pool.idleCount,
-    waiting: pool.waitingCount,
-    max: poolConfig.max
-  };
-};
-
-// Check if pool is nearing capacity
-const isPoolNearingCapacity = () => {
-  const status = getPoolStatus();
-  return status.total >= status.max * 0.8; // Warning at 80% capacity
-};
-
-// Log pool status periodically in production
-if (isProduction) {
-  setInterval(() => {
-    const status = getPoolStatus();
-    console.log(`[DB Pool] Status: ${status.total}/${status.max} connections (${status.idle} idle, ${status.waiting} waiting)`);
-    
-    if (isPoolNearingCapacity()) {
-      console.warn(`[DB Pool] WARNING: Nearing capacity (${status.total}/${status.max}) - possible connection leak`);
-    }
-  }, 60000); // Log every minute
-}
-
 module.exports = {
   query,
   getClient,
-  pool,
-  getPoolStatus,
-  isPoolNearingCapacity
+  pool
 };
