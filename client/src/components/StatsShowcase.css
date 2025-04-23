@@ -22,7 +22,7 @@
   justify-content: space-around;
   gap: 0.75rem;
   flex-grow: 1;
-  min-height: 120px; /* Ensure container has height even when loading */
+  min-height: 120px;
 }
 
 .stat-card {
