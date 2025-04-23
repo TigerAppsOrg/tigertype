@@ -88,10 +88,10 @@ const MIGRATIONS = [
         SELECT COUNT(*) FROM snippets 
         WHERE text = 'The quick brown fox jumps over the lazy dog.'
       `);
-      
+
       if (parseInt(existingCount.rows[0].count) === 0) {
         console.log('No existing snippets found, adding test snippets...');
-        
+
         // Insert test snippets
         await client.query(`
           INSERT INTO snippets (text, source, category, difficulty, word_count, character_count)
@@ -100,7 +100,7 @@ const MIGRATIONS = [
             ('To be or not to be, that is the question.', 'Shakespeare', 'literature', 2, 10, 35),
             ('All that glitters is not gold.', 'Shakespeare', 'literature', 2, 7, 28)
         `);
-        
+
         // Insert Princeton-themed snippets
         await client.query(`
           INSERT INTO snippets (text, source, category, difficulty, is_princeton_themed, word_count, character_count)
@@ -109,7 +109,7 @@ const MIGRATIONS = [
             ('Nassau Hall, one of Princeton''s oldest buildings, was named for King William III, Prince of Orange, of the House of Nassau.', 'Princeton Landmarks', 'princeton', 2, TRUE, 22, 123),
             ('The Princeton Tigers are the athletic teams of Princeton University. The school sponsors 38 varsity sports.', 'Princeton Athletics', 'princeton', 1, TRUE, 16, 100)
         `);
-        
+
         console.log('Added test snippets successfully');
       } else {
         console.log('Test snippets already exist, skipping seed data insertion');
@@ -121,7 +121,7 @@ const MIGRATIONS = [
     description: 'Update fastest_wpm for all users',
     up: async (client) => {
       console.log('Running migration to update fastest_wpm for all users...');
-      
+
       // Update all users' fastest_wpm based on their race results
       await client.query(`
         UPDATE users u
@@ -136,7 +136,7 @@ const MIGRATIONS = [
           WHERE user_id = u.id
         )
       `);
-      
+
       console.log('Successfully updated fastest_wpm for all users');
     }
   },
@@ -210,7 +210,7 @@ const MIGRATIONS = [
         DROP COLUMN IF EXISTS source_course_id,
         DROP COLUMN IF EXISTS source_term_id;
       `);
-       console.log('Successfully removed source columns from snippets table.');
+      console.log('Successfully removed source columns from snippets table.');
     }
   },
   {
@@ -259,7 +259,7 @@ const MIGRATIONS = [
         DROP COLUMN IF EXISTS course_department,
         DROP COLUMN IF EXISTS course_number;
       `);
-       console.log('Successfully removed course detail columns from snippets table.');
+      console.log('Successfully removed Princeton course columns from snippets table.');
     }
   },
   {
@@ -282,6 +282,123 @@ const MIGRATIONS = [
       console.log('Successfully removed has_completed_tutorial column from users table.');
     }
   },
+  {
+    version: 10,
+    description: 'Add badges and user_badges tables',
+    up: async (client) => {
+      console.log('Running migration to add badges and user_badges tables...');
+      await client.query(`
+      CREATE TABLE IF NOT EXISTS badges (
+        id SERIAL PRIMARY KEY,
+        key VARCHAR UNIQUE NOT NULL,
+        name VARCHAR NOT NULL,
+        description TEXT,
+        icon_url VARCHAR,
+        criteria_type VARCHAR NOT NULL,
+        criteria_value INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS user_badges (
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        badge_id INTEGER REFERENCES badges(id) ON DELETE CASCADE,
+        awarded_at TIMESTAMPTZ DEFAULT now(),
+        PRIMARY KEY (user_id, badge_id)
+      );
+    `);
+
+      // Check if badges already exist
+      const existingBadgesCount = await client.query(`
+    SELECT COUNT(*) FROM badges 
+    WHERE key = 'first_race'
+    `);
+
+      if (parseInt(existingBadgesCount.rows[0].count) === 0) {
+        console.log('No existing badges found, adding initial badges...');
+
+        // Insert badges only if none exist
+        await client.query(`
+      INSERT INTO badges (key, name, description, icon_url, criteria_type, criteria_value)
+      VALUES
+        ('first_race', 'First Race', 'Complete your first race', '/icons/first-race.svg', 'races_completed', 1),
+        ('ten_race', '10 Races', 'Complete 10 races', '/icons/10races.svg', 'races_completed', 10),
+        ('one_hundred_race', '100 Races', 'Complete 100 races', '/icons/100races.svg', 'races_completed', 100),
+        ('novice',  'Novice', 'Average WPM ≥ 100', '/icons/avg100.svg', 'avg_wpm', 100),
+        ('intermediate',  'Intermediate', 'Average WPM ≥ 125', '/icons/avg125.svg', 'avg_wpm', 125),
+        ('advanced',  'Advanced', 'Average WPM ≥ 150', '/icons/avg150.svg', 'avg_wpm', 150),
+        ('expert',  'Expert', 'Average WPM ≥ 175', '/icons/avg175.svg', 'avg_wpm', 175),
+        ('fast',  'Fast', 'Fastest WPM ≥ 150', '/icons/fastest150.svg', 'fastest_wpm', 150),
+        ('faster',  'Faster', 'Fastest WPM ≥ 175', '/icons/fastest175.svg', 'fastest_wpm', 175),
+        ('fastest',  'Fastest', 'Fastest WPM ≥ 200', '/icons/fastest200.svg', 'fastest_wpm', 200)
+    `);
+
+        console.log('Initial badges added successfully');
+      } else {
+        console.log('Badges already exist, skipping badge insertion');
+      }
+      console.log('Migration complete: badges / user_badges created.');
+    },
+    down: async (client) => {
+      console.log('Reverting migration: dropping badges and user_badges tables...');
+      await client.query(`
+      DROP TABLE IF EXISTS user_badges;
+      DROP TABLE IF EXISTS badges;
+    `);
+      console.log('Revert complete: badges / user_badges dropped.');
+    }
+  },
+  {
+    version: 11,
+    description: 'Adds titles and user_titles tables',
+    up: async (client) => {
+      console.log('Running migration to add titles and user_titles tables...');
+      await client.query(`
+      CREATE TABLE IF NOT EXISTS titles (
+      id SERIAL PRIMARY KEY,
+      key VARCHAR UNIQUE NOT NULL,
+      name VARCHAR UNIQUE NOT NULL,      
+      description TEXT,                  
+      criteria_type VARCHAR NOT NULL,    
+      criteria_value INTEGER NOT NULL     
+      );  
+
+      CREATE TABLE IF NOT EXISTS user_titles (
+      user_id INTEGER REFERENCES users(id)  ON DELETE CASCADE,
+      titles_id INTEGER REFERENCES titles(id) ON DELETE CASCADE,
+      awarded_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (user_id, titles_id)
+      );
+    `);
+
+      // Check if title already exist
+      const existingTitlesCount = await client.query(`
+      SELECT COUNT(*) FROM titles 
+      WHERE key = 'nice'
+    `);
+
+      if (parseInt(existingTitlesCount.rows[0].count) === 0) {
+        console.log('No existing titles found, adding initial titles...');
+
+        // Insert titles only if none exist
+        await client.query(`
+      INSERT INTO titles (key, name, description, criteria_type, criteria_value)
+      VALUES 
+        ('nice', 'Nice', 'Congrats on typing 69 words!', 'words_typed', 69);
+      `);
+
+        console.log('Initial titles added successfully');
+      } else {
+        console.log('Titles already exist, skipping badge insertion');
+      }
+      console.log('Migration complete: titles / user_titles created.');
+    }, down: async (client) => {
+      console.log('Reverting migration: dropping titles and user_titles tables...');
+      await client.query(`
+      DROP TABLE IF EXISTS user_titles;
+      DROP TABLE IF EXISTS titles;
+    `);
+      console.log('Revert complete: titles / user_titles dropped.');
+    }
+  }
 ];
 
 // Create migrations table if it doesn't exist
@@ -304,37 +421,37 @@ const getCurrentVersion = async (client) => {
 // Run all pending migrations
 const runMigrations = async () => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
-    
+
     // Create migrations table if it doesn't exist
     await createMigrationsTable(client);
-    
+
     // Get current version
     const currentVersion = await getCurrentVersion(client);
-    
+
     // Find pending migrations
     const pendingMigrations = MIGRATIONS.filter(m => m.version > currentVersion);
-    
+
     if (pendingMigrations.length === 0) {
       console.log('Database is up to date');
       await client.query('COMMIT');
       return;
     }
-    
+
     // Run each pending migration
     for (const migration of pendingMigrations) {
       console.log(`Running migration ${migration.version}: ${migration.description}`);
       await migration.up(client);
-      
+
       // Record migration
       await client.query(
         'INSERT INTO migrations (version, description) VALUES ($1, $2) ON CONFLICT (version) DO NOTHING',
         [migration.version, migration.description]
       );
     }
-    
+
     await client.query('COMMIT');
     console.log('All migrations completed successfully');
   } catch (err) {
@@ -357,16 +474,16 @@ const logDatabaseState = async () => {
         WHERE table_name = 'migrations'
       );
     `);
-    
+
     if (!migrationsExist.rows[0].exists) {
       console.log('Migrations table does not exist in the database');
       return;
     }
-    
+
     // Get current version
     const version = await getCurrentVersion(client);
     console.log(`Current database version: ${version}`);
-    
+
     // Check if fastest_wpm column exists
     const columnExists = await client.query(`
       SELECT EXISTS (
@@ -374,9 +491,9 @@ const logDatabaseState = async () => {
         WHERE table_name = 'users' AND column_name = 'fastest_wpm'
       );
     `);
-    
+
     console.log(`fastest_wpm column exists: ${columnExists.rows[0].exists}`);
-    
+
     // Get some sample data to verify
     const sampleData = await client.query(`
       SELECT id, netid, fastest_wpm 
@@ -384,9 +501,9 @@ const logDatabaseState = async () => {
       WHERE fastest_wpm > 0 
       LIMIT 5;
     `);
-    
+
     console.log('Sample users with fastest_wpm > 0:', sampleData.rows);
-    
+
   } catch (err) {
     console.error('Error checking database state:', err);
   } finally {
