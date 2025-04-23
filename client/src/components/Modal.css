@@ -20,9 +20,10 @@
 
 .warning-background {
   position: absolute;
-  height: 700px;
-  left: -30px;
-  opacity: 60%;
+  max-height: 275px;
+  right: 20%;
+  bottom: -4%;
+  opacity: 15%;
 }
 
 .modal-container, .modal-container-shake {
@@ -127,6 +128,7 @@
   text-align: center;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color-light, #383838);
+  z-index: 1;
 }
 
 .modal-button {
