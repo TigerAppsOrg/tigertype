@@ -30,7 +30,7 @@
   flex-direction: row;
   align-items: center;
   padding: 0.8rem 1rem;
-  background-color: rgba(30, 30, 30, 0.4);
+  background-color: var(--stat-card-color);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;

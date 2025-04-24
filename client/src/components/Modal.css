@@ -62,7 +62,7 @@
 .modal-container.modal-large {
   max-width: 850px;
   min-height: 500px;
-  background-color: #222222;
+  background-color: var(--modal-bg-color);
 }
 
 .modal-container.modal-large .modal-header {
@@ -73,7 +73,7 @@
 .modal-container.modal-large .modal-body {
   flex-grow: 1;
   overflow-y: auto;
-  background-color: #222222;
+  background-color: var(--modal-bg-color);
 }
 
 @keyframes scaleIn {
@@ -87,7 +87,7 @@
   right: 12px;
   background: none;
   border: none;
-  color: #aaa;
+  color: var(--typing-color);
   font-size: 2rem;
   line-height: 1;
   cursor: pointer;

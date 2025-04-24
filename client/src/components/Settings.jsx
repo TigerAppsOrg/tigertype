@@ -76,10 +76,17 @@ function Settings({ isOpen, onClose }) {
   useEffect(() => {
     document.documentElement.style.setProperty('--main-font', whichFont);
     document.documentElement.style.setProperty(
+      '--stat-card-color',
+      theme === 'light' ? 'rgba(175, 175, 175, 0.4)' : 'rgba(30, 30, 30, 0.4)'
+    );
+    document.documentElement.style.setProperty(
       '--developer-link-color', theme === 'light' ? '#FFAD6B' : '#C25A00'
     );
     document.documentElement.style.setProperty(
       '--developer-link-hover-color', theme === 'light' ? '#C25A00' : '#FFAD6B'
+    );
+    document.documentElement.style.setProperty(
+      '--modal-bg-color', theme === 'light' ?  '#DDDDDD' : '#222222'
     );
     document.documentElement.style.setProperty(
       '--background-color', theme === 'light' ? '#ffffff' : '#121212'
