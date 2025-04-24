@@ -38,7 +38,7 @@ function Typing({
   snippetType,
   snippetDepartment
 }) {
-  const { raceState, setRaceState, typingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet } = useRace();
+  const { raceState, setRaceState, typingState, setTypingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet } = useRace();
   const { socket } = useSocket();
   const { user } = useAuth();
   const [input, setInput] = useState('');
@@ -387,6 +387,17 @@ function Typing({
         if (inputRef.current) {
           inputRef.current.value = '';
         }
+        // Reset typing state
+        setTypingState({
+          input: '',
+          position: 0,
+          correctChars: 0,
+          errors: 0,
+          completed: false,
+          wpm: 0,
+          accuracy: 0,
+          lockedPosition: 0
+        });
         setRaceState(prev => ({
           ...prev,
           startTime: null,
@@ -402,7 +413,7 @@ function Typing({
     return () => {
       document.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
-  }, [raceState.type, loadNewSnippet, setRaceState]);
+  }, [raceState.type, loadNewSnippet, setRaceState, setTypingState]);
 
   const getElapsedTime = () =>
     raceState.startTime ? (Date.now() - raceState.startTime) / 1000 : 0;
