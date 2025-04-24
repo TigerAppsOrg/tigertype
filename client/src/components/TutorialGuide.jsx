@@ -752,8 +752,8 @@ const TutorialGuide = () => {
         showSkipButton={true}
         callback={handleJoyrideCallback}
         debug={false}
-        disableOverlayClose={true}
-        disableCloseOnEsc={true}
+        disableOverlayClose={false}
+        disableCloseOnEsc={false}
         floaterProps={{
           disableAnimation: true,
         }}
@@ -773,6 +773,13 @@ const TutorialGuide = () => {
           tooltip: {
             opacity: 1,
           }
+        }}
+        locale={{
+          close: 'Close',
+          last: 'Finish',
+          next: 'Next',
+          skip: 'Skip',
+          back: 'Back'
         }}
       />
     </>

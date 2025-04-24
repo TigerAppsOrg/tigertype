@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-// Removed: import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 // Define tutorial sections and their corresponding routes/entry points
 // Exposing this for TutorialGuide to use
@@ -23,7 +23,7 @@ const getSectionFromPath = (path) => {
 const TutorialContext = createContext(null);
 
 export const TutorialProvider = ({ children }) => {
-  // Removed: const location = useLocation();
+  const location = useLocation();
   const [isRunning, setIsRunning] = useState(false);
   const [currentSection, setCurrentSection] = useState('home');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -74,16 +74,17 @@ export const TutorialProvider = ({ children }) => {
 
   // Start the tutorial - Requires initial path to determine section
   const startTutorial = useCallback((initialPath, section = null, step = 0) => {
-    const startSection = section || determineSection(initialPath);
+    const path = initialPath || location.pathname;
+    const startSection = section || determineSection(path);
 
-    console.log(`[TutorialContext] Starting tutorial. Initial path: ${initialPath}, Determined section: ${startSection}, Step: ${step}`);
+    console.log(`[TutorialContext] Starting tutorial. Initial path: ${path}, Determined section: ${startSection}, Step: ${step}`);
 
     setCurrentSection(startSection);
     setCurrentStepIndex(step);
     setIsRunning(true);
     setIsPaused(false);
     setErrorState(null);
-  }, [determineSection]);
+  }, [determineSection, location.pathname]);
 
   // End the tutorial
   const endTutorial = useCallback(() => {

@@ -136,6 +136,8 @@ function TestConfigurator({
   const renderButton = (value, state, setter, label, icon = null, isFunctional = true, onClickOverride = null) => (
     <button
       key={value}
+      // Add data-testid for mode buttons to support tutorial targeting
+      data-testid={setter === setTestMode ? `mode-${value}` : undefined}
       className={`config-button ${state === value ? 'active' : ''} ${!isFunctional ? 'non-functional' : ''} ${icon ? 'icon-button' : ''}`}
       onClick={() => {
         if (onClickOverride) {
