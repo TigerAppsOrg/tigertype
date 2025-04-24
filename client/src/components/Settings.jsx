@@ -90,7 +90,6 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--incorrect-color', '#FF0000');
       document.documentElement.style.setProperty('--incorrect-bg-color', 'rgba(255,116,108, 0.30)');
       document.documentElement.style.setProperty('--current-color', '#000000');
-
       document.documentElement.style.setProperty('--stat-card-color', 'rgba(175, 175, 175, 0.4)');
       document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
       document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
@@ -128,11 +127,21 @@ function Settings({ isOpen, onClose }) {
   }, [whichFont, typingSound, theme, fontSize]);
 
   useEffect(() => {
-    const color = defaultCursor ? "#3a506b" : "none";
+    const block = defaultCursor ? "visible" : "hidden";
     const line = defaultCursor ? "hidden" : "visible";
+    let color = "none";
+
+    if (block === 'visible' && theme === 'light') {
+      color = "#8FAABD";
+    } else if (block === 'visible') {
+      color = "#3a506b";
+    } else {
+      color = "none";
+    }
+
     document.documentElement.style.setProperty('--default-cursor', color);
     document.documentElement.style.setProperty('--line-cursor', line);
-  }, [defaultCursor]);
+  }, [defaultCursor, theme]);
 
   // Handle closing modal on outside click or ESC key
   useEffect(() => {
