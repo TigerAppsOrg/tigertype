@@ -110,6 +110,8 @@ def call_ai_to_extract_snippets(comment_text):
         "In the sleepy afternoon light of McCosh 50 with the shades drawn and the brightest thing in the room being the screen of the wrestler in front of me's subway surfer emulator (Lord knows it isn't the professor), one cannot help but fall asleep as he mumbles into the microphone unintelligible sounds that masquerade as English words on statistical tests and methods.",
         "This level of incompetence at conveying the material is simply unprecedented in Princeton; nay Ivy League; nay university; nay pedagogical history, since the dawn of mankind.",
         "When I was a child, I got hit by a car.",
+        "It's like learning to swim by jumping into the water."
+        "The textbook is written in alien language by the way.",
         "Simply pray to whatever God you believe in for the exams. You WILL need His grace.",
         "My key takeaway from this class is how useless and unintelligent ChatGPT is when it comes to programming in a pre-existing environment.",
         "Not only is 'C' the grade I am getting for this course, but it is also the coding language that caused me a semester full of torment and punishment.",
@@ -123,6 +125,7 @@ def call_ai_to_extract_snippets(comment_text):
     bad_example_snippets = [
         "The professor was knowledgeable and helpful.",
         "The precepts were useful.",
+        "This course is not a good fifth course; it is a lot of work.",
         "Teachers just solve basic problems in the class that never come up on an exam.",
         "Problem sets were challenging but fair.",
         "Start the assignments early.",
@@ -155,10 +158,17 @@ def call_ai_to_extract_snippets(comment_text):
         "***Return an empty list [] if absolutely nothing meets these strict criteria. Be EXTREMELY SELECTIVE in your filtering.*** "
         f"{good_examples_text}"
         f"{bad_examples_text}"
-        "\nNow analyze the following review:"
-        "\n\n[REVIEW START]\n{review}\n[REVIEW END]\n\n"
-        "Output ONLY a JSON list containing the qualifying snippets, e.g. "
-        "[{{\"text\":\"…\",\"difficulty\":2}}, {{\"text\":\"…\",\"difficulty\":1}}] or []."
+
+        "\\n**Grammar/Typo Correction Examples:**\\n"
+        "When fixing typos or grammar, aim for minimal changes that improve readability while keeping the original voice. Examples:\\n"
+        "- Original:  'it was so hard and i cried so much bc of it lol'\\n"
+        "- Corrected: 'It was so hard and I cried so much because of it lol.' (Capitalized start, expanded 'bc', added period)\\n"
+        "- Original:  'prof jones is ok but lecture is kinda boring tbh'\\n"
+        "- Corrected: 'Prof. Jones is okay, but lecture is kinda boring, to be honest.' (Capitalized name, abbreviation, added punctuation)\\n"
+        "- Original:  'u need to do all the psets no cap'\\n"
+        "- Corrected: 'You need to do all the problem sets, no cap.' (Expanded 'u', 'psets', added comma)\\n"
+        "\\nNow analyze the following review:"
+        "\\n\\n[REVIEW START]\\n{review}\\n[REVIEW END]\\n\\n"
     ).replace("{review}", "{review}")  # keep literal placeholder for f‑string below
 
     retries = 0
@@ -303,3 +313,4 @@ atomic_write(processed_snip, processed_path)
 elapsed = time.perf_counter() - start_time
 print(f"\n✅ Done. Remaining comments: {len(raw_evals)}  |  "
       f"total snippets: {len(processed_snip)}  |  runtime: {elapsed:0.1f}s")
+
