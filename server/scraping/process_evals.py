@@ -131,9 +131,8 @@ def call_ai_to_extract_snippets(comment_text):
         "I'm not sure if I would take this for the actual course content, for I didn't find it all that interesting, most of the psets felt like busy work, and some of the derivations and problems felt way too wishy-washy (although to be fair rigorous diffeqs would not be very fun either.)",
         "unlike MAT 201 and 202, which felt like getting hit with a brick",
         "There are many YouTube playlists about differential equations, but none of them go to the depth that this course does.",
-        "",
-        "",
-        "",
+        "Dont take this class please :( UNLESS you absolutely have to",
+        "This course is fine if you have to take it. It won't make you like math, though. And if you like math, then you'll want to test out of this class, or start with some upper level stuff (although I haven't heard particularly positive things about that either).",
     ]
     bad_examples_text = "\n\nConversely, here are examples of the *type* of snippets to *AVOID* (too bland, generic, or common):\n"
     for i, ex in enumerate(bad_example_snippets):
