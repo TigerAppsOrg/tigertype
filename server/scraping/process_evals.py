@@ -147,7 +147,7 @@ def call_ai_to_extract_snippets(comment_text):
         "**AGGRESSIVELY AVOID** generic advice ('start early', 'go to office hours'), mundane praise/criticism ('good course', 'learned a lot', 'professor was nice'), boilerplate language, or purely factual statements unless the *wording itself* is exceptionally creative or funny."
         "Do NOT extract personal information unless it's part of a highly unusual or entertaining narrative."
         "For EACH valid snippet, include a difficulty rating: 1 (easy), 2 (medium), 3 (hard). Base this on factors like punctuation complexity, sentence structure, word length, and presence of numbers or symbols. Snippets over 50 words are usually difficulty 3."
-        "Fix obvious typos or grammatical errors in the source text, but DO NOT change the meaning or wording significantly. Preserve the original student voice."
+        "Fix obvious typos or grammatical errors in the source text, but DO NOT change the meaning or wording significantly. Preserve the original student voice. Also for example, if you are taking a snippet from the middle of a sentence, ensure that enough context is present so that the snippet remains understandably funny, and grammar/punctuation-wise ensure the first letter is capitalized."
         "***Return an empty list [] if absolutely nothing meets these strict criteria. Be ruthless in your filtering.*** "
         f"{good_examples_text}"
         f"{bad_examples_text}"
