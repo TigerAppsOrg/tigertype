@@ -113,6 +113,7 @@ def call_ai_to_extract_snippets(comment_text):
         "Simply pray to whatever God you believe in for the exams. You WILL need His grace.",
         "My key takeaway from this class is how useless and unintelligent ChatGPT is when it comes to programming in a pre-existing environment.",
         "Not only is 'C' the grade I am getting for this course, but it is also the coding language that caused me a semester full of torment and punishment.",
+        "David is hands down one of the best professors. He explains concepts in such a clear, digestable manner. If you're worried/nervous about math, David is your best bet!",
     ]
     good_examples_text = "\n\nHere are some examples of the *type* of snippets I want you to extract (focus on unique phrasing, strong opinions, humor, or vivid descriptions):\n"
     for i, ex in enumerate(good_example_snippets):
@@ -133,6 +134,7 @@ def call_ai_to_extract_snippets(comment_text):
         "There are many YouTube playlists about differential equations, but none of them go to the depth that this course does.",
         "Dont take this class please :( UNLESS you absolutely have to",
         "This course is fine if you have to take it. It won't make you like math, though. And if you like math, then you'll want to test out of this class, or start with some upper level stuff (although I haven't heard particularly positive things about that either).",
+        "Starts with sequences/series which are arguably the hardest part, then gets easier, almost algorithmic after.",
     ]
     bad_examples_text = "\n\nConversely, here are examples of the *type* of snippets to *AVOID* (too bland, generic, or common):\n"
     for i, ex in enumerate(bad_example_snippets):
