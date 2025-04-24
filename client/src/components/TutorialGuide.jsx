@@ -4,6 +4,7 @@ import Joyride, { STATUS, ACTIONS, EVENTS, LIFECYCLE } from 'react-joyride';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTutorial } from '../context/TutorialContext';
+import { useRace } from '../context/RaceContext'; // Import useRace for typing simulation
 
 // Helper function to create a step object
 const makeStep = (target, content, placement = 'bottom', extra = {}) => ({
@@ -327,22 +328,58 @@ const furtherSteps = [
 
 const TutorialGuide = () => {
   const { markTutorialComplete } = useAuth();
+  const { user } = useAuth(); // Get user for potential future use
   const navigate = useNavigate();
   const location = useLocation();
-  const [stepIndex, setStepIndex] = useState(0);
-  const [currentPath, setCurrentPath] = useState(location.pathname); 
-  const [currentSection, setCurrentSection] = useState('home'); 
-  const [isJoyrideRunningInternal, setIsJoyrideRunningInternal] = useState(false);
   const joyrideRef = useRef(null);
+  const retryCounts = useRef({}); // Keep retry counts
+  const { raceState, setRaceState, typingState, handleInput: raceHandleInput } = useRace(); // Get race context for typing simulation
+
+  // Use centralized state from TutorialContext
+  const {
+    isRunning,
+    currentSection,
+    currentStepIndex,
+    isPaused,
+    errorState,
+    startTutorial,
+    endTutorial,
+    advanceStep,
+    goToStep,
+    pauseTutorial,
+    resumeTutorial,
+    determineSection, // Get determineSection from context
+    TUTORIAL_SECTIONS
+  } = useTutorial();
+
+  // Local state for specific UI interactions within the tutorial guide itself
+  const [shouldAutoAdvanceToMode, setShouldAutoAdvanceToMode] = useState(null); // Keep this for mode button clicks
+
+  // Helper to get the current steps array based on context section
+  const getActiveSteps = () => {
+    switch(currentSection) {
+      case 'practice': return practiceSteps;
+      case 'further': return furtherSteps;
+      case 'home':
+      default: return homeSteps;
+    }
+  };
   
-  // Track auto-advance state
-  const [shouldAutoAdvanceToMode, setShouldAutoAdvanceToMode] = useState(null);
-  const { isTutorialRunning, endTutorial } = useTutorial();
+  // Utility function to wait for a target element
+  const waitForTarget = async (selector, timeout = 3000) => {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      if (document.querySelector(selector)) return true;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    console.warn(`[TutorialGuide] Target "${selector}" not found after ${timeout}ms.`);
+    return false;
+  };
 
   // Function to guide the user through typing and deliberately make a mistake
   const prepareForTyping = () => {
     // We need different behavior depending on which step we're on
-    const currentStep = getActiveSteps()[stepIndex];
+    const currentStep = getActiveSteps()[currentStepIndex];
     const isFirstTypingStep = currentStep?.target === '.typing-input-container';
     const isStartTypingStep = currentStep?.target === '.snippet-display' && currentStep?.content.includes('Start typing');
     const isMistakeStep = currentStep?.content.includes('Notice that the text turned red');
@@ -477,9 +514,10 @@ const TutorialGuide = () => {
 
   // Effect to enable clicking through tutorial overlay when in typing steps
   useEffect(() => {
-    const currentStep = getActiveSteps()[stepIndex];
+    if (!isRunning) return; // Only run if tutorial is active
+    const currentStep = getActiveSteps()[currentStepIndex];
     const isTypingStep = currentStep?.target.includes('typing');
-    
+
     const overlay = document.querySelector('.react-joyride__overlay');
     if (overlay && isTypingStep) {
       overlay.style.pointerEvents = 'none';
@@ -493,11 +531,11 @@ const TutorialGuide = () => {
         overlay.style.pointerEvents = 'auto';
       }
     };
-  }, [stepIndex, currentSection]);
+  }, [currentStepIndex, currentSection, isRunning]); // Add isRunning dependency
 
   // Check if mode buttons are clicked and auto-advance
   useEffect(() => {
-    if (!isJoyrideRunningInternal || !shouldAutoAdvanceToMode) return;
+    if (!isRunning || !shouldAutoAdvanceToMode) return; // Use context isRunning
     
     const handleModeClick = (e) => {
       const target = e.target.closest(`[data-testid="${shouldAutoAdvanceToMode}"]`);
@@ -513,173 +551,202 @@ const TutorialGuide = () => {
         }, 300);
       }
     };
-    
     document.addEventListener('click', handleModeClick);
     return () => document.removeEventListener('click', handleModeClick);
-  }, [shouldAutoAdvanceToMode, isJoyrideRunningInternal]);
+  }, [shouldAutoAdvanceToMode, isRunning]); // Use context isRunning
 
-  // Effect to sync external running state with internal state
+  // Effect to handle navigation changes using location hook here
   useEffect(() => {
-    setIsJoyrideRunningInternal(isTutorialRunning);
-    if (isTutorialRunning) {
-      // Reset logic when tutorial is started externally
-      const path = location.pathname;
-      let initialSection = 'home';
-      if (path === '/race') initialSection = 'practice';
-      else if (path === '/profile') initialSection = 'further';
+    if (!isRunning) return; // Only handle navigation if tutorial is running
 
-      setCurrentSection(initialSection);
-      setStepIndex(0);
-      setShouldAutoAdvanceToMode(null);
-      console.log(`Tutorial started on path ${path}, section ${initialSection} at step 0`);
-    }
-  }, [isTutorialRunning, location.pathname]);
+    const newPath = location.pathname;
+    const expectedSection = determineSection(newPath); // Use context function
+    console.log(`[TutorialGuide] Navigation detected. New path: ${newPath}, Current section: ${currentSection}, Expected section: ${expectedSection}`);
 
-  // Effect to handle navigation changes
-  useEffect(() => {
-    const path = location.pathname;
-    // Only update section/step if the path actually changes
-    if (path !== currentPath) {
-      const previousPath = currentPath;
-      setCurrentPath(path);
-      console.log('Path changed from', previousPath, 'to', path);
-
-      // Only adjust section/step if the tutorial is internally running
-      if (isJoyrideRunningInternal) {
-        let newSection = currentSection;
-        let newStepIndex = 0; // Default to resetting step index on section change
-        let sectionChanged = false;
-
-        if (previousPath === '/home' && path === '/race') {
-          newSection = 'practice';
-          sectionChanged = true;
-        } else if (previousPath === '/race' && path === '/home') {
-          newSection = 'further';
-          sectionChanged = true;
-        } else if (previousPath !== '/home' && path === '/home' && currentSection !== 'home') {
-          newSection = 'further'; 
-          sectionChanged = true;
-        } else if (path === '/profile' && currentSection !== 'further') {
-           newSection = 'further';
-           const profileStepIndex = furtherSteps.findIndex(step => step.target === '.profile-page-container');
-           newStepIndex = profileStepIndex >= 0 ? profileStepIndex : 0; // Start at profile step
-           sectionChanged = true;
-        }
-        
-        if (sectionChanged) {
-          console.log(`Navigation detected: switching to section ${newSection} at step ${newStepIndex}`);
-          setCurrentSection(newSection);
-          setStepIndex(newStepIndex);
-        }
+    if (expectedSection !== currentSection) {
+      // Logic to determine the correct step index when changing sections
+      let newStepIndex = 0;
+      // Example: If navigating from home to race, start practice section at step 0
+      if (currentSection === 'home' && expectedSection === 'practice') {
+        newStepIndex = 0;
       }
-    }
-  }, [location.pathname, isJoyrideRunningInternal, currentPath, currentSection]);
+      // Example: If navigating from race back to home, start further section at step 0
+      else if (currentSection === 'practice' && (expectedSection === 'further' || expectedSection === 'home')) {
+         // Assuming 'further' steps start after practice, reset to 0 for 'further'
+         // Need to refine this based on exact flow between practice -> home -> further
+         goToStep('further', 0); // Explicitly go to 'further' section
+         return; // Exit early as goToStep handles state update
+      }
+      // Example: Navigating to profile page should target the correct step in 'further'
+      else if (expectedSection === 'profile') {
+         // Find the index of the profile page step in the 'further' section
+         const profileStepIndex = furtherSteps.findIndex(step => step.target === '.profile-page-container');
+         newStepIndex = profileStepIndex >= 0 ? profileStepIndex : 0;
+         goToStep('further', newStepIndex); // Go to 'further' section at the profile step
+         return; // Exit early
+      }
+      // Add more specific transition logic here based on your step definitions
+      // ...
 
-  // Get the appropriate steps based on current section
-  const getActiveSteps = () => {
-    switch(currentSection) {
-      case 'practice': return practiceSteps;
-      case 'further': return furtherSteps;
-      case 'home':
-      default: return homeSteps;
-    }
-  };
+      console.log(`[TutorialGuide] Section changed from ${currentSection} to ${expectedSection}. Setting step to ${newStepIndex}.`);
+       goToStep(expectedSection, newStepIndex); // Use goToStep to handle state update
+     } else {
+       // Still in the same section. Only resume if paused for a reason *other* than target not found.
+       // If paused for target not found, let the TARGET_NOT_FOUND handler manage retries/pausing.
+       if (isPaused && !errorState?.startsWith('Target not found')) {
+         console.log(`[TutorialGuide] Resuming tutorial in section ${currentSection} after navigation (pause reason: ${errorState}).`);
+         resumeTutorial();
+       } else if (isPaused) {
+         console.log(`[TutorialGuide] Tutorial remains paused in section ${currentSection} after navigation (pause reason: ${errorState}).`);
+       }
+     }
+   }, [location.pathname, isRunning, currentSection, isPaused, errorState, determineSection, goToStep, resumeTutorial]); // Added errorState dependency
 
-  // Handle Joyride callback events
-  const handleJoyrideCallback = (data) => {
+  // Handle Joyride callback events - Refactored to use context
+  const handleJoyrideCallback = async (data) => {
     const { status, action, index, type, lifecycle, step } = data;
     const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
-    
-    console.log(`Joyride callback: Index: ${index}, Status: ${status}, Type: ${type}, Action: ${action}, Lifecycle: ${lifecycle}, Section: ${currentSection}`);
+    const currentSteps = getActiveSteps(); // Get steps for the current section
 
-    // Handle the correct sequence of events for each step
-    if (type === EVENTS.STEP_BEFORE) {
-      // Pre-step actions
+    console.log(`[TutorialGuide] Joyride CB: Idx:${index}, Status:${status}, Type:${type}, Action:${action}, Lifecycle:${lifecycle}, Section:${currentSection}, StepTarget:${step?.target}`);
+
+    // --- Step Before: Validate target and prepare step ---
+    if (type === EVENTS.STEP_BEFORE && lifecycle === LIFECYCLE.READY) {
+      console.log(`[TutorialGuide] STEP_BEFORE: Preparing step ${index} in section ${currentSection}`);
       
-      // Auto-advance mode selectors
-      if (step && step.target === '[data-testid="mode-timed"]' && lifecycle === LIFECYCLE.READY) {
-        console.log('Setting auto-advance for timed mode');
+      // 1. Validate Target Existence with Retry
+      const targetExists = await waitForTarget(step.target);
+      if (!targetExists) {
+        // Target not found after waiting, pause the tutorial
+        console.error(`[TutorialGuide] Target "${step.target}" for step ${index} not found after waiting. Pausing.`);
+        pauseTutorial(`Target not found: ${step.target}`);
+        // Optionally, show a message to the user here
+        return; // Stop processing this callback
+      }
+      
+      // 2. Reset retry count if target is found
+      const key = `${currentSection}-${index}`;
+      retryCounts.current[key] = 0;
+
+      // 3. Prepare specific step types (mode buttons, typing)
+      if (step.target === '[data-testid="mode-timed"]') {
+        console.log('[TutorialGuide] Setting auto-advance for timed mode');
         setShouldAutoAdvanceToMode('mode-timed');
-      }
-      else if (step && step.target === '[data-testid="mode-snippet"]' && lifecycle === LIFECYCLE.READY && index > 3) {
-        console.log('Setting auto-advance for snippet mode');
+      } else if (step.target === '[data-testid="mode-snippet"]' && index > 3) { // Assuming index > 3 means it's the "back to snippet" step
+        console.log('[TutorialGuide] Setting auto-advance for snippet mode');
         setShouldAutoAdvanceToMode('mode-snippet');
-      }
-      
-      // Typing experience steps need special handling
-      if (step && (
-          step.target === '.typing-input-container' || 
-          step.target === '.snippet-display' || 
-          step.content.includes('Backspace key') ||
-          step.content.includes('text turned red')
-      ) && lifecycle === LIFECYCLE.READY) {
-        console.log('Preparing for typing step:', step.target);
-        setTimeout(prepareForTyping, 500);
-      }
-    }
-    
-    // Handle target clicks for mode buttons
-    if (type === EVENTS.TARGET_CLICK) {
-      console.log('Target clicked:', step?.target);
-      // For mode buttons, we let the click handler advance the tutorial
-      if (step?.target.includes('data-testid="mode-')) {
-        // Don't advance here, the click handler will do it
-        return;
-      }
-    }
-    
-    // Update stepIndex for tracking progress
-    if ((type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) && action !== ACTIONS.CLOSE) {
-      const newStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
-      // Prevent advancing past the last step
-      if (newStepIndex >= 0 && newStepIndex < getActiveSteps().length) {
-         setStepIndex(newStepIndex);
-         console.log(`Advanced to step ${newStepIndex} in section ${currentSection}`);
-      } else if (newStepIndex >= getActiveSteps().length && status !== STATUS.FINISHED) {
-        console.log(`Attempted to advance past last step (${getActiveSteps().length -1}) in section ${currentSection}.`);
+      } else if (
+        step.target === '.typing-input-container' ||
+        step.target === '.snippet-display' ||
+        step.content.includes('Backspace key') ||
+        step.content.includes('text turned red')
+      ) {
+        console.log('[TutorialGuide] Preparing for typing step:', step.target);
+        // Ensure input is focused before preparing
+        const inputEl = document.querySelector('.typing-input-container input');
+        if (inputEl) inputEl.focus();
+        setTimeout(prepareForTyping, 300); // Slight delay after focus
       }
     }
 
-    // Handle tutorial completion
-    if (finishedStatuses.includes(status)) {
-      console.log('Tutorial finished or skipped. Marking as complete...');
-      setIsJoyrideRunningInternal(false);
-      markTutorialComplete();
-      endTutorial();
-    } 
-    // Handle target not found errors gracefully
-    else if (type === EVENTS.TARGET_NOT_FOUND) {
-      const target = getActiveSteps()[index]?.target;
-      console.warn(`Target not found for step ${index} in ${currentSection}: ${target}`);
-      
-      // Skip this step instead of ending the tutorial
-      if (getActiveSteps().length > index + 1) {
-        console.log('Target not found, skipping to next step');
-        setStepIndex(index + 1);
-      } else {
-        console.log('No more steps available after target not found, ending tutorial section');
-        if (currentSection === 'further') {
-          setIsJoyrideRunningInternal(false);
-          endTutorial();
-        }
+    // --- Target Click: Handle specific interactions ---
+    if (type === EVENTS.TARGET_CLICK) {
+      console.log('[TutorialGuide] TARGET_CLICK:', step?.target);
+      // Let mode button click handler manage advancement
+      if (step?.target.includes('data-testid="mode-')) {
+        return; // Prevent default advancement
       }
-    } 
-    else if (type === EVENTS.ERROR) {
-      console.error('Joyride error:', data);
-      setIsJoyrideRunningInternal(false);
+      // Handle other spotlight clicks if needed, otherwise let Joyride advance
+    }
+
+    // --- Step After: Update context state ---
+    if (type === EVENTS.STEP_AFTER && action !== ACTIONS.CLOSE) {
+       console.log(`[TutorialGuide] STEP_AFTER: Action: ${action}, Current Index: ${index}`);
+       if (action === ACTIONS.NEXT || action === ACTIONS.PREV) {
+         // Use context function to advance/go back
+         // Note: Joyride's index is the *previous* step index here
+         const nextIndex = index + (action === ACTIONS.NEXT ? 1 : -1);
+         if (nextIndex >= 0 && nextIndex < currentSteps.length) {
+            // Check if we are crossing section boundaries (if applicable)
+            // For now, assume advancement within the same section
+            goToStep(currentSection, nextIndex); 
+         } else if (nextIndex >= currentSteps.length) {
+            console.log(`[TutorialGuide] Reached end of section ${currentSection}.`);
+            // Handle section completion or end of tutorial
+            // This might involve navigating or calling endTutorial()
+            // For now, just end the tutorial if it's the last step of the last section
+            if (currentSection === 'further' && index === currentSteps.length - 1) {
+               endTutorial();
+               markTutorialComplete();
+            } else {
+               // TODO: Add logic for transitioning between sections if needed
+               console.warn("[TutorialGuide] Section transition logic not fully implemented.");
+               // As a fallback, end the tutorial if we advance past the last step
+               endTutorial();
+               markTutorialComplete();
+            }
+         }
+       }
+    }
+
+    // --- Error Handling: Target Not Found ---
+    if (type === EVENTS.TARGET_NOT_FOUND) {
+      const targetSelector = step?.target || currentSteps[index]?.target;
+      console.warn(`[TutorialGuide] TARGET_NOT_FOUND received for Step ${index}, Target: ${targetSelector}`);
+
+      // Check if the target exists *now* (maybe it appeared late)
+      if (document.querySelector(targetSelector)) {
+        console.log(`[TutorialGuide] Target ${targetSelector} found now. Retrying step ${index}.`);
+        // Force Joyride to re-render the same step
+        if (joyrideRef.current && joyrideRef.current.helpers) {
+          joyrideRef.current.helpers.go(index);
+        }
+        // Ensure tutorial is not paused if it was previously
+        if (isPaused) resumeTutorial();
+      } else {
+        // Target still not found, pause the tutorial
+        console.error(`[TutorialGuide] Target ${targetSelector} still not found. Pausing.`);
+        pauseTutorial(`Target not found: ${targetSelector}`);
+      }
+      return; // Stop further processing in this callback for this event
+    }
+
+    // --- Error Handling: General Joyride Errors ---
+    if (type === EVENTS.ERROR) {
+      console.error('[TutorialGuide] Joyride reported an error:', data);
+      pauseTutorial(`Joyride error: ${data.error?.message || 'Unknown error'}`);
+      // Optionally end tutorial or show error message
+      endTutorial(); // End tutorial on unexpected errors
+    }
+
+    // --- Tutorial Finish/Skip ---
+    if (finishedStatuses.includes(status)) {
+      console.log('[TutorialGuide] Tutorial finished or skipped.');
       endTutorial();
+      markTutorialComplete(); // Mark as complete in AuthContext
     }
   };
 
   const steps = getActiveSteps();
-  
+
+  // Render Joyride only if isRunning is true
+  if (!isRunning) return null;
+
   return (
     <>
+      {/* Optionally display a message if the tutorial is paused */}
+      {isPaused && (
+         <div style={{ position: 'fixed', top: '100px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(255, 0, 0, 0.8)', color: 'white', padding: '10px 20px', borderRadius: '5px', zIndex: 100001 }}>
+           Tutorial Paused: {errorState || 'Waiting for correct state...'}
+           {/* Add a button to manually resume if needed */}
+           {/* <button onClick={resumeTutorial}>Resume</button> */}
+         </div>
+      )}
       <Joyride
         ref={joyrideRef}
         steps={steps}
-        stepIndex={stepIndex}
-        run={isJoyrideRunningInternal}
+        stepIndex={currentStepIndex} // Use context stepIndex
+        run={isRunning && !isPaused} // Run only if running and not paused
         continuous={true}
         showProgress={true}
         showSkipButton={true}

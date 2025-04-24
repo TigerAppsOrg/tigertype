@@ -1,4 +1,5 @@
 # Princeton Course Evaluation Scraper for TigerType
+*[AI DISCLAIMER: THIS DOCUMENTATION WAS CREATED WITH THE HELP OF AI]*
 
 This directory contains the script and documentation for scraping course evaluations from the official Princeton University course evaluation website. The goal is to extract engaging text snippets for use in the TigerType application.
 
