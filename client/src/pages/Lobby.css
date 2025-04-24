@@ -147,7 +147,7 @@
 
 .lobby-settings h2 {
   margin: 0 0 1.2rem 0;
-  color: var(--heading-color);
+  color: var(--mode-text-color);
   font-size: 1.3rem;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.6rem;
@@ -251,7 +251,7 @@
 .lobby-players h2 {
   margin-top: 0;
   margin-bottom: 1.5rem;
-  color: var(--heading-color);
+  color: var(--mode-text-color);
   font-size: 1.3rem;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.5rem;

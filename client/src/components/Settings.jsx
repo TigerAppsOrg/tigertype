@@ -44,11 +44,48 @@ function Settings({ isOpen, onClose }) {
 
   const modalRef = useRef(); // Create a ref for the modal content
 
+  //   --main-font: 'Inter', sans-serif;
+  //   --secondary-color: #1e1e1e;
+  //   --mode-text-color: #e0e0e0;
+  //   --hover-color: #2a2a2a;
+  //   --type-container-color: #1e1e1e;
+  //   --container-color: #1e1e1e;
+  //   --typing-color: #ffffff53;  
+  //   --player-card-color: #2a2a2a;
+
+  //   --primary-color: #F5821F;
+  //   --primary-color-light: #FFAD6B;
+  //   --primary-color-dark: #C25A00;
+  //   --primary-color-rgb: 245, 130, 31;
+
+  //   --background-color: #121212;
+  //   --background-color-secondary: #1e1e1e;
+  //   --background-color-tertiary: #2a2a2a;
+  //   --background-color-tertiary-rgb: 42, 42, 42;
+
+  //   --text-color: #e0e0e0;
+  //   --text-color-secondary: #b0b0b0;
+  //   --text-color-tertiary: #888888;
+  //   --text-color-highlight: #ffffff;
+
+  //   --border-color: #3a3a3a;
+  //   --border-color-light: #4a4a4a;
+  //   --border-color-rgb: 58, 58, 58;
+
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
     document.documentElement.style.setProperty('--main-font', whichFont);
     document.documentElement.style.setProperty(
+      '--developer-link-color', theme === 'light' ? '#FFAD6B' : '#C25A00'
+    );
+    document.documentElement.style.setProperty(
+      '--developer-link-hover-color', theme === 'light' ? '#C25A00' : '#FFAD6B'
+    );
+    document.documentElement.style.setProperty(
       '--background-color', theme === 'light' ? '#ffffff' : '#121212'
+    );
+    document.documentElement.style.setProperty(
+      '--background-color-secondary', theme === 'light' ? '#e0e0e0' : '#1e1e1e'
     );
     document.documentElement.style.setProperty(
       '--secondary-color', theme === 'light' ? '#f0f0f0' : '#1e1e1e'
@@ -57,13 +94,16 @@ function Settings({ isOpen, onClose }) {
       '--mode-text-color', theme === 'light' ? '#1e1e1e' : '#e0e0e0'
     );
     document.documentElement.style.setProperty(
+      '--text-color-secondary', theme === 'light' ? '#505050' : '#b0b0b0'
+    );
+    document.documentElement.style.setProperty(
       '--hover-color', theme === 'light' ? '#a2a2a2' : '#2a2a2a'
     );
     document.documentElement.style.setProperty(
       '--type-container-color', theme === 'light' ? '#dfdfdf' : '#1e1e1e'
     );
     document.documentElement.style.setProperty(
-      '--typing-color', theme === 'light' ? 'black' : '#ffffff53'
+      '--typing-color', theme === 'light' ? '#000000' : '#ffffff53'
     );
     document.documentElement.style.setProperty(
       '--container-color', theme === 'light' ? '#ffffff' : '#121212'
@@ -85,7 +125,23 @@ function Settings({ isOpen, onClose }) {
     );
     document.documentElement.style.setProperty(
       '--current-color',
-      theme === 'light' ? 'black' : 'white'
+      theme === 'light' ? '#000000' : '#ffffff'
+    );
+    document.documentElement.style.setProperty(
+      '--text-color',
+      theme === 'light' ? '#000000' : '#e0e0e0'
+    );
+    document.documentElement.style.setProperty(
+      '--text-color-highlight',
+      theme === 'light' ? '#000000' : '#ffffff'
+    );
+    document.documentElement.style.setProperty(
+      '--button-bg-color',
+      theme === 'light' ? 'rgba(125, 125, 125, 0.8)' : '#3a3a3a'
+    );
+    document.documentElement.style.setProperty(
+      '--subtle-text-color',
+      theme === 'light' ? 'rgba(60, 60, 60, 0.8)' : '#7A7A7A'
     );
 
     // Set the snippet font size CSS variable
