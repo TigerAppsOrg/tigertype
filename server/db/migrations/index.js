@@ -216,7 +216,7 @@ const MIGRATIONS = [
   }
   ,
   {
-    version: 6,
+    version: 7,
     description: 'Add optimistic concurrency version column to lobbies table',
     up: async (client) => {
       // Add a harmless integer column used for optimistic concurrency control.
@@ -243,7 +243,7 @@ const MIGRATIONS = [
     }
   },
   {
-    version: 7,
+    version: 8,
     description: 'Add Princeton course details to snippets table',
     up: async (client) => {
       console.log('Running migration to add Princeton course details to snippets table...');
@@ -269,7 +269,7 @@ const MIGRATIONS = [
     }
   },
   {
-    version: 8,
+    version: 9,
     description: 'Ensure unique constraint on snippets.text',
     up: async (client) => {
       console.log('Running migration to ensure unique constraint on snippets.text...');
