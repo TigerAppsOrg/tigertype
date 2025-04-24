@@ -317,19 +317,19 @@ const MIGRATIONS = [
 
         // Insert badges only if none exist
         await client.query(`
-      INSERT INTO badges (key, name, description, icon_url, criteria_type, criteria_value)
-      VALUES
-        ('first_race', 'First Race', 'Complete your first race', '/icons/first-race.svg', 'races_completed', 1),
-        ('ten_race', '10 Races', 'Complete 10 races', '/icons/10races.svg', 'races_completed', 10),
-        ('one_hundred_race', '100 Races', 'Complete 100 races', '/icons/100races.svg', 'races_completed', 100),
-        ('novice',  'Novice', 'Average WPM ≥ 100', '/icons/avg100.svg', 'avg_wpm', 100),
-        ('intermediate',  'Intermediate', 'Average WPM ≥ 125', '/icons/avg125.svg', 'avg_wpm', 125),
-        ('advanced',  'Advanced', 'Average WPM ≥ 150', '/icons/avg150.svg', 'avg_wpm', 150),
-        ('expert',  'Expert', 'Average WPM ≥ 175', '/icons/avg175.svg', 'avg_wpm', 175),
-        ('fast',  'Fast', 'Fastest WPM ≥ 150', '/icons/fastest150.svg', 'fastest_wpm', 150),
-        ('faster',  'Faster', 'Fastest WPM ≥ 175', '/icons/fastest175.svg', 'fastest_wpm', 175),
-        ('fastest',  'Fastest', 'Fastest WPM ≥ 200', '/icons/fastest200.svg', 'fastest_wpm', 200)
-    `);
+        INSERT INTO badges (key, name, description, icon_url, criteria_type, criteria_value)
+        VALUES
+          ('first_race', 'First Race', 'Complete your first race', '/icons/first-race.svg', 'races_completed', 1),
+          ('ten_race', '10 Races', 'Complete 10 races', '/icons/10races.svg', 'races_completed', 10),
+          ('one_hundred_race', '100 Races', 'Complete 100 races', '/icons/100races.svg', 'races_completed', 100),
+          ('novice',  'Novice', 'Average WPM ≥ 100', '/icons/avg100.svg', 'avg_wpm', 100),
+          ('intermediate',  'Intermediate', 'Average WPM ≥ 125', '/icons/avg125.svg', 'avg_wpm', 125),
+          ('advanced',  'Advanced', 'Average WPM ≥ 150', '/icons/avg150.svg', 'avg_wpm', 150),
+          ('expert',  'Expert', 'Average WPM ≥ 175', '/icons/avg175.svg', 'avg_wpm', 175),
+          ('fast',  'Fast', 'Fastest WPM ≥ 150', '/icons/fastest150.svg', 'fastest_wpm', 150),
+          ('faster',  'Faster', 'Fastest WPM ≥ 175', '/icons/fastest175.svg', 'fastest_wpm', 175),
+          ('fastest',  'Fastest', 'Fastest WPM ≥ 200', '/icons/fastest200.svg', 'fastest_wpm', 200)
+      `);
 
         console.log('Initial badges added successfully');
       } else {
