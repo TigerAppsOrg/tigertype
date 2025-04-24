@@ -137,6 +137,7 @@ def call_ai_to_extract_snippets(comment_text):
         "I'm not sure if I would take this for the actual course content, for I didn't find it all that interesting, most of the psets felt like busy work, and some of the derivations and problems felt way too wishy-washy (although to be fair rigorous diffeqs would not be very fun either.)",
         "unlike MAT 201 and 202, which felt like getting hit with a brick",
         "It has been CRIMINALLY underrated in previous years.",
+        "He will single handedly carry you through this class.",
         "There are many YouTube playlists about differential equations, but none of them go to the depth that this course does.",
         "Dont take this class please :( UNLESS you absolutely have to",
         "If it isn't, I would strongly recommend against this course, but if you can't avoid it, good luck.",
@@ -156,7 +157,7 @@ def call_ai_to_extract_snippets(comment_text):
         "**AGGRESSIVELY AVOID** generic advice ('start early', 'go to office hours'), mundane praise/criticism ('good course', 'learned a lot', 'professor was nice'), boilerplate language, or purely factual statements unless the *wording itself* is exceptionally creative or funny."
         "For EACH valid snippet, include a difficulty rating: 1 (easy), 2 (medium), 3 (hard). Base this on factors like punctuation complexity, sentence structure, word length, and presence of numbers or symbols. Snippets over 50 words are usually difficulty 3."
         "Fix obvious typos or grammatical errors in the source text, but DO NOT change the meaning or wording significantly. Preserve the original student voice. Also for example, if you are taking a snippet from the middle of a sentence, ensure that enough context is present so that the snippet remains understandably funny, and grammar/punctuation-wise ensure the first letter is capitalized."
-        "***Return an empty list [] if absolutely nothing meets these strict criteria. Be EXTREMELY SELECTIVE in your filtering.*** "
+        "***Return an empty list [] if absolutely nothing meets these strict criteria. Be EXTREMELY SELECTIVE in your filtering; only return the funniest of course evaluations.*** "
         f"{good_examples_text}"
         f"{bad_examples_text}"
 
