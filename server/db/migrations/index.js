@@ -264,7 +264,7 @@ const MIGRATIONS = [
   },
   {
     version: 9,
-    description: 'Add has_completed_tutorial flag to users table',
+    description: 'Ensure unique constraint on snippets.text',
     up: async (client) => {
       console.log('Running migration to add has_completed_tutorial flag to users table...');
       await client.query(`
