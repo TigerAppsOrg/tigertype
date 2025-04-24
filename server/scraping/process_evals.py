@@ -106,6 +106,13 @@ def call_ai_to_extract_snippets(comment_text):
         "Verilog, which is an awful language full of strange idiosyncracies that destroy your code for no reason.",
         "If that isn't enough, literal billionaires come to speak to this class.",
         "So procrastination is actually a good option.",
+        "This class is absolutely awful. The guy doesn't speak English. I have literally never once in my 15 years of formal education been in the presence of a teacher so atrocious.",
+        "In the sleepy afternoon light of McCosh 50 with the shades drawn and the brightest thing in the room being the screen of the wrestler in front of me's subway surfer emulator (Lord knows it isn't the professor), one cannot help but fall asleep as he mumbles into the microphone unintelligible sounds that masquerade as English words on statistical tests and methods.",
+        "This level of incompetence at conveying the material is simply unprecedented in Princeton; nay Ivy League; nay university; nay pedagogical history, since the dawn of mankind.",
+        "When I was a child, I got hit by a car.",
+        "Simply pray to whatever God you believe in for the exams. You WILL need His grace.",
+        "My key takeaway from this class is how useless and unintelligent ChatGPT is when it comes to programming in a pre-existing environment.",
+        "Not only is 'C' the grade I am getting for this course, but it is also the coding language that caused me a semester full of torment and punishment.",
     ]
     examples_text = "\n\nHere are some examples of the *type* of snippets I want you to extract:\n"
     for i, ex in enumerate(example_snippets):
