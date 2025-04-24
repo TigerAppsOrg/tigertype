@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './Modal.css';
+// AI DISCLAIMER: "warning.png" was generated using AI 
+import warning from '../assets/logos/warning.png';
 
 const Modal = ({ 
   isOpen, 
@@ -9,9 +11,11 @@ const Modal = ({
   buttonText, 
   onClose, 
   children,
+  isAlert = false,
   showCloseButton = false,
   isLarge = false,
-  customFooter = null
+  customFooter = null,
+  onEnter = null
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -29,6 +33,9 @@ const Modal = ({
       if (event.key === 'Escape') {
         onClose();
       }
+      if (event.key === 'Enter') {
+        onEnter();
+      }
     };
 
     if (isOpen) {
@@ -38,7 +45,7 @@ const Modal = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, onEnter]);
 
   if (!isOpen) return null;
 
@@ -48,7 +55,7 @@ const Modal = ({
     }
   };
 
-  const modalContainerClass = `modal-container ${isLarge ? 'modal-large' : ''}`;
+  const modalContainerClass = `modal-container${isAlert ? '-shake' : ''} ${isLarge ? 'modal-large' : ''}`;
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -64,6 +71,7 @@ const Modal = ({
           </div>
         )}
         <div className="modal-body">
+          {isAlert && <img src={warning} className="warning-background" alt="tigertype-warning" />}
           {children ? children : <p>{message}</p>}
         </div>
         {customFooter ? (
@@ -76,7 +84,7 @@ const Modal = ({
               {buttonText || "I understand"}
             </button>
           </div>
-        ) : null}
+        ) : null}   
       </div>
     </div>
   );
@@ -89,9 +97,11 @@ Modal.propTypes = {
   message: PropTypes.string,
   buttonText: PropTypes.string,
   children: PropTypes.node,
+  isAlert: PropTypes.bool,
   showCloseButton: PropTypes.bool,
   isLarge: PropTypes.bool,
   customFooter: PropTypes.node,
+  onEnter: PropTypes.func
 };
 
 export default Modal; 

@@ -120,7 +120,7 @@ function AboutUs() {
             <li><strong>Player Minimum:</strong> Quick Match and Private Lobbies require a minimum of 2 players to start a race.</li>
             <li><strong>Ready Status:</strong> All players must click "Ready" to begin a race.</li>
             <li><strong>Inactivity Warning:</strong> If you are the only player who has not clicked "Ready" for 60 seconds, you will receive an inactivity warning.</li>
-            <li><strong>Inactivity Kick:</strong> If you remain inactive for an additional 45 seconds after the warning, you will be automatically removed from the lobby to prevent holding up other players.</li>
+            <li><strong>Inactivity Kick:</strong> If you remain inactive for an additional 15 seconds after the warning, you will be automatically removed from the lobby to prevent holding up other players.</li>
             <li><strong>Anti-Cheat Measures:</strong> Pasting text is disabled during races to maintain fair competition.</li>
           </ul>
 
@@ -158,7 +158,7 @@ function AboutUs() {
             <li>Once at least one other player joins, click "Ready"</li>
             <li>When all players are ready, a 5-second countdown will begin</li>
             <li>If you don't click "Ready" within 60 seconds, you'll receive an inactivity warning</li>
-            <li>If you remain inactive for an additional 45 seconds, you'll be removed from the lobby</li>
+            <li>If you remain inactive for an additional 15 seconds, you'll be removed from the lobby</li>
           </ul>
 
           <h4>Typing Content</h4>

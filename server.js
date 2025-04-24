@@ -38,22 +38,22 @@ const io = socketIO(server, {
 });
 
 // --- Trust Proxy --- 
-// Required for secure cookies to work correctly behind Heroku's proxy
-app.set('trust proxy', 1); 
+// Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
+app.set('trust proxy', true); 
 
-// Force HTTPS redirect in production
-if (process.env.NODE_ENV === 'production') {
-  app.use((req, res, next) => {
-    if (req.secure) {
-      // Request is alr secure, proceed
-      next();
-    } else {
-      // Redirect to HTTPS with 301 permanent redirect
-      const httpsUrl = 'https://' + req.headers.host + req.url;
-      res.redirect(301, httpsUrl);
-    }
-  });
-}
+// // Force HTTPS redirect in production
+// if (process.env.NODE_ENV === 'production') {
+//   app.use((req, res, next) => {
+//     if (req.secure) {
+//       // Request is alr secure, proceed
+//       next();
+//     } else {
+//       // Redirect to HTTPS with 301 permanent redirect
+//       const httpsUrl = 'https://' + req.headers.host + req.url;
+//       res.redirect(301, httpsUrl);
+//     }
+//   });
+// }
 
 // Configure CORS
 const corsOptions = {
@@ -75,9 +75,13 @@ const sessionMiddleware = session({
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'
+    httpOnly: false,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    // explicitly set domain for production to avoid ambiguity with custom domains
+    domain: process.env.NODE_ENV === 'production' && process.env.SERVICE_URL 
+            ? new URL(process.env.SERVICE_URL).hostname 
+            : undefined
   }
 });
 

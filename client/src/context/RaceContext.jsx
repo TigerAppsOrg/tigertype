@@ -466,7 +466,22 @@ export const RaceProvider = ({ children }) => {
 
   // Handle text input, enforce word locking
   const handleInput = (newInput) => {
-    if (!raceState.inProgress) {
+    
+    // --- Start Practice Race on First Input --- 
+    if (raceState.type === 'practice' && !raceState.inProgress && newInput.length > 0) {
+      console.log("First input detected in practice mode, starting race locally.");
+      setRaceState(prev => ({
+        ...prev,
+        inProgress: true,
+        startTime: Date.now() // Set start time locally
+      }));
+      // Note: The first call to updateProgress will use this new startTime
+    }
+    // --- End Practice Race Start --- 
+
+    if (!raceState.inProgress && !(raceState.type === 'practice' && newInput.length > 0) ) {
+      // If not in progress (and not the very first input of practice mode), 
+      // just update the input field visually without processing WPM etc.
       setTypingState(prev => ({
         ...prev,
         input: newInput,
@@ -475,6 +490,7 @@ export const RaceProvider = ({ children }) => {
       return;
     }
     
+    // If we are in progress (or just started practice), proceed with full update
     const currentInput = typingState.input;
     const lockedPosition = typingState.lockedPosition;
     const text = raceState.snippet?.text || '';
