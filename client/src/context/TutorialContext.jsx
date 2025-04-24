@@ -94,7 +94,17 @@ export const TutorialProvider = ({ children }) => {
     setCurrentStepIndex(0);
     setIsPaused(false);
     setErrorState(null);
-    // Consider calling markTutorialComplete here if appropriate
+    
+    // Call markTutorialComplete from the auth context if we have that function
+    try {
+      const { markTutorialAsCompleted } = window.user || {};
+      if (typeof markTutorialAsCompleted === 'function') {
+        console.log('[TutorialContext] Marking tutorial as completed via user API');
+        markTutorialAsCompleted();
+      }
+    } catch (err) {
+      console.error('[TutorialContext] Error marking tutorial as completed:', err);
+    }
   }, []);
 
   // Advance to the next step

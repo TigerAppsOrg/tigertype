@@ -114,7 +114,7 @@ const practiceSteps = [
 
   // --- Duration Selection ---
   makeStep(
-    '.duration-selection-inner',
+    '.options-wrapper.timed-options',
     'Choose how long you want to type: 15, 30, 60, or 120 seconds. Your scores in timed mode will appear on the leaderboard.',
     'bottom',
     { delay: 300 }
@@ -367,12 +367,73 @@ const TutorialGuide = () => {
   
   // Utility function to wait for a target element
   const waitForTarget = async (selector, timeout = 3000) => {
+    // Check if we need to use a fallback selector
+    let selectors = [selector];
+    
+    // Add fallback selectors for known problematic elements
+    if (selector === '.options-wrapper.timed-options') {
+      selectors.push('.timed-options');
+      selectors.push('.duration-selection-inner');
+      selectors.push('.test-configurator button[data-testid="mode-timed"]');
+    }
+    
     const start = Date.now();
     while (Date.now() - start < timeout) {
-      if (document.querySelector(selector)) return true;
+      // Try all potential selectors
+      for (const sel of selectors) {
+        if (document.querySelector(sel)) {
+          console.log(`[TutorialGuide] Found target using selector: ${sel}`);
+          return true;
+        }
+      }
       await new Promise(r => setTimeout(r, 100));
     }
-    console.warn(`[TutorialGuide] Target "${selector}" not found after ${timeout}ms.`);
+    
+    console.warn(`[TutorialGuide] Target not found after ${timeout}ms. Tried selectors: ${selectors.join(', ')}`);
+    return false;
+  };
+
+  // Helper to ensure the correct mode is active when needed for specific steps
+  const ensureCorrectMode = async (stepTarget) => {
+    // If we need timed mode to be active
+    if (stepTarget === '.options-wrapper.timed-options' || 
+        stepTarget === '.timed-options' || 
+        stepTarget === '.duration-selection-inner') {
+      
+      console.log('[TutorialGuide] Ensuring timed mode is active...');
+      
+      // Check if we need to click the timed mode button
+      const timedButton = document.querySelector('button[data-testid="mode-timed"]');
+      const timedOptionsVisible = document.querySelector('.timed-options.visible');
+      
+      if (timedButton && !timedOptionsVisible) {
+        console.log('[TutorialGuide] Clicking the timed mode button to activate timed mode');
+        timedButton.click();
+        
+        // Wait a bit for the UI to update
+        await new Promise(r => setTimeout(r, 500));
+        return true;
+      }
+    }
+    
+    // If we need snippet mode to be active
+    if (stepTarget === '.snippet-options' || stepTarget.includes('mode-snippet')) {
+      console.log('[TutorialGuide] Ensuring snippet mode is active...');
+      
+      // Check if we need to click the snippet mode button
+      const snippetButton = document.querySelector('button[data-testid="mode-snippet"]');
+      const snippetOptionsVisible = document.querySelector('.snippet-options.visible');
+      
+      if (snippetButton && !snippetOptionsVisible) {
+        console.log('[TutorialGuide] Clicking the snippet mode button to activate snippet mode');
+        snippetButton.click();
+        
+        // Wait a bit for the UI to update
+        await new Promise(r => setTimeout(r, 500));
+        return true;
+      }
+    }
+    
     return false;
   };
 
@@ -613,6 +674,9 @@ const TutorialGuide = () => {
     // --- Step Before: Validate target and prepare step ---
     if (type === EVENTS.STEP_BEFORE && lifecycle === LIFECYCLE.READY) {
       console.log(`[TutorialGuide] STEP_BEFORE: Preparing step ${index} in section ${currentSection}`);
+      
+      // 0. Ensure correct mode is active for mode-specific steps
+      await ensureCorrectMode(step.target);
       
       // 1. Validate Target Existence with Retry
       const targetExists = await waitForTarget(step.target);

@@ -284,16 +284,6 @@ const MIGRATIONS = [
   },
 ];
 
-// MIGRATION 9: Add has_completed_tutorial column to users table
-try {
-  const migration9 = require('./009_add_has_completed_tutorial.js');
-  if (!MIGRATIONS.some(m => m.version === migration9.version)) {
-    MIGRATIONS.push(migration9);
-  }
-} catch (e) {
-  console.error('Could not load migration 9:', e);
-}
-
 // Create migrations table if it doesn't exist
 const createMigrationsTable = async (client) => {
   await client.query(`

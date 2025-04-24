@@ -45,7 +45,7 @@ const ConditionalNavbar = () => {
   const location = useLocation();
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const { login, authenticated, user, loading } = useAuth();
-  const { isTutorialRunning, startTutorial, endTutorial } = useTutorial();
+  const { isRunning: isTutorialRunning, startTutorial, endTutorial } = useTutorial();
 
   // Effect to auto-start tutorial for new users
   useEffect(() => {
@@ -90,7 +90,7 @@ const ConditionalNavbar = () => {
 
 function AppRoutes() {
   return (
-    <Router>
+    <>
       <ConditionalNavbar /> {/* Use the conditional component */}
       <Suspense fallback={<Loading />}>
         <Routes>
@@ -125,21 +125,23 @@ function AppRoutes() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-    </Router>
+    </>
   );
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <TutorialProvider>
-        <SocketProvider>
-          <RaceProvider>
-            <AppRoutes />
-          </RaceProvider>
-        </SocketProvider>
-      </TutorialProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <TutorialProvider>
+          <SocketProvider>
+            <RaceProvider>
+              <AppRoutes />
+            </RaceProvider>
+          </SocketProvider>
+        </TutorialProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
