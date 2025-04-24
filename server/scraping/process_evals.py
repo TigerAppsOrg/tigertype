@@ -136,6 +136,7 @@ def call_ai_to_extract_snippets(comment_text):
         "He is an incredible lecturer, and probably the only one who could teach this amount of material in a short Princeton semester.",
         "I'm not sure if I would take this for the actual course content, for I didn't find it all that interesting, most of the psets felt like busy work, and some of the derivations and problems felt way too wishy-washy (although to be fair rigorous diffeqs would not be very fun either.)",
         "unlike MAT 201 and 202, which felt like getting hit with a brick",
+        "It has been CRIMINALLY underrated in previous years.",
         "There are many YouTube playlists about differential equations, but none of them go to the depth that this course does.",
         "Dont take this class please :( UNLESS you absolutely have to",
         "If it isn't, I would strongly recommend against this course, but if you can't avoid it, good luck.",
@@ -167,8 +168,11 @@ def call_ai_to_extract_snippets(comment_text):
         "- Corrected: 'Prof. Jones is okay, but lecture is kinda boring, to be honest.' (Capitalized name, abbreviation, added punctuation)\\n"
         "- Original:  'u need to do all the psets no cap'\\n"
         "- Corrected: 'You need to do all the problem sets, no cap.' (Expanded 'u', 'psets', added comma)\\n"
-        "\\nNow analyze the following review:"
-        "\\n\\n[REVIEW START]\\n{review}\\n[REVIEW END]\\n\\n"
+
+        "\nNow analyze the following review:"
+        "\n\n[REVIEW START]\n{review}\n[REVIEW END]\n\n"
+        "Output ONLY a JSON list containing the qualifying snippets, e.g. "
+        "[{{\"text\":\"…\",\"difficulty\":2}}, {{\"text\":\"…\",\"difficulty\":1}}] or []."
     ).replace("{review}", "{review}")  # keep literal placeholder for f‑string below
 
     retries = 0
