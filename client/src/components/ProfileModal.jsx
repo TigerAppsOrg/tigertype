@@ -19,6 +19,7 @@ function ProfileModal({ isOpen, onClose }) {
   const [selectedTitle, setSelectedTitle] =useState('');
   const [matchHistory, setMatchHistory] = useState([]);
   const [loadingMatchHistory, setLoadingMatchHistory] = useState(true);
+  const [userBadges, setUserBadges] = useState([]); 
 
   const modalRef = useRef();
   const typingInputRef = document.querySelector('.typing-input-container input');
@@ -170,6 +171,29 @@ function ProfileModal({ isOpen, onClose }) {
       fetchMatchHistory();
     }
   }, [isOpen, user, timestamp]);
+
+  useEffect(() => {
+    // Fetch user badges when the profile modal is opened
+    const fetchUserBadges = async () => {
+      try {
+        const response = await fetch('/api/user/badges', {
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+        console.log('User badges:', data);
+      }
+      catch (error) {
+        console.error('Error fetching user badges:', error);
+      }
+    }
+
+    if (isOpen && user) {
+      fetchUserBadges();
+    }
+
+  }, [isOpen, user]);
+
 
   // Parse numeric values to check if ints
   const parseNumericValue = (value) => {

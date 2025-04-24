@@ -357,6 +357,7 @@ const User = {
           [newAvgWpm.toFixed(2), newAvgAcc.toFixed(2), newRacesCompleted, userId]
         );
         console.log(`Updated regular stats for user ${userId}: WPM=${newAvgWpm.toFixed(2)}, Acc=${newAvgAcc.toFixed(2)}, Races=${newRacesCompleted}`);
+        await this.checkAndAwardBadges(userId);
       }
     } catch (error) {
       console.error(`Error updating stats for user ${userId}:`, error);
@@ -379,6 +380,7 @@ const User = {
           [wpm, userId]
         );
         console.log(`Updated fastest_wpm for user ${userId} to ${wpm}`);
+        await this.checkAndAwardBadges(userId); // Check for badges after updating fastest WPM
       } else {
         console.log(`Skipping fastest_wpm update for user ${userId} (${wpm} not higher than ${currentFastest})`);
       }
@@ -402,7 +404,133 @@ const User = {
     } catch (error) {
       console.error(`Error incrementing private race stats for user ${userId}:`, error);
     }
+  },
+
+  async getBadges(userId) {
+    if (!userId) return;
+    try {
+      const result = await pool.query(`
+        SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at 
+        FROM badges b 
+        JOIN user_badges u on b.id = u.badge_id 
+        WHERE u.user_id = $1
+        ORDER BY u.awarded_at DESC
+        `,
+        [userId]
+      );
+      console.log(`Got ${result.rows.length} badges for user: ${userId}`);
+      return result.rows;
+    } catch (error) {
+      console.error(`Error getting badges for user: ${userId}:`, error);
+    }
+  },
+
+  // used copilot for this - Ryan
+  async awardBadge(userId, badgeKey) {
+    if (!userId) return;
+    if (!badgeKey) return;
+
+    try {
+      // Check if user already has this badge
+      const existingBadge = await pool.query(`
+      SELECT u.badge_id FROM user_badges u JOIN badges b ON u.badge_id = b.id
+      WHERE u.user_id = $1 AND b.key = $2
+      `, [userId, badgeKey]);
+
+      if (existingBadge.rows.length > 0) {
+        return { awarded: false, already_awarded: true };
+      }
+
+      // Get the badge ID
+      const badgeResult = await db.query(`
+      SELECT id FROM badges WHERE key = $1
+      `, [badgeKey]);
+
+      if (badgeResult.rows.length === 0) {
+        throw new Error(`Badge with key ${badgeKey} not found`);
+      }
+
+      const badgeId = badgeResult.rows[0].id;
+
+      // Award the badge
+      await db.query(`
+      INSERT INTO user_badges (user_id, badge_id, awarded_at)
+      VALUES ($1, $2, CURRENT_TIMESTAMP)
+      `, [userId, badgeId]);
+
+      console.log(`Awarded badge ${badgeKey} for user: ${userId}`);
+
+      // Get badge details to return
+      const awardedBadge = await db.query(`
+      SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at
+      FROM badges b
+      JOIN user_badges u ON b.id = u.badge_id
+      WHERE u.user_id = $1 AND b.id = $2
+      `, [userId, badgeId]);
+
+      return {
+        awarded: true,
+        badge: awardedBadge.rows[0]
+      };
+    } catch (err) {
+      console.error('Error awarding badge:', err);
+      throw err;
+    }
+  },
+
+  // used copilot for this - Ryan
+  // Check user stats against badge criteria and award any earned badges
+  async checkAndAwardBadges(userId) {
+    try {
+      // Get user's current stats
+      const user = await this.findById(userId);
+      if (!user) return [];
+
+      // Get all badges that the user doesn't already have
+      const availableBadges = await db.query(`
+      SELECT b.id, b.key, b.name, b.criteria_type, b.criteria_value
+      FROM badges b
+      WHERE NOT EXISTS (
+        SELECT 1 FROM user_badges ub
+        WHERE ub.badge_id = b.id AND ub.user_id = $1
+      )
+      `, [userId]);
+
+      console.log(`Got unachieved badges for user: ${userId}`);
+
+      const newlyAwardedBadges = [];
+
+      // Check each badge criteria
+      for (const badge of availableBadges.rows) {
+        let awardBadge = false;
+
+        switch (badge.criteria_type) {
+          case 'races_completed':
+            awardBadge = user.races_completed >= badge.criteria_value;
+            break;
+          case 'avg_wpm':
+            awardBadge = parseFloat(user.avg_wpm) >= badge.criteria_value;
+            break;
+          case 'fastest_wpm':
+            awardBadge = parseFloat(user.fastest_wpm) >= badge.criteria_value;
+            break;
+        }
+
+        if (awardBadge) {
+          const result = await this.awardBadge(userId, badge.key);
+          if (result.awarded) {
+            newlyAwardedBadges.push(result.badge);
+          }
+        }
+      }
+
+      return newlyAwardedBadges;
+    } catch (err) {
+      console.error('Error checking and awarding badges:', err);
+      return [];
+    }
   }
+  
 };
 
 // Debug check to verify functions exist
