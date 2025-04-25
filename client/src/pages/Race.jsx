@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRace } from '../context/RaceContext';
+import { useTutorial } from '../context/TutorialContext';
+import { tutorialSteps } from '../tutorial/tutorialSteps';
 import { useSocket } from '../context/SocketContext';
 import Typing from '../components/Typing';
 import Results from '../components/Results';
@@ -14,8 +16,8 @@ import './Race.css';
 function Race() {
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { 
-    raceState, 
+  const {
+    raceState,
     typingState,
     inactivityState,
     setPlayerReady,
@@ -25,6 +27,9 @@ function Race() {
     setRaceState,
     loadNewSnippet
   } = useRace();
+  const { isRunning, currentSection, currentStepIndex } = useTutorial();
+  // index of the practice tutorial step when results screen should appear
+  const practiceResultIndex = tutorialSteps.practice.findIndex(s => s.id === 'practice-results-screen');
   
   // Test configuration states
   const [testMode, setTestMode] = useState('snippet');
@@ -142,10 +147,10 @@ function Race() {
 
               {/* Conditionally render Results */}
               {/* Show Results if race is completed */}
-              {raceState.completed && (
-                <Results 
-                  onShowLeaderboard={raceState.type === 'practice' ? toggleLeaderboard : null}
-                />
+              {raceState.completed && (!isRunning || (currentSection === 'practice' && currentStepIndex >= practiceResultIndex)) && (
+                 <Results
+                   onShowLeaderboard={raceState.type === 'practice' ? toggleLeaderboard : null}
+                 />
               )}
             </div>
             
