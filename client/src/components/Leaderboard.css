@@ -31,7 +31,7 @@ h2 {
 
 .control-button {
   padding: 0.6rem 1.2rem;
-  background-color: #3a3a3a; /* Dark gray */
+  background-color: var(--button-bg-color); /* Dark gray */
   color: #ccc; /* Light gray text */
   border: none;
   border-radius: 6px;
@@ -415,7 +415,7 @@ h2 {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background-color: rgba(58, 58, 58, 0.9);
+  background-color: var(--button-bg-color);
   color: rgba(255, 255, 255, 0.8);
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -442,7 +442,7 @@ h2 {
   width: 80%;
   font-weight: 600;
   border-radius: 8px;
-  background-color: rgba(58, 58, 58, 0.9);
+  background-color: var(--button-bg-color);
   color: rgba(255, 255, 255, 0.8);
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);

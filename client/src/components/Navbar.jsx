@@ -33,7 +33,7 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
   // Base style for all navbar links
   const getLinkStyle = (linkName) => {
     return {
-      color: hoveredLink === linkName ? '#F58025' : '#e0e0e0',
+      color: hoveredLink === linkName ? '#F58025' : 'var(--mode-text-color)',
       textDecoration: 'none',
       fontFamily: 'inherit',
       cursor: 'pointer'
