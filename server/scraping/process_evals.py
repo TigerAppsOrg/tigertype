@@ -80,8 +80,8 @@ def call_ai_to_extract_snippets(comment_text):
     if len(comment_text) < 20 or re.match(r"^[0-9.]+$|^N/A$|^n/a$", comment_text.strip()):
         return []
 
-    # ——— huge prompt with examples ———
-    example_snippets = [
+    # ——— GOOD examples ———
+    good_example_snippets = [
         "This would be a great course if it was not taught by Joe Scanlan. Alas, it is taught by him. Do not take this class if you are uncomfortable having a racist professor.",
         "This is the type of course that 10/10 dentists would recommend. You got better service on Ed than you would get at Verizon Wireless. Moretti/Li/Gabai had better offensive chemistry than Curry/Thompson/Durant.",
         "This class definitely put me in my lowest lows, a lot of sobbing in JRR bathrooms and I considered dropping/PDFing it multiple times. In fact, countless people did end up dropping it. Everyday I questioned why I didn't follow suit.",
@@ -106,24 +106,73 @@ def call_ai_to_extract_snippets(comment_text):
         "Verilog, which is an awful language full of strange idiosyncracies that destroy your code for no reason.",
         "If that isn't enough, literal billionaires come to speak to this class.",
         "So procrastination is actually a good option.",
+        "This class is absolutely awful. The guy doesn't speak English. I have literally never once in my 15 years of formal education been in the presence of a teacher so atrocious.",
+        "In the sleepy afternoon light of McCosh 50 with the shades drawn and the brightest thing in the room being the screen of the wrestler in front of me's subway surfer emulator (Lord knows it isn't the professor), one cannot help but fall asleep as he mumbles into the microphone unintelligible sounds that masquerade as English words on statistical tests and methods.",
+        "This level of incompetence at conveying the material is simply unprecedented in Princeton; nay Ivy League; nay university; nay pedagogical history, since the dawn of mankind.",
+        "When I was a child, I got hit by a car.",
+        "It's like learning to swim by jumping into the water."
+        "The textbook is written in alien language by the way.",
+        "Simply pray to whatever God you believe in for the exams. You WILL need His grace.",
+        "My key takeaway from this class is how useless and unintelligent ChatGPT is when it comes to programming in a pre-existing environment.",
+        "Not only is 'C' the grade I am getting for this course, but it is also the coding language that caused me a semester full of torment and punishment.",
+        "David is hands down one of the best professors. He explains concepts in such a clear, digestable manner. If you're worried/nervous about math, David is your best bet!",
     ]
-    examples_text = "\n\nHere are some examples of the *type* of snippets I want you to extract:\n"
-    for i, ex in enumerate(example_snippets):
-        examples_text += f"{i+1}. \"{ex}\"\n"
+    good_examples_text = "\n\nHere are some examples of the *type* of snippets I want you to extract (focus on unique phrasing, strong opinions, humor, or vivid descriptions):\n"
+    for i, ex in enumerate(good_example_snippets):
+        good_examples_text += f"{i+1}. \"{ex}\"\n"
+
+    # --- BAD examples (what to AVOID) ---
+    bad_example_snippets = [
+        "The professor was knowledgeable and helpful.",
+        "The precepts were useful.",
+        "This course is not a good fifth course; it is a lot of work.",
+        "Teachers just solve basic problems in the class that never come up on an exam.",
+        "Problem sets were challenging but fair.",
+        "Start the assignments early.",
+        "pls for the love of god use the exam archive",
+        "professor Howard doesn't sugarcoat the fact that it's fast-paced.",
+        "if precepts attendance wasn't necessary I wouldn't attend precepts, all preceptors do are walk through pset problems that aren't particularly useful.",
+        "This class is SUPER fast-paced, and it is often difficult to properly digest the material in such a short period.",
+        "He is an incredible lecturer, and probably the only one who could teach this amount of material in a short Princeton semester.",
+        "I'm not sure if I would take this for the actual course content, for I didn't find it all that interesting, most of the psets felt like busy work, and some of the derivations and problems felt way too wishy-washy (although to be fair rigorous diffeqs would not be very fun either.)",
+        "unlike MAT 201 and 202, which felt like getting hit with a brick",
+        "It has been CRIMINALLY underrated in previous years.",
+        "He will single handedly carry you through this class.",
+        "There are many YouTube playlists about differential equations, but none of them go to the depth that this course does.",
+        "Dont take this class please :( UNLESS you absolutely have to",
+        "If it isn't, I would strongly recommend against this course, but if you can't avoid it, good luck.",
+        "This course is fine if you have to take it. It won't make you like math, though. And if you like math, then you'll want to test out of this class, or start with some upper level stuff (although I haven't heard particularly positive things about that either).",
+        "Starts with sequences/series which are arguably the hardest part, then gets easier, almost algorithmic after.",
+    ]
+    bad_examples_text = "\n\nConversely, here are examples of the *type* of snippets to *AVOID* (too bland, generic, or common):\n"
+    for i, ex in enumerate(bad_example_snippets):
+        bad_examples_text += f"{i+1}. \"{ex}\"\n"
 
     # im no prompt engineer by any means but i think i cooked
     system_prompt = (
         "You are an *EXTREMELY SELECTIVE* assistant tasked with identifying ONLY the MOST engaging, funny, or uniquely phrased snippets from Princeton course reviews, suitable for a typing game."
-        "Your primary goal is QUALITY over quantity. Be very critical: it is better to return NOTHING than to return a bland snippet or something that would not be fun to type."
-        "The only users of the app are Princeton students so consider that the snippets, on top of being fun to type, should contain information useful for students deciding whether to take a course."
-        "Focus on extracting short, self‑contained, interesting, humorous, witty, strongly opinionated, or insightful phrases/sentences (15‑150 words)."
-        "AVOID generic advice, mundane praise/criticism, boilerplate, or personal info unless the *wording* itself is gold. More generic advice is only good if it's phrased in a way that's fun to type, or if it is useful information for the course."
-        "For EACH snippet include a difficulty rating: 1 (easy), 2 (medium), 3 (hard). "
-        "***Return an empty list [] if nothing meets the bar.*** "
-        f"{examples_text}"
+        "Your primary goal is MAXIMUM QUALITY over quantity. Be extremely critical: **it is FAR better to return NOTHING than to return a bland, generic, or uninspired snippet.**"
+        "The only users of the app are Princeton students so consider that the snippets, on top of being fun to type, can contain information useful for students deciding whether to take a course, *but only if presented in an interesting or funny way*."
+        "Focus on extracting short, self‑contained, interesting, humorous, witty, strongly opinionated, or insightful phrases/sentences (roughly 15‑150 words)."
+        "**AGGRESSIVELY AVOID** generic advice ('start early', 'go to office hours'), mundane praise/criticism ('good course', 'learned a lot', 'professor was nice'), boilerplate language, or purely factual statements unless the *wording itself* is exceptionally creative or funny."
+        "For EACH valid snippet, include a difficulty rating: 1 (easy), 2 (medium), 3 (hard). Base this on factors like punctuation complexity, sentence structure, word length, and presence of numbers or symbols. Snippets over 50 words are usually difficulty 3."
+        "Fix obvious typos or grammatical errors in the source text, but DO NOT change the meaning or wording significantly. Preserve the original student voice. Also for example, if you are taking a snippet from the middle of a sentence, ensure that enough context is present so that the snippet remains understandably funny, and grammar/punctuation-wise ensure the first letter is capitalized."
+        "***Return an empty list [] if absolutely nothing meets these strict criteria. Be EXTREMELY SELECTIVE in your filtering; only return the funniest of course evaluations.*** "
+        f"{good_examples_text}"
+        f"{bad_examples_text}"
+
+        "\\n**Grammar/Typo Correction Examples:**\\n"
+        "When fixing typos or grammar, aim for minimal changes that improve readability while keeping the original voice. Examples:\\n"
+        "- Original:  'it was so hard and i cried so much bc of it lol'\\n"
+        "- Corrected: 'It was so hard and I cried so much because of it lol.' (Capitalized start, expanded 'bc', added period)\\n"
+        "- Original:  'prof jones is ok but lecture is kinda boring tbh'\\n"
+        "- Corrected: 'Prof. Jones is okay, but lecture is kinda boring, to be honest.' (Capitalized name, abbreviation, added punctuation)\\n"
+        "- Original:  'u need to do all the psets no cap'\\n"
+        "- Corrected: 'You need to do all the problem sets, no cap.' (Expanded 'u', 'psets', added comma)\\n"
+
         "\nNow analyze the following review:"
         "\n\n[REVIEW START]\n{review}\n[REVIEW END]\n\n"
-        "Output ONLY a JSON list, e.g. "
+        "Output ONLY a JSON list containing the qualifying snippets, e.g. "
         "[{{\"text\":\"…\",\"difficulty\":2}}, {{\"text\":\"…\",\"difficulty\":1}}] or []."
     ).replace("{review}", "{review}")  # keep literal placeholder for f‑string below
 
@@ -269,3 +318,4 @@ atomic_write(processed_snip, processed_path)
 elapsed = time.perf_counter() - start_time
 print(f"\n✅ Done. Remaining comments: {len(raw_evals)}  |  "
       f"total snippets: {len(processed_snip)}  |  runtime: {elapsed:0.1f}s")
+
