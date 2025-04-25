@@ -23,7 +23,10 @@ function Settings({ isOpen, onClose }) {
   const [theme, setTheme] = useState(() => {
     // Default to 'dark' if no theme is stored or if stored value is invalid
     const storedTheme = localStorage.getItem('theme');
-    if (storedTheme === 'lavender-asphalt') {
+    if (storedTheme === 'tangerine') {
+      return 'tangerine'
+    }
+    else if (storedTheme === 'lavender-asphalt') {
       return 'lavender-asphalt';
     } else if (storedTheme === 'light') {
       return 'light';
@@ -60,7 +63,44 @@ function Settings({ isOpen, onClose }) {
 
     localStorage.setItem('theme', theme);
 
-    if (theme === 'lavender-asphalt') {
+    if (theme === 'tangerine') {
+      document.documentElement.style.setProperty('--primary-color', '#F5821F');
+      document.documentElement.style.setProperty('--secondary-color', '#F7EDE4');
+      document.documentElement.style.setProperty('--mode-text-color', '#214E34');
+      document.documentElement.style.setProperty('--hover-color', '#a2a2a2');
+      document.documentElement.style.setProperty('--type-container-color', '#FFF8F2');
+      document.documentElement.style.setProperty('--container-color', '#D7BFB1');
+      document.documentElement.style.setProperty('--typing-color', '#FFB577');
+      document.documentElement.style.setProperty('--player-card-color', '#aeaeae');
+
+      document.documentElement.style.setProperty('--background-color', '#E6BC9F');
+      document.documentElement.style.setProperty('--background-color-secondary', '#F0CDB3');
+
+      document.documentElement.style.setProperty('--text-color', '#214E34');
+      document.documentElement.style.setProperty('--text-color-secondary', '#505050');
+      document.documentElement.style.setProperty('--text-color-highlight', '#000000');
+      document.documentElement.style.setProperty('--subtle-text-color', 'rgba(60, 60, 60, 0.8)');
+
+      document.documentElement.style.setProperty('--correct-bg-color', '#0A970A');
+      document.documentElement.style.setProperty('--incorrect-color', '#FF0000');
+      document.documentElement.style.setProperty('--incorrect-bg-color', 'rgba(255,116,108, 0.30)');
+      document.documentElement.style.setProperty('--current-color', '#000000');
+
+      document.documentElement.style.setProperty('--caret-color', '#F58025')
+
+      document.documentElement.style.setProperty('--mode-title-color', '#F58025');
+      document.documentElement.style.setProperty('--stat-card-color', 'rgba(175, 175, 175, 0.4)');
+      document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
+      document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
+      document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
+      document.documentElement.style.setProperty('--button-bg-color', 'rgba(125, 125, 125, 0.8)');
+      
+      document.documentElement.style.setProperty('--background-color-tertiary', '#2a2a2a');
+      document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
+
+      document.documentElement.style.setProperty('--border-color', '#3a3a3a');
+    }
+    else if (theme === 'lavender-asphalt') {
       document.documentElement.style.setProperty('--mode-text-color', '#A59EB5'); //
       document.documentElement.style.setProperty('--hover-color', '#a2a2a2'); //
       
@@ -174,7 +214,10 @@ function Settings({ isOpen, onClose }) {
     const line = defaultCursor ? "hidden" : "visible";
     let color = "none";
 
-    if (block === 'visible' && theme === 'lavender-asphalt') {
+    if (block === 'visible' && theme === 'tangerine') {
+      color = '#8FAABD';
+    }
+    else if (block === 'visible' && theme === 'lavender-asphalt') {
       color = '#4A6A8C';
     }
     else if (block === 'visible' && theme === 'light') {
@@ -353,6 +396,7 @@ function Settings({ isOpen, onClose }) {
               <option value="dark">Dark</option>
               <option value="light">Light</option>
               <option value="lavender-asphalt">Lavender Asphalt</option>
+              <option value="tangerine">Tangerine</option>
             </select>
           </div>
           
