@@ -91,6 +91,11 @@ const TutorialGuide = () => {
                 const btn = document.querySelector('[data-tutorial-id="mode-timed"]');
                 if (btn) btn.click();
               }
+              if (currentStepConfig?.id === 'practice-mode-snippet') {
+                console.log('Programmatically clicking Snippet mode button');
+                const btn = document.querySelector('[data-tutorial-id="mode-snippet"]');
+                if (btn) btn.click();
+              }
 
               if (index + 1 < steps.length) {
                 nextStep();
@@ -116,7 +121,7 @@ const TutorialGuide = () => {
               else endTutorial();
             }
           }
-          else if (type === 'tooltip:close' || type === 'close' || type==='tour:end' || action === 'skip' || status === 'finished') {
+          else if (type === 'tooltip:close' || (type==='tooltip:before' && action==='close') || type === 'close' || type==='tour:end' || action === 'skip' || status === 'finished') {
             endTutorial();
           }
         }}
