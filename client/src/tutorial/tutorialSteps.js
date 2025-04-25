@@ -13,7 +13,7 @@ export const tutorialSteps = {
   practice: [
     { id: 'practice-start', anchorId: 'body', content: 'Welcome to Practice Mode! Click Next to continue.' },
     { id: 'practice-configurator', anchorId: 'configurator', content: 'This is the Test Configurator where you choose modes and options.' },
-    { id: 'practice-mode-timed', anchorId: 'mode-timed', content: 'Switch to Timed Mode here.', spotlightClicks: true },
+    { id: 'practice-mode-timed', anchorId: 'mode-timed', content: 'Switch to Timed Mode here.', spotlightClicks: true, event: 'click' },
     { id: 'practice-timed-options', anchorId: 'timed-options', content: 'Select the duration for Timed Mode.' },
     { id: 'practice-mode-snippet', anchorId: 'mode-snippet', content: 'Switch back to Snippet Mode here.', spotlightClicks: true },
     { id: 'practice-race-content', anchorId: 'race-content', content: 'This area shows the text you need to type.' },

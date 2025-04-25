@@ -5,11 +5,13 @@ import { tutorialSteps } from '../tutorial/tutorialSteps';
 import './TutorialGuide.css';
 import { useAnchorContext } from './TutorialAnchor';
 import { useLocation } from 'react-router-dom';
+import { useRace } from '../context/RaceContext';
 
 const TutorialGuide = () => {
   const { isRunning, currentSection, currentStepIndex, nextStep, prevStep, goToSection, endTutorial } = useTutorial();
   const { anchors } = useAnchorContext();
   const location = useLocation();
+  const { setConfigTestMode } = useRace();
   // fetch raw step configs per section
   const rawSteps = tutorialSteps[currentSection] || [];
   // Build Joyride steps using CSS selectors (data-tutorial-id)
@@ -81,6 +83,15 @@ const TutorialGuide = () => {
         callback={({ type, action, index, status }) => {
           if (type === 'step:after') {
             if (action === 'next') {
+              const currentStepConfig = rawSteps[index];
+
+              // Special handling for timed mode switch
+              if (currentStepConfig?.id === 'practice-mode-timed') {
+                console.log('Programmatically clicking Timed mode button');
+                const btn = document.querySelector('[data-tutorial-id="mode-timed"]');
+                if (btn) btn.click();
+              }
+
               if (index + 1 < steps.length) {
                 nextStep();
               } else {
@@ -105,7 +116,7 @@ const TutorialGuide = () => {
               else endTutorial();
             }
           }
-          else if (type === 'close' || type==='tour:end' || action === 'skip' || status === 'finished') {
+          else if (type === 'tooltip:close' || type === 'close' || type==='tour:end' || action === 'skip' || status === 'finished') {
             endTutorial();
           }
         }}

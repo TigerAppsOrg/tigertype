@@ -91,6 +91,13 @@ export const RaceProvider = ({ children }) => {
     countdown: null // Track countdown seconds
   });
 
+  // Explicit state for TestConfigurator to avoid passing setRaceState
+  const [testMode, setTestMode] = useState('snippet');
+  const [testDuration, setTestDuration] = useState(15);
+  const [snippetDifficulty, setSnippetDifficulty] = useState('');
+  const [snippetType, setSnippetType] = useState('');
+  const [snippetDepartment, setSnippetDepartment] = useState('all');
+
   // Local typing state
   const [typingState, setTypingState] = useState({
     input: '',
@@ -889,7 +896,17 @@ export const RaceProvider = ({ children }) => {
         resetRace,
         loadNewSnippet,
         dismissInactivityWarning,
-        dismissInactivityKick
+        dismissInactivityKick,
+        testMode,
+        setTestMode,
+        testDuration,
+        setTestDuration,
+        snippetDifficulty,
+        setSnippetDifficulty,
+        snippetType,
+        setSnippetType,
+        snippetDepartment,
+        setSnippetDepartment
       }}
     >
       {children}
@@ -897,13 +914,35 @@ export const RaceProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use the race context
-export const useRace = () => {
+const useEnhancedRace = () => {
   const context = useContext(RaceContext);
   if (!context) {
-    throw new Error('useRace must be used within a RaceProvider');
+    throw new Error('useEnhancedRace must be used within a RaceProvider');
   }
-  return context;
+
+  // Add specific setters for test config
+  const setConfigTestMode = useCallback((mode) => {
+    if (typeof context.setTestMode === 'function') context.setTestMode(mode);
+    // Optionally trigger loadNewSnippet or other side effects here
+    if (context.raceState.type === 'practice') {
+      context.setRaceState(prev => ({ ...prev, timedTest: { ...prev.timedTest, enabled: mode === 'timed' } }));
+      context.loadNewSnippet(); // Reload snippet on mode change
+    }
+  }, [context]);
+
+  const setConfigTestDuration = useCallback((duration) => {
+    if (typeof context.setTestDuration === 'function') context.setTestDuration(duration);
+    if (context.raceState.type === 'practice' && context.testMode === 'timed') {
+      context.setRaceState(prev => ({ ...prev, timedTest: { ...prev.timedTest, duration: duration } }));
+      context.loadNewSnippet(); // Reload snippet on duration change
+    }
+  }, [context]);
+
+  return {
+    ...context,
+    setConfigTestMode,
+    setConfigTestDuration
+  };
 };
 
-export default RaceContext;
+export { useEnhancedRace as useRace };
