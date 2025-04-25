@@ -138,9 +138,6 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)}
       />
-      
-      {/* Render TutorialGuide conditionally based on authenticated status */} 
-      {authenticated && <TutorialGuide />}
     </header>
   );
 }

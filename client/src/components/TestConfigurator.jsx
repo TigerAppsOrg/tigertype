@@ -2,6 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import './TestConfigurator.css';
+import TutorialAnchor from './TutorialAnchor';
 
 // --- Icon Placeholders ---
 const ClockIcon = () => <i className="bi bi-clock"></i>;
@@ -133,106 +134,123 @@ function TestConfigurator({
     }
   };
 
-  const renderButton = (value, state, setter, label, icon = null, isFunctional = true, onClickOverride = null) => (
-    <button
-      key={value}
-      // Add data-testid for mode buttons to support tutorial targeting
-      data-testid={setter === setTestMode ? `mode-${value}` : undefined}
-      className={`config-button ${state === value ? 'active' : ''} ${!isFunctional ? 'non-functional' : ''} ${icon ? 'icon-button' : ''}`}
-      onClick={() => {
-        if (onClickOverride) {
-          onClickOverride();
-          return;
-        }
-        if (!isFunctional) return;
-        
-        // Handle different types of buttons
-        if (value === 'timed' || value === 'snippet') {
-          // Mode buttons
-          handleModeChange(value, setter);
-        } else if (setter === setTestDuration) {
-          // Duration buttons
-          handleDurationChange(value);
-        } else {
-          // Other buttons (department, etc.)
-          setter(value);
-        }
-      }}
-      title={!isFunctional ? 'Filter coming soon!' : label || value}
-      aria-label={label || value}
-    >
-      {icon && icon()} {label || value}
-    </button>
-  );
+  // Under renderButton, detect if it's one of the tutorial anchorIds
+  const BUTTON_ANCHOR_MAP = {
+    snippet: 'mode-snippet',
+    timed: 'mode-timed',
+  };
+
+  const renderButton = (value, state, setter, label, icon = null, isFunctional = true, onClickOverride = null) => {
+    const anchorId = BUTTON_ANCHOR_MAP[value] || (setter === setTestDuration ? `timed-options` : null);
+    const button = (
+      <button
+        key={value}
+        data-testid={setter === setTestMode ? `mode-${value}` : undefined}
+        className={`config-button ${state === value ? 'active' : ''} ${!isFunctional ? 'non-functional' : ''} ${icon ? 'icon-button' : ''}`}
+        onClick={() => {
+          if (onClickOverride) {
+            onClickOverride();
+            return;
+          }
+          if (!isFunctional) return;
+          
+          // Handle different types of buttons
+          if (value === 'timed' || value === 'snippet') {
+            // Mode buttons
+            handleModeChange(value, setter);
+          } else if (setter === setTestDuration) {
+            // Duration buttons
+            handleDurationChange(value);
+          } else {
+            // Other buttons (department, etc.)
+            setter(value);
+          }
+        }}
+        title={!isFunctional ? 'Filter coming soon!' : label || value}
+        aria-label={label || value}
+      >
+        {icon && icon()} {label || value}
+      </button>
+    );
+    return anchorId ? (
+      <TutorialAnchor anchorId={anchorId} key={value}>
+        {button}
+      </TutorialAnchor>
+    ) : button;
+  };
 
   return (
-    // Main container
-    <div className={`test-configurator ${isLobby ? 'lobby' : ''}`}>
+    // Wrap the entire configurator in an anchor for tutorial
+    <TutorialAnchor anchorId="configurator">
+      <div className={`test-configurator ${isLobby ? 'lobby' : ''}`}>
 
-      {/* Mode Selection Group */}
-      <div className="config-section mode-selection">
-        {renderButton('snippet', testMode, setTestMode, 'Snippets', QuoteIcon)}
-        {renderButton('timed', testMode, setTestMode, 'Timed', ClockIcon)}
-      </div>
-
-      {/* Separator */}
-      <div className="config-separator"></div>
-
-      {/* Conditional Options Area */}
-      <div className="conditional-options-container">
-
-        {/* Snippet Filters Wrapper */}
-        <div className={`options-wrapper snippet-options ${testMode === 'snippet' ? 'visible' : ''}`}>
-          <div className="config-section snippet-filters-inner">
-             <div className="select-wrapper">
-                <DifficultyIcon />
-                <select
-                  className="config-select non-functional"
-                  value={snippetDifficulty}
-                  onChange={handleSelectChange(setSnippetDifficulty)}
-                  title="Difficulty filter coming soon!"
-                >
-                  <option value="" disabled hidden={snippetDifficulty !== ""}>difficulty</option>
-                  {DIFFICULTIES.map(diff => <option key={diff} value={diff}>{diff}</option>)}
-                </select>
-             </div>
-             <div className="config-separator-inner"></div>
-             <div className="select-wrapper">
-                <TypeIcon />
-                <select
-                  className="config-select non-functional"
-                  value={snippetType}
-                  onChange={handleSelectChange(setSnippetType)}
-                  title="Type filter coming soon!"
-                >
-                  <option value="" disabled hidden={snippetType !== ""}>type</option>
-                  {TYPES.map(type => <option key={type} value={type}>{type.replace('_', ' ')}</option>)}
-                </select>
-             </div>
-             <div className={`department-filter ${snippetType === 'course_reviews' ? 'visible' : ''}`}>
-                <div className="config-separator-inner"></div>
-                {DEPARTMENTS.map(dept => renderButton(dept, snippetDepartment, setSnippetDepartment, dept, null, false))}
-             </div>
-          </div>
+        {/* Mode Selection Group */}
+        <div className="config-section mode-selection">
+          {renderButton('snippet', testMode, setTestMode, 'Snippets', QuoteIcon)}
+          {renderButton('timed', testMode, setTestMode, 'Timed', ClockIcon)}
         </div>
 
-        {/* Timed Mode Duration Wrapper */}
-        <div className={`options-wrapper timed-options ${testMode === 'timed' ? 'visible' : ''}`}>
-          <div className="config-section duration-selection-inner">
-            {DURATIONS.map(duration => renderButton(duration, testDuration, setTestDuration, `${duration}s`))}
+        {/* Separator */}
+        <div className="config-separator"></div>
+
+        {/* Conditional Options Area */}
+        <div className="conditional-options-container">
+
+          {/* Snippet Filters Wrapper */}
+          <div className={`options-wrapper snippet-options ${testMode === 'snippet' ? 'visible' : ''}`}>
+            <div className="config-section snippet-filters-inner">
+               <div className="select-wrapper">
+                  <DifficultyIcon />
+                  <select
+                    className="config-select non-functional"
+                    value={snippetDifficulty}
+                    onChange={handleSelectChange(setSnippetDifficulty)}
+                    title="Difficulty filter coming soon!"
+                  >
+                    <option value="" disabled hidden={snippetDifficulty !== ""}>difficulty</option>
+                    {DIFFICULTIES.map(diff => <option key={diff} value={diff}>{diff}</option>)}
+                  </select>
+               </div>
+               <div className="config-separator-inner"></div>
+               <div className="select-wrapper">
+                  <TypeIcon />
+                  <select
+                    className="config-select non-functional"
+                    value={snippetType}
+                    onChange={handleSelectChange(setSnippetType)}
+                    title="Type filter coming soon!"
+                  >
+                    <option value="" disabled hidden={snippetType !== ""}>type</option>
+                    {TYPES.map(type => <option key={type} value={type}>{type.replace('_', ' ')}</option>)}
+                  </select>
+               </div>
+               <div className={`department-filter ${snippetType === 'course_reviews' ? 'visible' : ''}`}>
+                  <div className="config-separator-inner"></div>
+                  {DEPARTMENTS.map(dept => renderButton(dept, snippetDepartment, setSnippetDepartment, dept, null, false))}
+               </div>
+            </div>
           </div>
+
+          {/* Timed Mode Duration Wrapper */}
+          <TutorialAnchor anchorId="timed-options">
+            <div className={`options-wrapper timed-options ${testMode === 'timed' ? 'visible' : ''}`}>
+              <div className="config-section duration-selection-inner">
+                {DURATIONS.map(duration => renderButton(duration, testDuration, setTestDuration, `${duration}s`))}
+              </div>
+            </div>
+          </TutorialAnchor>
+
+        </div> {/* End Conditional Options Container */}
+
+        {/* Separator */}
+        <div className="config-separator"></div>
+
+        {/* Leaderboard Button (always visible in practice mode) */}
+        <div className="config-section leaderboard-button-section">
+          {renderButton('leaderboard', null, null, 'Leaderboard', LeaderboardIcon, true, onShowLeaderboard)}
         </div>
-
-      </div> {/* End Conditional Options Container */}
-
-      {/* Separator */}
-      <div className="config-separator"></div>
-
-      {/* Leaderboard Button (always visible in practice mode) */}
-      <div className="config-section leaderboard-button-section">
-        {renderButton('leaderboard', null, null, 'Leaderboard', LeaderboardIcon, true, onShowLeaderboard)}
-      </div>
-    </div> // End Main Container
+      </div> {/* End TestConfigurator container */}
+    </TutorialAnchor>
   );
 }
 

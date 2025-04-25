@@ -119,13 +119,8 @@
 
 /* GLOWING SPOTLIGHT EFFECT */
 .react-joyride__spotlight {
-  box-shadow: 0 0 0 4px #E77500, 0 0 16px 8px #F58025, 0 0 0 9999px rgba(0,0,0,0.7) !important;
-  border-radius: 12px !important;
-  transition: box-shadow 0.2s;
-  outline: 2.5px solid #F58025 !important;
-  outline-offset: 2px !important;
-  z-index: 99999 !important; 
-  position: relative !important;
+  background-color: transparent !important;
+  pointer-events: none !important;
 }
 
 .react-joyride__spotlight > * {
@@ -254,4 +249,20 @@
 }
 .react-joyride__tooltip .__floater__arrow {
     color: var(--background-color-secondary) !important;
+}
+
+/* Override Joyride spotlight to be transparent and non-blocking */
+.react-joyride__spotlight {
+  background-color: transparent !important;
+  pointer-events: none !important;
+}
+
+/* Ensure overlay does not block interactions */
+.react-joyride__overlay {
+  pointer-events: none !important;
+}
+
+/* Remove default dark overlay */
+.react-joyride__overlay--blanket {
+  background: none !important;
 }

@@ -115,46 +115,46 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  // Function to mark the tutorial as completed
-  const markTutorialComplete = useCallback(async () => {
-    // Wait briefly if user is not loaded yet (e.g., right after login/refresh)
-    if (!user || !user.id) {
-      console.log('User data not immediately available for markTutorialComplete, waiting 500ms...');
-      await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
-      // Re-check after waiting
-      const currentUser = window.user; // Check the potentially updated window.user
-      if (!currentUser || !currentUser.id) {
-        console.error('Cannot mark tutorial complete: User data still not available after waiting.');
-        return;
-      }
-      // Proceed with the potentially updated user object
+  // Helper function to mark tutorial as complete
+  const markTutorialComplete = async () => {
+    // If user is already available
+    if (user && user.netid) {
       try {
-        const response = await axios.put('/api/user/tutorial-complete');
-        if (response.status === 200 && response.data.user) {
-          updateUser({ has_completed_tutorial: true });
-          console.log('Tutorial marked as complete locally and on backend.');
+        console.log('Marking tutorial as completed for user:', user.netid);
+        const response = await fetch('/api/users/tutorial/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          console.log('Tutorial marked as completed successfully');
+          // Update local user state
+          setUser(prev => ({ ...prev, has_completed_tutorial: true }));
         } else {
-          console.error('Backend failed to mark tutorial as complete.', response.data);
+          console.error('Failed to mark tutorial as completed:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error marking tutorial as completed:', error);
+      }
+    } else {
+      console.log('User data not immediately available for markTutorialComplete, waiting 500ms...');
+      try {
+        // Wait a moment and try again
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Check if user data is available now
+        if (user && user.netid) {
+          await markTutorialComplete(); // Recursive call with user data
+        } else {
+          console.error('Cannot mark tutorial complete: User data still not available after waiting.');
         }
       } catch (err) {
-        console.error('Error calling backend to mark tutorial complete:', err);
-      }
-      return; // Exit after handling the delayed case
+        console.error('Error in delayed markTutorialComplete:', err);
     }
-
-    // Original logic if user is available immediately
-    try {
-      const response = await axios.put('/api/user/tutorial-complete');
-      if (response.status === 200 && response.data.user) {
-        updateUser({ has_completed_tutorial: true });
-        console.log('Tutorial marked as complete locally and on backend.');
-      } else {
-        console.error('Backend failed to mark tutorial as complete.', response.data);
-      }
-    } catch (err) {
-      console.error('Error calling backend to mark tutorial complete:', err);
     }
-  }, [user]); // Depends on the user object
+  };
 
   return (
     <AuthContext.Provider value={{

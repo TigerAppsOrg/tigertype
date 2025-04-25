@@ -13,6 +13,7 @@ import Navbar from './components/Navbar';
 import Loading from './components/Loading';
 import Modal from './components/Modal';
 import Leaderboard from './components/Leaderboard';
+import TutorialGuide from './components/TutorialGuide';
 
 // Lazy-loaded pages for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
@@ -50,8 +51,15 @@ const ConditionalNavbar = () => {
   // Effect to auto-start tutorial for new users
   useEffect(() => {
     if (!loading && authenticated && user && !user.has_completed_tutorial && !isTutorialRunning) {
-      console.log('User logged in and has not completed tutorial. Starting tutorial automatically.');
-      startTutorial();
+      const tutorialCompleted = localStorage.getItem('tutorial_completed') === 'true';
+      if (!tutorialCompleted) {
+        console.log('User logged in and has not completed tutorial. Starting tutorial automatically.');
+        setTimeout(() => {
+          startTutorial();
+        }, 1000);
+      } else {
+        console.log('Tutorial was previously completed according to localStorage flag.');
+      }
     }
   }, [authenticated, user, loading, isTutorialRunning, startTutorial]);
 
@@ -70,7 +78,7 @@ const ConditionalNavbar = () => {
         onOpenLeaderboard={handleOpenLeaderboard}
         onLoginClick={login}
         isTutorialRunning={isTutorialRunning}
-        setTutorialRunning={isRunning => isRunning ? startTutorial() : endTutorial()}
+        setTutorialRunning={isRunningFlag => isRunningFlag ? startTutorial() : endTutorial()}
       />
 
       {/* Leaderboard Modal */}
@@ -132,15 +140,17 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <TutorialProvider>
-          <SocketProvider>
-            <RaceProvider>
-              <AppRoutes />
-            </RaceProvider>
-          </SocketProvider>
-        </TutorialProvider>
-      </AuthProvider>
+    <AuthProvider>
+      <TutorialProvider>
+        <SocketProvider>
+          <RaceProvider>
+            <AppRoutes />
+            {/* Render the tutorial guide */}
+            <TutorialGuide />
+          </RaceProvider>
+        </SocketProvider>
+      </TutorialProvider>
+    </AuthProvider>
     </Router>
   );
 }

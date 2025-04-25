@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import './Modes.css';
+import TutorialAnchor from './TutorialAnchor';
 
 /* helper so clicks on an embedded form don't trigger the card action */
 const handleCardClick = (e, mode) => {
@@ -8,25 +9,46 @@ const handleCardClick = (e, mode) => {
   mode.action?.();
 };
 
+// Map each mode id to a tutorial anchorId
+const anchorMap = {
+  1: 'mode-practice',
+  2: 'mode-quick',
+  3: 'mode-create-private',
+  4: 'mode-join-private'
+};
+
 function Modes({ modes }) {
   return (
     <div className="modes-container">
-      {modes.map((mode) => (
-        <div
-          key={mode.id}
-          className={`mode-box ${mode.disabled ? 'mode-disabled' : ''}`}
-          onClick={(e) => handleCardClick(e, mode)}
-        >
-          {mode.iconClass && <i className={`mode-icon ${mode.iconClass}`}></i>}
+      {modes.map((mode) => {
+        // Create the card element
+        const card = (
+          <div
+            key={mode.id}
+            className={`mode-box ${mode.disabled ? 'mode-disabled' : ''}`}
+            onClick={(e) => handleCardClick(e, mode)}
+          >
+            {mode.iconClass && <i className={`mode-icon ${mode.iconClass}`}></i>}
 
-          <h3>{mode.name}</h3>
-          <p>{mode.description}</p>
-          {mode.subComponent}
-          {mode.disabled && (
-            <span className="coming-soon-badge">Coming&nbsp;Soon</span>
-          )}
-        </div>
-      ))}
+            <h3>{mode.name}</h3>
+            <p>{mode.description}</p>
+            {mode.subComponent}
+            {mode.disabled && (
+              <span className="coming-soon-badge">Coming&nbsp;Soon</span>
+            )}
+          </div>
+        );
+
+        // Wrap with TutorialAnchor if there's an anchorId for this mode
+        const anchorId = anchorMap[mode.id];
+        return anchorId ? (
+          <TutorialAnchor anchorId={anchorId} key={mode.id}>
+            {card}
+          </TutorialAnchor>
+        ) : (
+          card
+        );
+      })}
     </div>
   );
 }

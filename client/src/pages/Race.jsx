@@ -8,6 +8,7 @@ import PlayerStatusBar from '../components/PlayerStatusBar';
 import Modal from '../components/Modal';
 import TestConfigurator from '../components/TestConfigurator';
 import Leaderboard from '../components/Leaderboard';
+import TutorialAnchor from '../components/TutorialAnchor';
 import './Race.css';
 
 function Race() {
@@ -86,9 +87,11 @@ function Race() {
       <div className="race-container">
         <div className="race-header-wrapper">
           <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
+          <TutorialAnchor anchorId="back-button">
           <button className="back-button" onClick={handleBack}>
             <span>⟵</span> Back
           </button>
+          </TutorialAnchor>
           {/* Only show lobby code for private lobbies */}
           {raceState.type === 'private' && raceState.code && (
             <div className="lobby-code">Lobby Code: {raceState.code}</div>
@@ -114,6 +117,7 @@ function Race() {
           />
         )}
         
+        <TutorialAnchor anchorId="race-content">
         <div className="race-content">
           <div className="race-info">
             <div className="race-content-container">
@@ -153,6 +157,7 @@ function Race() {
             </div>
           </div>
         </div>
+        </TutorialAnchor>
       </div>
     </div>
   );

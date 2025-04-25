@@ -7,6 +7,7 @@ import playKeySound from './Sound.jsx';
 import './Settings.css';
 import { useAuth } from '../context/AuthContext';
 import './Typing.css';
+import TutorialAnchor from './TutorialAnchor';
 
 // Typing Tips shown before race countdown start
 const TYPING_TIPS = [
@@ -303,13 +304,15 @@ function Typing({
       // Special handling for close button
       if (e.target.closest('.close-button')) {
         setTimeout(() => {
-          inputRef.current.focus();
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
         }, 10);
         return;
       }
 
       // Otherwise, force focus back to input if appropriate
-      if (!isSettingsClick && !isSelectClick) {
+      if (!isSettingsClick && !isSelectClick && inputRef.current) {
         inputRef.current.focus();
       }
     };
@@ -869,20 +872,21 @@ function Typing({
               )}
               {getHighlightedText()}
             </div>
-            <div className="typing-input-container">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={handleComponentInput}
-                onPaste={handlePaste}
-                disabled={(raceState.type !== 'practice' && !raceState.inProgress) || (raceState.type !== 'practice' && typingState.completed)}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-              />
-            </div>
+            <TutorialAnchor anchorId="typing-input">
+              <div className="typing-input-container">
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={handleComponentInput}
+                  onPaste={handlePaste}
+                  className={isShaking ? 'shake' : ''}
+                  disabled={raceState.countdown > 0 || raceState.completed}
+                  autoComplete="off"
+                  spellCheck="false"
+                  aria-label="Typing input"
+                />
+              </div>
+            </TutorialAnchor>
           </div>
       )}
 
