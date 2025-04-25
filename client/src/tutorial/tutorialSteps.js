@@ -20,8 +20,9 @@ export const tutorialSteps = {
     // { id: 'practice-snippet-options', anchorId: 'snippet-options', content: 'You can select any duration to type for, each duration has it\s own leaderboard entry. TIMED Mode is the only mode that has public leaderboards.' },
     { id: 'practice-race-content', anchorId: 'race-content', content: 'Here is the text that you will type. As you type, you will see your stats and progress update in real time.' },
     { id: 'practice-typing-input', anchorId: 'typing-input', content: 'Unlike MonkeyType, to finish you MUST go back and fix your mistakes. If you make a mistake, you will see the text highlighted in RED, backspace to fix your mistake, and then continue.' },
-    { id: 'practice-typing-input', anchorId: 'typing-input', content: 'Practice mode will automatically begin when you start typing the first letter of any text. You can try right now, just start typing the excerpt below. Feel free to make a mistake to see the mistake highlighting in action.' },
-    { id: 'practice-typing-input', anchorId: 'typing-input', content: 'Once you finish a snippet (or run out of time in TIMED mode), you will be able to see your results and analytics.' },
+    { id: 'practice-typing-input', anchorId: 'typing-input', content: 'Practice mode will automatically begin when you start typing the first letter of any text.' },
+    { id: 'practice-typing-input', anchorId: 'typing-input', content: 'You can try right now, just start typing the excerpt below. Feel free to make a mistake to see the mistake highlighting in action.' },
+    { id: 'practice-results-screen', anchorId: 'results-screen', content: 'Once you finish a snippet (or run out of time in TIMED mode), you will be able to see your results and compare against other players.' },
     { id: 'practice-back', anchorId: 'back-button', content: 'Click this Back button to return to the home screen.', spotlightClicks: true }
   ],
   further: [
