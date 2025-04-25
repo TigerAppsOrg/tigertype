@@ -32,6 +32,9 @@ const TutorialGuide = () => {
 
   const joyrideRun = isRunning && hasFirst;
 
+  // Track how many times we've retried a missing target for each step
+  const retryCountsRef = React.useRef({});
+
   const prevSectionRef = React.useRef(currentSection);
   React.useEffect(() => {
     if (prevSectionRef.current !== currentSection) {
@@ -63,6 +66,7 @@ const TutorialGuide = () => {
         run={joyrideRun}
         continuous
         showSkipButton
+        showCloseButton
         showProgress
         disableOverlayClose
         spotlightClicks
@@ -82,6 +86,11 @@ const TutorialGuide = () => {
         }}
         callback={({ type, action, index, status }) => {
           if (type === 'step:after') {
+            // Handle immediate close within step:after (clicking the “X” icon)
+            if (action === 'close') {
+              endTutorial();
+              return;
+            }
             if (action === 'next') {
               const currentStepConfig = rawSteps[index];
 
@@ -113,15 +122,33 @@ const TutorialGuide = () => {
               if (index > 0) prevStep();
             }
           }
-          else if (type === 'target:notFound') {
-            // Skip step if target missing
-            if (index + 1 < steps.length) nextStep();
-            else {
-              if (currentSection === 'home') goToSection('practice');
-              else endTutorial();
+          else if (type === 'error:target_not_found' || type === 'target:notFound') {
+            // Retry up to 3× with 250 ms delay to give the DOM time to render the target
+            const retries = retryCountsRef.current[index] || 0;
+            if (retries < 3) {
+              retryCountsRef.current[index] = retries + 1;
+              setTimeout(() => {
+                goToSection(currentSection, index); // re-trigger Joyride for same step
+              }, 250);
+            } else {
+              // After exhausting retries, skip step to avoid tutorial hang
+              if (index + 1 < steps.length) nextStep();
+              else {
+                if (currentSection === 'home') goToSection('practice');
+                else endTutorial();
+              }
             }
           }
-          else if (type === 'tooltip:close' || (type==='tooltip:before' && action==='close') || type === 'close' || type==='tour:end' || action === 'skip' || status === 'finished') {
+          // Handle user closing via “X”, Skip, or finishing the tour
+          else if (
+            action === 'close' ||
+            type === 'tooltip:close' ||
+            (type === 'tooltip:before' && action === 'close') ||
+            type === 'close' ||
+            type === 'tour:end' ||
+            action === 'skip' ||
+            status === 'finished'
+          ) {
             endTutorial();
           }
         }}
