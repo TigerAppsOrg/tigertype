@@ -7,10 +7,13 @@ import './Navbar.css';
 import { useRace } from '../context/RaceContext';
 import PropTypes from 'prop-types'; // Import PropTypes
 import navbarLogo from '../assets/logos/navbar-logo.png';
+import TutorialGuide from './TutorialGuide'; // Import TutorialGuide
+import { useTutorial } from '../context/TutorialContext';
 
-function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
+function Navbar({ onOpenLeaderboard, onLoginClick }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { authenticated, user, logout } = useAuth();
+  const { authenticated, user, logout, markTutorialComplete } = useAuth();
+  const { isTutorialRunning, startTutorial, endTutorial } = useTutorial();
   const navigate = useNavigate();
   const {
     raceState,
@@ -37,22 +40,44 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) { // Add props
     };
   };
 
+  // Function to handle the end of the tutorial (called by TutorialGuide)
+  const handleTutorialEnd = () => {
+    endTutorial();
+  };
+
+  // Function to start the tutorial replay
+  const startTutorialReplay = () => {
+    const route = window.location.pathname.startsWith('/race') ? 'practice' : 'home';
+    startTutorial(route);
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-logo">
-        <button type='' onClick={handleLogo}>
+        <button type='button' onClick={handleLogo} className="logo-button"> {/* Added className */} 
           <img src={navbarLogo} alt="TigerType" />
         </button>
-        {/* Conditionally render settings button only when authenticated */}
+        {/* Buttons container */} 
         {authenticated && (
-          <button
-            className="settings-button"
-            onClick={() => setIsSettingsOpen(true)}
-            aria-label="Open settings"
-            tabIndex={0}
-          >
-            <span className="material-icons settings-icon">settings</span>
-          </button>
+          <div className="navbar-icons"> {/* Added container for icons */} 
+            <button
+              className="settings-button navbar-settings-icon" // Added identifier class
+              onClick={() => setIsSettingsOpen(true)}
+              aria-label="Open settings"
+              tabIndex={0}
+            >
+              <span className="material-icons">settings</span>
+            </button>
+            {/* Tutorial Replay Button */} 
+            <button
+              className="tutorial-replay-button"
+              onClick={startTutorialReplay}
+              aria-label="Replay tutorial"
+              tabIndex={0}
+            >
+              <span className="material-icons">help_outline</span> {/* Question mark icon */}
+            </button>
+          </div>
         )}
       </div>
       <nav className="navbar-links">

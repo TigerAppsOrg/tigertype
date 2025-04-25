@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRace } from '../context/RaceContext';
+import { useTutorial } from '../context/TutorialContext';
+import { tutorialSteps } from '../tutorial/tutorialSteps';
 import { useSocket } from '../context/SocketContext';
 import Typing from '../components/Typing';
 import Results from '../components/Results';
@@ -8,13 +10,14 @@ import PlayerStatusBar from '../components/PlayerStatusBar';
 import Modal from '../components/Modal';
 import TestConfigurator from '../components/TestConfigurator';
 import Leaderboard from '../components/Leaderboard';
+import TutorialAnchor from '../components/TutorialAnchor';
 import './Race.css';
 
 function Race() {
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { 
-    raceState, 
+  const {
+    raceState,
     typingState,
     inactivityState,
     setPlayerReady,
@@ -24,6 +27,9 @@ function Race() {
     setRaceState,
     loadNewSnippet
   } = useRace();
+  const { isRunning, currentSection, currentStepIndex } = useTutorial();
+  // index of the practice tutorial step when results screen should appear
+  const practiceResultIndex = tutorialSteps.practice.findIndex(s => s.id === 'practice-results-screen');
   
   // Test configuration states
   const [testMode, setTestMode] = useState('snippet');
@@ -86,9 +92,11 @@ function Race() {
       <div className="race-container">
         <div className="race-header-wrapper">
           <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
+          <TutorialAnchor anchorId="back-button">
           <button className="back-button" onClick={handleBack}>
             <span>⟵</span> Back
           </button>
+          </TutorialAnchor>
           {/* Only show lobby code for private lobbies */}
           {raceState.type === 'private' && raceState.code && (
             <div className="lobby-code">Lobby Code: {raceState.code}</div>
@@ -97,23 +105,29 @@ function Race() {
         
         {/* TestConfigurator - render only in practice mode */}
         {raceState.type === 'practice' && (
-          <TestConfigurator 
-            testMode={testMode}
-            testDuration={testDuration}
-            snippetDifficulty={snippetDifficulty}
-            snippetType={snippetType}
-            snippetDepartment={snippetDepartment}
-            setTestMode={setTestMode}
-            setTestDuration={setTestDuration}
-            setSnippetDifficulty={setSnippetDifficulty}
-            setSnippetType={setSnippetType}
-            setSnippetDepartment={setSnippetDepartment}
-            setRaceState={setRaceState}
-            loadNewSnippet={loadNewSnippet}
-            onShowLeaderboard={toggleLeaderboard}
-          />
+          <TutorialAnchor anchorId="configurator">
+            {/* tiny wrapper ensures non-zero bounding box immediately */}
+            <div style={{ minWidth: 1, minHeight: 1 }}>
+              <TestConfigurator
+                testMode={testMode}
+                testDuration={testDuration}
+                snippetDifficulty={snippetDifficulty}
+                snippetType={snippetType}
+                snippetDepartment={snippetDepartment}
+                setTestMode={setTestMode}
+                setTestDuration={setTestDuration}
+                setSnippetDifficulty={setSnippetDifficulty}
+                setSnippetType={setSnippetType}
+                setSnippetDepartment={setSnippetDepartment}
+                setRaceState={setRaceState}
+                loadNewSnippet={loadNewSnippet}
+                onShowLeaderboard={toggleLeaderboard}
+              />
+            </div>
+          </TutorialAnchor>
         )}
         
+        <TutorialAnchor anchorId="race-content">
         <div className="race-content">
           <div className="race-info">
             <div className="race-content-container">
@@ -133,10 +147,10 @@ function Race() {
 
               {/* Conditionally render Results */}
               {/* Show Results if race is completed */}
-              {raceState.completed && (
-                <Results 
-                  onShowLeaderboard={raceState.type === 'practice' ? toggleLeaderboard : null}
-                />
+              {raceState.completed && (!isRunning || (currentSection === 'practice' && currentStepIndex >= practiceResultIndex)) && (
+                 <Results
+                   onShowLeaderboard={raceState.type === 'practice' ? toggleLeaderboard : null}
+                 />
               )}
             </div>
             
@@ -153,6 +167,7 @@ function Race() {
             </div>
           </div>
         </div>
+        </TutorialAnchor>
       </div>
     </div>
   );

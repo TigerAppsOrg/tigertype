@@ -116,6 +116,29 @@ router.use('/profile', requireAuth, profileRoutes);
 
 // --- Existing API Routes ---
 
+/**
+ * Mark tutorial as completed for the current user
+ * PUT /api/user/tutorial-complete
+ * Requires authentication
+ * Returns: { id, has_completed_tutorial }
+ */
+router.put('/user/tutorial-complete', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID missing from request' });
+    }
+    const updated = await UserModel.markTutorialAsCompleted(userId);
+    if (!updated) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error('Error marking tutorial as completed:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get user profile info (Adjusted to use the new model fields)
 router.get('/user/profile', requireAuth, async (req, res) => {
   try {
@@ -144,7 +167,8 @@ router.get('/user/profile', requireAuth, async (req, res) => {
       races_completed: user.races_completed,
       avg_wpm: user.avg_wpm,
       avg_accuracy: user.avg_accuracy,
-      fastest_wpm: user.fastest_wpm
+      fastest_wpm: user.fastest_wpm,
+      has_completed_tutorial: user.has_completed_tutorial
     });
   } catch (err) {
     console.error('Error fetching user profile:', err);

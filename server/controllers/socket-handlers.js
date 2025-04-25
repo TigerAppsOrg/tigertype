@@ -28,6 +28,9 @@ const inactivityTimers = new Map(); // Store timers for inactivity warnings and 
 // Store user avatar URLs for quicker lookup
 const playerAvatars = new Map(); // socketId -> avatar_url
 
+// Store host disconnect timers for private lobbies
+const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds
+const hostDisconnectTimers = new Map(); // lobbyCode -> { timer: NodeJS.Timeout, userId: number }
 // Helper functions
 // Get player data for client, including avatar URL and basic stats
 const getPlayerClientData = async (player) => { // Make async
@@ -520,15 +523,36 @@ const initialize = (io) => {
         // Leave any existing race first
         await leaveCurrentRace(io, socket, netid);
 
+        // --- Sanitize code (uppercase, trim) ---
+        let sanitizedCode = code?.trim()?.toUpperCase?.();
+
         let lobby;
-        if (code) {
-          lobby = await RaceModel.findByCode(code);
+        if (sanitizedCode) {
+          lobby = await RaceModel.findByCode(sanitizedCode);
         } else if (hostNetId) {
           lobby = await RaceModel.findByHostNetId(hostNetId);
         } else if (playerNetId) {
           lobby = await RaceModel.findByPlayerNetId(playerNetId);
         } else {
           throw new Error('Lobby code or NetID required to join.');
+        }
+
+        // Fallback – if lobby not in DB but still alive in memory (e.g. DB rollback),
+        // try pulling from activeRaces.  This still requires we have an id later,
+        // so it is only a best-effort recovery path.
+        if ((!lobby || lobby.type !== 'private') && sanitizedCode && activeRaces.has(sanitizedCode)) {
+          console.warn(`Lobby ${sanitizedCode} not found in DB but exists in memory – using in-memory copy.`);
+          const memRace = activeRaces.get(sanitizedCode);
+          lobby = {
+            id: memRace.id,
+            code: memRace.code,
+            snippet_id: memRace.snippet?.id,
+            snippet_text: memRace.snippet?.text,
+            type: memRace.type,
+            status: memRace.status,
+            host_id: memRace.hostId,
+            host_netid: memRace.hostNetId
+          };
         }
 
         if (!lobby || lobby.type !== 'private') {
@@ -539,6 +563,34 @@ const initialize = (io) => {
           throw new Error('Lobby is already in progress or finished.');
         }
 
+       // --- BEGIN RECONNECTION & DUPLICATE CHECK ---
+       const players = racePlayers.get(lobby.code) || [];
+       const existingPlayerIndex = players.findIndex(
+         p =>
+           (userId && p.userId === userId) ||         // match on userId when logged-in
+           (!userId && !p.userId && p.netid === netid) // fallback to netid match for guests
+       );
+
+       if (existingPlayerIndex !== -1) {
+         // Player with the same userId is already in the lobby (reconnection)
+         console.log(`User ${netid} (userId: ${userId}) rejoining lobby ${lobby.code}. Updating socket ID.`);
+         const existingPlayer = players[existingPlayerIndex];
+         const oldSocketId = existingPlayer.id;
+
+         // Update socket ID
+         existingPlayer.id = socket.id;
+         racePlayers.set(lobby.code, players);
+
+         // Clean up old socket's avatar cache if different
+         if (oldSocketId !== socket.id) {
+           playerAvatars.delete(oldSocketId);
+         }
+         // Fetch avatar for new socket ID
+         await fetchUserAvatar(userId, socket.id);
+
+         // Skip adding to DB again, skip adding to players array again
+       } else {
+         // --- NEW PLAYER JOINING ---
         // Check if lobby is full (using DB check within addPlayerToLobby)
         try {
           await RaceModel.addPlayerToLobby(lobby.id, userId, false);
@@ -549,22 +601,26 @@ const initialize = (io) => {
           // Re-throw other DB errors
           throw err;
         }
-
-        // Join the socket room
-        socket.join(lobby.code);
-
         // Add player to in-memory list
-        const players = racePlayers.get(lobby.code) || [];
         const newPlayer = {
           id: socket.id,
           netid,
           userId,
           ready: false,
           lobbyId: lobby.id,
-          snippetId: lobby.snippet_id // Get snippetId from lobby data
+          snippetId: lobby.snippet_id, // Get snippetId from lobby data
+          // Ensure host status is correct if they are rejoining
+          isHost: activeRaces.get(lobby.code)?.hostId === userId
         };
         players.push(newPlayer);
         racePlayers.set(lobby.code, players);
+        // Fetch avatar for the joining player
+        await fetchUserAvatar(userId, socket.id);
+       }
+       // --- END NEW PLAYER JOINING / RECONNECTION HANDLING ---
+
+       // Join the socket room (do this regardless of new join or reconnect)
+       socket.join(lobby.code);
 
         // Ensure active race exists in memory (might happen if server restarted)
         if (!activeRaces.has(lobby.code)) {
@@ -595,10 +651,23 @@ const initialize = (io) => {
         }
         const raceInfo = activeRaces.get(lobby.code);
 
-        // Fetch avatar for the joining player
-        await fetchUserAvatar(userId, socket.id);
+        // --- BEGIN HOST RECONNECT HANDLING ---
+        // Check if this joining user is the host who disconnected recently
+        const disconnectTimerInfo = hostDisconnectTimers.get(lobby.code);
+        if (disconnectTimerInfo && disconnectTimerInfo.userId === userId) {
+          console.log(`Host ${netid} (userId: ${userId}) rejoined lobby ${lobby.code} within grace period. Cancelling timer.`);
+          clearTimeout(disconnectTimerInfo.timer);
+          hostDisconnectTimers.delete(lobby.code);
+          // Ensure host status is correctly set in activeRaces (should be already, but double-check)
+          if (raceInfo.hostId !== userId) {
+             console.warn(`Host ${netid} rejoined, but raceInfo.hostId was ${raceInfo.hostId}. Correcting.`);
+             raceInfo.hostId = userId;
+             raceInfo.hostNetId = netid;
+          }
+        }
+        // --- END HOST RECONNECT HANDLING ---
 
-        // Send race info to the joining player (needs async handling)
+        // Send race info to the joining player (needs async handling for avatars)
         const currentPlayersClientDataJoin = await Promise.all(players.map(p => getPlayerClientData(p)));
         const joinedDataJoin = { // Renamed variable
           code: lobby.code,
@@ -1128,69 +1197,86 @@ const initialize = (io) => {
     });
     
     // Handle disconnect
+    // Handle disconnect
     socket.on('disconnect', async () => {
+      // --- BEGIN DISCONNECT LOGIC ---
       console.log(`Socket disconnected: ${netid} (${socket.id})`);
-      
+
       // Remove player from all races
       for (const [code, players] of racePlayers.entries()) {
         const playerIndex = players.findIndex(p => p.id === socket.id);
-        
+
         if (playerIndex !== -1) {
           console.log(`Removing user ${netid} from race ${code}`);
-          
+
           // Get player and race information before removing
           const player = players[playerIndex];
           const race = activeRaces.get(code);
 
           // --- Handle Host Disconnecting from Private Lobby ---
           if (race && race.type === 'private' && race.hostId === player.userId) {
-            console.log(`Host ${netid} disconnected from private lobby ${code}. Attempting host reassignment.`);
+            console.log(`Host ${netid} (userId: ${player.userId}) disconnected from private lobby ${code}. Starting grace period.`);
 
-            // Remove host player from list (already about to be removed below as part of splice, but ensure)
-            // players.splice(playerIndex, 1);  // will be executed after this block
+            // Clear any existing timer for this lobby (shouldn't happen often)
+            const existingTimerInfo = hostDisconnectTimers.get(code);
+            if (existingTimerInfo) {
+              console.warn(`Found existing host disconnect timer for lobby ${code} while handling new disconnect. Clearing old timer.`);
+              clearTimeout(existingTimerInfo.timer);
+              hostDisconnectTimers.delete(code);
+            }
 
-            // Filter out the disconnecting host to derive remaining players
-            const remainingPlayers = players.filter(p => p.id !== socket.id);
+            // Start the grace period timer
+            const timer = setTimeout(async () => {
+              console.log(`Host reconnect grace period expired for lobby ${code}. Reassigning host.`);
+              hostDisconnectTimers.delete(code); // Remove timer entry
 
-            if (remainingPlayers.length === 0) {
-              // No one left – terminate lobby as before
-              console.log(`No players left in lobby ${code} after host disconnected. Terminating lobby.`);
+              // Re-fetch players in case someone else left during the grace period
+              const currentPlayers = racePlayers.get(code) || [];
+              const currentRace = activeRaces.get(code); // Re-fetch race state
 
-              socket.to(code).emit('lobby:terminated', { reason: 'Lobby empty after host disconnected.' });
+              // Ensure the disconnected host is actually removed before picking a new one
+              const remainingPlayersAfterGrace = currentPlayers.filter(p => p.userId !== player.userId);
 
-              // Clean up memory structures
-              racePlayers.delete(code);
-              activeRaces.delete(code);
-
-              // Soft‑terminate in DB for consistency (best‑effort)
-              try {
-                await RaceModel.softTerminate(race.id);
-              } catch (e) {
-                console.error(`Error soft‑terminating lobby ${code}:`, e);
+              if (!currentRace || remainingPlayersAfterGrace.length === 0) {
+                console.log(`No players left in lobby ${code} after host grace period. Terminating.`);
+                if (currentRace) {
+                  io.to(code).emit('lobby:terminated', { reason: 'Lobby empty after host disconnected.' });
+                  try { await RaceModel.softTerminate(currentRace.id); } catch (e) { console.error(`Error soft-terminating lobby ${code}:`, e); }
+                  activeRaces.delete(code);
+                }
+                racePlayers.delete(code); // Ensure players map is cleared
+                return; // Exit timer callback
               }
 
-              continue; // Done with this lobby
-            }
+              // Choose the oldest remaining player as new host
+              const newHost = remainingPlayersAfterGrace[0];
+              console.log(`Reassigning host of lobby ${code} to ${newHost.netid} (userId: ${newHost.userId})`);
 
-            // Choose the oldest remaining player (index 0 after filtering) as new host
-            const newHost = remainingPlayers[0];
+              currentRace.hostId = newHost.userId;
+              currentRace.hostNetId = newHost.netid;
+              activeRaces.set(code, currentRace); // Update race state
 
-            race.hostId = newHost.userId;
-            race.hostNetId = newHost.netid;
-            activeRaces.set(code, race);
+              // Persist new host in DB (best-effort)
+              try {
+                await RaceModel.reassignHost(currentRace.id, newHost.userId);
+              } catch (e) {
+                console.error(`Failed to reassign host in DB for lobby ${code}:`, e);
+              }
 
-            // Persist new host in DB (best‑effort)
-            try {
-              await RaceModel.reassignHost(race.id, newHost.userId);
-            } catch (e) {
-              console.error(`Failed to reassign host in DB for lobby ${code}:`, e);
-            }
+              // Inform clients in the lobby
+              io.to(code).emit('lobby:newHost', { newHostNetId: newHost.netid });
 
-            // Inform clients in the lobby
-            io.to(code).emit('lobby:newHost', { newHostNetId: newHost.netid });
+              // Update player list for clients (ensure host status is reflected)
+              const clientPlayers = await Promise.all(remainingPlayersAfterGrace.map(p => getPlayerClientData(p)));
+              io.to(code).emit('race:playersUpdate', { players: clientPlayers });
 
-            console.log(`Reassigned host of lobby ${code} to ${newHost.netid}`);
-            // Continue with standard disconnect handling (player list has been adjusted already below)
+            }, HOST_RECONNECT_GRACE_PERIOD);
+
+            // Store the timer and the disconnecting host's userId
+            hostDisconnectTimers.set(code, { timer, userId: player.userId });
+
+            // NOTE: We still proceed with removing the player from the list below,
+            // but the host reassignment is now delayed by the timer.
           }
           // --- End Host Disconnect Handling ---
 
@@ -1204,7 +1290,7 @@ const initialize = (io) => {
           // Remove player from race in memory
           players.splice(playerIndex, 1);
 
-          // If race exists and isn't practice mode, remove from db
+          // If race exists and isn't practice mode, remove player from DB lobby_players
           if (race && race.type !== 'practice' && player.userId) {
             try {
               await RaceModel.removePlayerFromLobby(race.id, player.userId);
@@ -1213,34 +1299,41 @@ const initialize = (io) => {
               console.error(`Error removing user ${netid} from lobby_players table:`, dbErr);
             }
           }
-          
-          // If no players left, clean up race
+
+          // If no players left (and no host disconnect timer running for this lobby), clean up race
           if (players.length === 0) {
-            console.log(`No players left in race ${code}, cleaning up`);
-            racePlayers.delete(code);
-            activeRaces.delete(code);
-            continue;
+            // Only clean up immediately if there isn't a host disconnect timer pending
+            if (!hostDisconnectTimers.has(code)) {
+              console.log(`No players left in race ${code}, cleaning up`);
+              racePlayers.delete(code);
+              activeRaces.delete(code);
+              // If it was a private lobby, try to soft terminate in DB
+              if (race && race.type === 'private') {
+                 try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
+              }
+              continue; // Skip broadcasting updates for an empty race
+            } else {
+              console.log(`No players left in race ${code}, but host disconnect timer is active. Cleanup deferred to timer.`);
+            }
           }
-          
-          // Update player list
+          // Update player list in memory (even if host timer is running)
           racePlayers.set(code, players);
-          
-          // Broadcast updated player list (needs async handling)
+          // Broadcast updated player list (needs async handling for avatars)
           const remainingPlayersClientDataDisc = await Promise.all(players.map(p => getPlayerClientData(p)));
           io.to(code).emit('race:playersUpdate', {
             players: remainingPlayersClientDataDisc
           });
-          
+
           // Broadcast player left message
           io.to(code).emit('race:playerLeft', { netid });
-          
+
           // Check if we should end the race early if all remaining players are finished
           if (race && race.status === 'racing') {
             const allCompleted = players.every(p => {
               const progress = playerProgress.get(p.id);
               return progress && progress.completed;
             });
-            
+
             if (allCompleted && players.length > 0) {
               console.log(`All remaining players in race ${code} have finished, ending race`);
               endRace(io, code).catch(err => {
@@ -1250,15 +1343,19 @@ const initialize = (io) => {
           }
         }
       }
-      
+
       // Clean up any stored progress
       playerProgress.delete(socket.id);
       lastProgressUpdate.delete(socket.id);
-      
       // Clean up stored avatar
       playerAvatars.delete(socket.id);
+      // Clean up any inactivity timers associated with this specific socket ID across all lobbies
+      for (const [key, timers] of inactivityTimers.entries()) {
+         if (key.endsWith(`-${socket.id}`)) {
+            clearInactivityTimers(key.split('-')[0], socket.id); // Call cleanup function
+         }
+      }
     });
-
     // Handle player canceling a race (pressing TAB to restart)
     socket.on('race:cancel', async (progressData) => {
       const { user: netid, userId } = socket.userInfo;

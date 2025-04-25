@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useRace } from '../context/RaceContext';
 import { useAuth } from '../context/AuthContext';
 import { useState, useCallback, useEffect } from 'react';
+import { useTutorial } from '../context/TutorialContext';
+import TutorialAnchor from './TutorialAnchor';
 import './Results.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 import PropTypes from 'prop-types';
@@ -9,6 +11,7 @@ import PropTypes from 'prop-types';
 function Results({ onShowLeaderboard }) {
   const navigate = useNavigate();
   const { raceState, typingState, resetRace } = useRace();
+  const { isRunning, endTutorial } = useTutorial();
   const { user } = useAuth();
   const [enlargedAvatar, setEnlargedAvatar] = useState(null);
   
@@ -20,6 +23,7 @@ function Results({ onShowLeaderboard }) {
   
   // Handle back button
   const handleBack = () => {
+    if (isRunning) endTutorial();
     resetRace();
     navigate('/home?refreshUser=true');
   };
@@ -129,7 +133,8 @@ function Results({ onShowLeaderboard }) {
     }
 
     return (
-      <div className="practice-results">
+      <TutorialAnchor anchorId="practice-results">
+        <div className="practice-results">
         <h3>Practice Results</h3>
         {statsContent}
         {/* Snippet Source Info */}
@@ -151,16 +156,21 @@ function Results({ onShowLeaderboard }) {
             View Course Review
           </a>
         )}
-        <div className="keyboard-shortcuts">
-          <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
-        </div>
+        <TutorialAnchor anchorId="keyboard-shortcuts">
+          <div className="keyboard-shortcuts">
+            <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
+          </div>
+        </TutorialAnchor>
         {/* Conditionally add Leaderboard Button */} 
         {onShowLeaderboard && (
-          <button className="leaderboard-shortcut-btn" onClick={onShowLeaderboard}>
-            <i className="bi bi-trophy"></i> View Leaderboards
-          </button>
+          <TutorialAnchor anchorId="finish-practice">
+            <button className="leaderboard-shortcut-btn" onClick={onShowLeaderboard}>
+              <i className="bi bi-trophy"></i> View Leaderboards
+            </button>
+          </TutorialAnchor>
         )}
-      </div>
+        </div>
+      </TutorialAnchor>
     );
   };
   

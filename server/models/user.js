@@ -7,7 +7,8 @@ const User = {
   async findById(userId) {
     if (!userId) return null;
     try {
-      const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+      // Select all relevant fields including the new tutorial flag
+      const result = await pool.query('SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial FROM users WHERE id = $1', [userId]);
       return result.rows[0];
     } catch (err) {
       console.error(`Error finding user by ID ${userId}:`, err);
@@ -15,79 +16,58 @@ const User = {
     }
   },
 
-  // Find user by netid, including bio and avatar_url
+  // Find user by netid, including bio, avatar_url, and tutorial flag
   async findByNetid(netid) {
     try {
-      // Try to get all fields including fastest_wpm
+      // Try to get all fields including fastest_wpm and has_completed_tutorial
       try {
         const result = await db.query(
-          'SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm FROM users WHERE netid = $1',
+          'SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial FROM users WHERE netid = $1',
           [netid]
         );
         return result.rows[0];
       } catch (error) {
-        // If there's an error (likely missing column), fallback to a simpler query
+        // Fallback logic (less likely needed now, but kept for safety)
         console.warn('Error in full findByNetid query, falling back to minimal query:', error.message);
         const fallbackResult = await db.query(
           'SELECT id, netid, last_login, created_at FROM users WHERE netid = $1',
           [netid]
         );
-        
-        // If we have a user, try to get other columns that might exist
+
+        // If we have a basic user, try to get other columns that might exist
         if (fallbackResult.rows[0]) {
           const user = fallbackResult.rows[0];
-          
-          // Try to get bio and avatar_url
-          try {
-            const profileResult = await db.query(
-              'SELECT bio, avatar_url FROM users WHERE id = $1',
-              [user.id]
-            );
-            if (profileResult.rows[0]) {
-              user.bio = profileResult.rows[0].bio;
-              user.avatar_url = profileResult.rows[0].avatar_url;
+
+          // Function to safely fetch additional fields
+          const fetchField = async (fieldName, query) => {
+            try {
+              const fieldResult = await db.query(query, [user.id]);
+              if (fieldResult.rows[0]) {
+                return fieldResult.rows[0][fieldName];
+              }
+            } catch (fieldError) {
+              console.warn(`Could not get ${fieldName} field:`, fieldError.message);
             }
-          } catch (profileError) {
-            console.warn('Could not get profile fields:', profileError.message);
-          }
-          
-          // Try to get stats fields
-          try {
-            const statsResult = await db.query(
-              'SELECT races_completed, avg_wpm, avg_accuracy FROM users WHERE id = $1',
-              [user.id]
-            );
-            if (statsResult.rows[0]) {
-              user.races_completed = statsResult.rows[0].races_completed;
-              user.avg_wpm = statsResult.rows[0].avg_wpm;
-              user.avg_accuracy = statsResult.rows[0].avg_accuracy;
-            }
-          } catch (statsError) {
-            console.warn('Could not get stats fields:', statsError.message);
-          }
-          
-          // Try to get fastest_wpm separately
-          try {
-            const fastestResult = await db.query(
-              'SELECT fastest_wpm FROM users WHERE id = $1',
-              [user.id]
-            );
-            if (fastestResult.rows[0]) {
-              user.fastest_wpm = fastestResult.rows[0].fastest_wpm;
-            } else {
-              // Default to 0 if not available
-              user.fastest_wpm = 0;
-            }
-          } catch (fastestError) {
-            console.warn('Could not get fastest_wpm field:', fastestError.message);
-            // Default to 0 if not available
-            user.fastest_wpm = 0;
-          }
-          
+            return null; // Return null or a default value if fetch fails
+          };
+
+          // Fetch profile fields
+          user.bio = await fetchField('bio', 'SELECT bio FROM users WHERE id = $1');
+          user.avatar_url = await fetchField('avatar_url', 'SELECT avatar_url FROM users WHERE id = $1');
+
+          // Fetch stats fields
+          user.races_completed = await fetchField('races_completed', 'SELECT races_completed FROM users WHERE id = $1') ?? 0;
+          user.avg_wpm = await fetchField('avg_wpm', 'SELECT avg_wpm FROM users WHERE id = $1') ?? 0;
+          user.avg_accuracy = await fetchField('avg_accuracy', 'SELECT avg_accuracy FROM users WHERE id = $1') ?? 0;
+          user.fastest_wpm = await fetchField('fastest_wpm', 'SELECT fastest_wpm FROM users WHERE id = $1') ?? 0;
+
+          // Fetch tutorial flag
+          user.has_completed_tutorial = await fetchField('has_completed_tutorial', 'SELECT has_completed_tutorial FROM users WHERE id = $1') ?? false;
+
           return user;
         }
-        
-        return fallbackResult.rows[0];
+
+        return fallbackResult.rows[0]; // Return basic user if found
       }
     } catch (err) {
       console.error('Error finding user by netid:', err);
@@ -95,11 +75,12 @@ const User = {
     }
   },
 
-  // Create a new user (bio and avatar_url will be null initially)
+  // Create a new user (bio and avatar_url will be null initially, tutorial flag defaults to false)
   async create(netid) {
     try {
+      // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm',
+        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
         [netid]
       );
       return result.rows[0];
@@ -112,8 +93,9 @@ const User = {
   // Update last login time
   async updateLastLogin(userId) {
     try {
+      // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm',
+        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
         [userId]
       );
       return result.rows[0];
@@ -127,13 +109,24 @@ const User = {
   async findOrCreate(netid) {
     try {
       let user = await this.findByNetid(netid);
-      
+
       if (!user) {
         user = await this.create(netid);
       } else {
         user = await this.updateLastLogin(user.id);
       }
-      
+
+      // Ensure the user object always includes the tutorial flag, even if fetched via fallback
+      if (user && user.has_completed_tutorial === undefined) {
+         try {
+            const flagResult = await db.query('SELECT has_completed_tutorial FROM users WHERE id = $1', [user.id]);
+            user.has_completed_tutorial = flagResult.rows[0]?.has_completed_tutorial ?? false;
+         } catch (flagError) {
+             console.warn(`Could not fetch has_completed_tutorial for user ${user.id} in findOrCreate fallback:`, flagError.message);
+             user.has_completed_tutorial = false; // Default to false on error
+         }
+      }
+
       return user;
     } catch (err) {
       console.error('Error in findOrCreate:', err);
@@ -145,33 +138,17 @@ const User = {
   async updateBio(userId, bio) {
     try {
       console.log('Calling updateBio with userId:', userId, 'and bio:', bio);
-      
-      // Focused query that just updates and returns waht's needed
+
+      // Update bio and fetch all relevant fields
       const result = await db.query(
-        'UPDATE users SET bio = $1 WHERE id = $2 RETURNING id, netid, bio, avatar_url',
+        'UPDATE users SET bio = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
         [bio, userId]
       );
-      
+
       if (result.rows.length === 0) {
         throw new Error('User not found');
       }
-      
-      // Try to get additional stats fields if they exist
-      try {
-        const statsResult = await db.query(
-          'SELECT races_completed, avg_wpm, avg_accuracy, fastest_wpm FROM users WHERE id = $1',
-          [userId]
-        );
-        
-        if (statsResult.rows[0]) {
-          // Merge the stats into our result
-          Object.assign(result.rows[0], statsResult.rows[0]);
-        }
-      } catch (statsErr) {
-        console.warn('Could not retrieve stats fields after bio update:', statsErr.message);
-        // Continue without stats - they're not critical for bio functionality
-      }
-      
+
       return result.rows[0];
     } catch (err) {
       console.error('Error updating user bio:', err);
@@ -179,38 +156,46 @@ const User = {
     }
   },
 
-  // Update useravatar URL
+  // Update user avatar URL
   async updateAvatarUrl(userId, avatarUrl) {
     try {
       console.log('Calling updateAvatarUrl with userId:', userId, 'and avatarUrl:', avatarUrl);
-      
+
+      // Update avatar URL and fetch all relevant fields
       const result = await db.query(
-        'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, netid, bio, avatar_url',
+        'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
         [avatarUrl, userId]
       );
-      
+
       if (result.rows.length === 0) {
         throw new Error('User not found');
       }
-      
-      // Try to get additional stats fields if they exist
-      try {
-        const statsResult = await db.query(
-          'SELECT races_completed, avg_wpm, avg_accuracy, fastest_wpm FROM users WHERE id = $1',
-          [userId]
-        );
-        
-        if (statsResult.rows[0]) {
-          Object.assign(result.rows[0], statsResult.rows[0]);
-        }
-      } catch (statsErr) {
-        console.warn('Could not retrieve stats fields after avatar update:', statsErr.message);
-        // Continue without stats - they're not critical for avatar functionality
-      }
-      
+
       return result.rows[0];
     } catch (err) {
       console.error('Error updating user avatar URL:', err);
+      throw err;
+    }
+  },
+
+  // Mark the user tutorial as completed
+  async markTutorialAsCompleted(userId) {
+    if (!userId) {
+      throw new Error('User ID is required to mark tutorial as completed');
+    }
+    try {
+      const result = await db.query(
+        'UPDATE users SET has_completed_tutorial = true WHERE id = $1 RETURNING id, has_completed_tutorial',
+        [userId]
+      );
+      if (result.rowCount === 0) {
+        console.warn(`Attempted to mark tutorial complete for non-existent user ID: ${userId}`);
+        return null; // Or throw an error if preferred
+      }
+      console.log(`Marked tutorial as completed for user ID: ${userId}`);
+      return result.rows[0]; // Return the updated user id and flag status
+    } catch (err) {
+      console.error(`Error marking tutorial as completed for user ID ${userId}:`, err);
       throw err;
     }
   },

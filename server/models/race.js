@@ -103,7 +103,7 @@ const Race = {
          FROM lobbies l
          JOIN users h ON l.host_id = h.id
          LEFT JOIN snippets s ON l.snippet_id = s.id
-         WHERE h.netid = $1 AND l.type = 'private' AND l.status = 'waiting'
+         WHERE LOWER(h.netid) = LOWER($1) AND l.type = 'private' AND l.status = 'waiting'
          ORDER BY l.created_at DESC -- Get the most recent one if multiple exist
          LIMIT 1`,
         [netId]
@@ -125,7 +125,7 @@ const Race = {
          JOIN users u ON lp.user_id = u.id
          LEFT JOIN snippets s ON l.snippet_id = s.id
          LEFT JOIN users h ON l.host_id = h.id
-         WHERE u.netid = $1 AND l.type = 'private' AND l.status = 'waiting'
+         WHERE LOWER(u.netid) = LOWER($1) AND l.type = 'private' AND l.status = 'waiting'
          ORDER BY l.created_at DESC
          LIMIT 1`,
         [netId]

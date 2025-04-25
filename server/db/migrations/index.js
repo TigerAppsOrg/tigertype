@@ -6,7 +6,6 @@ const path = require('path');
  * Database migration system for TigerType
  */
 
-// Migration versions and their descriptions
 const MIGRATIONS = [
   {
     version: 1,
@@ -213,8 +212,7 @@ const MIGRATIONS = [
       `);
        console.log('Successfully removed source columns from snippets table.');
     }
-  }
-  ,
+  },
   {
     version: 7,
     description: 'Add optimistic concurrency version column to lobbies table',
@@ -248,62 +246,42 @@ const MIGRATIONS = [
     up: async (client) => {
       console.log('Running migration to add Princeton course details to snippets table...');
       await client.query(`
-        ALTER TABLE public.snippets
-          ADD COLUMN IF NOT EXISTS princeton_course_url TEXT,
-          ADD COLUMN IF NOT EXISTS term_code VARCHAR(4),
-          ADD COLUMN IF NOT EXISTS course_id VARCHAR(6),
-          ADD COLUMN IF NOT EXISTS course_name TEXT;
+        ALTER TABLE snippets
+        ADD COLUMN IF NOT EXISTS course_department VARCHAR(10), -- e.g. COS
+        ADD COLUMN IF NOT EXISTS course_number VARCHAR(10); -- e.g. 333
       `);
-      console.log('Successfully added Princeton course columns to snippets table.');
+      console.log('Successfully added course detail columns to snippets table.');
     },
     down: async (client) => {
-      console.log('Reverting migration to remove Princeton course details from snippets table...');
+      console.log('Reverting migration to remove course detail columns from snippets table...');
       await client.query(`
-        ALTER TABLE public.snippets
-          DROP COLUMN IF EXISTS princeton_course_url,
-          DROP COLUMN IF EXISTS term_code,
-          DROP COLUMN IF EXISTS course_id,
-          DROP COLUMN IF EXISTS course_name;
+        ALTER TABLE snippets
+        DROP COLUMN IF EXISTS course_department,
+        DROP COLUMN IF EXISTS course_number;
       `);
-       console.log('Successfully removed Princeton course columns from snippets table.');
+       console.log('Successfully removed course detail columns from snippets table.');
     }
   },
   {
     version: 9,
     description: 'Ensure unique constraint on snippets.text',
     up: async (client) => {
-      console.log('Running migration to ensure unique constraint on snippets.text...');
-      // Check if the constraint already exists
-      const constraintExists = await client.query(`
-        SELECT constraint_name
-        FROM information_schema.table_constraints
-        WHERE table_schema = 'public'
-          AND table_name = 'snippets'
-          AND constraint_type = 'UNIQUE'
-          AND constraint_name = 'snippets_text_key'; -- Use a specific name
+      console.log('Running migration to add has_completed_tutorial flag to users table...');
+      await client.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS has_completed_tutorial BOOLEAN DEFAULT false;
       `);
-
-      if (constraintExists.rowCount === 0) {
-        console.log('Unique constraint snippets_text_key not found on snippets.text, adding it...');
-        await client.query(`
-          ALTER TABLE public.snippets
-          ADD CONSTRAINT snippets_text_key UNIQUE (text);
-        `);
-        console.log('Successfully added UNIQUE constraint snippets_text_key to snippets.text.');
-      } else {
-        console.log('Unique constraint snippets_text_key already exists on snippets.text.');
-      }
+      console.log('Successfully added has_completed_tutorial column to users table.');
     },
     down: async (client) => {
-      // Optional: Drop the constraint if it exists
-      console.log('Reverting migration to remove unique constraint from snippets.text...');
+      console.log('Reverting migration to remove has_completed_tutorial flag from users table...');
       await client.query(`
-        ALTER TABLE public.snippets
-        DROP CONSTRAINT IF EXISTS snippets_text_key;
+        ALTER TABLE users
+        DROP COLUMN IF EXISTS has_completed_tutorial;
       `);
-      console.log('Successfully removed unique constraint snippets_text_key from snippets.text (if it existed).');
+      console.log('Successfully removed has_completed_tutorial column from users table.');
     }
-  }
+  },
 ];
 
 // Create migrations table if it doesn't exist
@@ -419,4 +397,4 @@ const logDatabaseState = async () => {
 module.exports = {
   runMigrations,
   logDatabaseState
-}; 
+};

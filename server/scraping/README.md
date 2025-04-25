@@ -1,4 +1,5 @@
 # Princeton Course Evaluation Scraper for TigerType
+*[AI DISCLAIMER: THIS DOCUMENTATION WAS CREATED WITH THE HELP OF AI]*
 
 This directory contains the script and documentation for scraping course evaluations from the official Princeton University course evaluation website. The goal is to extract engaging text snippets for use in the TigerType application.
 
@@ -53,38 +54,3 @@ The provided `scrape_evals.js` script needs the following changes:
     ```
 4.  **Paste Cookie:** Paste the copied `PHPSESSID` when prompted.
 5.  **Output:** The script (once modified) will output a `raw_evaluations.json` file in the `server/scraping` directory.
-
-## AI Processing (Placeholder)
-
-```python
-# Example pseudocode for AI processing step
-import json
-# Assume an AI model/library 'ai_analyzer' exists
-
-def is_good_snippet(comment_text):
-    # AI logic to determine if a comment is funny, engaging, and suitable length
-    # Returns True/False and potentially categories
-    pass
-
-def analyze_evaluations(input_json_path, output_json_path):
-    with open(input_json_path, 'r') as f:
-        raw_data = json.load(f)
-
-    filtered_snippets = []
-    for evaluation in raw_data:
-        comment = evaluation.get('comment_text', '')
-        is_suitable, categories = is_good_snippet(comment) # Hypothetical AI call
-
-        if is_suitable:
-            evaluation['word_count'] = len(comment.split())
-            evaluation['character_count'] = len(comment)
-            evaluation['categories'] = categories # e.g., ['funny', 'positive']
-            filtered_snippets.append(evaluation)
-
-    with open(output_json_path, 'w') as f:
-        json.dump(filtered_snippets, f, indent=2)
-
-# analyze_evaluations('raw_evaluations.json', 'filtered_snippets.json')
-```
-
-This AI step is crucial for curating high-quality content for TigerType. 

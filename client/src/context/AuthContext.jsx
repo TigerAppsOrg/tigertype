@@ -1,73 +1,83 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
 // Create context
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUserState] = useState(null); // Renamed internal setter
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [authenticated, setAuthenticated] = useState(false);
+
+  // Function to fetch user profile data
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/user/profile');
+      if (response.data) {
+        // Ensure has_completed_tutorial is included, defaulting if necessary
+        const userData = {
+          ...response.data,
+          has_completed_tutorial: response.data.has_completed_tutorial ?? false,
+        };
+        setUserState(userData);
+        setAuthenticated(true);
+        window.user = userData; // Update window object
+        setError(null);
+        return userData;
+      } else {
+        // Handle case where profile endpoint returns no data unexpectedly
+        setUserState(null);
+        setAuthenticated(false);
+        window.user = null;
+        setError('Failed to retrieve user profile data.');
+        return null;
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+      // Don't nullify user/auth state if profile fetch fails after initial auth check
+      // setError('Failed to fetch user profile'); 
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Empty dependency array, this function doesn't depend on component state
 
   // Check authentication status on mount
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/auth/status');
-        
-        if (response.data.authenticated && response.data.user) {
-          // We're authenticated through CAS, but need to fetch full user profile
-          try {
-            const profileResponse = await axios.get('/api/user/profile');
-            if (profileResponse.data) {
-              setUser(profileResponse.data);
-              setAuthenticated(true);
-              
-              // Store user in window object for socket.io access
-              window.user = profileResponse.data;
-            } else {
-              setUser(response.data.user);
-              setAuthenticated(true);
-              window.user = response.data.user;
-            }
-          } catch (profileErr) {
-            console.error('Error fetching user profile:', profileErr);
-            // Still set the basic user info from auth status
-            setUser(response.data.user);
-            setAuthenticated(true);
-            window.user = response.data.user;
-          }
+        const authResponse = await axios.get('/auth/status');
+
+        if (authResponse.data.authenticated && authResponse.data.user) {
+          // Authenticated via CAS, now fetch full profile
+          await fetchUserProfile(); // fetchUserProfile handles setting state
         } else {
-          setUser(null);
+          setUserState(null);
           setAuthenticated(false);
           window.user = null;
         }
-        
         setError(null);
       } catch (err) {
         console.error('Error checking authentication status:', err);
-        setUser(null);
+        setUserState(null);
         setAuthenticated(false);
         window.user = null;
         setError('Failed to check authentication status');
-        // setLoading(false);
       } finally {
         setLoading(false);
       }
     };
 
     checkAuthStatus();
-  }, []);
+  }, [fetchUserProfile]); // Depend on fetchUserProfile
 
   // Monitor socket connection status to update user data on reconnect
-  // PLEASE REVIEW IF THIS IS EFFICIENT (it's prlly really not lol)-- AMMAAR
   useEffect(() => {
     let isInitialConnection = true;
     const handleSocketConnect = () => {
-      // When socket reconnects, fetch fresh user data to ensure consistency
-      // But skip on the initial connection to prevent loops
       if (authenticated && !isInitialConnection) {
         console.log('Socket reconnected, refreshing user profile data');
         fetchUserProfile();
@@ -75,75 +85,88 @@ export const AuthProvider = ({ children }) => {
       isInitialConnection = false;
     };
 
-    // Add event listener when the component mounts
     if (window.socket) {
       window.socket.on('connect', handleSocketConnect);
     }
 
-    // Cleanup function
     return () => {
       if (window.socket) {
         window.socket.off('connect', handleSocketConnect);
       }
     };
-  }, [authenticated]);  // Remove user dependency to avoid inf loop
+  }, [authenticated, fetchUserProfile]); // Depend on auth status and fetch function
 
   // Function to handle login
   const login = () => {
-    // Redirect to the CAS login
     window.location.href = '/auth/login';
   };
 
   // Function to handle logout
   const logout = () => {
-    // Redirect to the app logout endpoint
     window.location.href = '/auth/logout';
   };
 
-  // Function to fetch user profile after login
-  const fetchUserProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/api/user/profile');
-      
-      if (response.data) {
-        setUser(response.data);
-        setAuthenticated(true);
-        // Store user in window object for socket.io access
-        window.user = response.data;
-        return response.data;
-      }
-      
-      return null;
-    } catch (err) {
-      console.error('Error fetching user profile:', err);
-      setError('Failed to fetch user profile');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Function to update user data
+  // Function to update user data locally
   const updateUser = (userData) => {
-    setUser(prevUser => {
+    setUserState(prevUser => {
       const updatedUser = { ...prevUser, ...userData };
-      // Also update the window.user object for socket.io access
-      window.user = updatedUser;
+      window.user = updatedUser; // Keep window object in sync
       return updatedUser;
     });
   };
 
+  // Helper function to mark tutorial as complete
+  const markTutorialComplete = async () => {
+    // If user is already available
+    if (user && user.netid) {
+      try {
+        console.log('Marking tutorial as completed for user:', user.netid);
+        const response = await fetch('/api/users/tutorial/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          console.log('Tutorial marked as completed successfully');
+          // Update local user state
+          setUser(prev => ({ ...prev, has_completed_tutorial: true }));
+        } else {
+          console.error('Failed to mark tutorial as completed:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error marking tutorial as completed:', error);
+      }
+    } else {
+      console.log('User data not immediately available for markTutorialComplete, waiting 500ms...');
+      try {
+        // Wait a moment and try again
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Check if user data is available now
+        if (user && user.netid) {
+          await markTutorialComplete(); // Recursive call with user data
+        } else {
+          console.error('Cannot mark tutorial complete: User data still not available after waiting.');
+        }
+      } catch (err) {
+        console.error('Error in delayed markTutorialComplete:', err);
+    }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      authenticated, 
-      loading, 
-      error, 
-      login, 
+    <AuthContext.Provider value={{
+      user,
+      authenticated,
+      loading,
+      error,
+      login,
       logout,
       fetchUserProfile,
-      setUser: updateUser // Expose setUser function to update user state
+      setUser: updateUser, // Expose updateUser
+      markTutorialComplete // Expose the new function
     }}>
       {children}
     </AuthContext.Provider>
