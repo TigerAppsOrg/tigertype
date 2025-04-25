@@ -137,6 +137,13 @@
   transition: transform 0.2s ease;
 }
 
+/* Style for the container holding the settings and help icons */
+.navbar-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .navbar-link {
   position: relative;
   transition: color 0.2s ease;
