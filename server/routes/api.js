@@ -384,7 +384,7 @@ router.get('/user/badges', requireAuth, async (req, res) => {
     const userId = req.user.id;
     const badges = await UserModel.getBadges(userId);
     res.json(badges);
-    console.log('User badges fetched successfully:', badges);
+    console.log('User badges fetched successfully');
   } catch (err) {
     console.error('Error fetching user badges:', err);
     res.status(500).json({ error: 'Server error' });

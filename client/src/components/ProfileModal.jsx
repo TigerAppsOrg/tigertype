@@ -19,11 +19,23 @@ function ProfileModal({ isOpen, onClose }) {
   const [selectedTitle, setSelectedTitle] =useState('');
   const [matchHistory, setMatchHistory] = useState([]);
   const [loadingMatchHistory, setLoadingMatchHistory] = useState(true);
-  const [userBadges, setUserBadges] = useState([]); 
+  const [loadingBadges, setLoadingBadges] = useState(false);
+  const [userBadges, setUserBadges] = useState([]);
 
   const modalRef = useRef();
   const typingInputRef = document.querySelector('.typing-input-container input');
 
+  const getBadgeEmoji = (key) => {
+    switch (key) {
+      case 'first_race': return '🏁';
+      case 'novice': return '🥉';
+      case 'intermediate': return '🥈';
+      case 'advanced': return '🥇';
+      case 'expert': return '👑';
+      case 'fast': return '⚡';
+      default: return '🏆';
+    }
+  };
 
   // Function to add cache busting parameter to image URL (this is so scuffed, even if it works pls refine ammaar)
   const getCacheBustedImageUrl = (url) => {
@@ -133,7 +145,6 @@ function ProfileModal({ isOpen, onClose }) {
         }
 
         const data = await response.json();
-        console.log('Match history data:', data);
 
         for (let i of data) {
           let temp = String(i['lobby_type']);
@@ -176,15 +187,21 @@ function ProfileModal({ isOpen, onClose }) {
     // Fetch user badges when the profile modal is opened
     const fetchUserBadges = async () => {
       try {
+        setLoadingBadges(true);
         const response = await fetch('/api/user/badges', {
           credentials: 'include'
         });
 
         const data = await response.json();
         console.log('User badges:', data);
+        setUserBadges(data || []);
       }
       catch (error) {
         console.error('Error fetching user badges:', error);
+        setUserBadges([]);
+      }
+      finally {
+        setLoadingBadges(false);
       }
     }
 
@@ -430,6 +447,27 @@ function ProfileModal({ isOpen, onClose }) {
                 <div className="user-badges">
                   <h3>Badges</h3>
             
+                    {loadingBadges ? (
+                      <div className="badges-loading">Loading badges...</div>
+                    ) : userBadges && userBadges.length > 0 ? (
+                      <div className="badges-container">
+                        {userBadges.map(badge => (
+                          <div
+                            key={badge.id}
+                            className="badge-item"
+                            title={`${badge.description}`}
+                          >
+                            {getBadgeEmoji(badge.key)}
+                            <div className="badge-tooltip">
+                              {badge.name}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="no-badges">Complete races to earn badges!</div>
+                    )}
+
                 </div>
                 </div>
               </div>
