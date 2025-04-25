@@ -100,21 +100,26 @@ function Race() {
         
         {/* TestConfigurator - render only in practice mode */}
         {raceState.type === 'practice' && (
-          <TestConfigurator 
-            testMode={testMode}
-            testDuration={testDuration}
-            snippetDifficulty={snippetDifficulty}
-            snippetType={snippetType}
-            snippetDepartment={snippetDepartment}
-            setTestMode={setTestMode}
-            setTestDuration={setTestDuration}
-            setSnippetDifficulty={setSnippetDifficulty}
-            setSnippetType={setSnippetType}
-            setSnippetDepartment={setSnippetDepartment}
-            setRaceState={setRaceState}
-            loadNewSnippet={loadNewSnippet}
-            onShowLeaderboard={toggleLeaderboard}
-          />
+          <TutorialAnchor anchorId="configurator">
+            {/* tiny wrapper ensures non-zero bounding box immediately */}
+            <div style={{ minWidth: 1, minHeight: 1 }}>
+              <TestConfigurator
+                testMode={testMode}
+                testDuration={testDuration}
+                snippetDifficulty={snippetDifficulty}
+                snippetType={snippetType}
+                snippetDepartment={snippetDepartment}
+                setTestMode={setTestMode}
+                setTestDuration={setTestDuration}
+                setSnippetDifficulty={setSnippetDifficulty}
+                setSnippetType={setSnippetType}
+                setSnippetDepartment={setSnippetDepartment}
+                setRaceState={setRaceState}
+                loadNewSnippet={loadNewSnippet}
+                onShowLeaderboard={toggleLeaderboard}
+              />
+            </div>
+          </TutorialAnchor>
         )}
         
         <TutorialAnchor anchorId="race-content">
