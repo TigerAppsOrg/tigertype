@@ -162,8 +162,6 @@ function Results({ onShowLeaderboard }) {
           </div>
         </TutorialAnchor>
         {/* Conditionally add Leaderboard Button */} 
-:start_line:150
--------
         {onShowLeaderboard && (
           <TutorialAnchor anchorId="finish-practice">
             <button className="leaderboard-shortcut-btn" onClick={onShowLeaderboard}>
