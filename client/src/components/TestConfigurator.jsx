@@ -17,7 +17,6 @@ const LeaderboardIcon = () => <i className="bi bi-trophy"></i>;
 const DURATIONS = [15, 30, 60, 120];
 const DIFFICULTIES = ['all', 'easy', 'medium', 'hard'];
 const TYPES = ['all', 'general', 'princeton', 'course_reviews'];
-const DEPARTMENTS = ['all', 'COS', 'CHM', 'PHY'];
 // --- ---
 
 function TestConfigurator({
@@ -37,11 +36,61 @@ function TestConfigurator({
   isLobby = false,
 }) {
 
+  const [departments, setDepartments] = React.useState(['all']); // State for dynamic departments
+  const isMounted = React.useRef(false); // Ref to track initial mount
+
+  // Fetch departments on mount
+  React.useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        // Assuming fetch is available or imported appropriately
+        const response = await fetch('/api/snippets/course-subjects'); // Use the new API endpoint
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const fetchedSubjects = await response.json();
+        // Ensure 'all' is always the first option and handle potential duplicates if API includes 'all'
+        setDepartments(['all', ...new Set(fetchedSubjects.filter(s => s !== 'all'))]);
+      } catch (error) {
+        console.error("Failed to fetch departments:", error);
+        // Keep the default ['all'] or set a specific error state if needed
+      }
+    };
+    fetchDepartments();
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Reset department if type changes away from course reviews
   React.useEffect(() => {
     if (snippetType !== 'course_reviews' && snippetDepartment !== 'all') {
       setSnippetDepartment('all');
     }
   }, [snippetType, snippetDepartment, setSnippetDepartment]);
+
+  // Trigger snippet reload when filters change (after initial mount)
+  React.useEffect(() => {
+    // Only reload if it's not the initial mount and we are in snippet mode
+    if (isMounted.current && testMode === 'snippet') {
+       console.log('Snippet filter changed, loading new snippet...');
+       loadNewSnippet && loadNewSnippet();
+    }
+  }, [snippetDifficulty, snippetType, snippetDepartment]); // Watch filter states
+
+  // Track initial mount & ensure reload on mode switch to snippet
+   React.useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+    } else if (testMode === 'snippet') {
+      // Reload when switching *to* snippet mode after initial mount
+      console.log('Switched to snippet mode, loading new snippet...');
+      loadNewSnippet && loadNewSnippet();
+    }
+     // Optional: Cleanup function to reset ref on unmount
+     return () => {
+       // If component unmounts, reset isMounted (might not be strictly necessary)
+       // isMounted.current = false;
+     };
+  }, [testMode]); // Watch testMode
+
 
   // Ensure the component always shows the current active test mode
   React.useEffect(() => {
@@ -60,6 +109,8 @@ function TestConfigurator({
     }
   }, [testMode]);
 
+  // Updated handler for select changes to directly set state
+  // The useEffect hook above will handle reloading the snippet
   const handleSelectChange = (setter) => (event) => {
     setter(event.target.value);
   };
@@ -134,35 +185,56 @@ function TestConfigurator({
     }
   };
 
-  // Under renderButton, detect if it's one of the tutorial anchorIds
+  // ------------------------------
+  // Rendering helpers
+  // ------------------------------
+
+  // Map of config values to tutorial anchorIds so individual buttons can be highlighted in the tutorial overlay.
   const BUTTON_ANCHOR_MAP = {
     snippet: 'mode-snippet',
     timed: 'mode-timed',
   };
 
-  const renderButton = (value, state, setter, label, icon = null, isFunctional = true, onClickOverride = null) => {
-    const anchorId = BUTTON_ANCHOR_MAP[value] || (setter === setTestDuration ? `timed-options` : null);
+  /**
+   * Generic rendering helper for all configurator buttons.
+   * Automatically wires up behaviour for mode switches, duration changes, etc.
+   * If the given value is present in {@link BUTTON_ANCHOR_MAP} or represents one of the timed-mode duration
+   * buttons, it will automatically be wrapped in a {@link TutorialAnchor} so the tutorial system can
+   * reference the element.
+   */
+  const renderButton = (
+    value,
+    state,
+    setter,
+    label,
+    icon = null,
+    /* boolean */ isFunctional = true,
+    /* function */ onClickOverride = null,
+  ) => {
+    // Determine whether we need to wrap the button in a tutorial anchor.
+    const anchorId = BUTTON_ANCHOR_MAP[value] || (setter === setTestDuration ? 'timed-options' : null);
+
     const button = (
       <button
         key={value}
         data-testid={setter === setTestMode ? `mode-${value}` : undefined}
         className={`config-button ${state === value ? 'active' : ''} ${!isFunctional ? 'non-functional' : ''} ${icon ? 'icon-button' : ''}`}
         onClick={() => {
+          // Allow a full override for custom behaviour (e.g. leaderboard modal)
           if (onClickOverride) {
             onClickOverride();
             return;
           }
+          // Ignore clicks on non-functional buttons – they exist purely for UI preview.
           if (!isFunctional) return;
-          
-          // Handle different types of buttons
+
+          // Handle the main button categories.
           if (value === 'timed' || value === 'snippet') {
-            // Mode buttons
             handleModeChange(value, setter);
           } else if (setter === setTestDuration) {
-            // Duration buttons
             handleDurationChange(value);
-          } else {
-            // Other buttons (department, etc.)
+          } else if (setter) {
+            // Generic setter (difficulty, type, department, etc.)
             setter(value);
           }
         }}
@@ -172,18 +244,23 @@ function TestConfigurator({
         {icon && icon()} {label || value}
       </button>
     );
+
     return anchorId ? (
       <TutorialAnchor anchorId={anchorId} key={value}>
         {button}
       </TutorialAnchor>
-    ) : button;
+    ) : (
+      button
+    );
   };
 
-  return (
-    // Wrap the entire configurator in an anchor for tutorial
-    <TutorialAnchor anchorId="configurator">
-      <div className={`test-configurator ${isLobby ? 'lobby' : ''}`}>
+  // ------------------------------
+  // Render
+  // ------------------------------
 
+  return (
+    <TutorialAnchor anchorId="configurator">
+      <div className={`test-configurator ${isLobby ? 'lobby' : ''}`}> 
         {/* Mode Selection Group */}
         <div className="config-section mode-selection">
           {renderButton('snippet', testMode, setTestMode, 'Snippets', QuoteIcon)}
@@ -199,35 +276,57 @@ function TestConfigurator({
           {/* Snippet Filters Wrapper */}
           <div className={`options-wrapper snippet-options ${testMode === 'snippet' ? 'visible' : ''}`}>
             <div className="config-section snippet-filters-inner">
-               <div className="select-wrapper">
-                  <DifficultyIcon />
+              {/* Difficulty filter */}
+              <div className="select-wrapper">
+                <DifficultyIcon />
+                <select
+                  className="config-select"
+                  value={snippetDifficulty}
+                  onChange={handleSelectChange(setSnippetDifficulty)}
+                >
+                  <option value="" disabled hidden={snippetDifficulty !== ''}>difficulty</option>
+                  {DIFFICULTIES.map(diff => (
+                    <option key={diff} value={diff}>{diff}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="config-separator-inner"></div>
+
+              {/* Type filter */}
+              <div className="select-wrapper">
+                <TypeIcon />
+                <select
+                  className="config-select"
+                  value={snippetType}
+                  onChange={handleSelectChange(setSnippetType)}
+                >
+                  <option value="" disabled hidden={snippetType !== ''}>type</option>
+                  {TYPES.map(type => (
+                    <option key={type} value={type}>{type.replace('_', ' ')}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Department filter – only shown for course reviews */}
+              <div className={`department-filter ${snippetType === 'course_reviews' ? 'visible' : ''}`}>
+                <div className="config-separator-inner"></div>
+                <div className="select-wrapper">
+                  <DepartmentIcon />
                   <select
-                    className="config-select non-functional"
-                    value={snippetDifficulty}
-                    onChange={handleSelectChange(setSnippetDifficulty)}
-                    title="Difficulty filter coming soon!"
+                    className="config-select"
+                    value={snippetDepartment}
+                    onChange={handleSelectChange(setSnippetDepartment)}
+                    aria-label="Select Department"
                   >
-                    <option value="" disabled hidden={snippetDifficulty !== ""}>difficulty</option>
-                    {DIFFICULTIES.map(diff => <option key={diff} value={diff}>{diff}</option>)}
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>
+                        {dept === 'all' ? 'department' : dept}
+                      </option>
+                    ))}
                   </select>
-               </div>
-               <div className="config-separator-inner"></div>
-               <div className="select-wrapper">
-                  <TypeIcon />
-                  <select
-                    className="config-select non-functional"
-                    value={snippetType}
-                    onChange={handleSelectChange(setSnippetType)}
-                    title="Type filter coming soon!"
-                  >
-                    <option value="" disabled hidden={snippetType !== ""}>type</option>
-                    {TYPES.map(type => <option key={type} value={type}>{type.replace('_', ' ')}</option>)}
-                  </select>
-               </div>
-               <div className={`department-filter ${snippetType === 'course_reviews' ? 'visible' : ''}`}>
-                  <div className="config-separator-inner"></div>
-                  {DEPARTMENTS.map(dept => renderButton(dept, snippetDepartment, setSnippetDepartment, dept, null, false))}
-               </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -245,11 +344,11 @@ function TestConfigurator({
         {/* Separator */}
         <div className="config-separator"></div>
 
-        {/* Leaderboard Button (always visible in practice mode) */}
+        {/* Leaderboard Button */}
         <div className="config-section leaderboard-button-section">
           {renderButton('leaderboard', null, null, 'Leaderboard', LeaderboardIcon, true, onShowLeaderboard)}
         </div>
-      </div> {/* End TestConfigurator container */}
+      </div> {/* End test-configurator */}
     </TutorialAnchor>
   );
 }
