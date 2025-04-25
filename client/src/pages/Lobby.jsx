@@ -183,7 +183,7 @@ function Lobby() {
      return (
         <div className="lobby-page error-page">
             <h2>Error</h2>
-            <p>Could not join or find lobby "{lobbyCode}". It might be invalid, closed, or you might have been removed.</p>
+            <p>Could not join or find lobby "{lobbyCode}". It might be invalid or closed.</p>
             <button onClick={() => navigate('/home')}>Go Home</button>
         </div>
      );
@@ -292,7 +292,7 @@ function Lobby() {
                   <button
                     className="start-race-button"
                     onClick={startPrivateRace}
-                    disabled={raceState.players?.length < 2} // Require 2 players
+                    disabled={raceState.players?.length < 2 && !raceState.players?.every(p => p.ready === true)} // Require 2 players
                     title={raceState.players?.length < 2 ? "Need at least 2 players to start" : "Start the race!"}
                   >
                     Start Race

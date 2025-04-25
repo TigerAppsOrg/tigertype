@@ -204,7 +204,7 @@
 
 .developer-links a {
   display: inline-block;
-  color: var(--primary-color);
+  color: var(--developer-link-color);
   text-decoration: none;
   margin: 0 0.8rem;
   font-weight: 600;
@@ -219,12 +219,12 @@
   height: 2px;
   bottom: -3px;
   left: 0;
-  background-color: var(--primary-color);
+  background-color: var(--developer-link-hover-color);
   transition: width 0.3s ease;
 }
 
 .developer-links a:hover {
-  color: var(--primary-color-light);
+  color: var(--developer-link-hover-color);
 }
 
 .developer-links a:hover::after {

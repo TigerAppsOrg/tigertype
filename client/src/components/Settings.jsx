@@ -23,7 +23,16 @@ function Settings({ isOpen, onClose }) {
   const [theme, setTheme] = useState(() => {
     // Default to 'dark' if no theme is stored or if stored value is invalid
     const storedTheme = localStorage.getItem('theme');
-    return storedTheme === 'light' ? 'light' : 'dark'; 
+    if (storedTheme === 'tangerine') {
+      return 'tangerine'
+    }
+    else if (storedTheme === 'lavender-asphalt') {
+      return 'lavender-asphalt';
+    } else if (storedTheme === 'light') {
+      return 'light';
+    } else {
+      return 'dark'; 
+    }
   });
 
   const [fontSize, setFontSize] = useState(() => {
@@ -47,62 +56,181 @@ function Settings({ isOpen, onClose }) {
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
     document.documentElement.style.setProperty('--main-font', whichFont);
-    document.documentElement.style.setProperty(
-      '--background-color', theme === 'light' ? '#ffffff' : '#121212'
-    );
-    document.documentElement.style.setProperty(
-      '--secondary-color', theme === 'light' ? '#f0f0f0' : '#1e1e1e'
-    );
-    document.documentElement.style.setProperty(
-      '--mode-text-color', theme === 'light' ? '#1e1e1e' : '#e0e0e0'
-    );
-    document.documentElement.style.setProperty(
-      '--hover-color', theme === 'light' ? '#a2a2a2' : '#2a2a2a'
-    );
-    document.documentElement.style.setProperty(
-      '--type-container-color', theme === 'light' ? '#dfdfdf' : '#1e1e1e'
-    );
-    document.documentElement.style.setProperty(
-      '--typing-color', theme === 'light' ? 'black' : '#ffffff53'
-    );
-    document.documentElement.style.setProperty(
-      '--container-color', theme === 'light' ? '#ffffff' : '#121212'
-    );
-    document.documentElement.style.setProperty(
-      '--player-card-color', theme === 'light' ? '#aeaeae' : '#2a2a2a'
-    );
-    document.documentElement.style.setProperty(
-      '--correct-bg-color', 
-      theme === 'light' ? '#0A970A' : 'rgba(128, 239, 128, 0.55)'
-    );
-    document.documentElement.style.setProperty(
-      '--incorrect-color',
-      theme === 'light' ? '#FF0000' : 'rgba(255, 65, 47, 0.55)'
-    );
-    document.documentElement.style.setProperty(
-      '--incorrect-bg-color',
-      theme === 'light' ? 'rgba(255,116,108, 0.30)' : 'rgba(255,116,108, 0.10)'
-    );
-    document.documentElement.style.setProperty(
-      '--current-color',
-      theme === 'light' ? 'black' : 'white'
-    );
-
-    // Set the snippet font size CSS variable
     document.documentElement.style.setProperty('--snippet-font-size', `${fontSize}px`);
-    
     localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
-    localStorage.setItem('theme', theme); // Store theme string
-    localStorage.setItem('snippetFontSize', fontSize.toString()); // Store font size
-  }, [whichFont, typingSound, theme, fontSize]); // Add fontSize to dependencies
+    localStorage.setItem('snippetFontSize', fontSize.toString());
+
+    localStorage.setItem('theme', theme);
+
+    if (theme === 'tangerine') {
+      document.documentElement.style.setProperty('--primary-color', '#F5821F');
+      document.documentElement.style.setProperty('--secondary-color', '#F7EDE4');
+      document.documentElement.style.setProperty('--mode-text-color', '#214E34');
+      document.documentElement.style.setProperty('--hover-color', '#a2a2a2');
+      document.documentElement.style.setProperty('--type-container-color', '#FFF8F2');
+      document.documentElement.style.setProperty('--container-color', '#D7BFB1');
+      document.documentElement.style.setProperty('--typing-color', '#FFB577');
+      document.documentElement.style.setProperty('--player-card-color', '#aeaeae');
+
+      document.documentElement.style.setProperty('--background-color', '#E6BC9F');
+      document.documentElement.style.setProperty('--background-color-secondary', '#F0CDB3');
+
+      document.documentElement.style.setProperty('--text-color', '#214E34');
+      document.documentElement.style.setProperty('--text-color-secondary', '#505050');
+      document.documentElement.style.setProperty('--text-color-highlight', '#000000');
+      document.documentElement.style.setProperty('--subtle-text-color', 'rgba(60, 60, 60, 0.8)');
+
+      document.documentElement.style.setProperty('--correct-bg-color', '#0A970A');
+      document.documentElement.style.setProperty('--incorrect-color', '#FF0000');
+      document.documentElement.style.setProperty('--incorrect-bg-color', 'rgba(255,116,108, 0.30)');
+      document.documentElement.style.setProperty('--current-color', '#000000');
+
+      document.documentElement.style.setProperty('--caret-color', '#F58025')
+
+      document.documentElement.style.setProperty('--mode-title-color', '#F58025');
+      document.documentElement.style.setProperty('--stat-card-color', 'rgba(175, 175, 175, 0.4)');
+      document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
+      document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
+      document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
+      document.documentElement.style.setProperty('--button-bg-color', 'rgba(125, 125, 125, 0.8)');
+      
+      document.documentElement.style.setProperty('--background-color-tertiary', '#2a2a2a');
+      document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
+
+      document.documentElement.style.setProperty('--border-color', '#3a3a3a');
+    }
+    else if (theme === 'lavender-asphalt') {
+      document.documentElement.style.setProperty('--mode-text-color', '#A59EB5'); //
+      document.documentElement.style.setProperty('--hover-color', '#a2a2a2'); //
+      
+      document.documentElement.style.setProperty('--player-card-color', '#aeaeae'); //
+
+      document.documentElement.style.setProperty('--background-color', '#2C2C34'); //
+      document.documentElement.style.setProperty('--primary-color', '#C2AEDD') //
+      document.documentElement.style.setProperty('--secondary-color', '#3A3A42'); //
+      document.documentElement.style.setProperty('--background-color-secondary', '#3A3A42'); //
+
+      document.documentElement.style.setProperty('--type-container-color', '#2C2C34'); // 
+      document.documentElement.style.setProperty('--container-color', '#2E2E33'); //
+      
+      document.documentElement.style.setProperty('--typing-color', '#7A7A80'); //
+      document.documentElement.style.setProperty('--text-color', '#F1F1F6'); //
+      document.documentElement.style.setProperty('--text-color-secondary', '#F1F1F6'); //
+      document.documentElement.style.setProperty('--text-color-highlight', '#FAD6EA'); //
+      document.documentElement.style.setProperty('--subtle-text-color', '#9A9AA0'); //
+      document.documentElement.style.setProperty('--caret-color', '#B24DAE') //
+
+      document.documentElement.style.setProperty('--correct-bg-color', '#8AC49F'); //
+      document.documentElement.style.setProperty('--incorrect-color', '#B5746C'); //
+      document.documentElement.style.setProperty('--incorrect-bg-color', 'rgba(155, 100, 75, 0.3)'); //
+      document.documentElement.style.setProperty('--current-color', '#A59EB5'); //
+
+      document.documentElement.style.setProperty('--mode-title-color', '#B5746C'); //
+      document.documentElement.style.setProperty('--stat-card-color', 'rgba(175, 175, 175, 0.4)'); //
+      document.documentElement.style.setProperty('--developer-link-color', '#C2AEDD'); //
+      document.documentElement.style.setProperty('--developer-link-hover-color', '#6B4796'); //
+      document.documentElement.style.setProperty('--modal-bg-color', '#2E2E33'); //
+      document.documentElement.style.setProperty('--button-bg-color', 'rgba(125, 125, 125, 0.8)'); //
+    }
+    else if (theme === 'light') {
+      document.documentElement.style.setProperty('--primary-color', '#F5821F');
+      document.documentElement.style.setProperty('--secondary-color', '#f0f0f0');
+      document.documentElement.style.setProperty('--mode-text-color', '#1e1e1e');
+      document.documentElement.style.setProperty('--hover-color', '#a2a2a2');
+      document.documentElement.style.setProperty('--type-container-color', '#dfdfdf');
+      document.documentElement.style.setProperty('--container-color', '#ffffff');
+      document.documentElement.style.setProperty('--typing-color', '#000000');
+      document.documentElement.style.setProperty('--player-card-color', '#aeaeae');
+
+      document.documentElement.style.setProperty('--background-color', '#ffffff');
+      document.documentElement.style.setProperty('--background-color-secondary', '#e0e0e0');
+
+      document.documentElement.style.setProperty('--text-color', '#000000');
+      document.documentElement.style.setProperty('--text-color-secondary', '#505050');
+      document.documentElement.style.setProperty('--text-color-highlight', '#000000');
+      document.documentElement.style.setProperty('--subtle-text-color', 'rgba(60, 60, 60, 0.8)');
+
+      document.documentElement.style.setProperty('--correct-bg-color', '#0A970A');
+      document.documentElement.style.setProperty('--incorrect-color', '#FF0000');
+      document.documentElement.style.setProperty('--incorrect-bg-color', 'rgba(255,116,108, 0.30)');
+      document.documentElement.style.setProperty('--current-color', '#000000');
+
+      document.documentElement.style.setProperty('--caret-color', '#F58025')
+
+      document.documentElement.style.setProperty('--mode-title-color', '#F58025');
+      document.documentElement.style.setProperty('--stat-card-color', 'rgba(175, 175, 175, 0.4)');
+      document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
+      document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
+      document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
+      document.documentElement.style.setProperty('--button-bg-color', 'rgba(125, 125, 125, 0.8)');
+      
+      document.documentElement.style.setProperty('--background-color-tertiary', '#2a2a2a');
+      document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
+
+      document.documentElement.style.setProperty('--border-color', '#3a3a3a');
+    }
+    else { // Default: Dark Mode
+      document.documentElement.style.setProperty('--primary-color', '#F5821F');
+      document.documentElement.style.setProperty('--secondary-color', '#1e1e1e');
+      document.documentElement.style.setProperty('--mode-text-color', '#e0e0e0');
+      document.documentElement.style.setProperty('--hover-color','#2a2a2a');
+      document.documentElement.style.setProperty('--type-container-color', '#1e1e1e');
+      document.documentElement.style.setProperty('--container-color', '#121212');
+      document.documentElement.style.setProperty('--typing-color', '#ffffff53');
+      document.documentElement.style.setProperty('--player-card-color', '#2a2a2a');
+
+      document.documentElement.style.setProperty('--background-color', '#121212');
+      document.documentElement.style.setProperty('--background-color-secondary', '#1e1e1e');
+
+      document.documentElement.style.setProperty('--text-color', '#e0e0e0');
+      document.documentElement.style.setProperty('--text-color-secondary', '#b0b0b0');
+      document.documentElement.style.setProperty('--text-color-highlight', '#ffffff');
+      document.documentElement.style.setProperty('--subtle-text-color', '#7A7A7A');
+
+      document.documentElement.style.setProperty('--correct-bg-color', 'rgba(128, 239, 128, 0.55)');
+      document.documentElement.style.setProperty('--incorrect-color', 'rgba(255, 65, 47, 0.55)');
+      document.documentElement.style.setProperty('--incorrect-bg-color', 'rgba(255,116,108, 0.10)');
+      document.documentElement.style.setProperty('--current-color', '#ffffff');
+
+      document.documentElement.style.setProperty('--caret-color', '#F58025')
+
+      document.documentElement.style.setProperty('--mode-title-color', '#F58025');
+      document.documentElement.style.setProperty('--stat-card-color', 'rgba(30, 30, 30, 0.4)');
+      document.documentElement.style.setProperty('--developer-link-color', '#C25A00');
+      document.documentElement.style.setProperty('--developer-link-hover-color', '#FFAD6B');
+      document.documentElement.style.setProperty('--modal-bg-color', '#222222');
+      document.documentElement.style.setProperty('--button-bg-color', '#3a3a3a');
+
+      document.documentElement.style.setProperty('--background-color-tertiary', '#2a2a2a');
+      document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
+
+      document.documentElement.style.setProperty('--border-color', '#3a3a3a');
+    }
+  }, [whichFont, typingSound, theme, fontSize]);
 
   useEffect(() => {
-    const color = defaultCursor ? "#3a506b" : "none";
+    const block = defaultCursor ? "visible" : "hidden";
     const line = defaultCursor ? "hidden" : "visible";
+    let color = "none";
+
+    if (block === 'visible' && theme === 'tangerine') {
+      color = '#8FAABD';
+    }
+    else if (block === 'visible' && theme === 'lavender-asphalt') {
+      color = '#4A6A8C';
+    }
+    else if (block === 'visible' && theme === 'light') {
+      color = "#8FAABD";
+    } else if (block === 'visible') {
+      color = "#3a506b";
+    } else {
+      color = "none";
+    }
+
     document.documentElement.style.setProperty('--default-cursor', color);
     document.documentElement.style.setProperty('--line-cursor', line);
-  }, [defaultCursor]);
+  }, [defaultCursor, theme]);
 
   // Handle closing modal on outside click or ESC key
   useEffect(() => {
@@ -267,6 +395,8 @@ function Settings({ isOpen, onClose }) {
             >
               <option value="dark">Dark</option>
               <option value="light">Light</option>
+              <option value="lavender-asphalt">Lavender Asphalt</option>
+              <option value="tangerine">Tangerine</option>
             </select>
           </div>
           

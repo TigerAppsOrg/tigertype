@@ -272,7 +272,7 @@
   visibility: var(--line-cursor);
   position: absolute;
   content: "|";
-  color: var(--princeton-orange)!important;
+  color: var(--caret-color)!important;
   animation: slide 0.08s ease-out;
   right: 50%;
   transform: scale(180%, 1);
