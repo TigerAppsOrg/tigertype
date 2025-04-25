@@ -263,15 +263,31 @@ function TestConfigurator({
                   {TYPES.map(type => <option key={type} value={type}>{type.replace('_', ' ')}</option>)}
                 </select>
              </div>
+             {/* Department Dropdown - Conditionally Visible */}
              <div className={`department-filter ${snippetType === 'course_reviews' ? 'visible' : ''}`}>
                 <div className="config-separator-inner"></div>
-                 {/* Render departments dynamically */}
-                {departments.map(dept => renderButton(dept, snippetDepartment, setSnippetDepartment, dept, null, true))}
-              </div>
-            </div>
-          </div>
+                <div className="select-wrapper">
+                   <DepartmentIcon /> {/* Use the department icon */}
+                   <select
+                     className="config-select" // Use existing select styling
+                     value={snippetDepartment}
+                     onChange={handleSelectChange(setSnippetDepartment)}
+                     aria-label="Select Department"
+                   >
+                     {/* <option value="" disabled hidden={snippetDepartment !== ""}>department</option> */}
+                     {/* Map departments state to options */}
+                     {departments.map(dept => (
+                       <option key={dept} value={dept}>
+                         {dept === 'all' ? 'department' : dept} {/* Show 'department' for 'all' value */}
+                       </option>
+                     ))}
+                   </select>
+                </div>
+             </div>
+           </div>
+         </div>
 
-          {/* Timed Mode Duration Wrapper */}
+         {/* Timed Mode Duration Wrapper */}
         <div className={`options-wrapper timed-options ${testMode === 'timed' ? 'visible' : ''}`}>
           <div className="config-section duration-selection-inner">
             {DURATIONS.map(duration => renderButton(duration, testDuration, setTestDuration, `${duration}s`))}

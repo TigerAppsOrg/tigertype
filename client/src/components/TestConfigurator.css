@@ -17,7 +17,7 @@
   position: relative;
   z-index: 10;
   min-height: 40px;
-  overflow: hidden;
+  /* overflow: hidden; */ /* Allow content to overflow if needed */
 }
 
 /* Mode selection group */
@@ -73,30 +73,30 @@
   position: relative;
   display: flex;
   align-items: center;
-  flex-grow: 1;
-  min-width: 250px;
+  /* flex-grow: 1; */ /* Let container size naturally based on content */
+  /* min-width: 250px; */ /* Remove fixed min-width */
   height: 100%;
-  /* overflow: hidden; */ /* Remove overflow to prevent clipping absolute children */
 }
 
-/* Wrapper for options - absolute positioning for transition */
+/* Wrapper for options - use relative positioning and display toggle */
 .options-wrapper {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%) translateX(-20px);
+  /* position: absolute; */
+  /* left: 0; */
+  /* top: 50%; */
+  /* transform: translateY(-50%) translateX(-20px); */
   width: auto;
-  display: flex;
+  display: none; /* Hide by default */
   align-items: center;
   opacity: 0;
-  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+  transition: opacity 0.25s ease-out;
   pointer-events: none;
   white-space: nowrap;
 }
 
 .options-wrapper.visible {
+  display: flex; /* Show when visible */
   opacity: 1;
-  transform: translateY(-50%) translateX(0);
+  /* transform: translateY(-50%) translateX(0); */
   pointer-events: auto;
 }
 
@@ -213,9 +213,9 @@
 
 /* Department Filter Animation */
 .department-filter {
-  display: inline-flex;
+  display: inline-flex; /* Keep as inline-flex to contain the select-wrapper */
   align-items: center;
-  gap: 5px;
+  /* gap: 5px; */ /* No longer needed as it contains only one select-wrapper */
   max-width: 0;
   opacity: 0;
   overflow: hidden;
@@ -230,9 +230,12 @@
   margin-left: 5px;
   pointer-events: auto;
 }
+/* Remove rule for .department-filter .config-button as it's now a select */
+/*
 .department-filter .config-button {
   white-space: nowrap;
 }
+*/
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
