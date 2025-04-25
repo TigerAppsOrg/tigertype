@@ -4,10 +4,12 @@ import { useTutorial } from '../context/TutorialContext';
 import { tutorialSteps } from '../tutorial/tutorialSteps';
 import './TutorialGuide.css';
 import { useAnchorContext } from './TutorialAnchor';
+import { useLocation } from 'react-router-dom';
 
 const TutorialGuide = () => {
   const { isRunning, currentSection, currentStepIndex, nextStep, prevStep, goToSection, endTutorial } = useTutorial();
   const { anchors } = useAnchorContext();
+  const location = useLocation();
   // fetch raw step configs per section
   const rawSteps = tutorialSteps[currentSection] || [];
   // Build Joyride steps using CSS selectors (data-tutorial-id)
@@ -34,6 +36,20 @@ const TutorialGuide = () => {
       prevSectionRef.current = currentSection;
     }
   }, [currentSection]);
+
+  // Auto switch tutorial section based on current route while running
+  React.useEffect(() => {
+    if (!isRunning) return;
+    if (location.pathname.startsWith('/race')) {
+      if (currentSection !== 'practice') {
+        goToSection('practice', 0);
+      }
+    } else if (location.pathname.startsWith('/home')) {
+      if (currentSection !== 'home') {
+        goToSection('home', 0);
+      }
+    }
+  }, [location.pathname, isRunning, currentSection, goToSection]);
 
   if (!isRunning) return null;
 

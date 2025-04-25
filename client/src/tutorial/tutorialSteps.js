@@ -8,7 +8,7 @@ export const tutorialSteps = {
     { id: 'home-quick', anchorId: 'mode-quick', content: 'This is the Quick Match button.' },
     { id: 'home-create-private', anchorId: 'mode-create-private', content: 'Click here to create a Private Lobby.' },
     { id: 'home-join-private', anchorId: 'mode-join-private', content: 'Click here to join a Private Lobby.' },
-    { id: 'home-activate-practice', anchorId: 'mode-practice', content: 'Start Practice Mode by clicking here.', spotlightClicks: true }
+    { id: 'home-activate-practice', anchorId: 'mode-practice', content: 'Start Practice Mode by clicking here.', spotlightClicks: true, event: 'click', placement:'top' }
   ],
   practice: [
     { id: 'practice-start', anchorId: 'body', content: 'Welcome to Practice Mode! Click Next to continue.' },
