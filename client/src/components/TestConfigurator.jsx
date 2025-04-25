@@ -16,7 +16,6 @@ const LeaderboardIcon = () => <i className="bi bi-trophy"></i>;
 const DURATIONS = [15, 30, 60, 120];
 const DIFFICULTIES = ['all', 'easy', 'medium', 'hard'];
 const TYPES = ['all', 'general', 'princeton', 'course_reviews'];
-const DEPARTMENTS = ['all', 'COS', 'CHM', 'PHY'];
 // --- ---
 
 function TestConfigurator({
@@ -36,11 +35,61 @@ function TestConfigurator({
   isLobby = false,
 }) {
 
+  const [departments, setDepartments] = React.useState(['all']); // State for dynamic departments
+  const isMounted = React.useRef(false); // Ref to track initial mount
+
+  // Fetch departments on mount
+  React.useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        // Assuming fetch is available or imported appropriately
+        const response = await fetch('/api/snippets/course-subjects'); // Use the new API endpoint
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const fetchedSubjects = await response.json();
+        // Ensure 'all' is always the first option and handle potential duplicates if API includes 'all'
+        setDepartments(['all', ...new Set(fetchedSubjects.filter(s => s !== 'all'))]);
+      } catch (error) {
+        console.error("Failed to fetch departments:", error);
+        // Keep the default ['all'] or set a specific error state if needed
+      }
+    };
+    fetchDepartments();
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Reset department if type changes away from course reviews
   React.useEffect(() => {
     if (snippetType !== 'course_reviews' && snippetDepartment !== 'all') {
       setSnippetDepartment('all');
     }
   }, [snippetType, snippetDepartment, setSnippetDepartment]);
+
+  // Trigger snippet reload when filters change (after initial mount)
+  React.useEffect(() => {
+    // Only reload if it's not the initial mount and we are in snippet mode
+    if (isMounted.current && testMode === 'snippet') {
+       console.log('Snippet filter changed, loading new snippet...');
+       loadNewSnippet && loadNewSnippet();
+    }
+  }, [snippetDifficulty, snippetType, snippetDepartment]); // Watch filter states
+
+  // Track initial mount & ensure reload on mode switch to snippet
+   React.useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+    } else if (testMode === 'snippet') {
+      // Reload when switching *to* snippet mode after initial mount
+      console.log('Switched to snippet mode, loading new snippet...');
+      loadNewSnippet && loadNewSnippet();
+    }
+     // Optional: Cleanup function to reset ref on unmount
+     return () => {
+       // If component unmounts, reset isMounted (might not be strictly necessary)
+       // isMounted.current = false;
+     };
+  }, [testMode]); // Watch testMode
+
 
   // Ensure the component always shows the current active test mode
   React.useEffect(() => {
@@ -59,6 +108,8 @@ function TestConfigurator({
     }
   }, [testMode]);
 
+  // Updated handler for select changes to directly set state
+  // The useEffect hook above will handle reloading the snippet
   const handleSelectChange = (setter) => (event) => {
     setter(event.target.value);
   };
@@ -133,17 +184,18 @@ function TestConfigurator({
     }
   };
 
+  // Updated renderButton to handle department clicks and remove non-functional logic/title
   const renderButton = (value, state, setter, label, icon = null, isFunctional = true, onClickOverride = null) => (
     <button
       key={value}
-      className={`config-button ${state === value ? 'active' : ''} ${!isFunctional ? 'non-functional' : ''} ${icon ? 'icon-button' : ''}`}
+      className={`config-button ${state === value ? 'active' : ''} ${icon ? 'icon-button' : ''}`} // Removed non-functional class logic here
       onClick={() => {
         if (onClickOverride) {
           onClickOverride();
           return;
         }
-        if (!isFunctional) return;
-        
+        // Removed isFunctional check as we assume all rendered buttons are functional now
+
         // Handle different types of buttons
         if (value === 'timed' || value === 'snippet') {
           // Mode buttons
@@ -151,17 +203,21 @@ function TestConfigurator({
         } else if (setter === setTestDuration) {
           // Duration buttons
           handleDurationChange(value);
+        } else if (setter === setSnippetDepartment) {
+           // Department buttons - directly set state, useEffect handles reload
+           setter(value);
         } else {
-          // Other buttons (department, etc.)
+          // Fallback for any other potential buttons
           setter(value);
         }
       }}
-      title={!isFunctional ? 'Filter coming soon!' : label || value}
+      title={label || value} // Removed conditional title
       aria-label={label || value}
     >
       {icon && icon()} {label || value}
     </button>
   );
+
 
   return (
     // Main container
@@ -185,10 +241,10 @@ function TestConfigurator({
              <div className="select-wrapper">
                 <DifficultyIcon />
                 <select
-                  className="config-select non-functional"
+                  className="config-select" // Removed non-functional
                   value={snippetDifficulty}
                   onChange={handleSelectChange(setSnippetDifficulty)}
-                  title="Difficulty filter coming soon!"
+                  // title removed
                 >
                   <option value="" disabled hidden={snippetDifficulty !== ""}>difficulty</option>
                   {DIFFICULTIES.map(diff => <option key={diff} value={diff}>{diff}</option>)}
@@ -198,10 +254,10 @@ function TestConfigurator({
              <div className="select-wrapper">
                 <TypeIcon />
                 <select
-                  className="config-select non-functional"
+                  className="config-select" // Removed non-functional
                   value={snippetType}
                   onChange={handleSelectChange(setSnippetType)}
-                  title="Type filter coming soon!"
+                  // title removed
                 >
                   <option value="" disabled hidden={snippetType !== ""}>type</option>
                   {TYPES.map(type => <option key={type} value={type}>{type.replace('_', ' ')}</option>)}
@@ -209,12 +265,13 @@ function TestConfigurator({
              </div>
              <div className={`department-filter ${snippetType === 'course_reviews' ? 'visible' : ''}`}>
                 <div className="config-separator-inner"></div>
-                {DEPARTMENTS.map(dept => renderButton(dept, snippetDepartment, setSnippetDepartment, dept, null, false))}
-             </div>
+                 {/* Render departments dynamically */}
+                {departments.map(dept => renderButton(dept, snippetDepartment, setSnippetDepartment, dept, null, true))}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Timed Mode Duration Wrapper */}
+          {/* Timed Mode Duration Wrapper */}
         <div className={`options-wrapper timed-options ${testMode === 'timed' ? 'visible' : ''}`}>
           <div className="config-section duration-selection-inner">
             {DURATIONS.map(duration => renderButton(duration, testDuration, setTestDuration, `${duration}s`))}

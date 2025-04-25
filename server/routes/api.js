@@ -202,20 +202,48 @@ router.get('/user/results', requireAuth, async (req, res) => {
   }
 });
 
-// Get random snippet
+// Get random snippet with filters
 router.get('/snippets/random', requireAuth, async (req, res) => {
   try {
-    const difficulty = req.query.difficulty ? parseInt(req.query.difficulty) : null;
-    const snippet = await SnippetModel.getRandom(difficulty);
-    
-    if (!snippet) {
-      return res.status(404).json({ error: 'No snippets found' });
+    const { difficulty: difficultyStr, type, department } = req.query;
+    const filters = {};
+
+    // Map difficulty string to number
+    if (difficultyStr && difficultyStr !== 'all') {
+      const difficultyMap = { easy: 1, medium: 2, hard: 3 };
+      if (difficultyMap[difficultyStr]) {
+        filters.difficulty = difficultyMap[difficultyStr];
+      } else {
+        console.warn(`Invalid difficulty string received: ${difficultyStr}`);
+        // Optionally return a 400 error or ignore invalid difficulty
+      }
     }
-    
+
+    // Map type to category
+    if (type && type !== 'all') {
+      // Handle 'course_reviews' mapping specifically
+      filters.category = (type === 'course_reviews') ? 'course-reviews' : type;
+    }
+
+    // Add subject filter if type is course reviews and department is specified
+    if (filters.category === 'course-reviews' && department && department !== 'all') {
+      filters.subject = department; // Assuming department is the 3-letter code
+    }
+
+    console.log('Fetching snippet with filters:', filters);
+    const snippet = await SnippetModel.getRandom(filters);
+
+    if (!snippet) {
+      // Log the filters that resulted in no snippet
+      console.warn('No snippets found for the applied filters:', filters);
+      // Return 404 or potentially a default/fallback snippet
+      return res.status(404).json({ error: 'No snippets found matching the selected criteria.' });
+    }
+
     res.json(snippet);
   } catch (err) {
-    console.error('Error fetching random snippet:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error fetching random snippet with filters:', err);
+    res.status(500).json({ error: 'Server error while fetching snippet' });
   }
 });
 
@@ -247,6 +275,18 @@ router.get('/snippets/category/:category', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Error fetching snippets by category:', err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get unique course review subjects (departments)
+router.get('/snippets/course-subjects', requireAuth, async (req, res) => {
+  try {
+    const subjects = await SnippetModel.getCourseReviewSubjects();
+    // Prepend 'all' for the frontend filter option
+    res.json(['all', ...subjects]);
+  } catch (err) {
+    console.error('Error fetching course review subjects:', err);
+    res.status(500).json({ error: 'Server error fetching subjects' });
   }
 });
 
