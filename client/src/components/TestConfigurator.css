@@ -73,8 +73,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  flex-grow: 1;
-  min-width: 250px;
+  /* flex-grow: 1; */
+  /* min-width: 250px;
+  
   height: 100%;
   /* overflow: hidden; */ /* Remove overflow to prevent clipping absolute children */
 }

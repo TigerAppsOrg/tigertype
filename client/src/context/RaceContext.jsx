@@ -359,6 +359,11 @@ export const RaceProvider = ({ children }) => {
       setRaceState(prev => ({ ...prev, countdown: data.seconds }));
     };
 
+    const handleNewHost = (data) => {
+      console.log(`New host assigned: ${data.newHostNetId}`);
+      setRaceState(prev => ({ ...prev, hostNetId: data.newHostNetId }));
+    };
+
     // Register event listeners
     socket.on('race:joined', handleRaceJoined);
     socket.on('race:playersUpdate', handlePlayersUpdate);
@@ -376,6 +381,7 @@ export const RaceProvider = ({ children }) => {
     socket.on('lobby:kicked', handleLobbyKicked);
     socket.on('lobby:terminated', handleLobbyTerminated);
     socket.on('race:countdown', handleRaceCountdown);
+    socket.on('lobby:newHost', handleNewHost); // Added listener
 
     // Clean up on unmount
     return () => {
@@ -395,6 +401,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('lobby:kicked', handleLobbyKicked);
       socket.off('lobby:terminated', handleLobbyTerminated);
       socket.off('race:countdown', handleRaceCountdown);
+      socket.off('lobby:newHost', handleNewHost); // Added cleanup
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
   }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id]); 
