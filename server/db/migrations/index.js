@@ -308,9 +308,9 @@ const MIGRATIONS = [
 
       // Check if badges already exist
       const existingBadgesCount = await client.query(`
-    SELECT COUNT(*) FROM badges 
-    WHERE key = 'first_race'
-    `);
+      SELECT COUNT(*) FROM badges 
+      WHERE key = 'first_race'
+      `);
 
       if (parseInt(existingBadgesCount.rows[0].count) === 0) {
         console.log('No existing badges found, adding initial badges...');
@@ -347,11 +347,16 @@ const MIGRATIONS = [
     }
   },
   {
+<<<<<<< HEAD
     version: 11,
+=======
+    version: 10,
+>>>>>>> 6e426fe (title system)
     description: 'Adds titles and user_titles tables',
     up: async (client) => {
       console.log('Running migration to add titles and user_titles tables...');
       await client.query(`
+<<<<<<< HEAD
       CREATE TABLE IF NOT EXISTS titles (
       id SERIAL PRIMARY KEY,
       key VARCHAR UNIQUE NOT NULL,
@@ -375,15 +380,47 @@ const MIGRATIONS = [
       WHERE key = 'nice'
     `);
 
+=======
+        CREATE TABLE IF NOT EXISTS titles (
+        id SERIAL PRIMARY KEY,
+        key VARCHAR UNIQUE NOT NULL,
+        name VARCHAR UNIQUE NOT NULL,      
+        description TEXT,                  
+        criteria_type VARCHAR NOT NULL,    
+        criteria_value INTEGER NOT NULL     
+        );  
+
+        CREATE TABLE IF NOT EXISTS user_titles (
+        user_id INTEGER REFERENCES users(id)  ON DELETE CASCADE,
+        titles_id INTEGER REFERENCES titles(id) ON DELETE CASCADE,
+        awarded_at TIMESTAMPTZ DEFAULT now(),
+        PRIMARY KEY (user_id, titles_id)
+        );
+      `);
+
+      // Check if title already exist
+      const existingTitlesCount = await client.query(`
+        SELECT COUNT(*) FROM titles 
+        WHERE key = 'nice'
+      `);
+      
+>>>>>>> 6e426fe (title system)
       if (parseInt(existingTitlesCount.rows[0].count) === 0) {
         console.log('No existing titles found, adding initial titles...');
 
         // Insert titles only if none exist
         await client.query(`
+<<<<<<< HEAD
       INSERT INTO titles (key, name, description, criteria_type, criteria_value)
       VALUES 
         ('nice', 'Nice', 'Congrats on typing 69 words!', 'words_typed', 69);
       `);
+=======
+        INSERT INTO titles (key, name, description, criteria_type, criteria_value)
+        VALUES 
+          ('nice', 'Nice', 'Congrats on typing 69 words!', 'words_typed', 69);
+        `);
+>>>>>>> 6e426fe (title system)
 
         console.log('Initial titles added successfully');
       } else {
@@ -393,9 +430,15 @@ const MIGRATIONS = [
     }, down: async (client) => {
       console.log('Reverting migration: dropping titles and user_titles tables...');
       await client.query(`
+<<<<<<< HEAD
       DROP TABLE IF EXISTS user_titles;
       DROP TABLE IF EXISTS titles;
     `);
+=======
+        DROP TABLE IF EXISTS user_titles;
+        DROP TABLE IF EXISTS titles;
+      `);
+>>>>>>> 6e426fe (title system)
       console.log('Revert complete: titles / user_titles dropped.');
     }
   }

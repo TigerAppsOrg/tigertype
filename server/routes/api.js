@@ -391,4 +391,21 @@ router.get('/user/badges', requireAuth, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 module.exports = router;
+=======
+// Get user titles
+router.get('/user/titles', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const titles = await UserModel.getTitles(userId);
+    res.json(titles);
+    console.log('User titles fetched successfully');
+  } catch (err) {
+    console.error('Error fetching user titles:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+module.exports = router;
+>>>>>>> 6e426fe (title system)

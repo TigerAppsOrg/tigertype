@@ -19,9 +19,12 @@ function ProfileModal({ isOpen, onClose }) {
   const [selectedTitle, setSelectedTitle] =useState('');
   const [matchHistory, setMatchHistory] = useState([]);
   const [loadingMatchHistory, setLoadingMatchHistory] = useState(true);
-  const [loadingBadges, setLoadingBadges] = useState(false);
   const [userBadges, setUserBadges] = useState([]);
-
+  const [loadingBadges, setLoadingBadges] = useState(false);
+  const [userTitles, setUserTitles] = useState([]);
+  const [loadingTitles, setLoadingTitles] = useState(false);
+  const [showTitleDropdown, setShowTitleDropdown] = useState(false);
+  
   const modalRef = useRef();
   const typingInputRef = document.querySelector('.typing-input-container input');
 
@@ -210,7 +213,64 @@ function ProfileModal({ isOpen, onClose }) {
     }
 
   }, [isOpen, user]);
+  
+  const handleTitleClick = () => {
+    setShowTitleDropdown(!showTitleDropdown);
+  };
 
+  const selectTitle = (titleId) => {
+    const titleIdStr = String(titleId);
+    setSelectedTitle(titleIdStr);
+    setShowTitleDropdown(false);
+
+    try {
+      localStorage.setItem('selectedTitle', titleIdStr);
+      console.log(`Selected title saved: ${titleIdStr}`);
+    } catch (error) {
+      console.error('Error saving selected title to localStorage:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch user titles when the profile modal is opened
+    const fetchUserTitles = async () => {
+      try {
+        setLoadingTitles(true);
+        const response = await fetch('/api/user/titles', {
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+        console.log('User titles:', data);
+        setUserTitles(data || []);
+      }
+      catch (error) {
+        console.error('Error fetching user titles:', error);
+        setUserTitles([]);
+      }
+      finally {
+        setLoadingTitles(false);
+      }
+    }
+
+    if (isOpen && user) {
+      fetchUserTitles();
+    }
+
+  }, [isOpen, user]);
+
+  useEffect(() => {
+    if (isOpen && userTitles?.length > 0) {
+      const savedTitle = localStorage.getItem('selectedTitle');
+      
+      if (savedTitle && userTitles.some(title => String(title.id) === String(savedTitle))) {
+        setSelectedTitle(savedTitle);
+      } else {
+        // Don't auto-select any title if no saved selection
+        setSelectedTitle('');
+      }
+    }
+  }, [isOpen, userTitles]);
 
   // Parse numeric values to check if ints
   const parseNumericValue = (value) => {
@@ -436,13 +496,40 @@ function ProfileModal({ isOpen, onClose }) {
                   <div className="username-info">
                     <h2>{user?.netid || 'Guest'}</h2>
                   </div>
-                  <select 
-                    value={selectedTitle} 
-                    onChange={(e) => setSelectedTitle(e.target.value)}
-                    className="title-select"
-                  >
 
-                  </select>
+                  <div className="title-select">
+                    <div
+                      className="selected-title"
+                      onClick={handleTitleClick}
+                    >
+                      {selectedTitle ?
+                        userTitles.find(t => String(t.id) === String(selectedTitle))?.name || 'Select a title...'
+                        : 'Select a title...'}
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {showTitleDropdown && (
+                      <div className="title-dropdown">
+                        {loadingTitles ? (
+                          <div className="dropdown-option loading">Loading titles...</div>
+                        ) : userTitles && userTitles.length > 0 ? (
+                          userTitles.map(title => (
+                            <div
+                              key={title.id}
+                              className="dropdown-option"
+                              onClick={() => selectTitle(title.id)}
+                            >
+                              {title.name}
+                              <div className='title-description'>
+                                - {title.description || 'No description available'}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="dropdown-option disabled">No titles available</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                 <div className="user-badges">
                   <h3>Badges</h3>

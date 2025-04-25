@@ -358,6 +358,7 @@ const User = {
         );
         console.log(`Updated regular stats for user ${userId}: WPM=${newAvgWpm.toFixed(2)}, Acc=${newAvgAcc.toFixed(2)}, Races=${newRacesCompleted}`);
         await this.checkAndAwardBadges(userId);
+        await this.checkAndAwardTitles(userId);
       }
     } catch (error) {
       console.error(`Error updating stats for user ${userId}:`, error);
@@ -381,6 +382,7 @@ const User = {
         );
         console.log(`Updated fastest_wpm for user ${userId} to ${wpm}`);
         await this.checkAndAwardBadges(userId); // Check for badges after updating fastest WPM
+        await this.checkAndAwardTitles(userId);
       } else {
         console.log(`Skipping fastest_wpm update for user ${userId} (${wpm} not higher than ${currentFastest})`);
       }
@@ -415,9 +417,8 @@ const User = {
         JOIN user_badges u on b.id = u.badge_id 
         WHERE u.user_id = $1
         ORDER BY u.awarded_at DESC
-        `,
-        [userId]
-      );
+      `, [userId]);
+
       console.log(`Got ${result.rows.length} badges for user: ${userId}`);
       return result.rows;
     } catch (error) {
@@ -491,8 +492,8 @@ const User = {
       SELECT b.id, b.key, b.name, b.criteria_type, b.criteria_value
       FROM badges b
       WHERE NOT EXISTS (
-        SELECT 1 FROM user_badges ub
-        WHERE ub.badge_id = b.id AND ub.user_id = $1
+        SELECT 1 FROM user_badges u
+        WHERE u.badge_id = b.id AND u.user_id = $1
       )
       `, [userId]);
 
@@ -529,8 +530,130 @@ const User = {
       console.error('Error checking and awarding badges:', err);
       return [];
     }
-  }
+  },
   
+  async getTitles(userId) {
+    if (!userId) return;
+    try {
+      const result = await pool.query(`
+        SELECT t.id, t.key, t.name, t.description, u.awarded_at
+        FROM titles t
+        JOIN user_titles u ON t.id = u.titles_id
+        WHERE u.user_id = $1
+        ORDER BY u.awarded_at DESC
+      `, [userId])
+
+      console.log(`Got ${result.rows.length} achieved titles for user: ${userId}`);
+      return result.rows;
+    } catch (error) {
+      console.error(`Error getting titles for user: ${userId}:`, error);
+    }
+  },
+
+  async awardTitle(userId, titleKey) {
+    if (!userId) return;
+    if (!titleKey) return;
+    
+    try {
+      // Check if user already has this title
+      const existingTitle = await pool.query(`
+      SELECT u.titles_id FROM user_titles u JOIN titles t ON u.titles_id = t.id
+      WHERE u.user_id = $1 AND t.key = $2
+      `, [userId, titleKey]);
+
+      if (existingTitle.rows.length > 0) {
+        return { awarded: false, already_awarded: true };
+      }
+
+      // Get the title ID
+      const titleResult = await db.query(`
+      SELECT id FROM titles WHERE key = $1
+      `, [titleKey]);
+
+      if (titleResult.rows.length === 0) {
+        throw new Error(`Title with key ${titleKey} not found`);
+      }
+
+      const titleId = titleResult.rows[0].id;
+
+      // Award the title
+      await db.query(`
+      INSERT INTO user_titles (user_id, titles_id, awarded_at)
+      VALUES ($1, $2, CURRENT_TIMESTAMP)
+      `, [userId, titleId]);
+
+      console.log(`Awarded title ${titleKey} for user: ${userId}`);
+
+      // Get title details to return
+      const awardedTitle = await db.query(`
+      SELECT t.id, t.key, t.name, t.description, u.awarded_at
+      FROM titles t
+      JOIN user_titles u ON t.id = u.titles_id
+      WHERE u.user_id = $1 AND t.id = $2
+      `, [userId, titleId]);
+
+      return {
+        awarded: true,
+        title: awardedTitle.rows[0]
+      };
+    } catch (err) {
+      console.error('Error awarding title:', err);
+      throw err;
+    }
+  },
+
+  // Check user stats against title criteria and award any earned titles
+  async checkAndAwardTitles(userId) {
+    try {
+      // Get user's current stats
+      const user = await this.findById(userId);
+      if (!user) return [];
+
+      const detailedStats = await this.getDetailedStats(userId);
+      // Get all titles that the user doesn't already have
+      const availableTitles = await db.query(`
+      SELECT t.id, t.key, t.name, t.criteria_type, t.criteria_value
+      FROM titles t
+      WHERE NOT EXISTS (
+        SELECT 1 FROM user_titles u
+        WHERE u.titles_id = t.id AND u.user_id = $1
+      )
+      `, [userId]);
+
+      console.log(`Got unachieved titles for user: ${userId}`);
+
+      const newlyAwardedTitles = [];
+
+      // Check each title criteria
+      for (const title of availableTitles.rows) {
+        let awardTitle = false;
+
+        switch (title.criteria_type) {
+          case 'words_typed':
+            // Use the detailed stats for words typed
+            if (detailedStats) {
+              if (detailedStats.words_typed >= title.criteria_value) {
+                  awardTitle = true;
+              }
+          }
+            break;
+        }
+
+        if (awardTitle) {
+          const result = await this.awardTitle(userId, title.key);
+          if (result.awarded) {
+            newlyAwardedTitles.push(result.title);
+          }
+        }
+      }
+
+      return newlyAwardedTitles;
+    } catch (err) {
+      console.error('Error checking and awarding titles:', err);
+      return [];
+    }
+  },
+
 };
 
 // Debug check to verify functions exist

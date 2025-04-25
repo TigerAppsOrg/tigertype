@@ -81,6 +81,25 @@ CREATE TABLE IF NOT EXISTS user_badges (
   PRIMARY KEY (user_id, badge_id)
 );
 
+-- Title table for tracking user achievements
+CREATE TABLE IF NOT EXISTS titles (
+  id SERIAL PRIMARY KEY,
+  key VARCHAR UNIQUE NOT NULL
+  name VARCHAR UNIQUE NOT NULL,      -- Unique title name
+  description TEXT,                  -- Description of the title
+  criteria_type VARCHAR NOT NULL,    -- Type of criteria for earning the title
+  criteria_value INTEGER NOT NULL     -- Value required to earn the title
+)
+
+-- Junction table for managing user titles
+-- This table tracks which users have been awarded which titles
+CREATE TABLE IF NOT EXISTS user_titles (
+  user_id INTEGER REFERENCES users(id)  ON DELETE CASCADE,
+  title_id INTEGER REFERENCES title(id) ON DELETE CASCADE,
+  awarded_at TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (user_id, title_id)
+);
+
 -- User sessions table for storing session data
 DO $$
 BEGIN
@@ -97,6 +116,7 @@ BEGIN
         ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
     END IF;
 END $$;
+
 
 -- Indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_race_results_user_id ON race_results(user_id);
@@ -137,6 +157,11 @@ BEGIN
     VALUES
       ('first_race', 'First Race', 'Complete your first race', '/icons/first-race.svg', 'races_completed', 1),
       ('speedster',  'Speedster', 'Average WPM ≥ 80', '/icons/speedster.svg', 'avg_wpm', 80);
+
+    INSERT INTO titles (key, name, description, criteria_type, criteria_value)
+    VALUES 
+      ('nice', 'Nice', 'Congrats on typing 69 words!', 'words_typed', 69);
+      
 END $$;
 
 -- Example queries
