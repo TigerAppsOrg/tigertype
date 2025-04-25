@@ -12,9 +12,9 @@ export const TutorialProvider = ({ children }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   // Start the tutorial at the home section
-  const startTutorial = useCallback(() => {
+  const startTutorial = useCallback((section = 'home') => {
     if (isRunning) return;
-    setCurrentSection('home');
+    setCurrentSection(section);
     setCurrentStepIndex(0);
     setIsRunning(true);
   }, [isRunning]);

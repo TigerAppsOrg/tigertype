@@ -47,7 +47,8 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
 
   // Function to start the tutorial replay
   const startTutorialReplay = () => {
-    startTutorial();
+    const route = window.location.pathname.startsWith('/race') ? 'practice' : 'home';
+    startTutorial(route);
   };
 
   return (

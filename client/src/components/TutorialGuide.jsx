@@ -78,7 +78,7 @@ const TutorialGuide = () => {
           },
           options: { primaryColor: '#E77500', textColor: '#ffb366', zIndex: 100000 }
         }}
-        callback={({ type, action, index }) => {
+        callback={({ type, action, index, status }) => {
           if (type === 'step:after') {
             if (action === 'next') {
               if (index + 1 < steps.length) {
@@ -96,6 +96,17 @@ const TutorialGuide = () => {
             } else if (action === 'prev') {
               if (index > 0) prevStep();
             }
+          }
+          else if (type === 'target:notFound') {
+            // Skip step if target missing
+            if (index + 1 < steps.length) nextStep();
+            else {
+              if (currentSection === 'home') goToSection('practice');
+              else endTutorial();
+            }
+          }
+          else if (type === 'close' || type==='tour:end' || action === 'skip' || status === 'finished') {
+            endTutorial();
           }
         }}
       />
