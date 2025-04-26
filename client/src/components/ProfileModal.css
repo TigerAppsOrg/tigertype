@@ -107,7 +107,6 @@
 
 .profile-page-info {
   display: flex;
-  padding-right: 13.5rem;
 }
 
 .profile-page-info h2 {
@@ -123,8 +122,8 @@
   border-radius: 30px;
   border: solid;
   border-color: #f8f9fa;
-  width: 220px;
-  height: 220px;
+  width: 235px;
+  height: 235px;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -207,7 +206,7 @@
 .title-select {
   position: relative;
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .selected-title:hover{
@@ -292,71 +291,6 @@
   font-size: 1.8rem;
 }
 
-/* Badge styling */
-.badges-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  margin-top: 0.5rem;
-}
-
-.badge-item {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background-color: var(--secondary-color);
-  border: 2px solid #F58025;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1.5rem;
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;;
-}
-
-.badge-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(245, 128, 37, 0.6);
-  border-color: var(--mode-text-color);
-}
-
-.badge-tooltip {
-  position: absolute;
-  top: 3.1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--secondary-color);
-  color: var(--mode-text-color);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s, visibility 0.3s;
-  z-index: 10;
-  border: 1px solid #F58025;
-}
-
-.badge-item:hover .badge-tooltip {
-  opacity: 1;
-  visibility: visible;
-}
-
-.no-badges {
-  color: var(--mode-text-color);
-  opacity: 0.7;
-  font-style: italic;
-  font-size: 0.9rem;
-}
-
-.badges-loading {
-  color: var(--mode-text-color);
-  opacity: 0.7;
-  font-size: 0.9rem;
-}
-
 
 .profile-user-edit {
   width: 1.875rem;
@@ -400,7 +334,7 @@
   display: flex;
   align-items: center;
   flex-direction: row-reverse;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 }
 
 .save-bio-btn {
@@ -428,7 +362,7 @@
   margin-left: 20px;
   padding: 5px 10px;
   border-radius: 4px;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   margin-right: 20px;
 }
 
@@ -459,7 +393,7 @@
 .match-history-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem
+  gap: 2rem;
 }
 
 .match-history-card {
@@ -549,4 +483,182 @@
   color: #333333;
   font-size: 1.6rem;
   font-weight: bold;
+}
+
+/* Badge display and selection styling */
+.badge-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.badge-item {
+  width: 50px; 
+  height: 50px; 
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--hover-color);
+  position: relative;
+  margin-bottom: 2rem; 
+  margin-right: 10px;
+}
+
+.badge-item.selected {
+  background-color: rgba(245, 128, 37, 0.2);
+  border: 2px solid #F58025;
+}
+
+.badge-item.placeholder {
+  border: 2px dashed #777;
+}
+
+.badge-item:hover {
+  transform: scale(1.05);
+}
+
+.badge-emoji {
+  font-size: 1.8rem; 
+}
+
+.badge-plus {
+  font-size: 2rem; 
+  color: #777;
+}
+
+.badge-name {
+  position: absolute;
+  bottom: -1.7rem; 
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1rem;
+  color: var(--mode-text-color);
+  width: 100px; 
+  text-align: center;
+}
+
+/* Badge selector overlay styling */
+.badge-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1500;
+}
+
+.badge-selector {
+  background-color: var(--secondary-color);
+  border: 2px solid #F58025;
+  border-radius: 10px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* Added shadow for depth */
+
+}
+
+.badge-selector h4 {
+  color: var(--mode-text-color);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.badge-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 400px;
+  padding: 10px;
+}
+
+.badge-selection-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.badge-selection-item:hover {
+  background-color: rgba(245, 128, 37, 0.1);
+}
+
+.badge-selection-item.selected {
+  background-color: rgba(245, 128, 37, 0.2);
+  border: 1px solid #F58025;
+}
+
+.badge-details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 15px;
+}
+
+.badge-details .badge-name {
+  position: static;
+  transform: none;
+  width: auto;
+  font-weight: bold;
+  color: var(--mode-text-color);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.badge-details .badge-description {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.badge-selector-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  gap: 10px;
+}
+
+.badge-cancel, .badge-save {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.badge-cancel {
+  background-color: transparent;
+  color: #aaa;
+  border: 1px solid #555;
+}
+
+.badge-save {
+  background-color: #F58025;
+  color: white;
+  border: none;
+}
+
+.badge-loading, .no-badges {
+  padding: 20px;
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
 }

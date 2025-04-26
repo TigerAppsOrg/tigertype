@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './ProfileModal.css';
-import defaultProfileImage from '../assets/icons/default-profile.svg'
+import defaultProfileImage from '../assets/icons/default-profile.svg';
+import { createPortal } from 'react-dom';
 
 function ProfileModal({ isOpen, onClose }) {
   const { user, loading, setUser } = useAuth();
@@ -24,6 +25,9 @@ function ProfileModal({ isOpen, onClose }) {
   const [userTitles, setUserTitles] = useState([]);
   const [loadingTitles, setLoadingTitles] = useState(false);
   const [showTitleDropdown, setShowTitleDropdown] = useState(false);
+  const [displayedBadges, setDisplayedBadges] = useState([]);
+  const [showBadgeSelector, setShowBadgeSelector] = useState(false);
+  const [maxBadges] = useState(5); // Maximum number of badges that can be displayed
   
   const modalRef = useRef();
   const typingInputRef = document.querySelector('.typing-input-container input');
@@ -169,7 +173,7 @@ function ProfileModal({ isOpen, onClose }) {
           }
           i['position'] = temp1; // Add suffix to position
         }
-        console.log('Match history data:', data);
+        // console.log('Match history data:', data);
 
         setMatchHistory(data)
 
@@ -196,7 +200,7 @@ function ProfileModal({ isOpen, onClose }) {
         });
 
         const data = await response.json();
-        console.log('User badges:', data);
+        // console.log('User badges:', data);
         setUserBadges(data || []);
       }
       catch (error) {
@@ -213,6 +217,36 @@ function ProfileModal({ isOpen, onClose }) {
     }
 
   }, [isOpen, user]);
+
+  const toggleBadgeSelection = (badge) => {
+    const isCurrentlySelected = displayedBadges.some(b => b.id === badge.id);
+    
+    if (isCurrentlySelected) {
+      // Remove badge from selection
+      setDisplayedBadges(displayedBadges.filter(b => b.id !== badge.id));
+    } else if (displayedBadges.length < maxBadges) {
+      // Add badge to selection if under max limit
+      setDisplayedBadges([...displayedBadges, badge]);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && userBadges?.length > 0) {
+      const savedBadgeIds = JSON.parse(localStorage.getItem('displayedBadgeIds') || '[]');
+      
+      const badgesToDisplay = userBadges.filter(badge => 
+        savedBadgeIds.includes(badge.id.toString())
+      );
+      
+      setDisplayedBadges(badgesToDisplay.slice(0, maxBadges));
+    }
+  }, [isOpen, userBadges, maxBadges]);
+
+  const saveBadgeSelections = () => {
+    const badgeIds = displayedBadges.map(badge => badge.id.toString());
+    localStorage.setItem('displayedBadgeIds', JSON.stringify(badgeIds));
+    setShowBadgeSelector(false);
+  };
   
   const handleTitleClick = () => {
     setShowTitleDropdown(!showTitleDropdown);
@@ -241,7 +275,7 @@ function ProfileModal({ isOpen, onClose }) {
         });
 
         const data = await response.json();
-        console.log('User titles:', data);
+        // console.log('User titles:', data);
         setUserTitles(data || []);
       }
       catch (error) {
@@ -455,8 +489,8 @@ function ProfileModal({ isOpen, onClose }) {
   const avatarUrl = getCacheBustedImageUrl(user?.avatar_url);
 
   return (
-    <div className="profile-overlay">
-      <div className="profile-container" ref={modalRef}>
+    <div className="profile-overlay" ref={modalRef}>
+      <div className="profile-container" >
 
         <div className="back-button-container">
           <button className="back-button-profile" onClick={onClose}>
@@ -518,7 +552,7 @@ function ProfileModal({ isOpen, onClose }) {
                               className="dropdown-option"
                               onClick={() => selectTitle(title.id)}
                             >
-                              {title.name}
+                               {title.name}
                               <div className='title-description'>
                                 - {title.description || 'No description available'}
                               </div>
@@ -531,31 +565,34 @@ function ProfileModal({ isOpen, onClose }) {
                     )}
                   </div>
 
-                <div className="user-badges">
-                  <h3>Badges</h3>
-            
-                    {loadingBadges ? (
-                      <div className="badges-loading">Loading badges...</div>
-                    ) : userBadges && userBadges.length > 0 ? (
-                      <div className="badges-container">
-                        {userBadges.map(badge => (
-                          <div
-                            key={badge.id}
-                            className="badge-item"
-                            title={`${badge.description}`}
-                          >
-                            {getBadgeEmoji(badge.key)}
-                            <div className="badge-tooltip">
-                              {badge.name}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="no-badges">Complete races to earn badges!</div>
-                    )}
+                  <div className="user-badges">
+                    <h3>Badges</h3>
 
-                </div>
+                    
+                    <div className="badge-display">
+                      {displayedBadges.map((badge, index) => (
+                        <div
+                          key={`selected-${badge.id}`}
+                          className="badge-item selected"
+                          onClick={() => setShowBadgeSelector(true)}
+                        >
+                          <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
+                          <span className="badge-name">{badge.name}</span>
+                        </div>
+                      ))}
+
+                      {/* Add placeholder badges for remaining slots */}
+                      {Array.from({ length: maxBadges - displayedBadges.length }, (_, i) => (
+                        <div
+                          key={`empty-${i}`}
+                          className="badge-item placeholder"
+                          onClick={() => setShowBadgeSelector(true)}
+                        >
+                          <span className="badge-plus">+</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -676,8 +713,40 @@ function ProfileModal({ isOpen, onClose }) {
             </div>
           )}    
         </div>
-       
       </div>
+
+      {showBadgeSelector && (
+                      <div className="badge-selector-overlay">
+                        <div className="badge-selector">
+                          <h4>Select Badges to Display</h4>
+                          <div className="badge-grid">
+                            {loadingBadges ? (
+                              <div className="badge-loading">Loading badges...</div>
+                            ) : userBadges.length > 0 ? (
+                              userBadges.map(badge => (
+                                <div
+                                  key={badge.id}
+                                  className={`badge-selection-item ${displayedBadges.some(b => b.id === badge.id) ? 'selected' : ''}`}
+                                  onClick={() => toggleBadgeSelection(badge)}
+                                >
+                                  <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
+                                  <div className="badge-details">
+                                    <span className="badge-name">{badge.name}</span>
+                                    <span className="badge-description">{badge.description}</span>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-badges">No badges earned yet. Complete races to earn badges!</div>
+                            )}
+                          </div>
+                          <div className="badge-selector-actions">
+                            <button className="badge-cancel" onClick={() => setShowBadgeSelector(false)}>Cancel</button>
+                            <button className="badge-save" onClick={saveBadgeSelections}>Save Changes</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
     </div>
   );
 }
