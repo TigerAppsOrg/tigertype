@@ -14,6 +14,7 @@ import Loading from './components/Loading';
 import Modal from './components/Modal';
 import Leaderboard from './components/Leaderboard';
 import TutorialGuide from './components/TutorialGuide';
+import DeviceGuard from './components/DeviceGuard';
 
 // Lazy-loaded pages for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
@@ -140,17 +141,19 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
-    <AuthProvider>
-      <TutorialProvider>
-        <SocketProvider>
-          <RaceProvider>
-            <AppRoutes />
-            {/* Render the tutorial guide */}
-            <TutorialGuide />
-          </RaceProvider>
-        </SocketProvider>
-      </TutorialProvider>
-    </AuthProvider>
+      <AuthProvider>
+        <TutorialProvider>
+          <SocketProvider>
+            <RaceProvider>
+              <DeviceGuard>
+                <AppRoutes />
+                {/* Render the tutorial guide */}
+                <TutorialGuide />
+              </DeviceGuard>
+            </RaceProvider>
+          </SocketProvider>
+        </TutorialProvider>
+      </AuthProvider>
     </Router>
   );
 }
