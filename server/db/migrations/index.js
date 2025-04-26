@@ -447,7 +447,7 @@ const runMigrations = async () => {
 
       // Record migration
       await client.query(
-        'INSERT INTO migrations (version, description) VALUES ($1, $2) ON CONFLICT (version) DO NOTHING',
+        'INSERT INTO migrations (version, description) VALUES ($1, $2)',
         [migration.version, migration.description]
       );
     }

@@ -145,13 +145,9 @@ function ProfileModal({ isOpen, onClose }) {
           credentials: 'include'
         });
 
-        console.log('Response status:', response.status);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch match history: ${response.status}`);
-        }
-
         const data = await response.json();
+
+        console.log('Match history response:', data);
 
         for (let i of data) {
           let temp = String(i['lobby_type']);
@@ -159,6 +155,10 @@ function ProfileModal({ isOpen, onClose }) {
           cap = cap.toUpperCase();
           temp = cap + temp.slice(1);
           i['lobby_type'] = temp; // Capitalize the first letter of lobby_type
+
+          if (i['lobby_type'] === "Public" || i['lobby_type'] === "Private") {
+            i['lobby_type'] = i['lobby_type'] + ' Lobby';
+          }
 
           let temp1 = i['position'];
           if (temp1 === '1') {

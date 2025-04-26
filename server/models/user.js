@@ -205,25 +205,24 @@ const User = {
   // Get a user's recent race results
   async getRecentResults(userId, limit = 3) {
     try {
-      const result = await db.query(
-        `SELECT r.id, r.wpm, r.accuracy, r.completion_time, 
-         s.text as snippet_text, s.source, s.category, 
-         r.created_at, l.type as lobby_type,
-         CASE
-           WHEN l.type IN ('public', 'private') THEN
-             (SELECT COUNT(*) + 1 FROM race_results r2 
-              WHERE r2.lobby_id = r.lobby_id 
-              AND r2.completion_time < r.completion_time)
-           ELSE NULL
-         END as position
-         FROM race_results r
-         JOIN snippets s ON r.snippet_id = s.id
-         LEFT JOIN lobbies l on r.lobby_id = l.id
-         WHERE r.user_id = $1
-         ORDER BY r.created_at DESC
-         LIMIT $2`,
-        [userId, limit]
-      );
+      const result = await db.query(`
+        SELECT r.id, r.wpm, r.accuracy, r.completion_time, 
+          s.text as snippet_text, s.source, s.category, 
+          r.created_at, COALESCE(l.type, 'Practice') as lobby_type,
+        CASE
+         WHEN l.type IN ('public', 'private') THEN
+           (SELECT COUNT(*) + 1 FROM race_results r2 
+            WHERE r2.lobby_id = r.lobby_id 
+            AND r2.completion_time < r.completion_time)
+         ELSE NULL
+        END as position
+        FROM race_results r
+        JOIN snippets s ON r.snippet_id = s.id
+        LEFT JOIN lobbies l ON r.lobby_id = l.id
+        WHERE r.user_id = $1
+        ORDER BY r.created_at DESC
+        LIMIT $2
+        `, [userId, limit]);
       return result.rows;
     } catch (err) {
       console.error('Error getting recent results:', err);
