@@ -94,8 +94,8 @@ export const RaceProvider = ({ children }) => {
   // Explicit state for TestConfigurator to avoid passing setRaceState
   const [testMode, setTestMode] = useState('snippet');
   const [testDuration, setTestDuration] = useState(15);
-  const [snippetDifficulty, setSnippetDifficulty] = useState('');
-  const [snippetType, setSnippetType] = useState('');
+  const [snippetDifficulty, setSnippetDifficulty] = useState('all');
+  const [snippetType, setSnippetType] = useState('all');
   const [snippetDepartment, setSnippetDepartment] = useState('all');
 
   // Local typing state
@@ -427,16 +427,17 @@ export const RaceProvider = ({ children }) => {
     if (!socket || !connected) return;
     console.log('Joining practice mode...');
     
-    // Use current state values, not potentially stale ones from closure
-    const currentRaceState = { ...raceState };
-    
-    // Pass test configuration when joining practice mode
+    // Pass test configuration and current snippet filters
     const options = {
-      testMode: currentRaceState.timedTest?.enabled ? 'timed' : 'snippet',
-      testDuration: currentRaceState.timedTest?.duration || 15,
-      snippetFilters: currentRaceState.snippetFilters
+      testMode: raceState.timedTest?.enabled ? 'timed' : 'snippet',
+      testDuration: raceState.timedTest?.duration || 15,
+      snippetFilters: {
+        difficulty: snippetDifficulty,
+        type: snippetType,
+        department: snippetDepartment
+      }
     };
-    
+    console.log('Joining practice with options:', options);
     socket.emit('practice:join', options);
   };
 
@@ -457,7 +458,7 @@ export const RaceProvider = ({ children }) => {
     if (!socket || !connected || raceState.type !== 'practice') return;
     console.log('Loading new practice snippet...');
     
-    // Reset states
+    // Reset typing state
     setTypingState({
       input: '',
       position: 0,
@@ -470,7 +471,6 @@ export const RaceProvider = ({ children }) => {
     });
     
     setRaceState(prev => {
-      // Get current race state
       const currentState = {
         ...prev,
         startTime: null,
@@ -479,12 +479,15 @@ export const RaceProvider = ({ children }) => {
         manuallyStarted: false
       };
       
-      // Request a new practice snippet with test configuration 
-      // using the current state values (not stale ones)
+      // Build options with current snippet filters
       const options = {
         testMode: currentState.timedTest?.enabled ? 'timed' : 'snippet',
         testDuration: currentState.timedTest?.duration || 15,
-        snippetFilters: currentState.snippetFilters
+        snippetFilters: {
+          difficulty: snippetDifficulty,
+          type: snippetType,
+          department: snippetDepartment
+        }
       };
       
       console.log('Requesting new practice snippet with options:', options);
@@ -799,11 +802,15 @@ export const RaceProvider = ({ children }) => {
   const createPrivateLobby = (options = {}) => {
     if (!socket || !connected) return;
     console.log('Creating private lobby with options:', options);
-    // Include current test settings from raceState if not overridden in options
+    // Include current test settings and snippet filters from local state or options
     const lobbyOptions = {
       testMode: options.testMode || raceState.settings.testMode,
       testDuration: options.testDuration || raceState.settings.testDuration,
-      // snippetFilters: options.snippetFilters || raceState.snippetFilters // If filtering is added
+      snippetFilters: options.snippetFilters || {
+        difficulty: snippetDifficulty,
+        type: snippetType,
+        department: snippetDepartment
+      }
     };
     socket.emit('private:create', lobbyOptions, (response) => {
       if (!response.success) {

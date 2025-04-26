@@ -107,12 +107,14 @@ function Lobby() {
   const handleSettingChange = (setter) => (value) => {
     if (!isHost) return; // Only the host may change settings
 
-    const current = raceState.settings || { testMode: 'snippet', testDuration: 15 };
+    // Ensure snippetFilters exist in settings
+    const defaultFilters = { difficulty: 'all', type: 'all', department: 'all' };
+    const current = {
+      ...(raceState.settings || { testMode: 'snippet', testDuration: 15 }),
+      snippetFilters: raceState.settings?.snippetFilters || defaultFilters
+    };
 
-    // Build a new settings object beginning with the current ones so that we
-    // always send BOTH testMode and testDuration together (the backend logic
-    // relies on having the mode when deciding whether to regenerate a timed
-    // snippet)
+    // Build a new settings object beginning with the current ones
     let updatedSettings = { ...current };
 
     switch (setter) {
@@ -123,20 +125,22 @@ function Lobby() {
         updatedSettings.testDuration = parseInt(value, 10) || 15;
         break;
       case 'setSnippetDifficulty':
-        // Filters are still client‑only for now – update local state and exit
         setSnippetDifficulty(value);
-        return;
+        updatedSettings.snippetFilters = { ...current.snippetFilters, difficulty: value };
+        break;
       case 'setSnippetType':
         setSnippetType(value);
-        return;
+        updatedSettings.snippetFilters = { ...current.snippetFilters, type: value };
+        break;
       case 'setSnippetDepartment':
         setSnippetDepartment(value);
-        return;
+        updatedSettings.snippetFilters = { ...current.snippetFilters, department: value };
+        break;
       default:
         return; // Unknown setter – do nothing
     }
 
-    // Send the updated settings to the server
+    // Send the updated settings (including snippetFilters) to the server
     updateLobbySettings(updatedSettings);
   };
 
