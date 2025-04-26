@@ -31,6 +31,7 @@ const playerAvatars = new Map(); // socketId -> avatar_url
 // Store host disconnect timers for private lobbies
 const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds
 const hostDisconnectTimers = new Map(); // lobbyCode -> { timer: NodeJS.Timeout, userId: number }
+
 // Helper functions
 // Get player data for client, including avatar URL and basic stats
 const getPlayerClientData = async (player) => { // Make async
@@ -87,6 +88,136 @@ const fetchUserAvatar = async (userId, socketId) => {
     }
   } catch (err) {
     console.error(`Error fetching avatar for user ${userId} (socket ${socketId}):`, err);
+  }
+};
+
+// Helper function to find and disconnect existing sessions for the same user ID
+const forceDisconnectExistingSessions = async (io, newSocket, userIdToDisconnect) => {
+  if (!userIdToDisconnect) return; // Cannot disconnect if user ID is not known
+
+  console.log(`Checking for existing sessions for userId: ${userIdToDisconnect}, excluding new socket: ${newSocket.id}`);
+
+  let disconnectedSocketId = null;
+  let disconnectedFromCode = null;
+  let disconnectedNetId = null;
+
+  // Iterate through all active races and their players
+  for (const [code, players] of racePlayers.entries()) {
+    const playerIndex = players.findIndex(p => p.userId === userIdToDisconnect && p.id !== newSocket.id);
+
+    if (playerIndex !== -1) {
+      const playerToDisconnect = players[playerIndex];
+      disconnectedSocketId = playerToDisconnect.id;
+      disconnectedFromCode = code;
+      disconnectedNetId = playerToDisconnect.netid; // Store netid for logging/events
+
+      console.log(`Found existing session for userId ${userIdToDisconnect} (netid: ${disconnectedNetId}) in lobby ${code} with socketId ${disconnectedSocketId}. Forcing disconnect.`);
+
+      // Find the old socket object
+      const oldSocket = io.sockets.sockets.get(disconnectedSocketId);
+
+      if (oldSocket) {
+        // 1. Emit force disconnect event to the old client
+        oldSocket.emit('force_disconnect', { reason: 'You joined a race in another session. You may close this tab.' });
+
+        // 2. Disconnect the old socket forcefully
+        oldSocket.disconnect(true); // Pass true to close underlying connection
+        console.log(`Forcefully disconnected old socket ${disconnectedSocketId}`);
+      } else {
+        console.log(`Old socket ${disconnectedSocketId} not found in io.sockets.sockets. Maybe already disconnected?`);
+      }
+
+      // 3. Manually remove the player from the specific race's player list in memory
+      const race = activeRaces.get(code);
+      players.splice(playerIndex, 1); // Remove player from the array for this code
+
+      // --- Simulate parts of the disconnect logic for the removed player ---
+
+      // Remove from DB if applicable (non-practice race)
+      if (race && race.type !== 'practice' && playerToDisconnect.userId) {
+        try {
+          await RaceModel.removePlayerFromLobby(race.id, playerToDisconnect.userId);
+          console.log(`Removed disconnected user ${disconnectedNetId} from DB lobby ${code}`);
+        } catch (dbErr) {
+          console.error(`Error removing disconnected user ${disconnectedNetId} from DB lobby ${code}:`, dbErr);
+        }
+      }
+
+      // Clean up race if empty, otherwise notify others
+      if (players.length === 0) {
+        // Handle potential host disconnect timer if the lobby is now empty
+        if (hostDisconnectTimers.has(code)) {
+           console.log(`Lobby ${code} empty after forced disconnect, but host timer active. Deferring cleanup.`);
+           // We might still need to update the player list *before* the timer potentially cleans up
+           racePlayers.set(code, players); // Ensure the map reflects the empty list
+        } else {
+          console.log(`Lobby ${code} empty after forced disconnect. Cleaning up.`);
+          racePlayers.delete(code);
+          activeRaces.delete(code);
+          // Attempt to terminate private lobbies in DB
+          if (race && race.type === 'private') {
+             try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
+          }
+        }
+      } else {
+         // Update player list in memory for the affected lobby
+         racePlayers.set(code, players);
+
+         // --- Handle host 'leaving' due to disconnect ---
+         let newHostAssigned = false;
+         if (race && race.type === 'private' && race.hostId === playerToDisconnect.userId) {
+             console.log(`Host ${disconnectedNetId} was force-disconnected from ${code}. Checking for new host.`);
+             // No grace period here, assign immediately if possible
+             const newHost = players[0]; // Assign to the next player
+             if (newHost) {
+                 console.log(`Assigning new host for ${code}: ${newHost.netid}`);
+                 race.hostId = newHost.userId;
+                 race.hostNetId = newHost.netid;
+                 activeRaces.set(code, race); // Update race state
+                 newHostAssigned = true;
+                 // Persist in DB (best effort)
+                 try {
+                     await RaceModel.reassignHost(race.id, newHost.userId);
+                 } catch (e) {
+                     console.error(`Failed to reassign host in DB for ${code} after force disconnect:`, e);
+                 }
+                 // Notify clients about the new host
+                 io.to(code).emit('lobby:newHost', { newHostNetId: newHost.netid });
+             } else {
+                 // Should be handled by the 'lobby empty' check above, but log just in case
+                 console.warn(`Host ${disconnectedNetId} force-disconnected from ${code}, but no players left to assign host.`);
+             }
+         }
+         // --- End Host Handling ---
+
+         // Broadcast updated player list (unless lobby became empty and is being cleaned up)
+         if (!hostDisconnectTimers.has(code) || players.length > 0) {
+           try {
+             const clientPlayers = await Promise.all(players.map(p => getPlayerClientData(p)));
+             io.to(code).emit('race:playersUpdate', { players: clientPlayers });
+             io.to(code).emit('race:playerLeft', { netid: disconnectedNetId, reason: 'disconnected' }); // Inform others
+             console.log(`Notified lobby ${code} about player ${disconnectedNetId} leaving.`);
+           } catch (err) {
+             console.error(`Error preparing/sending client data after forced disconnect in ${code}:`, err);
+           }
+         }
+      }
+
+      // 4. Clean up associated data for the old socket
+      playerProgress.delete(disconnectedSocketId);
+      lastProgressUpdate.delete(disconnectedSocketId);
+      playerAvatars.delete(disconnectedSocketId);
+      clearInactivityTimers(code, disconnectedSocketId); // Clear any inactivity timers
+
+      // Found and handled the duplicate, no need to check other races for this user
+      break;
+    }
+  }
+
+  if (disconnectedSocketId) {
+     console.log(`Finished force disconnect process for userId ${userIdToDisconnect}. Old socket ${disconnectedSocketId} removed from lobby ${disconnectedFromCode}.`);
+  } else {
+     console.log(`No existing sessions found for userId ${userIdToDisconnect} (excluding new socket ${newSocket.id}).`);
   }
 };
 
@@ -194,6 +325,9 @@ const initialize = (io) => {
       try {
         console.log(`User ${netid} joining practice mode with options:`, options);
 
+        // Force disconnect any existing sessions for this user ID FIRST
+        await forceDisconnectExistingSessions(io, socket, userId);
+
         // Leave any existing race first
         await leaveCurrentRace(io, socket, netid);
 
@@ -282,6 +416,9 @@ const initialize = (io) => {
       const { user: netid, userId } = socket.userInfo; // Get user info
       try {
         console.log(`User ${netid} joining public lobby`);
+
+        // Force disconnect any existing sessions for this user ID FIRST
+        await forceDisconnectExistingSessions(io, socket, userId);
 
         // Leave any existing race first
         await leaveCurrentRace(io, socket, netid);
@@ -417,6 +554,9 @@ const initialize = (io) => {
       try {
         console.log(`User ${netid} creating private lobby with options:`, options);
 
+        // Force disconnect any existing sessions for this user ID FIRST
+        await forceDisconnectExistingSessions(io, socket, userId);
+
         // Leave any existing race first
         await leaveCurrentRace(io, socket, netid);
 
@@ -519,6 +659,9 @@ const initialize = (io) => {
 
       try {
         console.log(`User ${netid} attempting to join private lobby via:`, data);
+
+        // Force disconnect any existing sessions for this user ID FIRST
+        await forceDisconnectExistingSessions(io, socket, userId);
 
         // Leave any existing race first
         await leaveCurrentRace(io, socket, netid);

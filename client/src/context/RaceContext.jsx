@@ -3,7 +3,7 @@ import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
 
 // Create context
-const RaceContext = createContext(null);
+export const RaceContext = createContext(null);
 
 // Helper functions for session storage
 const saveInactivityState = (state) => {
@@ -381,7 +381,7 @@ export const RaceProvider = ({ children }) => {
     socket.on('lobby:kicked', handleLobbyKicked);
     socket.on('lobby:terminated', handleLobbyTerminated);
     socket.on('race:countdown', handleRaceCountdown);
-    socket.on('lobby:newHost', handleNewHost); // Added listener
+    socket.on('lobby:newHost', handleNewHost);
 
     // Clean up on unmount
     return () => {
