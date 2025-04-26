@@ -746,63 +746,36 @@ const initialize = (io) => {
           throw new Error(`Lobby ${lobby.code} is already in progress or finished.`);
         }
 
-       // --- BEGIN RECONNECTION & DUPLICATE CHECK ---
+       // --- Player Joining Logic (Handles both new joins and rejoins after forceDisconnect) ---
        const players = racePlayers.get(lobby.code) || [];
-       const existingPlayerIndex = players.findIndex(
-         p =>
-           (userId && p.userId === userId) ||         // match on userId when logged-in
-           (!userId && !p.userId && p.netid === netid) // fallback to netid match for guests
-       );
 
-       if (existingPlayerIndex !== -1) {
-         // Player with the same userId is already in the lobby (reconnection)
-         console.log(`User ${netid} (userId: ${userId}) rejoining lobby ${lobby.code}. Updating socket ID.`);
-         const existingPlayer = players[existingPlayerIndex];
-         const oldSocketId = existingPlayer.id;
-
-         // Update socket ID
-         existingPlayer.id = socket.id;
-         racePlayers.set(lobby.code, players);
-
-         // Clean up old socket's avatar cache if different
-         if (oldSocketId !== socket.id) {
-           playerAvatars.delete(oldSocketId);
+       // Check if lobby is full (using DB check within addPlayerToLobby)
+       try {
+         await RaceModel.addPlayerToLobby(lobby.id, userId, false);
+       } catch (err) {
+         if (err.message === 'Lobby is full.') {
+           throw new Error('Lobby is full (max 10 players).');
          }
-         // Fetch avatar for new socket ID
-         await fetchUserAvatar(userId, socket.id);
-
-         // Skip adding to DB again, skip adding to players array again
-       } else {
-         // --- NEW PLAYER JOINING ---
-        // Check if lobby is full (using DB check within addPlayerToLobby)
-        try {
-          await RaceModel.addPlayerToLobby(lobby.id, userId, false);
-        } catch (err) {
-          if (err.message === 'Lobby is full.') {
-             throw new Error('Lobby is full (max 10 players).');
-          }
-          // Re-throw other DB errors
-          throw err;
-        }
-        // Add player to in-memory list
-        const newPlayer = {
-          id: socket.id,
-          netid,
-          userId,
-          ready: false,
-          lobbyId: lobby.id,
-          snippetId: lobby.snippet_id, // Get snippetId from lobby data
-          // Ensure host status is correct if they are rejoining
-          isHost: activeRaces.get(lobby.code)?.hostId === userId
-        };
-        players.push(newPlayer);
-        racePlayers.set(lobby.code, players);
-        // Fetch avatar for the joining player
-        await fetchUserAvatar(userId, socket.id);
+         // Re-throw other DB errors
+         throw err;
        }
-       // --- END NEW PLAYER JOINING / RECONNECTION HANDLING ---
+       // Add player to in-memory list
+       const newPlayer = {
+         id: socket.id,
+         netid,
+         userId,
+         ready: false,
+         lobbyId: lobby.id,
+         snippetId: lobby.snippet_id, // Get snippetId from lobby data
+         // Host status is derived from raceInfo later
+       };
+       players.push(newPlayer);
+       racePlayers.set(lobby.code, players);
+       // Fetch avatar for the joining player
+       await fetchUserAvatar(userId, socket.id);
+       // --- END Player Joining Logic ---
 
-       // Join the socket room (do this regardless of new join or reconnect)
+       // Join the socket room
        socket.join(lobby.code);
 
         // Ensure active race exists in memory (might happen if server restarted)
@@ -1421,7 +1394,7 @@ const initialize = (io) => {
               const remainingPlayersAfterGrace = currentPlayers.filter(p => p.userId !== player.userId);
 
               if (!currentRace || remainingPlayersAfterGrace.length === 0) {
-                console.log(`No players left in lobby ${code} after host grace period. Terminating.`);
+                console.log(`No players left in lobby ${code} after host disconnected. Terminating.`);
                 if (currentRace) {
                   io.to(code).emit('lobby:terminated', { reason: 'Lobby empty after host disconnected.' });
                   try { await RaceModel.softTerminate(currentRace.id); } catch (e) { console.error(`Error soft-terminating lobby ${code}:`, e); }
@@ -1502,6 +1475,7 @@ const initialize = (io) => {
           // Update player list in memory (even if host timer is running)
           racePlayers.set(code, players);
           // Broadcast updated player list (needs async handling for avatars)
+          console.log(`[Disconnect] Broadcasting player update for lobby ${code} after ${netid} disconnected.`); // <-- Added log
           const remainingPlayersClientDataDisc = await Promise.all(players.map(p => getPlayerClientData(p)));
           io.to(code).emit('race:playersUpdate', {
             players: remainingPlayersClientDataDisc

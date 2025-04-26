@@ -340,6 +340,8 @@ export const RaceProvider = ({ children }) => {
       }));
       // Reset race state locally
       resetRace(); // Call resetRace without notifying server
+      // Explicitly disconnect the client socket to prevent auto-rejoin
+      socket?.disconnect(); 
     };
 
     const handleLobbyTerminated = (data) => {
