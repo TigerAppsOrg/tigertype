@@ -3,7 +3,7 @@ import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
 
 // Create context
-const RaceContext = createContext(null);
+export const RaceContext = createContext(null);
 
 // Helper functions for session storage
 const saveInactivityState = (state) => {
@@ -340,6 +340,8 @@ export const RaceProvider = ({ children }) => {
       }));
       // Reset race state locally
       resetRace(); // Call resetRace without notifying server
+      // Explicitly disconnect the client socket to prevent auto-rejoin
+      socket?.disconnect(); 
     };
 
     const handleLobbyTerminated = (data) => {
@@ -364,6 +366,18 @@ export const RaceProvider = ({ children }) => {
       setRaceState(prev => ({ ...prev, hostNetId: data.newHostNetId }));
     };
 
+    // Handler for when a player explicitly leaves/disconnects
+    const handlePlayerLeft = (data) => {
+      const { netid, reason } = data;
+      console.log(`Player ${netid} left lobby. Reason: ${reason || 'disconnect'}`);
+      setRaceState(prev => {
+        // Filter out the player who left
+        const updatedPlayers = prev.players.filter(p => p.netid !== netid);
+        return { ...prev, players: updatedPlayers };
+      });
+      // Optionally, show a small notification/toast message about the player leaving
+    };
+
     // Register event listeners
     socket.on('race:joined', handleRaceJoined);
     socket.on('race:playersUpdate', handlePlayersUpdate);
@@ -381,7 +395,8 @@ export const RaceProvider = ({ children }) => {
     socket.on('lobby:kicked', handleLobbyKicked);
     socket.on('lobby:terminated', handleLobbyTerminated);
     socket.on('race:countdown', handleRaceCountdown);
-    socket.on('lobby:newHost', handleNewHost); // Added listener
+    socket.on('lobby:newHost', handleNewHost);
+    socket.on('race:playerLeft', handlePlayerLeft);
 
     // Clean up on unmount
     return () => {
@@ -402,6 +417,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('lobby:terminated', handleLobbyTerminated);
       socket.off('race:countdown', handleRaceCountdown);
       socket.off('lobby:newHost', handleNewHost); // Added cleanup
+      socket.off('race:playerLeft', handlePlayerLeft);
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
   }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id]); 

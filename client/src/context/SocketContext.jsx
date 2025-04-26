@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { RaceContext } from './RaceContext'; // Import RaceContext object, not useRace hook
 
 // Create context
 const SocketContext = createContext(null);
@@ -18,6 +19,7 @@ const socketOptions = {
 
 export const SocketProvider = ({ children }) => {
   const { user, authenticated } = useAuth();
+  const raceContext = useContext(RaceContext); 
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState(null);
@@ -67,10 +69,34 @@ export const SocketProvider = ({ children }) => {
       
       if (reason === 'io server disconnect') {
         // The server has disconnected us, attempt to reconnect
-        socketInstance.connect();
+        // Do not auto-reconnect here if the disconnect was forced
+        // The server logic handles the forced disconnect
+        console.log('Server disconnected socket. Potential reconnection needed manually or by page refresh.');
+        // Example: Show a message to the user
+        // setError('Disconnected by server. Please refresh or try logging in again.'); 
       }
+      // else if reason === 'transport close', etc. - client initiated or network issue
+      // Let the default reconnection logic handle these
     });
     
+    // Listener for forced disconnect due to new session
+    socketInstance.on('force_disconnect', (data) => {
+      const reason = data?.reason || 'Disconnected due to activity in another session.';
+      console.warn(`Force disconnected by server: ${reason}`);
+      alert(reason); // Show alert popup
+      setConnected(false);
+      setError(reason);
+
+      // Reset race state if RaceContext is available
+      if (raceContext && raceContext.resetRace) {
+        console.log('Resetting race state due to forced disconnect.');
+        raceContext.resetRace();
+      }
+      
+      // Explicitly disconnect the socket instance on the client side as well
+      socketInstance.disconnect();
+    });
+
     // Store socket instance in state
     setSocket(socketInstance);
     setSocketLoaded(true);
@@ -84,12 +110,13 @@ export const SocketProvider = ({ children }) => {
         window.socket = null;
       }
       
-      socketInstance.disconnect();
       socketInstance.off('connect');
       socketInstance.off('disconnect');
       socketInstance.off('connect_error');
+      socketInstance.off('force_disconnect');
+      socketInstance.disconnect();
     };
-  }, [authenticated]); // Only depend on authenticated, not user
+  }, [authenticated, raceContext]); // Add raceContext to dependency array
 
   // Reconnect function
   const reconnect = () => {
@@ -98,6 +125,9 @@ export const SocketProvider = ({ children }) => {
     }
   };
 
+  // TBH joinPracticeMode function seems redundant here?
+  // RaceContext alr provides methods to join races
+  // keeping it for now, but it might be redundant
   const joinPracticeMode = () => {
     if (!socket || !connected) return;
     

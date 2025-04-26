@@ -29,15 +29,24 @@ function JoinLobbyPanel({ className = '' }) {
       if (idx !== -1 && parts[idx + 1]) value = parts[idx + 1];
     } catch (_) { /* not a URL – ignore */ }
 
-    const codeRegex = /^[A-Za-z0-9]{4,6}$/;
-    const isCode    = codeRegex.test(value);
-    const payload   = isCode
-      ? { code: value.toUpperCase() }
-      : { playerNetId: value.toLowerCase() };
+    const codeRegex = /^[A-Za-z0-9]{6}$/; // Exactly 6 alphanumeric
+    const isPotentialCode = codeRegex.test(value);
+
+    // Always send as playerNetId (server will check this)
+    // Also send as code if it matches the 6-char format
+    const payload = {
+      playerNetId: value.toLowerCase() // Send as lowercase NetID
+    };
+    if (isPotentialCode) {
+      payload.code = value.toUpperCase(); // Add code field if it matches format
+    }
+
+    console.log('Sending join payload:', payload); // Add log to verify
 
     joinPrivateLobby(payload, (res) => {
       setBusy(false);
-      if (!res.success) setError(res.error || 'Lobby not found.');
+      // if (!res.success) setError(res.error || 'Lobby not found.');
+      if (!res.success) setError(res.error || 'Lobby not found or is not joinable.'); // More generic error
       else setInput('');
     });
   };
