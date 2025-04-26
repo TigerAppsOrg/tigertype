@@ -391,9 +391,6 @@ router.get('/user/badges', requireAuth, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-module.exports = router;
-=======
 // Get user titles
 router.get('/user/titles', requireAuth, async (req, res) => {
   try {
@@ -408,4 +405,3 @@ router.get('/user/titles', requireAuth, async (req, res) => {
 });
 
 module.exports = router;
->>>>>>> 6e426fe (title system)
