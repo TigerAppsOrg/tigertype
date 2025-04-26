@@ -299,7 +299,7 @@
 }
 
 .biography {
-  padding-top: 2rem;
+  padding-top: 2.2rem;
   padding-right: 2rem;
   display: flex;
   flex-direction: column;
@@ -506,8 +506,6 @@
   transition: all 0.2s ease;
   background-color: var(--hover-color);
   position: relative;
-  margin-bottom: 2rem; 
-  margin-right: 10px;
 }
 
 .badge-item.selected {
@@ -523,6 +521,10 @@
   transform: scale(1.05);
 }
 
+.badge-item:hover .badge-name {
+  opacity: 1;
+}
+
 .badge-emoji {
   font-size: 1.8rem; 
 }
@@ -534,13 +536,19 @@
 
 .badge-name {
   position: absolute;
-  bottom: -1.7rem; 
+  bottom: -87%;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 1rem;
-  color: var(--mode-text-color);
-  width: 100px; 
-  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  border: 1px solid #F58025;
 }
 
 /* Badge selector overlay styling */
@@ -568,7 +576,7 @@
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* Added shadow for depth */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); 
 
 }
 
@@ -613,7 +621,7 @@
   margin-left: 15px;
 }
 
-.badge-details .badge-name {
+.badge-details .badge-modal-name {
   position: static;
   transform: none;
   width: auto;
@@ -621,11 +629,12 @@
   color: var(--mode-text-color);
   font-size: 1rem;
   margin: 0;
+  text-align: left;
 }
 
-.badge-details .badge-description {
+.badge-details .badge-modal-description {
   font-size: 0.9rem;
-  color: #aaa;
+  color: var(--text-color-secondary);
   margin-top: 2px;
 }
 
@@ -642,23 +651,24 @@
   font-weight: bold;
   cursor: pointer;
   font-size: 1rem;
+  transition: all 0.2s ease;
 }
 
 .badge-cancel {
   background-color: transparent;
-  color: #aaa;
+  color: var(--text-color-secondary);
   border: 1px solid #555;
 }
 
 .badge-save {
   background-color: #F58025;
-  color: white;
+  color: var(--text-color-highlight);
   border: none;
 }
 
 .badge-loading, .no-badges {
   padding: 20px;
   text-align: center;
-  color: #aaa;
+  color: var(--text-color-secondary);
   font-style: italic;
 }

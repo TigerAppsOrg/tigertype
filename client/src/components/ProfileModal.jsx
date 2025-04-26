@@ -233,18 +233,42 @@ function ProfileModal({ isOpen, onClose }) {
   useEffect(() => {
     if (isOpen && userBadges?.length > 0) {
       const savedBadgeIds = JSON.parse(localStorage.getItem('displayedBadgeIds') || '[]');
+    const badgeDisplayOrder = JSON.parse(localStorage.getItem('badgeDisplayOrder') || '[]');
+    
+    if (badgeDisplayOrder.length > 0) {
+      // Use the stored order to display badges
+      const orderedBadges = [];
       
+      // First add badges in their saved order
+      badgeDisplayOrder.forEach(item => {
+        const badge = userBadges.find(b => b.id.toString() === item.id);
+        if (badge) {
+          orderedBadges.push(badge);
+        }
+      });
+      
+      // Set the ordered badges
+      setDisplayedBadges(orderedBadges.slice(0, maxBadges));
+    } else {
+      // Fall back to the old method if no order is saved
       const badgesToDisplay = userBadges.filter(badge => 
         savedBadgeIds.includes(badge.id.toString())
       );
       
       setDisplayedBadges(badgesToDisplay.slice(0, maxBadges));
     }
-  }, [isOpen, userBadges, maxBadges]);
+  }
+}, [isOpen, userBadges, maxBadges]);
 
   const saveBadgeSelections = () => {
     const badgeIds = displayedBadges.map(badge => badge.id.toString());
+    const orderedBadges = displayedBadges.map((badge, index) => ({
+      id: badge.id.toString(),
+      order: index
+    }));
+    
     localStorage.setItem('displayedBadgeIds', JSON.stringify(badgeIds));
+    localStorage.setItem('badgeDisplayOrder', JSON.stringify(orderedBadges));
     setShowBadgeSelector(false);
   };
   
@@ -731,8 +755,8 @@ function ProfileModal({ isOpen, onClose }) {
                                 >
                                   <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
                                   <div className="badge-details">
-                                    <span className="badge-name">{badge.name}</span>
-                                    <span className="badge-description">{badge.description}</span>
+                                    <span className="badge-modal-name">{badge.name}</span>
+                                    <span className="badge-modal-description">{badge.description}</span>
                                   </div>
                                 </div>
                               ))
