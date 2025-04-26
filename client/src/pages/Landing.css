@@ -55,13 +55,13 @@ body {
 .landing-main-content {
   display: flex;
   flex-direction: row;
-  align-items: flex-start; 
+  align-items: flex-start;
   justify-content: center;
   width: 100%;
   max-width: fit-content;
   gap: 5em;
   flex-grow: 1;
-  max-height: fit-content;  
+  max-height: fit-content;
   padding-bottom: 3vh;
   padding-top: 0vh;
 }
@@ -107,6 +107,12 @@ body {
   background-color: var(--princeton-orange, #F58025);
   border-color: var(--princeton-orange, #F58025);
   color: white;
+}
+
+/* Disabled login state styling */
+.login-button-left:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Combined Data Section */
@@ -245,44 +251,59 @@ body {
   margin-top: 1rem; 
 }
 
-/* Responsive Adjustments */
+/* Responsiveness */
 @media (max-width: 900px) {
   .landing-main-content {
-    flex-direction: column; /* Stack columns */
-    gap: 2rem;
-    align-items: center; 
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 0 1rem;
+    max-width: none;
+    box-sizing: border-box;
   }
-  .landing-left-column, .landing-right-column {
-    flex-basis: 100%; 
-    max-width: 600px; 
-    align-items: center; 
+  .landing-left-column,
+  .landing-right-column {
+    flex-basis: 100%;
+    max-width: 100%;
+    padding: 0 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    width: 100%;
   }
-  .landing-right-column h2, .landing-description-right {
-    text-align: center; 
+  .landing-data-section {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: none;
+    padding: 0 1rem;
+    gap: 1rem;
   }
-  .animated-text-container {
-     min-height: 100px;
+  .landing-stats-container,
+  .landing-leaderboard-container {
+    width: 100%;
+    max-width: none;
+    margin-bottom: 1rem;
   }
-   .animated-text {
-    font-size: 1.1rem;
+  .landing-leaderboard-container .leaderboard-list {
+    max-height: 60vh;
+  }
+  .landing-container {
+    padding-top: 2rem;
+    padding-bottom: 1rem;
+  }
+  .landing-right-column h2,
+  .landing-description-right {
+    text-align: center;
   }
 }
 
 @media (max-width: 600px) {
-  .landing-container {
-    padding: 1rem 3%;
-  }
-  .landing-right-column h2 {
-    font-size: 2rem;
-  }
-   .landing-logo-large {
-    width: 150px;
-    height: 150px;
-  }
-  .animated-text {
-    font-size: 1rem;
-  }
-   .landing-description-right {
-    font-size: 1rem;
+  .landing-left-column,
+  .landing-right-column {
+    padding: 0 0.5rem;
   }
 }

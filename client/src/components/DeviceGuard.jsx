@@ -42,12 +42,14 @@ const DeviceGuard = ({ children }) => {
     <>
       {isMobile && location.pathname === '/' && (
         <div style={{
-          backgroundColor: '#ffeb3b',
-          padding: '12px',
+          backgroundColor: 'rgba(245, 128, 37, 0.1)',
+          borderLeft: '4px solid #F58025',
+          padding: '12px 16px',
           textAlign: 'center',
           fontFamily: 'Arial, sans-serif',
+          color: 'var(--mode-text-color, #e0e0e0)',
         }}>
-          <span style={{ fontWeight: 'bold', color: '#333' }}>Warning:</span> Tigertype is not fully supported on mobile devices. You can view this landing page, but other pages will not be accessible.
+          <strong style={{ color: '#F58025' }}>Notice:</strong> TigerType is best viewed on desktop. Mobile access is limited to this landing page only.
         </div>
       )}
       {children}

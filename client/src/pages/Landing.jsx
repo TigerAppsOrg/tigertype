@@ -27,6 +27,8 @@ function Landing() {
   const [isMistakeCorrectionPhase, setIsMistakeCorrectionPhase] = useState(false); // Tracks if we are currently correcting (typing mistake + backspacing)
   const [mistakeStartIndex, setMistakeStartIndex] = useState(-1);
   const [mistakeEndIndex, setMistakeEndIndex] = useState(-1);
+  // Detect mobile devices to disable login on mobile
+  const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/.test(navigator.userAgent); // is hacky but it works ig
 
   // --- Animation Logic ---
 
@@ -227,8 +229,12 @@ function Landing() {
           {/* Left Column */}
           <div className="landing-left-column">
             <img src={tigerLogo} alt="TigerType Logo" className="landing-logo-large" />
-            <button onClick={handleLogin} className="login-button-left">
-              Log In
+            <button
+              onClick={!isMobile ? handleLogin : undefined}
+              disabled={isMobile}
+              className="login-button-left"
+            >
+              {isMobile ? 'Log In (Desktop Only)' : 'Log In'}
             </button>
           </div>
 

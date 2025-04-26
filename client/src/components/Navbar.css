@@ -179,3 +179,9 @@
   background-color: #e67016;
   box-shadow: 0 2px 4px rgba(245, 128, 37, 0.3);
 }
+
+@media (max-width: 900px) {
+  .navbar {
+    display: none;
+  }
+}
