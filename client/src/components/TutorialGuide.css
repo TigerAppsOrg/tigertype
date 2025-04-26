@@ -51,7 +51,7 @@
 /* Buttons (Primary - Next/Last) - TigerType Orange! */
 .react-joyride__tooltip button[data-action="primary"],
 .react-joyride__tooltip button[aria-label="Next"],
-.react-joyride__tooltip button[aria-label="Last"] {
+.react-joyride__tooltip button[aria-label="Finish"] {
   background: linear-gradient(90deg, #E77500 0%, #F58025 100%) !important;
   color: #fff !important;
   border: none !important;
@@ -66,7 +66,7 @@
 
 .react-joyride__tooltip button[data-action="primary"]:hover,
 .react-joyride__tooltip button[aria-label="Next"]:hover,
-.react-joyride__tooltip button[aria-label="Last"]:hover {
+.react-joyride__tooltip button[aria-label="Finish"]:hover {
   background: linear-gradient(90deg, #F58025 0%, #E77500 100%) !important;
 }
 
@@ -176,7 +176,7 @@
 /* Buttons (Primary - Next/Last) - Ensure Orange! */
 .react-joyride__tooltip button[data-action="primary"], /* More specific selector */
 .react-joyride__tooltip button[aria-label="Next"],
-.react-joyride__tooltip button[aria-label="Last"] {
+.react-joyride__tooltip button[aria-label="Finish"] {
   background-color: var(--primary-color) !important; /* Use theme primary color */
   color: white !important;
   border: none !important;
@@ -190,7 +190,7 @@
 
 .react-joyride__tooltip button[data-action="primary"]:hover,
 .react-joyride__tooltip button[aria-label="Next"]:hover,
-.react-joyride__tooltip button[aria-label="Last"]:hover {
+.react-joyride__tooltip button[aria-label="Finish"]:hover {
   background-color: var(--primary-color-dark) !important; /* Darker on hover */
 }
 
