@@ -807,22 +807,6 @@ const initialize = (io) => {
         }
         const raceInfo = activeRaces.get(lobby.code);
 
-        // --- BEGIN HOST RECONNECT HANDLING ---
-        // Check if this joining user is the host who disconnected recently
-        const disconnectTimerInfo = hostDisconnectTimers.get(lobby.code);
-        if (disconnectTimerInfo && disconnectTimerInfo.userId === userId) {
-          console.log(`Host ${netid} (userId: ${userId}) rejoined lobby ${lobby.code} within grace period. Cancelling timer.`);
-          clearTimeout(disconnectTimerInfo.timer);
-          hostDisconnectTimers.delete(lobby.code);
-          // Ensure host status is correctly set in activeRaces (should be already, but double-check)
-          if (raceInfo.hostId !== userId) {
-             console.warn(`Host ${netid} rejoined, but raceInfo.hostId was ${raceInfo.hostId}. Correcting.`);
-             raceInfo.hostId = userId;
-             raceInfo.hostNetId = netid;
-          }
-        }
-        // --- END HOST RECONNECT HANDLING ---
-
         // Send race info to the joining player (needs async handling for avatars)
         const currentPlayersClientDataJoin = await Promise.all(players.map(p => getPlayerClientData(p)));
         const joinedDataJoin = { // Renamed variable
@@ -849,6 +833,14 @@ const initialize = (io) => {
         socket.emit('error', { message: err.message || 'Failed to join private lobby' });
         if (callback) callback({ success: false, error: err.message || 'Failed to join private lobby' });
       }
+    });
+
+    // Handle manual lobby leave from client
+    socket.on('lobby:leave', async () => {
+      const { user: netid } = socket.userInfo;
+      console.log(`User ${netid} manually leaving lobby via leave event.`);
+      // Reuse disconnect logic to leave the current race and broadcast
+      await leaveCurrentRace(io, socket, netid);
     });
 
     // Handle kicking a player (host only)
@@ -1353,7 +1345,6 @@ const initialize = (io) => {
     });
     
     // Handle disconnect
-    // Handle disconnect
     socket.on('disconnect', async () => {
       // --- BEGIN DISCONNECT LOGIC ---
       console.log(`Socket disconnected: ${netid} (${socket.id})`);
@@ -1455,34 +1446,38 @@ const initialize = (io) => {
               console.error(`Error removing user ${netid} from lobby_players table:`, dbErr);
             }
           }
+          console.log(`[Disconnect] Finished DB removal attempt for ${netid} in ${code}. Proceeding with broadcast.`);
 
-          // If no players left (and no host disconnect timer running for this lobby), clean up race
+          // --- Lobby Cleanup / Player List Update ---
           if (players.length === 0) {
-            // Only clean up immediately if there isn't a host disconnect timer pending
             if (!hostDisconnectTimers.has(code)) {
               console.log(`No players left in race ${code}, cleaning up`);
               racePlayers.delete(code);
               activeRaces.delete(code);
-              // If it was a private lobby, try to soft terminate in DB
               if (race && race.type === 'private') {
                  try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
               }
-              continue; // Skip broadcasting updates for an empty race
+              continue; 
             } else {
               console.log(`No players left in race ${code}, but host disconnect timer is active. Cleanup deferred to timer.`);
             }
           }
-          // Update player list in memory (even if host timer is running)
-          racePlayers.set(code, players);
-          // Broadcast updated player list (needs async handling for avatars)
-          console.log(`[Disconnect] Broadcasting player update for lobby ${code} after ${netid} disconnected.`); // <-- Added log
-          const remainingPlayersClientDataDisc = await Promise.all(players.map(p => getPlayerClientData(p)));
-          io.to(code).emit('race:playersUpdate', {
-            players: remainingPlayersClientDataDisc
-          });
+          
+          racePlayers.set(code, players); 
 
-          // Broadcast player left message
-          io.to(code).emit('race:playerLeft', { netid });
+          try {
+            console.log(`[Disconnect] Preparing player data broadcast for ${code}. ${players.length} players remaining.`);
+            const remainingPlayersClientDataDisc = await Promise.all(players.map(p => getPlayerClientData(p)));
+            console.log(`[Disconnect] Broadcasting playersUpdate for ${code}...`);
+            io.to(code).emit('race:playersUpdate', { 
+              players: remainingPlayersClientDataDisc
+            });
+            console.log(`[Disconnect] Broadcasting playerLeft for ${code}...`);
+            io.to(code).emit('race:playerLeft', { netid }); 
+            console.log(`[Disconnect] Successfully broadcasted updates for ${code}.`);
+          } catch (broadcastErr) {
+             console.error(`[Disconnect] Error broadcasting player updates for lobby ${code}:`, broadcastErr);
+          }
 
           // Check if we should end the race early if all remaining players are finished
           if (race && race.status === 'racing') {
