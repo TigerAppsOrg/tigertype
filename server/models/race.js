@@ -98,6 +98,8 @@ const Race = {
   // Find an active private lobby by host's NetID
   async findByHostNetId(netId) {
     try {
+      console.log(`[findByHostNetId] Searching for lobby with host NetID: '${netId}'`);
+      
       const result = await db.query(
         `SELECT l.*, s.text AS snippet_text, h.netid AS host_netid
          FROM lobbies l
@@ -108,6 +110,9 @@ const Race = {
          LIMIT 1`,
         [netId]
       );
+      
+      console.log(`[findByHostNetId] Query result for host NetID '${netId}':`, result.rows[0] || 'Not Found');
+      
       return result.rows[0];
     } catch (err) {
       console.error('Error finding lobby by host NetID:', err);

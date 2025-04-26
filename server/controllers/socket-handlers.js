@@ -655,55 +655,95 @@ const initialize = (io) => {
     // Handle joining a private lobby
     socket.on('private:join', async (data, callback) => {
       const { user: netid, userId } = socket.userInfo;
-      const { code, hostNetId, playerNetId } = data; // Can join by code, host netId, or any player's netId
+      const { code, hostNetId, playerNetId } = data;
 
       try {
         console.log(`User ${netid} attempting to join private lobby via:`, data);
 
-        // Force disconnect any existing sessions for this user ID FIRST
         await forceDisconnectExistingSessions(io, socket, userId);
-
-        // Leave any existing race first
         await leaveCurrentRace(io, socket, netid);
 
-        // --- Sanitize code (uppercase, trim) ---
         let sanitizedCode = code?.trim()?.toUpperCase?.();
+        let sanitizedHostNetId = hostNetId?.trim(); // Trim just in case
+        let sanitizedPlayerNetId = playerNetId?.trim()?.toLowerCase(); // Trim and lowercase
 
-        let lobby;
+        let lobby = null;
+
+        // 1. Try finding by Code if provided
         if (sanitizedCode) {
+          console.log(`Attempting to find lobby by code: ${sanitizedCode}`);
           lobby = await RaceModel.findByCode(sanitizedCode);
-        } else if (hostNetId) {
-          lobby = await RaceModel.findByHostNetId(hostNetId);
-        } else if (playerNetId) {
-          lobby = await RaceModel.findByPlayerNetId(playerNetId);
-        } else {
-          throw new Error('Lobby code or NetID required to join.');
+          if (lobby && lobby.type === 'private') {
+             console.log(`Found lobby ${lobby.code} via code.`);
+          } else {
+             lobby = null; // Reset if not found or not private
+             console.log(`Lobby not found via code ${sanitizedCode} or was not private.`);
+          }
+        }
+
+        // 2. If not found by code, try by Host NetID if provided
+        if (!lobby && sanitizedHostNetId) {
+           console.log(`Attempting to find lobby by hostNetId: ${sanitizedHostNetId}`);
+           lobby = await RaceModel.findByHostNetId(sanitizedHostNetId);
+           if (lobby) { // findByHostNetId already filters by type='private' and status='waiting'
+              console.log(`Found lobby ${lobby.code} via hostNetId ${sanitizedHostNetId}.`);
+           } else {
+              console.log(`Lobby not found via hostNetId ${sanitizedHostNetId}.`);
+           }
+        }
+
+        // 3. If not found by code or hostNetId, try by Player NetID if provided
+        if (!lobby && sanitizedPlayerNetId) {
+           console.log(`Attempting to find lobby by playerNetId: ${sanitizedPlayerNetId}`);
+           lobby = await RaceModel.findByPlayerNetId(sanitizedPlayerNetId);
+           if (lobby) { // findByPlayerNetId already filters by type='private' and status='waiting'
+             console.log(`Found lobby ${lobby.code} via playerNetId ${sanitizedPlayerNetId}.`);
+           } else {
+             console.log(`Lobby not found via playerNetId ${sanitizedPlayerNetId}.`);
+           }
         }
 
         // Fallback – if lobby not in DB but still alive in memory (e.g. DB rollback),
-        // try pulling from activeRaces.  This still requires we have an id later,
-        // so it is only a best-effort recovery path.
-        if ((!lobby || lobby.type !== 'private') && sanitizedCode && activeRaces.has(sanitizedCode)) {
-          console.warn(`Lobby ${sanitizedCode} not found in DB but exists in memory – using in-memory copy.`);
+        // try pulling from activeRaces. This might be redundant now but keep as safety net.
+        if (!lobby && sanitizedCode && activeRaces.has(sanitizedCode)) {
+          console.warn(`Lobby ${sanitizedCode} not found via DB lookups but exists in memory – using in-memory copy.`);
           const memRace = activeRaces.get(sanitizedCode);
-          lobby = {
-            id: memRace.id,
-            code: memRace.code,
-            snippet_id: memRace.snippet?.id,
-            snippet_text: memRace.snippet?.text,
-            type: memRace.type,
-            status: memRace.status,
-            host_id: memRace.hostId,
-            host_netid: memRace.hostNetId
-          };
+          // Ensure it's actually a private lobby we're recovering
+          if (memRace.type === 'private') {
+             lobby = {
+               id: memRace.id,
+               code: memRace.code,
+               snippet_id: memRace.snippet?.id,
+               snippet_text: memRace.snippet?.text,
+               type: memRace.type,
+               status: memRace.status,
+               host_id: memRace.hostId,
+               host_netid: memRace.hostNetId
+             };
+          } else {
+             console.warn(`In-memory race ${sanitizedCode} found, but it is not private. Ignoring.`);
+          }
         }
 
+        // Final check: Did we find a valid private lobby?
         if (!lobby || lobby.type !== 'private') {
-          throw new Error('Private lobby not found.');
+          // Consolidate error messages based on input
+          let errorMsg = 'Private lobby not found';
+          if (sanitizedCode && sanitizedPlayerNetId) {
+             errorMsg += ` matching code '${sanitizedCode}' or NetID '${sanitizedPlayerNetId}'.`;
+          } else if (sanitizedCode) {
+             errorMsg += ` matching code '${sanitizedCode}'.`;
+          } else if (sanitizedPlayerNetId) {
+             errorMsg += ` matching NetID '${sanitizedPlayerNetId}'.`;
+          } else if (sanitizedHostNetId) {
+              errorMsg += ` matching host NetID '${sanitizedHostNetId}'.`;
+          }
+          throw new Error(errorMsg);
         }
 
+        // Check status after finding the lobby
         if (lobby.status !== 'waiting') {
-          throw new Error('Lobby is already in progress or finished.');
+          throw new Error(`Lobby ${lobby.code} is already in progress or finished.`);
         }
 
        // --- BEGIN RECONNECTION & DUPLICATE CHECK ---
