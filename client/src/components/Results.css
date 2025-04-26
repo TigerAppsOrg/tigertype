@@ -542,7 +542,8 @@
 /* --------------------------------------- */
 
 .course-review-btn {
-  margin-top: 0.75rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
