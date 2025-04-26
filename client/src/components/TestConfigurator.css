@@ -264,7 +264,7 @@
      font-size: 0.9rem;
   }
   .config-separator, .config-separator-inner {
-     /* Keep separators */
+     width: auto;
   }
   .department-filter {
      margin-left: 0;
