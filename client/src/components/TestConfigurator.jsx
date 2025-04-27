@@ -34,10 +34,31 @@ function TestConfigurator({
   loadNewSnippet,
   onShowLeaderboard,
   isLobby = false,
+  snippetError = null,
 }) {
 
   const [departments, setDepartments] = React.useState(['all']); // State for dynamic departments
   const isMounted = React.useRef(false); // Ref to track initial mount
+
+  // Store available difficulties for the current type/department filters
+  const [availableDifficulties, setAvailableDifficulties] = React.useState(DIFFICULTIES);
+
+  // Fetch available difficulties when type or department filters change
+  React.useEffect(() => {
+    const fetchDifficulties = async () => {
+      try {
+        const params = new URLSearchParams({ type: snippetType, department: snippetDepartment });
+        const response = await fetch(`/api/snippets/filters?${params.toString()}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        setAvailableDifficulties(data.difficulties || DIFFICULTIES);
+      } catch (error) {
+        console.error('Failed to fetch available difficulties:', error);
+        setAvailableDifficulties(DIFFICULTIES);
+      }
+    };
+    fetchDifficulties();
+  }, [snippetType, snippetDepartment]);
 
   // Fetch departments on mount
   React.useEffect(() => {
@@ -261,6 +282,7 @@ function TestConfigurator({
   return (
     <TutorialAnchor anchorId="configurator">
       <div className={`test-configurator ${isLobby ? 'lobby' : ''}`}> 
+        {snippetError && <div className="config-error">{snippetError}</div>}
         {/* Mode Selection Group */}
         <div className="config-section mode-selection">
           {renderButton('snippet', testMode, setTestMode, 'Snippets', QuoteIcon)}
@@ -286,7 +308,14 @@ function TestConfigurator({
                 >
                   <option value="" disabled hidden={snippetDifficulty !== ''}>difficulty</option>
                   {DIFFICULTIES.map(diff => (
-                    <option key={diff} value={diff}>{diff}</option>
+                    <option
+                      key={diff}
+                      value={diff}
+                      disabled={!availableDifficulties.includes(diff)}
+                      title={!availableDifficulties.includes(diff) ? 'No snippets available for selected filters' : undefined}
+                    >
+                      {diff}
+                    </option>
                   ))}
                 </select>
               </div>
