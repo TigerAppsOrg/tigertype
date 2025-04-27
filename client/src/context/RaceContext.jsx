@@ -97,6 +97,12 @@ export const RaceProvider = ({ children }) => {
   const [snippetDifficulty, setSnippetDifficulty] = useState('all');
   const [snippetType, setSnippetType] = useState('all');
   const [snippetDepartment, setSnippetDepartment] = useState('all');
+  const [snippetError, setSnippetError] = useState(null);
+
+  // Clear snippetError when filters change
+  useEffect(() => {
+    setSnippetError(null);
+  }, [snippetDifficulty, snippetType, snippetDepartment]);
 
   // Local typing state
   const [typingState, setTypingState] = useState({
@@ -192,6 +198,13 @@ export const RaceProvider = ({ children }) => {
   useEffect(() => {
     if (!socket || !connected) return;
 
+    // Handle snippet not found events from server
+    const handleSnippetNotFound = (data) => {
+      console.log('Snippet not found:', data.message);
+      setSnippetError(data.message);
+    };
+    socket.on('snippetNotFound', handleSnippetNotFound);
+    
     // Event handlers
     const handleRaceJoined = (data) => {
       console.log('Joined race:', data);
@@ -418,6 +431,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('race:countdown', handleRaceCountdown);
       socket.off('lobby:newHost', handleNewHost); // Added cleanup
       socket.off('race:playerLeft', handlePlayerLeft);
+      socket.off('snippetNotFound', handleSnippetNotFound); // Cleanup snippet not found listener
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
   }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id]); 
@@ -425,6 +439,8 @@ export const RaceProvider = ({ children }) => {
   // Methods for race actions
   const joinPracticeMode = () => {
     if (!socket || !connected) return;
+    // Clear any previous snippet errors
+    setSnippetError(null);
     console.log('Joining practice mode...');
     
     // Pass test configuration and current snippet filters
@@ -456,6 +472,8 @@ export const RaceProvider = ({ children }) => {
   // Load a new snippet for practice mode
   const loadNewSnippet = () => {
     if (!socket || !connected || raceState.type !== 'practice') return;
+    // Clear any previous snippet errors
+    setSnippetError(null);
     console.log('Loading new practice snippet...');
     
     // Reset typing state
@@ -936,7 +954,8 @@ export const RaceProvider = ({ children }) => {
         snippetType,
         setSnippetType,
         snippetDepartment,
-        setSnippetDepartment
+        setSnippetDepartment,
+        snippetError
       }}
     >
       {children}

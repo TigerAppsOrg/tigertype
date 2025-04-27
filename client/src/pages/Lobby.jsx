@@ -14,10 +14,9 @@ function Lobby() {
   const { lobbyCode } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { socket } = useSocket(); // Get socket instance
+  const { socket } = useSocket();
   const {
     raceState,
-    // typingState, // Typing state not directly needed here
     inactivityState,
     setPlayerReady,
     resetRace,
@@ -27,14 +26,12 @@ function Lobby() {
     updateLobbySettings,
     startPrivateRace,
     loadNewSnippet,
-    setRaceState
+    setRaceState,
+    snippetError
   } = useRace();
 
   const [isLoading, setIsLoading] = useState(true);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
-  // Remove state for the simple stats modal
-  // const [showStatsModal, setShowStatsModal] = useState(false);
-  // const [selectedPlayerStats, setSelectedPlayerStats] = useState(null);
 
   // Check if the current user is the host
   const isHost = user?.netid === raceState.hostNetId;
@@ -250,6 +247,7 @@ function Lobby() {
                     setSnippetDepartment={handleSettingChange('setSnippetDepartment')}
                     setRaceState={setRaceState} // Pass down if needed by TestConfigurator internals
                     loadNewSnippet={loadNewSnippet} // Pass down if needed
+                    snippetError={snippetError}
                     onShowLeaderboard={() => {}} // Disable leaderboard button in lobby
                   />
                 ) : (

@@ -353,7 +353,7 @@ const initialize = (io) => {
           const subject = category === 'course-reviews' && department && department !== 'all'
             ? department
             : null;
-          // Build filter combinations for progressive fallback prioritizing difficulty
+          // Build filter combinations, prioritizing difficulty
           const combos = [];
           if (numericDifficulty != null && category && subject) {
             combos.push({ difficulty: numericDifficulty, category, subject });
@@ -373,8 +373,10 @@ const initialize = (io) => {
           if (category) {
             combos.push({ category });
           }
-          // Fallback random
-          combos.push({});
+          // Fallback random only if no filters were selected (default behavior)
+          if (numericDifficulty == null && !category && !subject) {
+            combos.push({});
+          }
           // Attempt filters in sequence
           let found = null;
           for (const f of combos) {
@@ -386,7 +388,9 @@ const initialize = (io) => {
             }
           }
           if (!found) {
-            throw new Error('Failed to load snippet with any filter combination');
+            console.log(`No snippets found for filters: ${JSON.stringify(options.snippetFilters)}`);
+            socket.emit('snippetNotFound', { message: 'No snippet available for selected categories. Please adjust your filters.' });
+            return;
           }
           snippet = found;
           snippetId = snippet.id;
@@ -395,7 +399,7 @@ const initialize = (io) => {
 
         // --- Start: Manage Practice Lobby In-Memory ONLY --- 
         // NO LONGER creating a lobby in the database for practice
-        // console.log(`Created practice lobby with code ${practiceCode}`); // Optional: log the ephemeral code
+        // console.log(`Created practice lobby with code ${practiceCode}`);
 
         // Store active practice race info in memory
         activeRaces.set(practiceCode, {
@@ -623,7 +627,7 @@ const initialize = (io) => {
           const subject = category === 'course-reviews' && department && department !== 'all'
             ? department
             : null;
-          // Build filter combinations for progressive fallback prioritizing difficulty
+          // Build filter combinations, prioritizing difficulty
           const combos = [];
           if (numericDifficulty != null && category && subject) {
             combos.push({ difficulty: numericDifficulty, category, subject });
@@ -643,8 +647,10 @@ const initialize = (io) => {
           if (category) {
             combos.push({ category });
           }
-          // Fallback random
-          combos.push({});
+          // Fallback random only if no filters were selected (default behavior)
+          if (numericDifficulty == null && !category && !subject) {
+            combos.push({});
+          }
           let found = null;
           for (const f of combos) {
             const candidate = await SnippetModel.getRandom(f);

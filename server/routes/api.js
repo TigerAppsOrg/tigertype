@@ -9,6 +9,7 @@ const UserModel = require('../models/user');
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
 const profileRoutes = require('./profileRoutes'); // Import profile routes
+const db = require('../config/database');
 
 // Middleware to ensure API requests are authenticated
 const requireAuth = (req, res, next) => {
@@ -311,6 +312,48 @@ router.get('/snippets/course-subjects', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Error fetching course review subjects:', err);
     res.status(500).json({ error: 'Server error fetching subjects' });
+  }
+});
+
+// Get available difficulty options based on selected type and department
+router.get('/snippets/filters', requireAuth, async (req, res) => {
+  try {
+    const { type, department } = req.query;
+    const conditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    // Map type to category filter
+    if (type && type !== 'all') {
+      const category = type === 'course_reviews' ? 'course-reviews' : type;
+      conditions.push(`category = $${paramIndex++}`);
+      params.push(category);
+
+      // If course-reviews, include department filter
+      if (category === 'course-reviews' && department && department !== 'all') {
+        conditions.push(`SUBSTRING(course_name FROM 1 FOR 3) = $${paramIndex++}`);
+        params.push(department);
+      }
+    }
+
+    let query = 'SELECT DISTINCT difficulty FROM snippets';
+    if (conditions.length) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    const result = await db.query(query, params);
+    // Map numeric difficulties to string labels
+    const difficultyMapReverse = { 1: 'easy', 2: 'medium', 3: 'hard' };
+    const difficulties = result.rows
+      .map(row => difficultyMapReverse[row.difficulty])
+      .filter(Boolean);
+    // Include 'all' by default
+    const uniqueDifficulties = ['all', ...new Set(difficulties)];
+
+    res.json({ difficulties: uniqueDifficulties });
+  } catch (err) {
+    console.error('Error fetching snippet filters:', err);
+    res.status(500).json({ error: 'Server error fetching snippet filters' });
   }
 });
 
