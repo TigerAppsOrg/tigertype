@@ -8,7 +8,7 @@
   min-height: 350px; /* change to be more responsive later */
   width: 100%;
   position: relative;
-  top: -5vh;
+  top: 2vh;
 }
 
 .results-container h2 {
@@ -107,7 +107,7 @@
 .winner-netid {
   font-size: 1.8rem;
   font-weight: bold;
-  color: #fff;
+  color: #F58025;
 }
 
 .winner-stats {
@@ -167,7 +167,7 @@
   flex-grow: 1;
   overflow-y: auto;
   border-radius: 8px;
-  background-color: #2a2a2a;
+  background-color: var(--background-color-tertiary);
 }
 
 .result-item {
@@ -223,7 +223,7 @@
 
 .result-netid {
   font-weight: 600;
-  color: #fff;
+  color: #F58025;
 }
 
 .result-stats {
@@ -242,7 +242,7 @@
 .result-accuracy, .result-time {
   min-width: 80px;
   text-align: right;
-  color: #ccc;
+  color: var(--text-color);
 }
 
 /* Practice results container - simplified */

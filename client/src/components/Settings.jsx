@@ -93,9 +93,9 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
       document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
       document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
-      document.documentElement.style.setProperty('--button-bg-color', 'rgba(125, 125, 125, 0.8)');
+      document.documentElement.style.setProperty('--button-bg-color', 'rgb(75, 75, 75)');
       
-      document.documentElement.style.setProperty('--background-color-tertiary', '#2a2a2a');
+      document.documentElement.style.setProperty('--background-color-tertiary', '#d5d5d5');
       document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
 
       document.documentElement.style.setProperty('--border-color', '#3a3a3a');
@@ -115,7 +115,7 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--container-color', '#2E2E33'); //
       
       document.documentElement.style.setProperty('--typing-color', '#7A7A80'); //
-      document.documentElement.style.setProperty('--text-color', '#F1F1F6'); //
+      document.documentElement.style.setProperty('--text-color', '#7A7A80'); //
       document.documentElement.style.setProperty('--text-color-secondary', '#F1F1F6'); //
       document.documentElement.style.setProperty('--text-color-highlight', '#FAD6EA'); //
       document.documentElement.style.setProperty('--subtle-text-color', '#9A9AA0'); //
@@ -163,9 +163,9 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
       document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
       document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
-      document.documentElement.style.setProperty('--button-bg-color', 'rgba(125, 125, 125, 0.8)');
+      document.documentElement.style.setProperty('--button-bg-color', 'rgb(75, 75, 75)');
       
-      document.documentElement.style.setProperty('--background-color-tertiary', '#2a2a2a');
+      document.documentElement.style.setProperty('--background-color-tertiary', '#d5d5d5');
       document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
 
       document.documentElement.style.setProperty('--border-color', '#3a3a3a');
@@ -328,7 +328,7 @@ function Settings({ isOpen, onClose }) {
             </select>
           </div>
           <div className="setting-item setting-item-slider">
-            <label htmlFor="font-size-slider">Font Size</label>
+            <label htmlFor="font-size-slider">Excerpt Font Size</label>
             <div className="slider-container">
               <input
                 id="font-size-slider"

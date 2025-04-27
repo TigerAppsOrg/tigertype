@@ -83,7 +83,7 @@ function Home() {
     {
       id: 4,
       name: 'Join Private Match',
-      description: "Enter a code or NetID to join a friend's lobby",
+      description: "Enter a lobby code or NetID to join a friend's lobby",
       subComponent: <JoinLobbyPanel />,
       iconClass: 'bi bi-key'
     }

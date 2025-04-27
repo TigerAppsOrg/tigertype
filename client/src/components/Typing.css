@@ -72,12 +72,11 @@
   color: var(--princeton-orange);
   font-weight: lighter;
   transform: skewX(-10deg); /* manually making italics since css font-style isn't working idk why*/
-  opacity: 0.7;
 }
 
 /* Tip visibility states */
 .tip-visible {
-  opacity: 0.5;
+  opacity: 0.8;
   transition: opacity 0.5s ease;
 }
 
