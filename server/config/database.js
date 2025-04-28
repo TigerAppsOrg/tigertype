@@ -10,7 +10,7 @@ console.log('Connecting to database in', isProduction ? 'PRODUCTION' : 'DEVELOPM
 if (isProduction && connectionString) {
   console.log('Using database connection string from DATABASE_URL');
 } else {
-  console.log(`  User: ${process.env.DB_USER}`);
+  console.log(`  User: ${process.env.DB_USER || process.env.USER}`);
   console.log(`  Host: ${process.env.DB_HOST || 'localhost'}`);
   console.log(`  Database: ${process.env.DB_NAME || 'tigertype'}`);
   console.log(`  Port: ${process.env.DB_PORT || 5432}`);
@@ -41,7 +41,7 @@ if (isProduction && connectionString) {
 } else {
   // Development configuration using individual parameters
   poolConfig = {
-    user: process.env.DB_USER || 'postgres',
+    user: process.env.DB_USER || process.env.USER,
     host: process.env.DB_HOST || 'localhost',
     database: process.env.DB_NAME || 'tigertype',
     password: process.env.DB_PASSWORD || '',
