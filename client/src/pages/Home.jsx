@@ -116,7 +116,7 @@ function Home() {
 
         {/* New layout container */}
         <div className="modes-layout-section">
-          <div className="private-modes-stack">
+          <div className="standard-modes-container">
             <Modes modes={standardModes} />
           </div>
 

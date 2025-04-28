@@ -94,7 +94,7 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
       document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
       document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
-      document.documentElement.style.setProperty('--button-bg-color', 'rgb(75, 75, 75)');
+      document.documentElement.style.setProperty('--button-bg-color', 'rgb(120, 120, 120)');
       
       document.documentElement.style.setProperty('--background-color-tertiary', '#d5d5d5');
       document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
@@ -164,7 +164,7 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
       document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
       document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
-      document.documentElement.style.setProperty('--button-bg-color', 'rgb(75, 75, 75)');
+      document.documentElement.style.setProperty('--button-bg-color', 'rgb(120, 120, 120)');
       
       document.documentElement.style.setProperty('--background-color-tertiary', '#d5d5d5');
       document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
