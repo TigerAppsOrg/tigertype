@@ -25,18 +25,23 @@ function Race() {
     dismissInactivityWarning,
     dismissInactivityKick,
     setRaceState,
-    loadNewSnippet
+    loadNewSnippet,
+    testMode,
+    setTestMode,
+    testDuration,
+    setTestDuration,
+    snippetDifficulty,
+    setSnippetDifficulty,
+    snippetType,
+    setSnippetType,
+    snippetDepartment,
+    setSnippetDepartment,
+    snippetError
   } = useRace();
   const { isRunning, currentSection, currentStepIndex } = useTutorial();
   // index of the practice tutorial step when results screen should appear
   const practiceResultIndex = tutorialSteps.practice.findIndex(s => s.id === 'practice-results-screen');
   
-  // Test configuration states
-  const [testMode, setTestMode] = useState('snippet');
-  const [testDuration, setTestDuration] = useState(15);
-  const [snippetDifficulty, setSnippetDifficulty] = useState('');
-  const [snippetType, setSnippetType] = useState('');
-  const [snippetDepartment, setSnippetDepartment] = useState('all');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   
   // Handle back button
@@ -121,6 +126,7 @@ function Race() {
                 setSnippetDepartment={setSnippetDepartment}
                 setRaceState={setRaceState}
                 loadNewSnippet={loadNewSnippet}
+                snippetError={snippetError}
                 onShowLeaderboard={toggleLeaderboard}
               />
             </div>

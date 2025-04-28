@@ -408,6 +408,7 @@ function Typing({
           completed: false,
           manuallyStarted: false
         }));
+        
       }
     };
 
