@@ -259,9 +259,8 @@
 
 .player-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
-  max-width: 100%;
 }
 
 .lobby-page .player-card {
@@ -289,6 +288,7 @@
 .lobby-page .profile-widget-clickable {
   cursor: pointer;
   width: 100%;
+  margin-left: 9vw;
 }
 
 .lobby-page .player-card.empty-slot {
@@ -525,6 +525,12 @@
     gap: 1.5rem;
   }
 
+  .lobby-page .profile-widget-clickable {
+    cursor: pointer;
+    width: 100%;
+    margin-right: 13vw;
+  }
+
   .lobby-left-column,
   .lobby-right-column {
     min-width: 100%;
@@ -574,6 +580,12 @@
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
+  }
+
+  .lobby-page .profile-widget-clickable {
+    cursor: pointer;
+    width: 100%;
+    margin-left: 22vw;
   }
 
   .lobby-code-display {
