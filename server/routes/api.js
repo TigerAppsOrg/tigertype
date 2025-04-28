@@ -447,4 +447,93 @@ router.get('/user/titles', requireAuth, async (req, res) => {
   }
 });
 
+// Get another user's basic profile by netid
+router.get('/user/:netid/profile', requireAuth, async (req, res) => {
+  try {
+    const { netid } = req.params;
+    const userToView = await UserModel.findByNetid(netid);
+    if (!userToView) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({
+      netid: userToView.netid,
+      userId: userToView.id,
+      bio: userToView.bio,
+      avatar_url: userToView.avatar_url,
+      races_completed: userToView.races_completed,
+      avg_wpm: userToView.avg_wpm,
+      avg_accuracy: userToView.avg_accuracy,
+      fastest_wpm: userToView.fastest_wpm
+    });
+  } catch (err) {
+    console.error('Error fetching user profile by netid:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get another user's detailed stats by netid
+router.get('/user/:netid/detailed-stats', requireAuth, async (req, res) => {
+  try {
+    const { netid } = req.params;
+    const userToView = await UserModel.findByNetid(netid);
+    if (!userToView) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const detailedStats = await UserModel.getDetailedStats(userToView.id);
+    res.json(detailedStats);
+  } catch (err) {
+    console.error('Error fetching detailed stats for user by netid:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get another user's recent results by netid
+router.get('/user/:netid/results', requireAuth, async (req, res) => {
+  try {
+    const { netid } = req.params;
+    const limit = parseInt(req.query.limit) || 3;
+    const userToView = await UserModel.findByNetid(netid);
+    if (!userToView) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const results = await UserModel.getRecentResults(userToView.id, limit);
+    res.json(results || []);
+  } catch (err) {
+    console.error('Error fetching results for user by netid:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get another user's badges by netid
+router.get('/user/:netid/badges', requireAuth, async (req, res) => {
+  try {
+    const { netid } = req.params;
+    const userToView = await UserModel.findByNetid(netid);
+    if (!userToView) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const badges = await UserModel.getBadges(userToView.id);
+    res.json(badges);
+  } catch (err) {
+    console.error('Error fetching badges for user by netid:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get another user's titles by netid
+router.get('/user/:netid/titles', requireAuth, async (req, res) => {
+  try {
+    const { netid } = req.params;
+    const userToView = await UserModel.findByNetid(netid);
+    if (!userToView) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const titles = await UserModel.getTitles(userToView.id);
+    res.json(titles);
+  } catch (err) {
+    console.error('Error fetching titles for user by netid:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
