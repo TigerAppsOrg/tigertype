@@ -96,12 +96,17 @@ function Race() {
       
       <div className="race-container">
         <div className="race-header-wrapper">
-          <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
-          <TutorialAnchor anchorId="back-button">
-          <button className="back-button" onClick={handleBack}>
-            <span>⟵</span> Back
-          </button>
-          </TutorialAnchor>
+          {/* Only show race title/back button before results */}
+          {!raceState.completed && (
+            <>
+              <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
+              <TutorialAnchor anchorId="back-button">
+                <button className="back-button" onClick={handleBack}>
+                  <span>⟵</span> Back
+                </button>
+              </TutorialAnchor>
+            </>
+          )}
           {/* Only show lobby code for private lobbies */}
           {raceState.type === 'private' && raceState.code && (
             <div className="lobby-code">Lobby Code: {raceState.code}</div>
