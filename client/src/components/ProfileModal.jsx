@@ -600,7 +600,11 @@ function ProfileModal({ isOpen, onClose }) {
                           className="badge-item selected"
                           onClick={() => setShowBadgeSelector(true)}
                         >
-                          <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
+                          {badge.icon_url ? (
+                            <img src={badge.icon_url} alt={badge.name} className="badge-image" />
+                          ) : (
+                            <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
+                          )}
                           <span className="badge-name">{badge.name}</span>
                         </div>
                       ))}
@@ -753,7 +757,11 @@ function ProfileModal({ isOpen, onClose }) {
                                   className={`badge-selection-item ${displayedBadges.some(b => b.id === badge.id) ? 'selected' : ''}`}
                                   onClick={() => toggleBadgeSelection(badge)}
                                 >
-                                  <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
+                                  {badge.icon_url ? (
+                                    <img src={badge.icon_url} alt={badge.name} className="badge-image" />
+                                  ) : (
+                                    <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
+                                  )}
                                   <div className="badge-details">
                                     <span className="badge-modal-name">{badge.name}</span>
                                     <span className="badge-modal-description">{badge.description}</span>

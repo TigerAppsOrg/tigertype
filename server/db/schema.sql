@@ -155,8 +155,22 @@ BEGIN
 
     INSERT INTO badges (key, name, description, icon_url, criteria_type, criteria_value)
     VALUES
-      ('first_race', 'First Race', 'Complete your first race', '/icons/first-race.svg', 'races_completed', 1),
-      ('speedster',  'Speedster', 'Average WPM ≥ 80', '/icons/speedster.svg', 'avg_wpm', 80);
+      ('first_race',       'First Race',     'Complete your first race',      '/assets/badges/firstrace.png', 'races_completed', 1),
+      ('ten_race',         '10 Races',       'Complete 10 races',           '/assets/badges/10races.png',   'races_completed', 10),
+      ('one_hundred_race', '100 Races',      'Complete 100 races',          '/assets/badges/100races.png',  'races_completed', 100),
+      ('novice',         'Novice',         'Average WPM ≥ 60',            '/assets/badges/novice.png',    'avg_wpm',         60),
+      ('intermediate',     'Intermediate',   'Average WPM ≥ 100',           '/assets/badges/intermediate.png','avg_wpm',         100),
+      ('advanced',       'Advanced',       'Average WPM ≥ 125',           '/assets/badges/advanced.png',  'avg_wpm',         125),
+      ('expert',         'Expert',         'Average WPM ≥ 150',           '/assets/badges/expert.png',    'avg_wpm',         150),
+      ('fast',           'Fast',           'Fastest WPM ≥ 150',           '/assets/badges/fast.png',      'fastest_wpm',     150),
+      ('faster',         'Faster',         'Fastest WPM ≥ 175',           '/assets/badges/faster.png',    'fastest_wpm',     175),
+      ('fastest',        'Fastest',        'Fastest WPM ≥ 200',           '/assets/badges/fastest.png',   'fastest_wpm',     200)
+    ON CONFLICT (key) DO UPDATE SET
+      name = EXCLUDED.name,
+      description = EXCLUDED.description,
+      icon_url = EXCLUDED.icon_url,
+      criteria_type = EXCLUDED.criteria_type,
+      criteria_value = EXCLUDED.criteria_value;
 
     INSERT INTO titles (key, name, description, criteria_type, criteria_value)
     VALUES 
