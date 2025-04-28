@@ -669,7 +669,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
                          // Display the first title found, or a default. Adjust if multiple/selected needed.
                          <span>{userTitles[0]?.name || 'No Title Set'}</span>
                        ) : (
-                         <span>No Title Set</span>
+                         <span className="no-title-display">No Title Set</span>
                        )}
                      </div>
                   )}
@@ -695,6 +695,11 @@ function ProfileModal({ isOpen, onClose, netid }) {
                           <span className="badge-name">{badge.name}</span>
                         </div>
                       ))}
+
+                      {/* Display message if viewing other profile with no badges */}
+                      {!isOwnProfile && userBadges.length === 0 && !loadingBadges && (
+                        <div className="no-badges-display">No badges earned yet.</div>
+                      )}
 
                       {/* Only show placeholder add badges if own profile */}
                       {isOwnProfile && Array.from({ length: maxBadges - displayedBadges.length }, (_, i) => (
@@ -734,7 +739,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
                   </>
                 ) : (
                   // Read-only bio for others
-                  <p className="bio-text read-only-bio">{displayUser?.bio || 'No bio available.'}</p>
+                  <div className="read-only-bio-container">
+                     <p className="bio-text">{displayUser?.bio || 'This user hasn\'t written a bio yet.'}</p>
+                  </div>
                 )}
               </div>
             </div>
