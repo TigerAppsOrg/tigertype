@@ -15,7 +15,7 @@
 }
 
 .profile-container {
-  width: 110%;
+  width: 110vw;
   height: auto;
   position: absolute;
   margin: 2rem auto;
@@ -30,7 +30,7 @@
 }
 
 .loading-container {
-  width: 120%;  
+  width: 120vw;  
   margin: 2rem auto;
   padding: 2rem;
   text-align: center;
@@ -547,7 +547,7 @@
   transform: translateX(-50%);
   font-size: 0.9rem;
   color: var(--text-color);
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: var(--container-color);
   padding: 4px 8px;
   border-radius: 4px;
   white-space: nowrap;
