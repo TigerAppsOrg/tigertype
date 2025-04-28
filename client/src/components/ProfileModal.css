@@ -97,12 +97,14 @@
 .profile-components {
   display:flex;
   flex-direction: row;
+  gap: 2rem;
 }
 
 .profile-header-info {
   display:flex;
   flex-direction: column;
-  width:50%;
+  flex: 1 1 55%;
+  min-width: 0;
 }
 
 .profile-page-info {
@@ -213,7 +215,7 @@
 
 .title-select {
   position: relative;
-  width: 100%;
+  width: 95%;
   margin-bottom: 0.5rem;
 }
 
@@ -386,8 +388,11 @@
 }
 
 .match-history {
-  width: 50%;
+  flex: 1 1 45%;
+  min-width: 0;
   font-size: 2rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .match-history h2{
@@ -741,7 +746,8 @@
 }
 
 .displayed-title-name {
-  /* Add specific styling if needed, currently inherits from parent */
+  font-weight: 600;
+  color: var(--text-color-highlight);
 }
 
 .no-title-display {
@@ -749,6 +755,7 @@
   color: var(--text-color-secondary);
   font-size: 1.3rem;
   width: 100%;
+  padding: 2px 0;
 }
 
 .read-only-bio-container {
