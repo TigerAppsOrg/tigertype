@@ -103,7 +103,7 @@ function Settings({ isOpen, onClose }) {
     }
     else if (theme === 'lavender-asphalt') {
       document.documentElement.style.setProperty('--mode-text-color', '#A59EB5'); //
-      document.documentElement.style.setProperty('--hover-color', '#a2a2a2'); //
+      document.documentElement.style.setProperty('--hover-color', '#2a2a2a'); //
       
       document.documentElement.style.setProperty('--player-card-color', '#aeaeae'); //
 
