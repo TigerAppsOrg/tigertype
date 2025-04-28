@@ -321,7 +321,7 @@
 }
 
 .biography-input::placeholder {
-  color: #aaa;
+  color: var(--text-color);
 }
 
 .biography-input:focus {

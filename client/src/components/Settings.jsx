@@ -74,7 +74,7 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--typing-color', '#FFB577');
       document.documentElement.style.setProperty('--player-card-color', '#aeaeae');
 
-      document.documentElement.style.setProperty('--background-color', '#E6BC9F');
+      document.documentElement.style.setProperty('--background-color', '#F5D8C4');
       document.documentElement.style.setProperty('--background-color-secondary', '#F0CDB3');
 
       document.documentElement.style.setProperty('--text-color', '#214E34');
