@@ -343,16 +343,63 @@ const initialize = (io) => {
           snippetId = `timed-${duration}`; // Use a special ID for timed tests in memory
           console.log(`Created timed test (${duration}s) for practice mode`);
         } else {
-          // TODO: Implement snippet filtering based on options.snippetFilters
-          snippet = await SnippetModel.getRandom();
-          if (!snippet) throw new Error('Failed to load snippet');
+          // Implement progressive snippet filtering based on options.snippetFilters
+          const { difficulty, type, department } = options.snippetFilters || {};
+          const difficultyMap = { easy: 1, medium: 2, hard: 3 };
+          const numericDifficulty = difficultyMap[difficulty] || null;
+          const category = type && type !== 'all'
+            ? (type === 'course_reviews' ? 'course-reviews' : type)
+            : null;
+          const subject = category === 'course-reviews' && department && department !== 'all'
+            ? department
+            : null;
+          // Build filter combinations, prioritizing difficulty
+          const combos = [];
+          if (numericDifficulty != null && category && subject) {
+            combos.push({ difficulty: numericDifficulty, category, subject });
+          }
+          if (numericDifficulty != null && category) {
+            combos.push({ difficulty: numericDifficulty, category });
+          }
+          if (numericDifficulty != null && subject) {
+            combos.push({ difficulty: numericDifficulty, subject });
+          }
+          if (numericDifficulty != null) {
+            combos.push({ difficulty: numericDifficulty });
+          }
+          if (category && subject) {
+            combos.push({ category, subject });
+          }
+          if (category) {
+            combos.push({ category });
+          }
+          // Fallback random only if no filters were selected (default behavior)
+          if (numericDifficulty == null && !category && !subject) {
+            combos.push({});
+          }
+          // Attempt filters in sequence
+          let found = null;
+          for (const f of combos) {
+            const candidate = await SnippetModel.getRandom(f);
+            if (candidate) {
+              console.log(`Loaded snippet for practice mode with filters: ${JSON.stringify(f)}`);
+              found = candidate;
+              break;
+            }
+          }
+          if (!found) {
+            console.log(`No snippets found for filters: ${JSON.stringify(options.snippetFilters)}`);
+            socket.emit('snippetNotFound', { message: 'No snippet available for selected categories. Please adjust your filters.' });
+            return;
+          }
+          snippet = found;
           snippetId = snippet.id;
           console.log(`Loaded snippet ID ${snippetId} for practice mode`);
         }
 
         // --- Start: Manage Practice Lobby In-Memory ONLY --- 
         // NO LONGER creating a lobby in the database for practice
-        // console.log(`Created practice lobby with code ${practiceCode}`); // Optional: log the ephemeral code
+        // console.log(`Created practice lobby with code ${practiceCode}`);
 
         // Store active practice race info in memory
         activeRaces.set(practiceCode, {
@@ -373,6 +420,7 @@ const initialize = (io) => {
           settings: { // Store settings used for this practice session
             testMode: options.testMode || 'snippet',
             testDuration: duration || 15, 
+            snippetFilters: options.snippetFilters || { difficulty: 'all', type: 'all', department: 'all' }
           }
         });
 
@@ -569,10 +617,53 @@ const initialize = (io) => {
           snippet = createTimedTestSnippet(duration);
           // snippetId remains null for timed tests in practice/private
         } else {
-          // Get a snippet based on filters or random
-          // TODO: Implement snippet filtering based on options.snippetFilters
-          snippet = await SnippetModel.getRandom(); // Using random for now
-          if (!snippet) throw new Error('Failed to load snippet');
+          // Implement progressive snippet filtering based on options.snippetFilters
+          const { difficulty, type, department } = options.snippetFilters || {};
+          const difficultyMap = { easy: 1, medium: 2, hard: 3 };
+          const numericDifficulty = difficultyMap[difficulty] || null;
+          const category = type && type !== 'all'
+            ? (type === 'course_reviews' ? 'course-reviews' : type)
+            : null;
+          const subject = category === 'course-reviews' && department && department !== 'all'
+            ? department
+            : null;
+          // Build filter combinations, prioritizing difficulty
+          const combos = [];
+          if (numericDifficulty != null && category && subject) {
+            combos.push({ difficulty: numericDifficulty, category, subject });
+          }
+          if (numericDifficulty != null && category) {
+            combos.push({ difficulty: numericDifficulty, category });
+          }
+          if (numericDifficulty != null && subject) {
+            combos.push({ difficulty: numericDifficulty, subject });
+          }
+          if (numericDifficulty != null) {
+            combos.push({ difficulty: numericDifficulty });
+          }
+          if (category && subject) {
+            combos.push({ category, subject });
+          }
+          if (category) {
+            combos.push({ category });
+          }
+          // Fallback random only if no filters were selected (default behavior)
+          if (numericDifficulty == null && !category && !subject) {
+            combos.push({});
+          }
+          let found = null;
+          for (const f of combos) {
+            const candidate = await SnippetModel.getRandom(f);
+            if (candidate) {
+              console.log(`Loaded snippet for private lobby with filters: ${JSON.stringify(f)}`);
+              found = candidate;
+              break;
+            }
+          }
+          if (!found) {
+            throw new Error('Failed to load snippet with any filter combination for private lobby');
+          }
+          snippet = found;
           snippetId = snippet.id;
         }
 
@@ -619,10 +710,10 @@ const initialize = (io) => {
           hostId: userId, // Store host ID
           hostNetId: netid, // Store host NetID
           startTime: null,
-          settings: { // Store initial settings
+          settings: { // Store initial settings including snippetFilters
             testMode: options.testMode || 'snippet',
             testDuration: options.testDuration || 15,
-            // snippetFilters: options.snippetFilters || { difficulty: 'all', type: 'all', department: 'all' }
+            snippetFilters: options.snippetFilters || { difficulty: 'all', type: 'all', department: 'all' }
           }
         });
 
@@ -933,14 +1024,70 @@ const initialize = (io) => {
         let newSnippet = race.snippet;
         let snippetChanged = false;
 
-        // If snippetId is explicitly provided (user selected a specific snippet)
-        if (settings.snippetId && settings.snippetId !== race.snippet?.id) {
+        // Choose new snippet based on updated settings
+        if (settings.snippetFilters && (settings.testMode === 'snippet' || race.settings.testMode === 'snippet')) {
+          // Apply progressive filter combos, prioritizing difficulty
+          const { difficulty, type, department } = settings.snippetFilters;
+          const difficultyMap = { easy: 1, medium: 2, hard: 3 };
+          const numericDifficulty = difficultyMap[difficulty] || null;
+          const category = type && type !== 'all'
+            ? (type === 'course_reviews' ? 'course-reviews' : type)
+            : null;
+          const subject = category === 'course-reviews' && department && department !== 'all'
+            ? department
+            : null;
+          // Build filter combinations
+          const combos = [];
+          if (numericDifficulty != null && category && subject) {
+            combos.push({ difficulty: numericDifficulty, category, subject });
+          }
+          if (numericDifficulty != null && category) {
+            combos.push({ difficulty: numericDifficulty, category });
+          }
+          if (numericDifficulty != null && subject) {
+            combos.push({ difficulty: numericDifficulty, subject });
+          }
+          if (numericDifficulty != null) {
+            combos.push({ difficulty: numericDifficulty });
+          }
+          if (category && subject) {
+            combos.push({ category, subject });
+          }
+          if (category) {
+            combos.push({ category });
+          }
+          // Fallback: completely random
+          combos.push({});
+          let found = null;
+          for (const f of combos) {
+            const candidate = await SnippetModel.getRandom(f);
+            if (candidate) {
+              console.log(`Loaded snippet for private lobby with filters: ${JSON.stringify(f)}`);
+              found = candidate;
+              break;
+            }
+          }
+          if (!found) {
+            throw new Error('Failed to load snippet with any filter combination for private lobby');
+          }
+          newSnippet = {
+            id: found.id,
+            text: found.text,
+            is_timed_test: false,
+            duration: null,
+            princeton_course_url: found.princeton_course_url || null,
+            course_name: found.course_name || null
+          };
+          snippetChanged = true;
+          race.settings.snippetFilters = settings.snippetFilters;
+        } else if (settings.snippetId && settings.snippetId !== race.snippet?.id) {
+          // Host selected a specific snippet
           const dbSnippet = await SnippetModel.findById(settings.snippetId);
           if (!dbSnippet) throw new Error('Selected snippet not found.');
           newSnippet = {
             id: dbSnippet.id,
             text: dbSnippet.text,
-            is_timed_test: false, // Assume regular snippet
+            is_timed_test: false,
             duration: null,
             princeton_course_url: dbSnippet.princeton_course_url || null,
             course_name: dbSnippet.course_name || null
@@ -953,6 +1100,7 @@ const initialize = (io) => {
           // When only the duration is provided (without testMode) but we are already in timed mode
           (typeof settings.testMode === 'undefined' && typeof settings.testDuration !== 'undefined' && race.settings.testMode === 'timed' && settings.testDuration !== race.settings.testDuration)
         ) {
+          // Timed test snippet
           const duration = parseInt(settings.testDuration) || parseInt(race.settings.testDuration) || 30;
           newSnippet = createTimedTestSnippet(duration);
           snippetChanged = true;
@@ -961,7 +1109,7 @@ const initialize = (io) => {
         }
         // If mode changed back to snippet from timed
         else if (settings.testMode === 'snippet' && race.settings.testMode === 'timed') {
-          // Load a new random snippet (or based on filters if implemented)
+          // Switch from timed back to snippet
           const randomSnippet = await SnippetModel.getRandom();
           if (!randomSnippet) throw new Error('Failed to load snippet for snippet mode.');
           newSnippet = {
