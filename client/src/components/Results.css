@@ -543,6 +543,7 @@
 
 .course-review-btn {
   margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -581,7 +582,7 @@
 /* --------------------------------------- */
 
 .snippet-info {
-  margin-top: 0.5rem;
+  margin: 0.5rem;
   text-align: center;
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.7);
