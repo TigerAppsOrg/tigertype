@@ -148,12 +148,14 @@ body {
 
 /* Right Column */
 .landing-right-column {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   flex-basis: 60%; 
   justify-content: flex-start;
-  align-self: anchor-center
+  align-self: anchor-center;
+  right: 10vh;
 }
 
 .landing-right-column h2 {
