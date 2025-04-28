@@ -182,12 +182,12 @@ function ProfileModal({ isOpen, onClose, netid }) {
     const fetchMatchHistory = async () => {
       try {
         setLoadingMatchHistory(true);
-        const url = `/api/user/${targetNetId}/results`;
+        const url = `/api/user/${targetNetId}/results?limit=10`;
         const response = await fetch(url, { credentials: 'include' });
 
         const data = await response.json();
 
-        console.log('Match history response:', data);
+        console.log('Full match history response from API:', data); // Log the raw data
 
         for (let i of data) {
           let temp = String(i['lobby_type']);
@@ -215,7 +215,10 @@ function ProfileModal({ isOpen, onClose, netid }) {
         }
         // console.log('Match history data:', data);
 
-        setMatchHistory(data)
+        // Slice the data to get only the top 10 most recent matches
+        const recentMatches = data.slice(0, 10);
+
+        setMatchHistory(recentMatches)
 
       } catch (error) {
         console.error('Error fetching match history:', error);
@@ -665,11 +668,11 @@ function ProfileModal({ isOpen, onClose, netid }) {
                     <div className="title-display static-title">
                        {loadingTitles ? (
                          <span>Loading title...</span>
-                       ) : userTitles && userTitles.length > 0 ? (
-                         // Display the first title found, or a default. Adjust if multiple/selected needed.
-                         <span>{userTitles[0]?.name || 'No Title Set'}</span>
+                       ) : userTitles && userTitles.length > 0 && userTitles[0]?.name ? (
+                         // Display the first title found. Add specific class for styling.
+                         <span className="displayed-title-name">{userTitles[0]?.name}</span>
                        ) : (
-                         <span>No Title Set</span>
+                         <span className="no-title-display">No Title Set</span>
                        )}
                      </div>
                   )}
@@ -695,6 +698,11 @@ function ProfileModal({ isOpen, onClose, netid }) {
                           <span className="badge-name">{badge.name}</span>
                         </div>
                       ))}
+
+                      {/* Display message if viewing other profile with no badges */}
+                      {!isOwnProfile && userBadges.length === 0 && !loadingBadges && (
+                        <div className="no-badges-display">No badges earned yet.</div>
+                      )}
 
                       {/* Only show placeholder add badges if own profile */}
                       {isOwnProfile && Array.from({ length: maxBadges - displayedBadges.length }, (_, i) => (
@@ -734,7 +742,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
                   </>
                 ) : (
                   // Read-only bio for others
-                  <p className="bio-text read-only-bio">{displayUser?.bio || 'No bio available.'}</p>
+                  <div className="read-only-bio-container">
+                     <p className="bio-text">{displayUser?.bio || 'This user hasn\'t written a bio yet.'}</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -748,33 +758,48 @@ function ProfileModal({ isOpen, onClose, netid }) {
                 <div className="no-matches">No recent race history available.</div>
               ) : (
                 <div className="match-history-list">
-                  {matchHistory.map((match, index) => (
-                    <div key={index} className="match-history-card">
-                      <div className="match-date">
-                        {new Date(match.created_at).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </div>
-                      <div className="match-details">
-                        <div className="match-type">  
-                          <div className='match-lobby-type'>
-                            {match.lobby_type}
+                  {matchHistory.map((match, index) => {
+                    // Determine position class
+                    let positionClass = '';
+                    if (match.position === '1st') positionClass = 'first-place';
+                    else if (match.position === '2nd') positionClass = 'second-place';
+                    else if (match.position === '3rd') positionClass = 'third-place';
+
+                    return (
+                      <div key={index} className="match-history-card">
+                        <div className="match-date">
+                          {new Date(match.created_at).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        <div className="match-details">
+                          {/* Position Column (now first) */}
+                          <div className={`match-position ${positionClass}`}>
+                            <div className="position-number">{match.position || '-'}</div>
+                            <div className="match-position-label">Position</div>
                           </div>
-                          <div className='match-category'>
-                            {match.source || match.category || "Race"}
+
+                          {/* Details Column (Type/Category + Stats) */}
+                          <div className="match-info-details">
+                            <div className="match-type">
+                              <div className='match-lobby-type'>
+                                {match.lobby_type}
+                              </div>
+                              <div className='match-category'>
+                                {match.source || match.category || "Race"}
+                              </div>
+                            </div>
+
+                            <div className="match-stats">
+                              <span><i className="bi bi-speedometer"></i> {parseFloat(match.wpm).toFixed(0)} WPM</span>
+                              <span><i className="bi bi-check-circle"></i> {parseFloat(match.accuracy).toFixed(0)}% Acc</span>
+                            </div>
                           </div>
                         </div>
-                        <div className='match-position'>
-                            {match.position ? `Position: ${match.position}` : ''}
-                          </div>
-                        <div className="match-stats">
-                          <span>{parseFloat(match.wpm).toFixed(0)} WPM</span>
-                          <span>{parseFloat(match.accuracy).toFixed(0)}% Acc</span>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -792,19 +817,19 @@ function ProfileModal({ isOpen, onClose, netid }) {
           ) : (
             <div className="stats-grid primary-stats">
               <div className="stat-card">
-                <h3>Races Completed</h3>
+                <h3><i className="bi bi-bar-chart-line"></i> Races Completed</h3>
                 <p>{parseNumericValue(displayUser.races_completed) || 0}</p>
               </div>
               <div className="stat-card">
-                <h3>Average WPM</h3>
+                <h3><i className="bi bi-speedometer"></i> Average WPM</h3>
                 <p>{parseNumericValue(displayUser.avg_wpm).toFixed(2)}</p>
               </div>
               <div className="stat-card">
-                <h3>Average Accuracy</h3>
+                <h3><i className="bi bi-check-circle"></i> Average Accuracy</h3>
                 <p>{parseNumericValue(displayUser.avg_accuracy).toFixed(2)}%</p>
               </div>
               <div className="stat-card">
-                <h3>Fastest Speed</h3>
+                <h3><i className="bi bi-lightning-fill"></i> Fastest Speed</h3>
                 <p>{parseNumericValue(displayUser.fastest_wpm).toFixed(2)} WPM</p>
               </div>
             </div>
@@ -817,19 +842,19 @@ function ProfileModal({ isOpen, onClose, netid }) {
           ) : detailedStats ? (
             <div className="stats-grid">
               <div className="stat-card">
-                <h3>Total Tests Started</h3>
+                <h3><i className="bi bi-pencil-square"></i> Total Tests Started</h3>
                 <p>{formatNumber(detailedStats.sessions_started)}</p>
               </div>
               <div className="stat-card">
-                <h3>Sessions Completed</h3>
+                <h3><i className="bi bi-check2-square"></i> Sessions Completed</h3>
                 <p>{formatNumber(detailedStats.sessions_completed)}</p>
               </div>
               <div className="stat-card">
-                <h3>Total Words Typed</h3>
+                <h3><i className="bi bi-keyboard"></i> Total Words Typed</h3>
                 <p>{formatNumber(detailedStats.words_typed)}</p>
               </div>
               <div className="stat-card">
-                <h3>Completion Rate</h3>
+                <h3><i className="bi bi-pie-chart"></i> Completion Rate</h3>
                 <p>{detailedStats.sessions_started > 0
                   ? (detailedStats.sessions_completed / detailedStats.sessions_started * 100).toFixed(1)
                   : 0}%</p>
