@@ -216,7 +216,7 @@ router.get('/user/detailed-stats', requireAuth, async (req, res) => {
 router.get('/user/results', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 3;
     
     const results = await UserModel.getRecentResults(userId, limit);
     
@@ -418,6 +418,32 @@ router.get('/stats', async (req, res) => {
       avg_wpm: '68',
       active_users: '842'
     });
+  }
+})
+
+// Get user badges
+router.get('/user/badges', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const badges = await UserModel.getBadges(userId);
+    res.json(badges);
+    console.log('User badges fetched successfully');
+  } catch (err) {
+    console.error('Error fetching user badges:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get user titles
+router.get('/user/titles', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const titles = await UserModel.getTitles(userId);
+    res.json(titles);
+    console.log('User titles fetched successfully');
+  } catch (err) {
+    console.error('Error fetching user titles:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
