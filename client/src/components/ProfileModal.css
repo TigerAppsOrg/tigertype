@@ -469,8 +469,13 @@
   text-align: center;
   transition: transform 0.2s ease;
   height: 100%;
+}
+
+.profile-stat {
   flex-direction: column!important;
 }
+
+.stat-card
 
 .stat-card:hover {
   transform: translateY(-5px);

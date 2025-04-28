@@ -695,19 +695,19 @@ function ProfileModal({ isOpen, onClose }) {
             <div className="stats-loading">No stats available</div>
           ) : (
             <div className="stats-grid primary-stats">
-              <div className="stat-card">
+              <div className="stat-card profile-stat">
                 <h3>Races Completed</h3>
                 <p>{parseNumericValue(user.races_completed) || 0}</p>
               </div>
-              <div className="stat-card">
+              <div className="stat-card profile-stat">
                 <h3>Average WPM</h3>
                 <p>{parseNumericValue(user.avg_wpm).toFixed(2)}</p>
               </div>
-              <div className="stat-card">
+              <div className="stat-card profile-stat">
                 <h3>Average Accuracy</h3>
                 <p>{parseNumericValue(user.avg_accuracy).toFixed(2)}%</p>
               </div>
-              <div className="stat-card">
+              <div className="stat-card profile-stat">
                 <h3>Fastest Speed</h3>
                 <p>{parseNumericValue(user.fastest_wpm).toFixed(2)} WPM</p>
               </div>
@@ -720,19 +720,19 @@ function ProfileModal({ isOpen, onClose }) {
             <div className="stats-loading">No detailed stats available</div>
           ) : (
             <div className="stats-grid">
-              <div className="stat-card">
+              <div className="stat-card profile-stat">
                 <h3>Total Tests Started</h3>
                 <p>{formatNumber(detailedStats.sessions_started)}</p>
               </div>
-              <div className="stat-card">
+              <div className="stat-card profile-stat">
                 <h3>Sessions Completed</h3>
                 <p>{formatNumber(detailedStats.sessions_completed)}</p>
               </div>
-              <div className="stat-card">
+              <div className="stat-card profile-stat">
                 <h3>Total Words Typed</h3>
                 <p>{formatNumber(detailedStats.words_typed)}</p>
               </div>
-              <div className="stat-card">
+              <div className="stat-card profile-stat">
                 <h3>Completion Rate</h3>
                 <p>{detailedStats.sessions_started > 0
                   ? (detailedStats.sessions_completed / detailedStats.sessions_started * 100).toFixed(1)
