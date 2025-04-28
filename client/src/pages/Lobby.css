@@ -288,7 +288,7 @@
 .lobby-page .profile-widget-clickable {
   cursor: pointer;
   width: 100%;
-  margin-left: 9vw;
+  padding-left: 5vw;
 }
 
 .lobby-page .player-card.empty-slot {
@@ -528,7 +528,7 @@
   .lobby-page .profile-widget-clickable {
     cursor: pointer;
     width: 100%;
-    margin-right: 13vw;
+    padding-right: 22vw;
   }
 
   .lobby-left-column,
@@ -585,7 +585,7 @@
   .lobby-page .profile-widget-clickable {
     cursor: pointer;
     width: 100%;
-    margin-left: 22vw;
+    padding-left: 5vw;
   }
 
   .lobby-code-display {
