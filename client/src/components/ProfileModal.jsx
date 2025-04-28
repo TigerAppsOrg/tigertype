@@ -755,33 +755,48 @@ function ProfileModal({ isOpen, onClose, netid }) {
                 <div className="no-matches">No recent race history available.</div>
               ) : (
                 <div className="match-history-list">
-                  {matchHistory.map((match, index) => (
-                    <div key={index} className="match-history-card">
-                      <div className="match-date">
-                        {new Date(match.created_at).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </div>
-                      <div className="match-details">
-                        <div className="match-type">
-                          <div className='match-lobby-type'>
-                            {match.lobby_type}
+                  {matchHistory.map((match, index) => {
+                    // Determine position class
+                    let positionClass = '';
+                    if (match.position === '1st') positionClass = 'first-place';
+                    else if (match.position === '2nd') positionClass = 'second-place';
+                    else if (match.position === '3rd') positionClass = 'third-place';
+
+                    return (
+                      <div key={index} className="match-history-card">
+                        <div className="match-date">
+                          {new Date(match.created_at).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        <div className="match-details">
+                          {/* Position Column (now first) */}
+                          <div className={`match-position ${positionClass}`}>
+                            <div className="position-number">{match.position || '-'}</div>
+                            <div className="match-position-label">Position</div>
                           </div>
-                          <div className='match-category'>
-                            {match.source || match.category || "Race"}
+
+                          {/* Details Column (Type/Category + Stats) */}
+                          <div className="match-info-details">
+                            <div className="match-type">
+                              <div className='match-lobby-type'>
+                                {match.lobby_type}
+                              </div>
+                              <div className='match-category'>
+                                {match.source || match.category || "Race"}
+                              </div>
+                            </div>
+
+                            <div className="match-stats">
+                              <span><i className="bi bi-speedometer"></i> {parseFloat(match.wpm).toFixed(0)} WPM</span>
+                              <span><i className="bi bi-check-circle"></i> {parseFloat(match.accuracy).toFixed(0)}% Acc</span>
+                            </div>
                           </div>
                         </div>
-                        <div className={`match-position ${match.position === '1st' ? 'first-place' : ''}`}>
-                            {match.position ? `Position: ${match.position}` : ''}
-                          </div>
-                        <div className="match-stats">
-                          <span><i className="bi bi-speedometer"></i> {parseFloat(match.wpm).toFixed(0)} WPM</span>
-                          <span><i className="bi bi-check-circle"></i> {parseFloat(match.accuracy).toFixed(0)}% Acc</span>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
