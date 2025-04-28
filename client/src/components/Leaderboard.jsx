@@ -31,7 +31,8 @@ const formatRelativeTime = (timestamp) => {
 
 function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMode = 'modal' }) {
   const { socket } = useSocket();
-  const { user } = useAuth();
+  // Destructure authenticated flag to check CAS login status
+  const { user, authenticated } = useAuth();
   const [duration, setDuration] = useState(defaultDuration);
   const [period, setPeriod] = useState(defaultPeriod);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -97,7 +98,8 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
   }, [socket, duration, period]);
 
   const handleAvatarClick = (_avatarUrl, netid) => {
-    // Open profile modal for clicked user
+    // Only proceed if user is authenticated via CAS
+    if (!authenticated) return;
     setSelectedProfileNetid(netid);
     setShowProfileModal(true);
   };
@@ -193,9 +195,9 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                     <span className="leaderboard-rank">{index + 1}</span>
                     <div className="leaderboard-player">
                       <div 
-                        className="leaderboard-avatar" 
-                        onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)}
-                        title={`View ${entry.netid}\'s avatar`}
+                        className={`leaderboard-avatar ${!authenticated ? 'disabled' : ''}`}
+                        onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
+                        title={authenticated ? `View ${entry.netid}\'s profile` : 'Log in to view profiles'}
                       >
                         <img 
                           src={entry.avatar_url || defaultProfileImage} 
@@ -226,8 +228,8 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
         </>
       )}
 
-      {/* Profile Modal for viewing user profiles */}
-      {showProfileModal && (
+      {/* Profile Modal for viewing user profiles (only for authenticated users) */}
+      {authenticated && showProfileModal && (
         <ProfileModal
           isOpen={showProfileModal}
           onClose={() => setShowProfileModal(false)}

@@ -105,16 +105,21 @@
 .profile-components {
   display:flex;
   flex-direction: row;
+  gap: 2rem;
 }
 
 .profile-header-info {
   display:flex;
   flex-direction: column;
-  width:50%;
+  flex: 1 1 55%;
+  min-width: 0;
 }
 
 .profile-page-info {
   display: flex;
+  align-items: flex-start;
+  gap: 1.875rem;
+  padding-bottom: 1.5rem;
 }
 
 .profile-page-info h2 {
@@ -153,6 +158,12 @@
 
 .profile-page-image input[type="image"].uploading {
   opacity: 0.5;
+}
+
+.static-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .upload-overlay {
@@ -194,11 +205,10 @@
 }
 
 .selectable-info {
-  padding-left: 1.875rem;
+  flex: 1;
+  min-width: 0;
   display: flex;         
   flex-direction: column; 
-  padding-right: 2rem;
-  width: 100%;      
 }
 
 .username-info {
@@ -213,7 +223,7 @@
 
 .title-select {
   position: relative;
-  width: 100%;
+  width: 95%;
   margin-bottom: 0.5rem;
 }
 
@@ -239,7 +249,6 @@
   color: #F58025;
   font-size: 0.8rem;
   transition: transform 0.2s;
-
 }
 
 .title-dropdown {
@@ -297,6 +306,7 @@
 .user-badges h3{
   text-align: left;
   font-size: 1.8rem;
+  margin-bottom: 0.5rem;
 }
 
 
@@ -314,6 +324,7 @@
 }
 
 .biography-input {
+  box-sizing: border-box;
   resize: none;
   border-radius: 15px;
   padding: 10px;
@@ -385,8 +396,11 @@
 }
 
 .match-history {
-  width: 50%;
+  flex: 1 1 45%;
+  min-width: 0;
   font-size: 2rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .match-history h2{
@@ -401,55 +415,160 @@
 .match-history-list {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
+  padding-top: 5px;
+  padding-right: 10px;
+  padding-left: 10px;
+  height: 400px;
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar for Match History */
+/* i like this alot should make it global later */
+.match-history-list::-webkit-scrollbar {
+  width: 8px;
+}
+.match-history-list::-webkit-scrollbar-track {
+  background: var(--secondary-color);
+  border-radius: 4px;
+}
+.match-history-list::-webkit-scrollbar-thumb {
+  background-color: #F58025; 
+  border-radius: 4px;
+  border: 2px solid var(--secondary-color);
+}
+.match-history-list::-webkit-scrollbar-thumb:hover {
+  background-color: #e06800;
 }
 
 .match-history-card {
-  background-color: var(--secondary-color);
+  background-color: var(--hover-color);
   border-radius: 8px;
-  padding: 0.8rem;
-  border: 1px solid rgba(245, 128, 37, 0.3);
-  transition: transform 0.2s, border-color 0.2s;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgba(245, 128, 37, 0.2);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .match-history-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.01);
   border-color: #F58025;
+  box-shadow: 0 4px 10px rgba(245, 128, 37, 0.15);
 }
 
 .match-date {
-  font-size: 1.2rem;
-  color: var(--mode-text-color);
-  margin-bottom: 0.5rem;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.8rem;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 2px 5px;
+  border-radius: 4px;
 }
+
 .match-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  padding-top: 0.8rem;
+  min-height: 60px;
+}
+
+.match-position {
+  grid-column: 1 / 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.8rem;
+  align-self: stretch;
+  border-right: 1px solid rgba(245, 128, 37, 0.2);
+  margin-left: 0;
+  background-color: transparent;
+  border-left: none;
+  border-radius: 0;
+  text-align: center;
+}
+
+.match-info-details {
+  grid-column: 2 / 3;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .match-type {
-  font-size: 1.5rem;
+  font-size: 1rem;
   color: var(--mode-text-color);
   display: flex;
   flex-direction: column;
   text-align: left;
+  gap: 0.2rem;
 }
 
-.match-position {
-  margin-right: 3rem;
+.match-lobby-type {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.match-category {
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+}
+
+.match-position .position-number {
+  font-size: 2.4rem;
+  font-weight: bold;
+  line-height: 1.1;
+  color: var(--text-color-secondary);
+}
+
+.match-position-label {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  margin-top: -2px;
+  text-transform: uppercase;
+}
+
+.match-position.first-place .position-number {
+  color: #FFD700;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+}
+
+.match-position.second-place .position-number {
+  color: #C0C0C0;
+  text-shadow: 0 0 5px rgba(192, 192, 192, 0.4);
+}
+
+.match-position.third-place .position-number {
+  color: #CD7F32;
+  text-shadow: 0 0 5px rgba(205, 127, 50, 0.4);
 }
 
 .match-stats {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 0.3rem;
 }
 
 .match-stats span {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   color: #F58025;
-  margin-bottom: 0.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Add icons to match stats */
+.match-stats span i {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .profile-stats h2 {
@@ -469,12 +588,18 @@
 }
 
 .stat-card {
-  background-color: #dfdfdfb3;
+  background: linear-gradient(135deg, var(--hover-color) 0%, var(--secondary-color) 100%);
+  color: var(--mode-text-color);
   padding: 1.4rem;
-  border-radius: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 128, 37, 0.2);
   text-align: center;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .profile-stat {
@@ -485,27 +610,40 @@
 
 .stat-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(245, 128, 37, 0.2);
 }
 
 .stat-card h3 {
-  color: #222222;
-  margin-bottom: 0.5rem;
-  font-size: 1.6rem;
+  color: var(--mode-text-color);
+  margin-bottom: 0.8rem;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.stat-card h3 i {
+  color: #F58025;
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .stat-card p {
-  color: #333333;
-  font-size: 1.6rem;
+  color: var(--text-color-highlight);
+  font-size: 1.8rem;
   font-weight: bold;
+  margin: 0;
 }
 
 /* Badge display and selection styling */
 .badge-display {
+  min-height: 50px;
   display: flex;
   flex-wrap: wrap;
   gap: 2rem;
   margin-top: 10px;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .badge-item {
@@ -597,7 +735,6 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); 
-
 }
 
 .badge-selector h4 {
@@ -690,5 +827,77 @@
   padding: 20px;
   text-align: center;
   color: var(--text-color-secondary);
+  font-style: italic;
+  
+.no-badges-display {
+  font-style: italic;
+  color: var(--text-color-secondary);
+  font-size: 1.1rem;
+  padding: 10px 0;
+  width: 100%;
+  text-align: left;
+  margin-left: 5px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.title-display.static-title {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hover-color);
+  color: var(--mode-text-color);
+  border-radius: 4px;
+  padding: 0.5rem 0.8rem;
+  font-size: 1.5rem;
+  text-align: left;
+  margin-bottom: 0.5rem;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  transition: border-color 0.2s ease;
+}
+
+.title-display.static-title:hover {
+  border-color: #F58025;
+}
+
+.displayed-title-name {
+  font-weight: 600;
+  color: var(--text-color-highlight);
+}
+
+.no-title-display {
+  font-style: italic;
+  color: var(--text-color-secondary);
+  font-size: 1.3rem;
+  width: 100%;
+  padding: 2px 0;
+}
+
+.read-only-bio-container {
+  resize: none;
+  border-radius: 15px;
+  padding: 15px;
+  width: 100%;
+  min-height: 200px;
+  background-color: var(--hover-color);
+  color: #f8f9fa;
+  border: 1px solid #444;
+  font-family: inherit;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.read-only-bio-container .bio-text {
+  margin: 0;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.read-only-bio-container .bio-text:empty::before {
+  content: 'This user hasn\'t written a bio yet.';
+  color: #aaa;
   font-style: italic;
 }
