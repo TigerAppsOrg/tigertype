@@ -9,6 +9,7 @@ const UserModel = require('../models/user');
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
 const profileRoutes = require('./profileRoutes'); // Import profile routes
+const db = require('../config/database');
 
 // Middleware to ensure API requests are authenticated
 const requireAuth = (req, res, next) => {
@@ -215,7 +216,7 @@ router.get('/user/detailed-stats', requireAuth, async (req, res) => {
 router.get('/user/results', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 3;
     
     const results = await UserModel.getRecentResults(userId, limit);
     
@@ -314,6 +315,48 @@ router.get('/snippets/course-subjects', requireAuth, async (req, res) => {
   }
 });
 
+// Get available difficulty options based on selected type and department
+router.get('/snippets/filters', requireAuth, async (req, res) => {
+  try {
+    const { type, department } = req.query;
+    const conditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    // Map type to category filter
+    if (type && type !== 'all') {
+      const category = type === 'course_reviews' ? 'course-reviews' : type;
+      conditions.push(`category = $${paramIndex++}`);
+      params.push(category);
+
+      // If course-reviews, include department filter
+      if (category === 'course-reviews' && department && department !== 'all') {
+        conditions.push(`SUBSTRING(course_name FROM 1 FOR 3) = $${paramIndex++}`);
+        params.push(department);
+      }
+    }
+
+    let query = 'SELECT DISTINCT difficulty FROM snippets';
+    if (conditions.length) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    const result = await db.query(query, params);
+    // Map numeric difficulties to string labels
+    const difficultyMapReverse = { 1: 'easy', 2: 'medium', 3: 'hard' };
+    const difficulties = result.rows
+      .map(row => difficultyMapReverse[row.difficulty])
+      .filter(Boolean);
+    // Include 'all' by default
+    const uniqueDifficulties = ['all', ...new Set(difficulties)];
+
+    res.json({ difficulties: uniqueDifficulties });
+  } catch (err) {
+    console.error('Error fetching snippet filters:', err);
+    res.status(500).json({ error: 'Server error fetching snippet filters' });
+  }
+});
+
 // Get race results
 router.get('/races/:code/results', requireAuth, async (req, res) => {
   try {
@@ -375,6 +418,32 @@ router.get('/stats', async (req, res) => {
       avg_wpm: '68',
       active_users: '842'
     });
+  }
+})
+
+// Get user badges
+router.get('/user/badges', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const badges = await UserModel.getBadges(userId);
+    res.json(badges);
+    console.log('User badges fetched successfully');
+  } catch (err) {
+    console.error('Error fetching user badges:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get user titles
+router.get('/user/titles', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const titles = await UserModel.getTitles(userId);
+    res.json(titles);
+    console.log('User titles fetched successfully');
+  } catch (err) {
+    console.error('Error fetching user titles:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

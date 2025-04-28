@@ -264,10 +264,22 @@
      font-size: 0.9rem;
   }
   .config-separator, .config-separator-inner {
-     /* Keep separators */
+     width: auto;
   }
   .department-filter {
      margin-left: 0;
      margin-top: 5px;
   }
+}
+
+/* Error message styling for unavailable snippets */
+.config-error {
+  color: var(--error-color, #e74c3c);
+  background-color: rgba(231, 76, 60, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  width: 100%;
+  text-align: center;
 }

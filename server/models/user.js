@@ -200,20 +200,29 @@ const User = {
     }
   },
 
+  // psuedo-code for getting lobby type done by ryan, actual sql implementation done by copilot
+  // psuedo-code for getting position done by ryan, actual sql implementation done by copilot
   // Get a user's recent race results
-  async getRecentResults(userId, limit = 10) {
+  async getRecentResults(userId, limit = 3) {
     try {
-      const result = await db.query(
-        `SELECT r.id, r.wpm, r.accuracy, r.completion_time, 
-         s.text as snippet_text, s.source, s.category, 
-         r.created_at
-         FROM race_results r
-         JOIN snippets s ON r.snippet_id = s.id
-         WHERE r.user_id = $1
-         ORDER BY r.created_at DESC
-         LIMIT $2`,
-        [userId, limit]
-      );
+      const result = await db.query(`
+        SELECT r.id, r.wpm, r.accuracy, r.completion_time, 
+          s.text as snippet_text, s.source, s.category, 
+          r.created_at, COALESCE(l.type, 'Practice') as lobby_type,
+        CASE
+         WHEN l.type IN ('public', 'private') THEN
+           (SELECT COUNT(*) + 1 FROM race_results r2 
+            WHERE r2.lobby_id = r.lobby_id 
+            AND r2.completion_time < r.completion_time)
+         ELSE NULL
+        END as position
+        FROM race_results r
+        JOIN snippets s ON r.snippet_id = s.id
+        LEFT JOIN lobbies l ON r.lobby_id = l.id
+        WHERE r.user_id = $1
+        ORDER BY r.created_at DESC
+        LIMIT $2
+        `, [userId, limit]);
       return result.rows;
     } catch (err) {
       console.error('Error getting recent results:', err);
@@ -347,6 +356,8 @@ const User = {
           [newAvgWpm.toFixed(2), newAvgAcc.toFixed(2), newRacesCompleted, userId]
         );
         console.log(`Updated regular stats for user ${userId}: WPM=${newAvgWpm.toFixed(2)}, Acc=${newAvgAcc.toFixed(2)}, Races=${newRacesCompleted}`);
+        await this.checkAndAwardBadges(userId);
+        await this.checkAndAwardTitles(userId);
       }
     } catch (error) {
       console.error(`Error updating stats for user ${userId}:`, error);
@@ -369,6 +380,8 @@ const User = {
           [wpm, userId]
         );
         console.log(`Updated fastest_wpm for user ${userId} to ${wpm}`);
+        await this.checkAndAwardBadges(userId); // Check for badges after updating fastest WPM
+        await this.checkAndAwardTitles(userId);
       } else {
         console.log(`Skipping fastest_wpm update for user ${userId} (${wpm} not higher than ${currentFastest})`);
       }
@@ -392,7 +405,254 @@ const User = {
     } catch (error) {
       console.error(`Error incrementing private race stats for user ${userId}:`, error);
     }
-  }
+  },
+
+  async getBadges(userId) {
+    if (!userId) return;
+    try {
+      const result = await pool.query(`
+        SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at 
+        FROM badges b 
+        JOIN user_badges u on b.id = u.badge_id 
+        WHERE u.user_id = $1
+        ORDER BY u.awarded_at DESC
+      `, [userId]);
+
+      console.log(`Got ${result.rows.length} badges for user: ${userId}`);
+      return result.rows;
+    } catch (error) {
+      console.error(`Error getting badges for user: ${userId}:`, error);
+    }
+  },
+
+  // used copilot for this - Ryan
+  async awardBadge(userId, badgeKey) {
+    if (!userId) return;
+    if (!badgeKey) return;
+
+    try {
+      // Check if user already has this badge
+      const existingBadge = await pool.query(`
+      SELECT u.badge_id FROM user_badges u JOIN badges b ON u.badge_id = b.id
+      WHERE u.user_id = $1 AND b.key = $2
+      `, [userId, badgeKey]);
+
+      if (existingBadge.rows.length > 0) {
+        return { awarded: false, already_awarded: true };
+      }
+
+      // Get the badge ID
+      const badgeResult = await db.query(`
+      SELECT id FROM badges WHERE key = $1
+      `, [badgeKey]);
+
+      if (badgeResult.rows.length === 0) {
+        throw new Error(`Badge with key ${badgeKey} not found`);
+      }
+
+      const badgeId = badgeResult.rows[0].id;
+
+      // Award the badge
+      await db.query(`
+      INSERT INTO user_badges (user_id, badge_id, awarded_at)
+      VALUES ($1, $2, CURRENT_TIMESTAMP)
+      `, [userId, badgeId]);
+
+      console.log(`Awarded badge ${badgeKey} for user: ${userId}`);
+
+      // Get badge details to return
+      const awardedBadge = await db.query(`
+      SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at
+      FROM badges b
+      JOIN user_badges u ON b.id = u.badge_id
+      WHERE u.user_id = $1 AND b.id = $2
+      `, [userId, badgeId]);
+
+      return {
+        awarded: true,
+        badge: awardedBadge.rows[0]
+      };
+    } catch (err) {
+      console.error('Error awarding badge:', err);
+      throw err;
+    }
+  },
+
+  // used copilot for this - Ryan
+  // Check user stats against badge criteria and award any earned badges
+  async checkAndAwardBadges(userId) {
+    try {
+      // Get user's current stats
+      const user = await this.findById(userId);
+      if (!user) return [];
+
+      // Get all badges that the user doesn't already have
+      const availableBadges = await db.query(`
+      SELECT b.id, b.key, b.name, b.criteria_type, b.criteria_value
+      FROM badges b
+      WHERE NOT EXISTS (
+        SELECT 1 FROM user_badges u
+        WHERE u.badge_id = b.id AND u.user_id = $1
+      )
+      `, [userId]);
+
+      console.log(`Got unachieved badges for user: ${userId}`);
+
+      const newlyAwardedBadges = [];
+
+      // Check each badge criteria
+      for (const badge of availableBadges.rows) {
+        let awardBadge = false;
+
+        switch (badge.criteria_type) {
+          case 'races_completed':
+            awardBadge = user.races_completed >= badge.criteria_value;
+            break;
+          case 'avg_wpm':
+            awardBadge = parseFloat(user.avg_wpm) >= badge.criteria_value;
+            break;
+          case 'fastest_wpm':
+            awardBadge = parseFloat(user.fastest_wpm) >= badge.criteria_value;
+            break;
+        }
+
+        if (awardBadge) {
+          const result = await this.awardBadge(userId, badge.key);
+          if (result.awarded) {
+            newlyAwardedBadges.push(result.badge);
+          }
+        }
+      }
+
+      return newlyAwardedBadges;
+    } catch (err) {
+      console.error('Error checking and awarding badges:', err);
+      return [];
+    }
+  },
+  
+  async getTitles(userId) {
+    if (!userId) return;
+    try {
+      const result = await pool.query(`
+        SELECT t.id, t.key, t.name, t.description, u.awarded_at
+        FROM titles t
+        JOIN user_titles u ON t.id = u.titles_id
+        WHERE u.user_id = $1
+        ORDER BY u.awarded_at DESC
+      `, [userId])
+
+      console.log(`Got ${result.rows.length} achieved titles for user: ${userId}`);
+      return result.rows;
+    } catch (error) {
+      console.error(`Error getting titles for user: ${userId}:`, error);
+    }
+  },
+
+  async awardTitle(userId, titleKey) {
+    if (!userId) return;
+    if (!titleKey) return;
+    
+    try {
+      // Check if user already has this title
+      const existingTitle = await pool.query(`
+      SELECT u.titles_id FROM user_titles u JOIN titles t ON u.titles_id = t.id
+      WHERE u.user_id = $1 AND t.key = $2
+      `, [userId, titleKey]);
+
+      if (existingTitle.rows.length > 0) {
+        return { awarded: false, already_awarded: true };
+      }
+
+      // Get the title ID
+      const titleResult = await db.query(`
+      SELECT id FROM titles WHERE key = $1
+      `, [titleKey]);
+
+      if (titleResult.rows.length === 0) {
+        throw new Error(`Title with key ${titleKey} not found`);
+      }
+
+      const titleId = titleResult.rows[0].id;
+
+      // Award the title
+      await db.query(`
+      INSERT INTO user_titles (user_id, titles_id, awarded_at)
+      VALUES ($1, $2, CURRENT_TIMESTAMP)
+      `, [userId, titleId]);
+
+      console.log(`Awarded title ${titleKey} for user: ${userId}`);
+
+      // Get title details to return
+      const awardedTitle = await db.query(`
+      SELECT t.id, t.key, t.name, t.description, u.awarded_at
+      FROM titles t
+      JOIN user_titles u ON t.id = u.titles_id
+      WHERE u.user_id = $1 AND t.id = $2
+      `, [userId, titleId]);
+
+      return {
+        awarded: true,
+        title: awardedTitle.rows[0]
+      };
+    } catch (err) {
+      console.error('Error awarding title:', err);
+      throw err;
+    }
+  },
+
+  // Check user stats against title criteria and award any earned titles
+  async checkAndAwardTitles(userId) {
+    try {
+      // Get user's current stats
+      const user = await this.findById(userId);
+      if (!user) return [];
+
+      const detailedStats = await this.getDetailedStats(userId);
+      // Get all titles that the user doesn't already have
+      const availableTitles = await db.query(`
+      SELECT t.id, t.key, t.name, t.criteria_type, t.criteria_value
+      FROM titles t
+      WHERE NOT EXISTS (
+        SELECT 1 FROM user_titles u
+        WHERE u.titles_id = t.id AND u.user_id = $1
+      )
+      `, [userId]);
+
+      console.log(`Got unachieved titles for user: ${userId}`);
+
+      const newlyAwardedTitles = [];
+
+      // Check each title criteria
+      for (const title of availableTitles.rows) {
+        let awardTitle = false;
+
+        switch (title.criteria_type) {
+          case 'words_typed':
+            // Use the detailed stats for words typed
+            if (detailedStats) {
+              if (detailedStats.words_typed >= title.criteria_value) {
+                  awardTitle = true;
+              }
+          }
+            break;
+        }
+
+        if (awardTitle) {
+          const result = await this.awardTitle(userId, title.key);
+          if (result.awarded) {
+            newlyAwardedTitles.push(result.title);
+          }
+        }
+      }
+
+      return newlyAwardedTitles;
+    } catch (err) {
+      console.error('Error checking and awarding titles:', err);
+      return [];
+    }
+  },
+
 };
 
 // Debug check to verify functions exist

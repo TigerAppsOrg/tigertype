@@ -52,6 +52,7 @@ function Settings({ isOpen, onClose }) {
   const [defaultCursor, setDefaultCursor] = useState(true);
 
   const modalRef = useRef(); // Create a ref for the modal content
+  const typingInputRef = document.querySelector('.typing-input-container input');
 
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
@@ -73,7 +74,7 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--typing-color', '#FFB577');
       document.documentElement.style.setProperty('--player-card-color', '#aeaeae');
 
-      document.documentElement.style.setProperty('--background-color', '#E6BC9F');
+      document.documentElement.style.setProperty('--background-color', '#F5D8C4');
       document.documentElement.style.setProperty('--background-color-secondary', '#F0CDB3');
 
       document.documentElement.style.setProperty('--text-color', '#214E34');
@@ -238,6 +239,11 @@ function Settings({ isOpen, onClose }) {
       // Close if clicked outside the modal content area
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         onClose();
+        setTimeout(() => {
+          if (typingInputRef) {
+            typingInputRef.focus();
+          }
+        }, 10);
       }
     };
 
