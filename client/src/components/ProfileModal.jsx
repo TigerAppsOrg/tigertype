@@ -518,7 +518,7 @@ function ProfileModal({ isOpen, onClose }) {
 
         <div className="back-button-container">
           <button className="back-button-profile" onClick={onClose}>
-            <span>⟵ </span>Back
+            Back
           </button>
           <div className='profile-title'>
             <h2>Profile</h2>

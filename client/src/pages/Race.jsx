@@ -99,7 +99,7 @@ function Race() {
           <h1 className="race-title">{raceState.type === 'practice' ? 'Practice Mode' : 'Race'}</h1>
           <TutorialAnchor anchorId="back-button">
           <button className="back-button" onClick={handleBack}>
-            <span>⟵</span> Back
+            Back
           </button>
           </TutorialAnchor>
           {/* Only show lobby code for private lobbies */}
