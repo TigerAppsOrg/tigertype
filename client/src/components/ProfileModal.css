@@ -409,55 +409,116 @@
   max-height: 400px;
   overflow-y: auto;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
+  padding-right: 10px;
+  flex-grow: 1;
+}
+
+/* Custom Scrollbar for Match History */
+.match-history-list::-webkit-scrollbar {
+  width: 8px;
+}
+.match-history-list::-webkit-scrollbar-track {
+  background: var(--secondary-color);
+  border-radius: 4px;
+}
+.match-history-list::-webkit-scrollbar-thumb {
+  background-color: #F58025; 
+  border-radius: 4px;
+  border: 2px solid var(--secondary-color);
+}
+.match-history-list::-webkit-scrollbar-thumb:hover {
+  background-color: #e06800;
 }
 
 .match-history-card {
-  background-color: var(--secondary-color);
+  background-color: var(--hover-color);
   border-radius: 8px;
-  padding: 0.8rem;
-  border: 1px solid rgba(245, 128, 37, 0.3);
-  transition: transform 0.2s, border-color 0.2s;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgba(245, 128, 37, 0.2);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .match-history-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.01);
   border-color: #F58025;
+  box-shadow: 0 4px 10px rgba(245, 128, 37, 0.15);
 }
 
 .match-date {
-  font-size: 1.2rem;
-  color: var(--mode-text-color);
-  margin-bottom: 0.5rem;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.8rem;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 2px 5px;
+  border-radius: 4px;
 }
+
 .match-details {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
 }
 
 .match-type {
-  font-size: 1.5rem;
+  font-size: 1rem;
   color: var(--mode-text-color);
   display: flex;
   flex-direction: column;
   text-align: left;
+  gap: 0.2rem;
+}
+
+.match-lobby-type {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.match-category {
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
 }
 
 .match-position {
-  margin-right: 3rem;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--text-color-highlight);
+  text-align: center;
+}
+
+/* Special style for 1st place */
+.match-position.first-place {
+ color: #FFD700;
+ text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
 }
 
 .match-stats {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 0.3rem;
 }
 
 .match-stats span {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   color: #F58025;
-  margin-bottom: 0.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Add icons to match stats */
+.match-stats span i {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .profile-stats h2 {

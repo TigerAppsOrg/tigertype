@@ -764,7 +764,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
                         })}
                       </div>
                       <div className="match-details">
-                        <div className="match-type">  
+                        <div className="match-type">
                           <div className='match-lobby-type'>
                             {match.lobby_type}
                           </div>
@@ -772,12 +772,12 @@ function ProfileModal({ isOpen, onClose, netid }) {
                             {match.source || match.category || "Race"}
                           </div>
                         </div>
-                        <div className='match-position'>
+                        <div className={`match-position ${match.position === '1st' ? 'first-place' : ''}`}>
                             {match.position ? `Position: ${match.position}` : ''}
                           </div>
                         <div className="match-stats">
-                          <span>{parseFloat(match.wpm).toFixed(0)} WPM</span>
-                          <span>{parseFloat(match.accuracy).toFixed(0)}% Acc</span>
+                          <span><i className="bi bi-speedometer"></i> {parseFloat(match.wpm).toFixed(0)} WPM</span>
+                          <span><i className="bi bi-check-circle"></i> {parseFloat(match.accuracy).toFixed(0)}% Acc</span>
                         </div>
                       </div>
                     </div>
