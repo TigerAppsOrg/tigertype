@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
 import './Leaderboard.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
+import ProfileModal from './ProfileModal.jsx';
 
 const DURATIONS = [15, 30, 60, 120];
 const PERIODS = ['daily', 'alltime'];
@@ -36,7 +37,9 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  // State to track which user's profile to view
+  const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     // Fetch from API directly if socket isn't available (user not logged in)
@@ -93,12 +96,10 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
 
   }, [socket, duration, period]);
 
-  const handleAvatarClick = (avatarUrl, netid) => {
-    setSelectedAvatar({ url: avatarUrl, name: netid });
-  };
-
-  const closeAvatarModal = () => {
-    setSelectedAvatar(null);
+  const handleAvatarClick = (_avatarUrl, netid) => {
+    // Open profile modal for clicked user
+    setSelectedProfileNetid(netid);
+    setShowProfileModal(true);
   };
 
   return (
@@ -225,22 +226,13 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
         </>
       )}
 
-      {/* Avatar Modal (Common to both layouts) */}
-      {selectedAvatar && (
-        <div className="avatar-modal-overlay" onClick={closeAvatarModal}>
-          <div className="avatar-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="avatar-modal-close" onClick={closeAvatarModal}>&times;</button>
-            <div className="avatar-modal-content">
-              <img 
-                src={selectedAvatar.url || defaultProfileImage} 
-                alt={`${selectedAvatar.name} avatar`} 
-                className="avatar-modal-image" 
-                onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
-              />
-              <p className="avatar-modal-name">{selectedAvatar.name}</p>
-            </div>
-          </div>
-        </div>
+      {/* Profile Modal for viewing user profiles */}
+      {showProfileModal && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          netid={selectedProfileNetid}
+        />
       )}
     </>
   );

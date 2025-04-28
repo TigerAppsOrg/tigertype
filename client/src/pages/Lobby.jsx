@@ -7,6 +7,7 @@ import TestConfigurator from '../components/TestConfigurator';
 import ProfileWidget from '../components/ProfileWidget';
 import Modal from '../components/Modal';
 import Loading from '../components/Loading';
+import ProfileModal from '../components/ProfileModal'; // Import ProfileModal
 import './Lobby.css';
 import './Race.css';
 
@@ -32,6 +33,9 @@ function Lobby() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
+  // State for viewing other users' profiles
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
 
   // Check if the current user is the host
   const isHost = user?.netid === raceState.hostNetId;
@@ -141,23 +145,23 @@ function Lobby() {
     updateLobbySettings(updatedSettings);
   };
 
-  // --- Profile Modal Trigger ---
-  const handlePlayerClick = (playerNetId) => {
-    if (playerNetId === user?.netid) {
-      // Navigate to own profile page if clicking self
-      navigate('/profile');
-    } else {
-      // TODO: Implement opening the detailed profile modal here
-      // This will likely involve setting state to show the modal
-      // and potentially fetching more detailed profile data for playerNetId
-      console.log(`Trigger profile modal for ${playerNetId} (Not Implemented)`);
-      // Example (if using state for modal visibility):
-      // setSelectedProfileNetId(playerNetId);
-      // setShowProfileModal(true);
-    }
+  // --- Profile Modal Handlers ---
+  const openProfileModal = (netid) => {
+    setSelectedProfileNetid(netid); // netid might be null if viewing self
+    setShowProfileModal(true);
   };
-  // --- End Profile Modal Trigger ---
 
+  const closeProfileModal = () => {
+    setShowProfileModal(false);
+    setSelectedProfileNetid(null);
+  };
+
+  // Handles clicks on player widgets
+  const handlePlayerClick = (playerNetId) => {
+    // Open the modal, passing the netid of the clicked player
+    openProfileModal(playerNetId);
+  };
+  // --- End Profile Modal Handlers ---
 
   const handleCopyInviteLink = () => {
     const inviteLink = `${window.location.origin}/lobby/${raceState.code}`;
@@ -323,6 +327,15 @@ function Lobby() {
           <div></div>
         )}
       </div>
+
+      {/* Profile Modal */} 
+      {showProfileModal && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={closeProfileModal}
+          netid={selectedProfileNetid} // Pass the selected netid
+        />
+      )}
     </div>
   );
 }

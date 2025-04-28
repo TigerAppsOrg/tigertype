@@ -4,7 +4,7 @@ import './ProfileModal.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 import { createPortal } from 'react-dom';
 
-function ProfileModal({ isOpen, onClose }) {
+function ProfileModal({ isOpen, onClose, netid }) {
   const { user, loading, setUser } = useAuth();
   const [bio, setBio] = useState('');
   const [isSavingBio, setIsSavingBio] = useState(false);
@@ -13,7 +13,9 @@ function ProfileModal({ isOpen, onClose }) {
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [timestamp, setTimestamp] = useState(Date.now()); // Timestamp for cache (i have no idea what else is causing images to not refresh)
+  const [timestamp, setTimestamp] = useState(Date.now()); // Timestamp for cache busting
+  const [profileUser, setProfileUser] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const fileInputRef = useRef(null);
   const [detailedStats, setDetailedStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -90,16 +92,54 @@ function ProfileModal({ isOpen, onClose }) {
     };
   }, [isOpen, onClose]); // Re-run effect if isOpen or onClose changes
 
-  if (!isOpen) {return null};
-
-  // Fetch detailed stats when component mounts
+  // Fetch basic profile info when modal opens or netid changes
   useEffect(() => {
+    if (!isOpen) return;
+    const fetchProfile = async () => {
+      setLoadingProfile(true);
+      setProfileUser(null); // Clear previous user data
+      const url = netid ? `/api/user/${netid}/profile` : '/api/user/profile';
+      try {
+        const response = await fetch(url, { credentials: 'include' });
+        if (!response.ok) throw new Error('Failed to fetch profile');
+        const data = await response.json();
+        // If viewing another user, store in profileUser
+        // If viewing self, data comes from `user` context, but store bio
+        if (netid) {
+          setProfileUser(data);
+          if (data.bio) setBio(data.bio);
+        } else if (user && user.bio) {
+          // When viewing self, initialize bio from context if available
+          setBio(user.bio);
+        }
+      } catch (err) {
+        console.error('Error fetching profile user:', err);
+      } finally {
+        // If viewing self, loading depends on AuthContext, not this fetch
+        if (netid) {
+           setLoadingProfile(false);
+        } else {
+           // For self view, loading is finished when AuthContext `loading` is false
+           // We set it true initially and rely on AuthContext state
+           setLoadingProfile(loading); // Link to auth loading state
+        }
+      }
+    };
+    fetchProfile();
+  }, [isOpen, netid, user, loading]); // Add user and loading dependencies
+
+  // Fetch detailed stats
+  useEffect(() => {
+    if (!isOpen) return;
+    // Determine whose stats to fetch
+    const targetNetId = netid || user?.netid;
+    if (!targetNetId) return; // Don't fetch if no user context and no netid
+
     const fetchDetailedStats = async () => {
       try {
         setLoadingStats(true);
-        const response = await fetch('/api/user/detailed-stats', {
-          credentials: 'include'
-        });
+        const url = `/api/user/${targetNetId}/detailed-stats`;
+        const response = await fetch(url, { credentials: 'include' });
 
         if (!response.ok) {
           throw new Error('Failed to fetch detailed stats');
@@ -115,35 +155,35 @@ function ProfileModal({ isOpen, onClose }) {
     };
 
     fetchDetailedStats();
-  }, []);
+  }, [isOpen, netid, user]); // Depend on isOpen, netid, and logged-in user
 
   useEffect(() => {
-    // Initialize bio from user data when loaded
-    if (user && user.bio) {
+    // Initialize bio from user data when loaded (for self-view)
+    if (!netid && user && user.bio) {
       setBio(user.bio);
     }
-  }, [user]);
+  }, [user, netid]); // Depend on user context and netid prop
 
-  // Update timestamp when avatar URL changes
+  // Update timestamp when avatar URL changes (for self-view)
   useEffect(() => {
-    if (user && user.avatar_url) {
+    if (!netid && user && user.avatar_url) {
       console.log('Avatar URL from user data:', user.avatar_url);
-      // Reset image error state and update timestamp for cache busting
       setImageError(false);
       setTimestamp(Date.now());
     }
-  }, [user?.avatar_url]);
+  }, [user?.avatar_url, netid]);
 
-  // Update the fetch match history function in ProfileModal.jsx
+  // Fetch Match History
   useEffect(() => {
+    if (!isOpen) return;
+    const targetNetId = netid || user?.netid;
+    if (!targetNetId) return;
+
     const fetchMatchHistory = async () => {
       try {
         setLoadingMatchHistory(true);
-        console.log('Fetching match history...');
-
-        const response = await fetch('/api/user/results', {
-          credentials: 'include'
-        });
+        const url = `/api/user/${targetNetId}/results`;
+        const response = await fetch(url, { credentials: 'include' });
 
         const data = await response.json();
 
@@ -185,19 +225,20 @@ function ProfileModal({ isOpen, onClose }) {
       }
     };
 
-    if (isOpen && user) {
-      fetchMatchHistory();
-    }
-  }, [isOpen, user, timestamp]);
+    fetchMatchHistory();
+  }, [isOpen, netid, user, timestamp]);
 
+  // Fetch Badges
   useEffect(() => {
-    // Fetch user badges when the profile modal is opened
+    if (!isOpen) return;
+    const targetNetId = netid || user?.netid;
+    if (!targetNetId) return;
+
     const fetchUserBadges = async () => {
       try {
         setLoadingBadges(true);
-        const response = await fetch('/api/user/badges', {
-          credentials: 'include'
-        });
+        const url = `/api/user/${targetNetId}/badges`;
+        const response = await fetch(url, { credentials: 'include' });
 
         const data = await response.json();
         // console.log('User badges:', data);
@@ -212,11 +253,8 @@ function ProfileModal({ isOpen, onClose }) {
       }
     }
 
-    if (isOpen && user) {
-      fetchUserBadges();
-    }
-
-  }, [isOpen, user]);
+    fetchUserBadges();
+  }, [isOpen, netid, user]);
 
   const toggleBadgeSelection = (badge) => {
     const isCurrentlySelected = displayedBadges.some(b => b.id === badge.id);
@@ -289,14 +327,17 @@ function ProfileModal({ isOpen, onClose }) {
     }
   };
 
+  // Fetch Titles
   useEffect(() => {
-    // Fetch user titles when the profile modal is opened
+    if (!isOpen) return;
+    const targetNetId = netid || user?.netid;
+    if (!targetNetId) return;
+
     const fetchUserTitles = async () => {
       try {
         setLoadingTitles(true);
-        const response = await fetch('/api/user/titles', {
-          credentials: 'include'
-        });
+        const url = `/api/user/${targetNetId}/titles`;
+        const response = await fetch(url, { credentials: 'include' });
 
         const data = await response.json();
         // console.log('User titles:', data);
@@ -311,11 +352,8 @@ function ProfileModal({ isOpen, onClose }) {
       }
     }
 
-    if (isOpen && user) {
-      fetchUserTitles();
-    }
-
-  }, [isOpen, user]);
+    fetchUserTitles();
+  }, [isOpen, netid, user]);
 
   useEffect(() => {
     if (isOpen && userTitles?.length > 0) {
@@ -399,25 +437,26 @@ function ProfileModal({ isOpen, onClose }) {
   };
 
   const handleImageError = () => {
-    console.error('Image failed to load:', user?.avatar_url);
+    const urlWithError = netid ? profileUser?.avatar_url : user?.avatar_url;
+    console.error('Image failed to load:', urlWithError);
     setImageError(true);
-
     // Add a message to the user
-    // not sure if this is needed by why not
-    if (user?.avatar_url) {
+    if (urlWithError) {
       setUploadError('Image loaded successfully but cannot be displayed. You can view it by clicking the avatar.');
     }
   };
 
   const openImageInNewTab = () => {
-    if (user?.avatar_url && imageError) {
-      window.open(user.avatar_url, '_blank');
+    const urlToOpen = netid ? profileUser?.avatar_url : user?.avatar_url;
+    if (urlToOpen && imageError) {
+      window.open(urlToOpen, '_blank');
     } else {
-      handleAvatarClick();
+      handleAvatarClick(); // Or do nothing if not own profile?
     }
   };
 
   const handleFileChange = async (e) => {
+    if (netid) return; // Should not happen if button is hidden, but safety check
     setUploadError('');
     setUploadSuccess('');
     setImageError(false);
@@ -506,11 +545,29 @@ function ProfileModal({ isOpen, onClose }) {
     }
   };
 
-  if (loading) {
-    return <div className="loading-container">Loading profile...</div>;
+  // Determine if viewing own profile
+  const isOwnProfile = !netid || (user && netid === user.netid);
+  // Determine which user object to use for display
+  const displayUser = isOwnProfile ? user : profileUser;
+
+  // Recalculate avatarUrl based on displayUser
+  const avatarUrl = getCacheBustedImageUrl(displayUser?.avatar_url);
+
+  // Loading state check (consider both auth loading and profile loading)
+  if ((isOwnProfile && loading) || (!isOwnProfile && loadingProfile)) {
+     return (
+        <div className="profile-overlay">
+           <div className="profile-container loading-container">
+              Loading profile...
+           </div>
+        </div>
+     );
   }
 
-  const avatarUrl = getCacheBustedImageUrl(user?.avatar_url);
+  // If modal is closed, render nothing (after all hooks)
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="profile-overlay" ref={modalRef}>
@@ -530,75 +587,105 @@ function ProfileModal({ isOpen, onClose }) {
             <div className="profile-header-info">
               <div className="profile-page-info">
                 <div className="profile-page-image">
-                  <input
-                    type="image"
-                    src={!imageError ? avatarUrl : defaultProfileImage}
-                    alt="Profile"
-                    onClick={imageError && user?.avatar_url ? openImageInNewTab : handleAvatarClick}
-                    className={isUploading ? "uploading" : ""}
-                    onError={handleImageError}
-                  />
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                    accept="image/jpeg, image/png, image/gif, image/webp"
-                  />
-                  {isUploading && <div className="upload-overlay">Uploading...</div>}
-                  {uploadError && <div className="profile-error-message">{uploadError}</div>}
-                  {uploadSuccess && <div className="success-message">{uploadSuccess}</div>}
+                  {isOwnProfile ? (
+                    <>
+                      <input
+                        type="image"
+                        src={!imageError ? avatarUrl : defaultProfileImage}
+                        alt="Profile"
+                        onClick={imageError && displayUser?.avatar_url ? openImageInNewTab : handleAvatarClick}
+                        className={isUploading ? "uploading" : ""}
+                        onError={handleImageError}
+                      />
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={isOwnProfile ? handleFileChange : undefined}
+                        style={{ display: 'none' }}
+                        accept="image/jpeg, image/png, image/gif, image/webp"
+                      />
+                      {isUploading && <div className="upload-overlay">Uploading...</div>}
+                      {uploadError && <div className="profile-error-message">{uploadError}</div>}
+                      {uploadSuccess && <div className="success-message">{uploadSuccess}</div>}
+                    </>
+                  ) : (
+                    // Read-only image for other users
+                    <img
+                      src={!imageError ? avatarUrl : defaultProfileImage}
+                      alt={`${displayUser?.netid || 'User'}'s Profile`}
+                      className="static-avatar" // Add different class if needed
+                      onClick={imageError && displayUser?.avatar_url ? openImageInNewTab : undefined}
+                      onError={handleImageError}
+                    />
+                  )}
                 </div>
 
                 <div className="selectable-info">
                   <div className="username-info">
-                    <h2>{user?.netid || 'Guest'}</h2>
+                    <h2>{displayUser?.netid || 'Guest'}</h2>
                   </div>
 
-                  <div className="title-select">
-                    <div
-                      className="selected-title"
-                      onClick={handleTitleClick}
-                    >
-                      {selectedTitle ?
-                        userTitles.find(t => String(t.id) === String(selectedTitle))?.name || 'Select a title...'
-                        : 'Select a title...'}
-                      <span className="dropdown-arrow">▼</span>
-                    </div>
-                    {showTitleDropdown && (
-                      <div className="title-dropdown">
-                        {loadingTitles ? (
-                          <div className="dropdown-option loading">Loading titles...</div>
-                        ) : userTitles && userTitles.length > 0 ? (
-                          userTitles.map(title => (
-                            <div
-                              key={title.id}
-                              className="dropdown-option"
-                              onClick={() => selectTitle(title.id)}
-                            >
-                               {title.name}
-                              <div className='title-description'>
-                                - {title.description || 'No description available'}
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="dropdown-option disabled">No titles available</div>
-                        )}
+                  {/* Title Section - Conditional */} 
+                  {isOwnProfile ? (
+                    <div className="title-select">
+                      <div
+                        className="selected-title"
+                        onClick={handleTitleClick}
+                      >
+                        {selectedTitle ?
+                          userTitles.find(t => String(t.id) === String(selectedTitle))?.name || 'Select a title...'
+                          : 'Select a title...'}
+                        <span className="dropdown-arrow">▼</span>
                       </div>
-                    )}
-                  </div>
+                      {showTitleDropdown && (
+                        <div className="title-dropdown">
+                          {loadingTitles ? (
+                            <div className="dropdown-option loading">Loading titles...</div>
+                          ) : userTitles && userTitles.length > 0 ? (
+                            userTitles.map(title => (
+                              <div
+                                key={title.id}
+                                className="dropdown-option"
+                                onClick={() => selectTitle(title.id)}
+                              >
+                                 {title.name}
+                                <div className='title-description'>
+                                  - {title.description || 'No description available'}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="dropdown-option disabled">No titles available</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Read-only title display for others
+                    <div className="title-display static-title">
+                       {loadingTitles ? (
+                         <span>Loading title...</span>
+                       ) : userTitles && userTitles.length > 0 ? (
+                         // Display the first title found, or a default. Adjust if multiple/selected needed.
+                         <span>{userTitles[0]?.name || 'No Title Set'}</span>
+                       ) : (
+                         <span>No Title Set</span>
+                       )}
+                     </div>
+                  )}
 
                   <div className="user-badges">
                     <h3>Badges</h3>
 
-                    
                     <div className="badge-display">
-                      {displayedBadges.map((badge, index) => (
+                      {/* Show selected badges for self, all badges for others */} 
+                      {(isOwnProfile ? displayedBadges : userBadges).map((badge, index) => (
                         <div
                           key={`selected-${badge.id}`}
                           className="badge-item selected"
-                          onClick={() => setShowBadgeSelector(true)}
+                          // Only allow opening selector if own profile
+                          onClick={isOwnProfile ? () => setShowBadgeSelector(true) : undefined}
+                          style={!isOwnProfile ? { cursor: 'default' } : {}}
                         >
                           {badge.icon_url ? (
                             <img src={badge.icon_url} alt={badge.name} className="badge-image" />
@@ -609,15 +696,15 @@ function ProfileModal({ isOpen, onClose }) {
                         </div>
                       ))}
 
-                      {/* Add placeholder badges for remaining slots */}
-                      {Array.from({ length: maxBadges - displayedBadges.length }, (_, i) => (
-                        <div
-                          key={`empty-${i}`}
-                          className="badge-item placeholder"
-                          onClick={() => setShowBadgeSelector(true)}
-                        >
-                          <span className="badge-plus">+</span>
-                        </div>
+                      {/* Only show placeholder add badges if own profile */}
+                      {isOwnProfile && Array.from({ length: maxBadges - displayedBadges.length }, (_, i) => (
+                          <div
+                            key={`empty-${i}`}
+                            className="badge-item placeholder"
+                            onClick={() => setShowBadgeSelector(true)}
+                          >
+                            <span className="badge-plus">+</span>
+                          </div>
                       ))}
                     </div>
                   </div>
@@ -625,22 +712,30 @@ function ProfileModal({ isOpen, onClose }) {
               </div>
 
               <div className='biography'>
-                <textarea
-                  className="biography-input"
-                  placeholder='Write a little about yourself!'
-                  value={bio}
-                  onChange={handleBioChange}
-                ></textarea>
-                <div className="bio-controls">
-                  <button
-                    className="save-bio-btn"
-                    onClick={saveBio}
-                    disabled={isSavingBio}
-                  >
-                    {isSavingBio ? 'Saving...' : 'Save Bio'}
-                  </button>
-                  {bioMessage && <span className={bioMessage.includes('Failed') ? 'bio-error' : 'bio-success'}>{bioMessage}</span>}
-                </div>
+                {isOwnProfile ? (
+                  <>
+                    <textarea
+                      className="biography-input"
+                      placeholder='Write a little about yourself!'
+                      value={bio}
+                      onChange={isOwnProfile ? handleBioChange : undefined}
+                      readOnly={!isOwnProfile}
+                    ></textarea>
+                    <div className="bio-controls">
+                      <button
+                        className="save-bio-btn"
+                        onClick={saveBio}
+                        disabled={isSavingBio}
+                      >
+                        {isSavingBio ? 'Saving...' : 'Save Bio'}
+                      </button>
+                      {bioMessage && <span className={bioMessage.includes('Failed') ? 'bio-error' : 'bio-success'}>{bioMessage}</span>}
+                    </div>
+                  </>
+                ) : (
+                  // Read-only bio for others
+                  <p className="bio-text read-only-bio">{displayUser?.bio || 'No bio available.'}</p>
+                )}
               </div>
             </div>
 
@@ -650,7 +745,7 @@ function ProfileModal({ isOpen, onClose }) {
               {loadingMatchHistory ? (
                 <div className="loading-message">Loading match history...</div>
               ) : matchHistory.length === 0 ? (
-                <div className="no-matches">No race history available yet.</div>
+                <div className="no-matches">No recent race history available.</div>
               ) : (
                 <div className="match-history-list">
                   {matchHistory.map((match, index) => (
@@ -690,35 +785,36 @@ function ProfileModal({ isOpen, onClose }) {
 
         {/* We may want to make stats be dynamic (i.e. golden color) if they're exceptional */}
         <div className="profile-stats">
-          <h2>Your Stats</h2>
-          {!user ? (
+          {/* Adjust title based on viewed user */}
+          <h2>{isOwnProfile ? 'Your' : `${displayUser?.netid || 'User'}'s`} Stats</h2>
+          {!displayUser ? (
             <div className="stats-loading">No stats available</div>
           ) : (
             <div className="stats-grid primary-stats">
               <div className="stat-card">
                 <h3>Races Completed</h3>
-                <p>{parseNumericValue(user.races_completed) || 0}</p>
+                <p>{parseNumericValue(displayUser.races_completed) || 0}</p>
               </div>
               <div className="stat-card">
                 <h3>Average WPM</h3>
-                <p>{parseNumericValue(user.avg_wpm).toFixed(2)}</p>
+                <p>{parseNumericValue(displayUser.avg_wpm).toFixed(2)}</p>
               </div>
               <div className="stat-card">
                 <h3>Average Accuracy</h3>
-                <p>{parseNumericValue(user.avg_accuracy).toFixed(2)}%</p>
+                <p>{parseNumericValue(displayUser.avg_accuracy).toFixed(2)}%</p>
               </div>
               <div className="stat-card">
                 <h3>Fastest Speed</h3>
-                <p>{parseNumericValue(user.fastest_wpm).toFixed(2)} WPM</p>
+                <p>{parseNumericValue(displayUser.fastest_wpm).toFixed(2)} WPM</p>
               </div>
             </div>
           )}
 
-            {loadingStats ? (
+          {loadingStats ? (
             <div className="stats-loading">Loading detailed stats...</div>
-          ) : !detailedStats ? (
+          ) : !detailedStats && (isOwnProfile || profileUser) ? (
             <div className="stats-loading">No detailed stats available</div>
-          ) : (
+          ) : detailedStats ? (
             <div className="stats-grid">
               <div className="stat-card">
                 <h3>Total Tests Started</h3>
@@ -739,7 +835,7 @@ function ProfileModal({ isOpen, onClose }) {
                   : 0}%</p>
               </div>
             </div>
-          )}    
+          ) : null}    
         </div>
       </div>
 

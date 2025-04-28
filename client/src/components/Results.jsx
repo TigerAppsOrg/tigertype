@@ -7,13 +7,16 @@ import TutorialAnchor from './TutorialAnchor';
 import './Results.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 import PropTypes from 'prop-types';
+import ProfileModal from './ProfileModal.jsx';
 
 function Results({ onShowLeaderboard }) {
   const navigate = useNavigate();
   const { raceState, typingState, resetRace } = useRace();
   const { isRunning, endTutorial } = useTutorial();
   const { user } = useAuth();
-  const [enlargedAvatar, setEnlargedAvatar] = useState(null);
+  // State for profile modal
+  const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   
   // --- DEBUG LOG --- 
   useEffect(() => {
@@ -28,41 +31,19 @@ function Results({ onShowLeaderboard }) {
     navigate('/home?refreshUser=true');
   };
   
-  // Handle avatar click
-  const handleAvatarClick = (avatar, netid) => {
-    setEnlargedAvatar({ url: avatar || defaultProfileImage, netid });
+  // Handle avatar click to show profile modal
+  const handleAvatarClick = (_avatar, netid) => {
+    setSelectedProfileNetid(netid);
+    setShowProfileModal(true);
     document.body.style.overflow = 'hidden';
   };
   
-  // Close modal
+  // Close profile modal
   const closeModal = useCallback(() => {
-    setEnlargedAvatar(null);
+    setShowProfileModal(false);
+    setSelectedProfileNetid(null);
     document.body.style.overflow = '';
   }, []);
-  
-  // Close modal when clicking overlay
-  const closeEnlargedAvatar = (e) => {
-    if (e.target === e.currentTarget) {
-      closeModal();
-    }
-  };
-  
-  // Handle escape key press
-  useEffect(() => {
-    const handleEscKey = (e) => {
-      if (e.key === 'Escape' && enlargedAvatar) {
-        closeModal();
-      }
-    };
-    
-    if (enlargedAvatar) {
-      document.addEventListener('keydown', handleEscKey);
-    }
-    
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-    };
-  }, [enlargedAvatar, closeModal]);
   
   // Render practice mode results
   const renderPracticeResults = () => {
@@ -296,34 +277,13 @@ function Results({ onShowLeaderboard }) {
         </button>
       </div>
       
-      {/* Enlarged Avatar Modal */}
-      {enlargedAvatar && (
-        <div 
-          className="avatar-modal-overlay" 
-          onClick={closeEnlargedAvatar}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${enlargedAvatar.netid}'s avatar`}
-        >
-          <div className="avatar-modal">
-            <button 
-              className="avatar-modal-close" 
-              onClick={closeModal}
-              aria-label="Close avatar view"
-            >
-              ×
-            </button>
-            <div className="avatar-modal-content">
-              <img 
-                src={enlargedAvatar.url} 
-                alt={`${enlargedAvatar.netid}'s avatar`} 
-                className="avatar-modal-image"
-                onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
-              />
-              <div className="avatar-modal-name">{enlargedAvatar.netid}</div>
-            </div>
-          </div>
-        </div>
+      {/* Profile Modal for viewing user profiles */}
+      {showProfileModal && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={closeModal}
+          netid={selectedProfileNetid}
+        />
       )}
     </>
   );
