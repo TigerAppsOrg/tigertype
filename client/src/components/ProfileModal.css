@@ -406,12 +406,11 @@
 
 .match-history-list {
   display: flex;
-  max-height: 400px;
-  overflow-y: auto;
   flex-direction: column;
   gap: 1rem;
   padding-right: 10px;
-  flex-grow: 1;
+  height: 400px;
+  overflow-y: auto;
 }
 
 /* Custom Scrollbar for Match History */

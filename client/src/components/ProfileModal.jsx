@@ -182,12 +182,12 @@ function ProfileModal({ isOpen, onClose, netid }) {
     const fetchMatchHistory = async () => {
       try {
         setLoadingMatchHistory(true);
-        const url = `/api/user/${targetNetId}/results`;
+        const url = `/api/user/${targetNetId}/results?limit=10`;
         const response = await fetch(url, { credentials: 'include' });
 
         const data = await response.json();
 
-        console.log('Match history response:', data);
+        console.log('Full match history response from API:', data); // Log the raw data
 
         for (let i of data) {
           let temp = String(i['lobby_type']);
@@ -215,7 +215,10 @@ function ProfileModal({ isOpen, onClose, netid }) {
         }
         // console.log('Match history data:', data);
 
-        setMatchHistory(data)
+        // Slice the data to get only the top 10 most recent matches
+        const recentMatches = data.slice(0, 10);
+
+        setMatchHistory(recentMatches)
 
       } catch (error) {
         console.error('Error fetching match history:', error);
