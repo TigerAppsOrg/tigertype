@@ -189,5 +189,6 @@
 @media (max-width: 1090px) {
   .navbar-links a {
     opacity: 0;
+    display: none;
   }
 }
