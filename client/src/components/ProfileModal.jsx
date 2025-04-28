@@ -665,9 +665,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
                     <div className="title-display static-title">
                        {loadingTitles ? (
                          <span>Loading title...</span>
-                       ) : userTitles && userTitles.length > 0 ? (
-                         // Display the first title found, or a default. Adjust if multiple/selected needed.
-                         <span>{userTitles[0]?.name || 'No Title Set'}</span>
+                       ) : userTitles && userTitles.length > 0 && userTitles[0]?.name ? (
+                         // Display the first title found. Add specific class for styling.
+                         <span className="displayed-title-name">{userTitles[0]?.name}</span>
                        ) : (
                          <span className="no-title-display">No Title Set</span>
                        )}
@@ -799,19 +799,19 @@ function ProfileModal({ isOpen, onClose, netid }) {
           ) : (
             <div className="stats-grid primary-stats">
               <div className="stat-card">
-                <h3>Races Completed</h3>
+                <h3><i className="bi bi-bar-chart-line"></i> Races Completed</h3>
                 <p>{parseNumericValue(displayUser.races_completed) || 0}</p>
               </div>
               <div className="stat-card">
-                <h3>Average WPM</h3>
+                <h3><i className="bi bi-speedometer"></i> Average WPM</h3>
                 <p>{parseNumericValue(displayUser.avg_wpm).toFixed(2)}</p>
               </div>
               <div className="stat-card">
-                <h3>Average Accuracy</h3>
+                <h3><i className="bi bi-check-circle"></i> Average Accuracy</h3>
                 <p>{parseNumericValue(displayUser.avg_accuracy).toFixed(2)}%</p>
               </div>
               <div className="stat-card">
-                <h3>Fastest Speed</h3>
+                <h3><i className="bi bi-lightning-fill"></i> Fastest Speed</h3>
                 <p>{parseNumericValue(displayUser.fastest_wpm).toFixed(2)} WPM</p>
               </div>
             </div>
@@ -824,19 +824,19 @@ function ProfileModal({ isOpen, onClose, netid }) {
           ) : detailedStats ? (
             <div className="stats-grid">
               <div className="stat-card">
-                <h3>Total Tests Started</h3>
+                <h3><i className="bi bi-pencil-square"></i> Total Tests Started</h3>
                 <p>{formatNumber(detailedStats.sessions_started)}</p>
               </div>
               <div className="stat-card">
-                <h3>Sessions Completed</h3>
+                <h3><i className="bi bi-check2-square"></i> Sessions Completed</h3>
                 <p>{formatNumber(detailedStats.sessions_completed)}</p>
               </div>
               <div className="stat-card">
-                <h3>Total Words Typed</h3>
+                <h3><i className="bi bi-keyboard"></i> Total Words Typed</h3>
                 <p>{formatNumber(detailedStats.words_typed)}</p>
               </div>
               <div className="stat-card">
-                <h3>Completion Rate</h3>
+                <h3><i className="bi bi-pie-chart"></i> Completion Rate</h3>
                 <p>{detailedStats.sessions_started > 0
                   ? (detailedStats.sessions_completed / detailedStats.sessions_started * 100).toFixed(1)
                   : 0}%</p>

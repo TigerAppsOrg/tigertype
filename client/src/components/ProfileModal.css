@@ -472,28 +472,46 @@
 }
 
 .stat-card {
-  background-color: rgba(223, 223, 223, 0.7);
+  background: linear-gradient(135deg, var(--hover-color) 0%, var(--secondary-color) 100%);
+  color: var(--mode-text-color);
   padding: 1.4rem;
-  border-radius: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 128, 37, 0.2);
   text-align: center;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .stat-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(245, 128, 37, 0.2);
 }
 
 .stat-card h3 {
-  color: #222222;
-  margin-bottom: 0.5rem;
-  font-size: 1.6rem;
+  color: var(--mode-text-color);
+  margin-bottom: 0.8rem;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.stat-card h3 i {
+  color: #F58025;
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .stat-card p {
-  color: #333333;
-  font-size: 1.6rem;
+  color: var(--text-color-highlight);
+  font-size: 1.8rem;
   font-weight: bold;
+  margin: 0;
 }
 
 /* Badge display and selection styling */
@@ -697,12 +715,16 @@
   padding: 10px 0;
   width: 100%;
   text-align: left;
+  margin-left: 5px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
 }
 
 .title-display.static-title {
-  background-color: transparent;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hover-color);
   color: var(--mode-text-color);
-  border: none;
   border-radius: 4px;
   padding: 0.5rem 0.8rem;
   font-size: 1.5rem;
@@ -711,12 +733,22 @@
   min-height: 40px;
   display: flex;
   align-items: center;
+  transition: border-color 0.2s ease;
+}
+
+.title-display.static-title:hover {
+  border-color: #F58025;
+}
+
+.displayed-title-name {
+  /* Add specific styling if needed, currently inherits from parent */
 }
 
 .no-title-display {
   font-style: italic;
   color: var(--text-color-secondary);
   font-size: 1.3rem;
+  width: 100%;
 }
 
 .read-only-bio-container {
