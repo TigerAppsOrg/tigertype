@@ -106,7 +106,7 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
             
             {/* Logged-in specific items */}
             <button onClick={logout} className="logout-button">Logout</button>
-            <ProfileWidget user={user}/>
+            <ProfileWidget user={user} layout="navbar"/>
           </>
         ) : (
           <>

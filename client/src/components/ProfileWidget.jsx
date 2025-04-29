@@ -9,7 +9,8 @@ import axios from 'axios';
 // Default profile image
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 
-function ProfileWidget({ user, onClick }) {
+// Accept a layout prop ('default' or 'navbar')
+function ProfileWidget({ user, onClick, layout = 'default' }) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   // Local state for titles (use provided or fetch)
   const [titles, setTitles] = useState(user?.titles || []);
@@ -43,8 +44,36 @@ function ProfileWidget({ user, onClick }) {
     }
   }, [user?.netid, user?.titles]);
 
-  // Only display the most recent/unlocked title
-  const selectedTitle = titles && titles.length > 0 ? titles[0] : null;
+  // --- Logic to determine the title to display ---
+  let displayTitle = null;
+  // Only read localStorage on the client-side
+  if (typeof window !== 'undefined') {
+    try {
+      const storedTitleId = localStorage.getItem('selectedTitle');
+      if (storedTitleId && titles && titles.length > 0) {
+        // Find the title object matching the stored ID
+        // Ensure comparison handles potential type differences (e.g., string vs number)
+        displayTitle = titles.find(title => String(title.id) === String(storedTitleId));
+      }
+    } catch (err) {
+      console.error('Error reading selected title from localStorage:', err);
+    }
+  }
+
+  // Fallback: If no selected title found in storage or error,
+  // check for an explicitly equipped title from props/API (if API provided one)
+  if (!displayTitle) {
+      const equippedTitleFromAPI = titles?.find(title => title.is_equipped);
+      if (equippedTitleFromAPI) {
+          displayTitle = equippedTitleFromAPI;
+      }
+      // Optional: Further fallback to the first title if desired
+      // else if (titles && titles.length > 0) {
+      //   displayTitle = titles[0];
+      // }
+  }
+  // --- End Title Logic ---
+
   const content = (
     <div className="profile-widget">
       <div className="profile-image">
@@ -60,15 +89,19 @@ function ProfileWidget({ user, onClick }) {
             ? `${Math.round(parseNumericValue(user.avg_wpm))} WPM`
             : 'No stats yet'
           }
-        </div>
-        {/* Display selected title */}
-        {selectedTitle && (
-          <div className="profile-titles">
-            <span className="profile-title-badge">
-              {selectedTitle.name}
+          {/* Display selected title inline with WPM */}
+          {displayTitle && (
+            <span className="profile-title-inline">
+               · {displayTitle.name}
             </span>
-          </div>
-        )}
+          )}
+          {/* Conditionally render title on new line for navbar layout */}
+          {layout === 'navbar' && displayTitle && (
+            <div className="profile-title-newline">
+              {displayTitle.name}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -90,6 +123,7 @@ function ProfileWidget({ user, onClick }) {
       </div>
       
       {showProfileModal && (<ProfileModal 
+      netid={user?.netid}
       isOpen={showProfileModal} 
       onClose={closeProfileModal} 
       />)}
@@ -103,9 +137,16 @@ ProfileWidget.propTypes = {
     avatar_url: PropTypes.string,
     avg_wpm: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     avg_accuracy: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    races_completed: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    races_completed: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    // Ensure titles prop type includes id and name
+    titles: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        name: PropTypes.string.isRequired,
+        is_equipped: PropTypes.bool // Optional: if API provides equipped status
+    })),
   }),
-  onClick: PropTypes.func
+  onClick: PropTypes.func,
+  layout: PropTypes.oneOf(['default', 'navbar']) // Add layout prop type
 };
 
 export default ProfileWidget;

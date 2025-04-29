@@ -109,14 +109,40 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
                 </div>
                 <div className="player-text">
                   <span className="player-name">{player.netid}</span>
-                  {/* Only show selected (most recent) title */}
-                  {playerTitlesMap[player.netid]?.[0] && (
-                    <div className="player-titles">
-                      <span className="player-title-badge">
-                        {playerTitlesMap[player.netid][0].name}
-                      </span>
-                    </div>
-                  )}
+                  {/* Determine the title to display */}
+                  {(() => {
+                    const titles = playerTitlesMap[player.netid];
+                    let titleToShow = null;
+
+                    if (titles && titles.length > 0) {
+                      // If it's the current logged-in user, check localStorage
+                      if (player.netid === user?.netid && typeof window !== 'undefined') {
+                        try {
+                          const storedTitleId = localStorage.getItem('selectedTitle');
+                          if (storedTitleId) {
+                            titleToShow = titles.find(t => String(t.id) === String(storedTitleId));
+                          }
+                        } catch (err) {
+                          console.error('Error reading selected title from localStorage in PlayerStatusBar:', err);
+                        }
+                      }
+                      
+                      // Fallback: If no stored title found for current user, or for other users,
+                      // try finding an equipped one (if API provides it), otherwise default to first.
+                      if (!titleToShow) {
+                        const equippedTitle = titles.find(t => t.is_equipped);
+                        titleToShow = equippedTitle || titles[0];
+                      }
+                    }
+
+                    return titleToShow ? (
+                      <div className="player-titles">
+                        <span className="player-title-badge">
+                          {titleToShow.name}
+                        </span>
+                      </div>
+                    ) : null; // Return null if no title should be displayed
+                  })()}
                 </div>
               </div>
               
