@@ -266,14 +266,12 @@
 .lobby-page .player-card {
   background-color: var(--container-color);
   border-radius: 6px;
-  padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   border: 1px solid var(--border-color);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  position: relative;
+  box-shadow: none;
   min-height: 120px;
   justify-content: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -304,9 +302,12 @@
 }
 
 .lobby-page .player-card .profile-widget {
-  margin-bottom: 0.5rem;
   text-decoration: none;
   color: inherit;
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  flex-grow: 1;
 }
 .lobby-page .player-card .profile-widget:hover {
   text-decoration: none;
@@ -315,9 +316,10 @@
 .lobby-page .player-status {
   display: flex;
   gap: 0.5rem;
-  margin-top: 0.5rem;
   font-size: 0.8rem;
   font-weight: 500;
+  padding: 0 1rem 0.5rem;
+  justify-content: center;
 }
 
 .lobby-page .host-tag,
