@@ -5,6 +5,7 @@ const { s3, getSignedUrl, getDirectS3Url } = require('../config/s3');
 const multer = require('multer');
 const path = require('path');
 require('dotenv').config();
+const sharp = require('sharp');
 
 // --- Multer Configuration for Avatar Upload ---
 
@@ -85,6 +86,20 @@ exports.uploadAvatar = (req, res) => {
     const netid = req.user.netid;
     const file = req.file;
     const fileExtension = ALLOWED_MIME_TYPES[file.mimetype];
+    // Compress image
+    let bufferToUpload = file.buffer;
+    try {
+      if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+        bufferToUpload = await sharp(file.buffer).jpeg({ quality: 80 }).toBuffer(); // 80% seems fine to me, idk what is standard
+      } else if (file.mimetype === 'image/png') {
+        bufferToUpload = await sharp(file.buffer).png({ compressionLevel: 9 }).toBuffer();
+      } else if (file.mimetype === 'image/webp') {
+        bufferToUpload = await sharp(file.buffer).webp({ quality: 80 }).toBuffer();
+      }
+    } catch (compressError) {
+      console.error('Error compressing avatar image:', compressError);
+      bufferToUpload = file.buffer;
+    }
     const fileName = `avatars/${netid}-${Date.now()}${fileExtension}`;
     const bucketName = process.env.S3_BUCKET_NAME;
 
@@ -96,7 +111,7 @@ exports.uploadAvatar = (req, res) => {
     const params = {
       Bucket: bucketName,
       Key: fileName,
-      Body: file.buffer,          // Use buffer from multer.memoryStorage
+      Body: bufferToUpload,       // Use compressed image buffer
       ContentType: file.mimetype
     };
 

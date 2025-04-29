@@ -200,13 +200,12 @@ const User = {
     }
   },
 
-  // psuedo-code for getting lobby type done by ryan, actual sql implementation done by copilot
-  // psuedo-code for getting position done by ryan, actual sql implementation done by copilot
   // Get a user's recent race results
   async getRecentResults(userId, limit = 3) {
+    if (!userId) return [];
     try {
-      const result = await db.query(`
-        SELECT r.id, r.wpm, r.accuracy, r.completion_time, 
+      const result = await db.query(
+        `SELECT r.id, r.wpm, r.accuracy, r.completion_time, 
           s.text as snippet_text, s.source, s.category, 
           r.created_at, COALESCE(l.type, 'Practice') as lobby_type,
         CASE
@@ -221,12 +220,13 @@ const User = {
         LEFT JOIN lobbies l ON r.lobby_id = l.id
         WHERE r.user_id = $1
         ORDER BY r.created_at DESC
-        LIMIT $2
-        `, [userId, limit]);
+        LIMIT $2`,
+        [userId, limit]
+      );
       return result.rows;
-    } catch (err) {
-      console.error('Error getting recent results:', err);
-      throw err;
+    } catch (error) {
+      console.error(`Error getting recent results for user ${userId}:`, error);
+      return [];
     }
   },
 
@@ -407,21 +407,23 @@ const User = {
     }
   },
 
+  // Get a user's badges
   async getBadges(userId) {
-    if (!userId) return;
+    if (!userId) return [];
     try {
-      const result = await pool.query(`
-        SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at 
+      const result = await pool.query(
+        `SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at 
         FROM badges b 
         JOIN user_badges u on b.id = u.badge_id 
         WHERE u.user_id = $1
-        ORDER BY u.awarded_at DESC
-      `, [userId]);
-
+        ORDER BY u.awarded_at DESC`,
+        [userId]
+      );
       console.log(`Got ${result.rows.length} badges for user: ${userId}`);
       return result.rows;
     } catch (error) {
-      console.error(`Error getting badges for user: ${userId}:`, error);
+      console.error(`Error getting badges for user ${userId}:`, error);
+      return [];
     }
   },
 
@@ -531,21 +533,23 @@ const User = {
     }
   },
   
+  // Get a user's titles
   async getTitles(userId) {
-    if (!userId) return;
+    if (!userId) return [];
     try {
-      const result = await pool.query(`
-        SELECT t.id, t.key, t.name, t.description, u.awarded_at
+      const result = await pool.query(
+        `SELECT t.id, t.key, t.name, t.description, u.awarded_at
         FROM titles t
         JOIN user_titles u ON t.id = u.titles_id
         WHERE u.user_id = $1
-        ORDER BY u.awarded_at DESC
-      `, [userId])
-
+        ORDER BY u.awarded_at DESC`,
+        [userId]
+      );
       console.log(`Got ${result.rows.length} achieved titles for user: ${userId}`);
       return result.rows;
     } catch (error) {
-      console.error(`Error getting titles for user: ${userId}:`, error);
+      console.error(`Error getting titles for user ${userId}:`, error);
+      return [];
     }
   },
 
