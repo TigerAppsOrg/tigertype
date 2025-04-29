@@ -11,7 +11,7 @@ import ProfileModal from './ProfileModal.jsx';
 
 function Results({ onShowLeaderboard }) {
   const navigate = useNavigate();
-  const { raceState, typingState, resetRace } = useRace();
+  const { raceState, typingState, resetRace, joinPublicRace } = useRace();
   const { isRunning, endTutorial } = useTutorial();
   const { user } = useAuth();
   // State for profile modal
@@ -44,6 +44,12 @@ function Results({ onShowLeaderboard }) {
     setSelectedProfileNetid(null);
     document.body.style.overflow = '';
   }, []);
+  
+  // Add handler to queue another public race
+  const handleQueueNext = () => {
+    resetRace();
+    joinPublicRace();
+  };
   
   // Render practice mode results
   const renderPracticeResults = () => {
@@ -272,7 +278,14 @@ function Results({ onShowLeaderboard }) {
         
         {raceState.type === 'practice' ? renderPracticeResults() : renderRaceResults()}
         
-        <button className="back-btn" onClick={handleBack}>
+        {/* Queue Next Race button for quick matches */}
+        {raceState.type === 'public' && (
+          <button className="back-btn" onClick={handleQueueNext}>
+            Queue Another Race
+          </button>
+        )}
+        
+        <button className="back-btn back-to-menu-btn" onClick={handleBack}>
           Back to Menu
         </button>
       </div>

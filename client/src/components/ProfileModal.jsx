@@ -573,8 +573,8 @@ function ProfileModal({ isOpen, onClose, netid }) {
   }
 
   return (
-    <div className="profile-overlay" ref={modalRef}>
-      <div className="profile-container" >
+    <div className="profile-overlay">
+      <div className="profile-container" ref={modalRef}>
 
         <div className="back-button-container">
           <button className="back-button-profile" onClick={onClose}>

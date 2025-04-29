@@ -8,7 +8,7 @@
   min-height: 350px; /* change to be more responsive later */
   width: 100%;
   position: relative;
-  top: -5vh;
+  top: 2vh;
 }
 
 .results-container h2 {
@@ -107,7 +107,7 @@
 .winner-netid {
   font-size: 1.8rem;
   font-weight: bold;
-  color: #fff;
+  color: #F58025;
 }
 
 .winner-stats {
@@ -167,7 +167,7 @@
   flex-grow: 1;
   overflow-y: auto;
   border-radius: 8px;
-  background-color: #2a2a2a;
+  background-color: var(--background-color-tertiary);
 }
 
 .result-item {
@@ -223,7 +223,7 @@
 
 .result-netid {
   font-weight: 600;
-  color: #fff;
+  color: #F58025;
 }
 
 .result-stats {
@@ -242,7 +242,7 @@
 .result-accuracy, .result-time {
   min-width: 80px;
   text-align: right;
-  color: #ccc;
+  color: var(--text-color);
 }
 
 /* Practice results container - simplified */
@@ -250,7 +250,7 @@
   max-width: 500px;
   display: flex;
   flex-direction: column;
-  background-color: #222222;
+  background-color: var(--background-color);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   overflow: hidden;
@@ -272,7 +272,8 @@
   align-items: center;
   justify-content: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--background-color);
+  border-bottom: 1px solid var(--background-color-secondary);
   transition: background-color 0.2s ease;
   box-sizing: border-box;
   text-align: center;
@@ -281,7 +282,7 @@
 }
 
 .practice-results .stat-item:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--background-color-secondary);
 }
 
 .practice-results .stat-item:last-child {
@@ -291,7 +292,7 @@
 .practice-results .stat-label {
   font-weight: bold;
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -338,17 +339,31 @@
   box-shadow: 0 2px 8px rgba(245, 128, 37, 0.3);
 }
 
+/* Override for Back to Menu button */
+.back-btn.back-to-menu-btn {
+  background-color: #444;       /* solid dark gray background */
+  color: #fff;                  /* white text */
+  border: 2px solid #F58025;    /* keep accent-colored border */
+  box-shadow: none;             /* remove extra shadow */
+}
+
+.back-btn.back-to-menu-btn:hover {
+  background-color: #555;       /* slightly lighter on hover */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(245, 128, 37, 0.2); /* lighter accent shadow */
+}
+
 /* Keyboard shortcuts - better spacing */
 .keyboard-shortcuts {
   margin: 0;
   text-align: center;
   padding: 0.85rem;
-  background-color: rgba(30, 30, 30, 0.6);
+  background-color: var(--background-color-secondary);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .keyboard-shortcuts p {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-color);
   margin: 0;
   font-size: 0.9rem;
 }
@@ -380,8 +395,8 @@
   width: calc(100% - 2.5rem); 
   margin: 0.75rem auto 1.25rem;
   padding: 0.85rem 1rem;
-  background-color: #3a3a3a;
-  color: #ccc;
+  background-color: var(--background-color-secondary);
+  color: var(--text-color);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -585,7 +600,7 @@
   margin: 0.5rem;
   text-align: center;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-color);
 }
 
 .snippet-info strong {
