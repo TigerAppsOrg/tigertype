@@ -147,6 +147,7 @@
 .navbar-link {
   position: relative;
   transition: color 0.2s ease;
+  width: -webkit-fill-available;
 }
 
 .navbar-link:after {
