@@ -174,7 +174,12 @@ BEGIN
 
     INSERT INTO titles (key, name, description, criteria_type, criteria_value)
     VALUES 
-      ('nice', 'Nice', 'Congrats on typing 69 words!', 'words_typed', 69);
+      ('wawa_warrior', 'Wawa Warrior', 'Unlocked by completing a race or practice session with the Wawa snippet (ID 589)', 'snippet_completed', 589),
+      ('orange_lightning', 'Orange Lightning', 'Achieve an average WPM of 150+', 'avg_wpm', 150),
+      ('president_eisgruber', 'President Eisgruber', 'Fastest recorded time for the 15-second global leaderboard', 'global_fastest', 0),
+      ('beta_tester', 'Beta Tester', 'Complete a race before May 15, 2025', 'beta_tester', 20250515),
+      ('needs_a_shower', 'Needs A Shower', 'Complete 1000 races', 'races_completed', 1000)
+    ON CONFLICT (key) DO NOTHING;
       
 END $$;
 

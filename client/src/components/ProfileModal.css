@@ -339,7 +339,7 @@
 }
 
 .biography-input::placeholder {
-  color: var(--text-color);
+  color: gray;
 }
 
 .biography-input:focus {
@@ -868,8 +868,8 @@
 
 .no-title-display {
   font-style: italic;
-  color: var(--text-color-secondary);
-  font-size: 1.3rem;
+  color: #888888;
+  font-size: 1rem;
   width: 100%;
   padding: 2px 0;
 }
@@ -898,6 +898,6 @@
 
 .read-only-bio-container .bio-text:empty::before {
   content: 'This user hasn\'t written a bio yet.';
-  color: #aaa;
+  color: #888888;
   font-style: italic;
 }

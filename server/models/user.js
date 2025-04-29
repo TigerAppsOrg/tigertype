@@ -8,7 +8,7 @@ const User = {
     if (!userId) return null;
     try {
       // Select all relevant fields including the new tutorial flag
-      const result = await pool.query('SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial FROM users WHERE id = $1', [userId]);
+      const result = await pool.query('SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id FROM users WHERE id = $1', [userId]);
       return result.rows[0];
     } catch (err) {
       console.error(`Error finding user by ID ${userId}:`, err);
@@ -22,7 +22,7 @@ const User = {
       // Try to get all fields including fastest_wpm and has_completed_tutorial
       try {
         const result = await db.query(
-          'SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial FROM users WHERE netid = $1',
+          'SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id FROM users WHERE netid = $1',
           [netid]
         );
         return result.rows[0];
@@ -63,6 +63,8 @@ const User = {
 
           // Fetch tutorial flag
           user.has_completed_tutorial = await fetchField('has_completed_tutorial', 'SELECT has_completed_tutorial FROM users WHERE id = $1') ?? false;
+        // Fetch selected title
+        user.selected_title_id = await fetchField('selected_title_id', 'SELECT selected_title_id FROM users WHERE id = $1');
 
           return user;
         }
@@ -80,7 +82,7 @@ const User = {
     try {
       // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
+        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
         [netid]
       );
       return result.rows[0];
@@ -95,7 +97,7 @@ const User = {
     try {
       // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
+        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
         [userId]
       );
       return result.rows[0];
@@ -141,7 +143,7 @@ const User = {
 
       // Update bio and fetch all relevant fields
       const result = await db.query(
-        'UPDATE users SET bio = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
+        'UPDATE users SET bio = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
         [bio, userId]
       );
 
@@ -163,7 +165,7 @@ const User = {
 
       // Update avatar URL and fetch all relevant fields
       const result = await db.query(
-        'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
+        'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
         [avatarUrl, userId]
       );
 
@@ -200,13 +202,33 @@ const User = {
     }
   },
 
-  // psuedo-code for getting lobby type done by ryan, actual sql implementation done by copilot
-  // psuedo-code for getting position done by ryan, actual sql implementation done by copilot
+  // Update user's selected title
+  async updateTitle(userId, titleId) {
+    if (!userId) {
+      throw new Error('User ID is required to update selected title');
+    }
+    try {
+      // titleId can be null to deselect
+      const result = await pool.query(
+        'UPDATE users SET selected_title_id = $1 WHERE id = $2 RETURNING id, selected_title_id',
+        [titleId, userId] // Pass titleId directly (can be null)
+      );
+      if (result.rowCount === 0) {
+        throw new Error('User not found');
+      }
+      return result.rows[0];
+    } catch (err) {
+      console.error(`Error updating selected title for user ${userId} to ${titleId}:`, err);
+      throw err;
+    }
+  },
+
   // Get a user's recent race results
   async getRecentResults(userId, limit = 3) {
+    if (!userId) return [];
     try {
-      const result = await db.query(`
-        SELECT r.id, r.wpm, r.accuracy, r.completion_time, 
+      const result = await db.query(
+        `SELECT r.id, r.wpm, r.accuracy, r.completion_time, 
           s.text as snippet_text, s.source, s.category, 
           r.created_at, COALESCE(l.type, 'Practice') as lobby_type,
         CASE
@@ -221,12 +243,13 @@ const User = {
         LEFT JOIN lobbies l ON r.lobby_id = l.id
         WHERE r.user_id = $1
         ORDER BY r.created_at DESC
-        LIMIT $2
-        `, [userId, limit]);
+        LIMIT $2`,
+        [userId, limit]
+      );
       return result.rows;
-    } catch (err) {
-      console.error('Error getting recent results:', err);
-      throw err;
+    } catch (error) {
+      console.error(`Error getting recent results for user ${userId}:`, error);
+      return [];
     }
   },
 
@@ -407,21 +430,23 @@ const User = {
     }
   },
 
+  // Get a user's badges
   async getBadges(userId) {
-    if (!userId) return;
+    if (!userId) return [];
     try {
-      const result = await pool.query(`
-        SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at 
+      const result = await pool.query(
+        `SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at 
         FROM badges b 
         JOIN user_badges u on b.id = u.badge_id 
         WHERE u.user_id = $1
-        ORDER BY u.awarded_at DESC
-      `, [userId]);
-
+        ORDER BY u.awarded_at DESC`,
+        [userId]
+      );
       console.log(`Got ${result.rows.length} badges for user: ${userId}`);
       return result.rows;
     } catch (error) {
-      console.error(`Error getting badges for user: ${userId}:`, error);
+      console.error(`Error getting badges for user ${userId}:`, error);
+      return [];
     }
   },
 
@@ -531,21 +556,23 @@ const User = {
     }
   },
   
+  // Get a user's titles
   async getTitles(userId) {
-    if (!userId) return;
+    if (!userId) return [];
     try {
-      const result = await pool.query(`
-        SELECT t.id, t.key, t.name, t.description, u.awarded_at
+      const result = await pool.query(
+        `SELECT t.id, t.key, t.name, t.description, u.awarded_at
         FROM titles t
         JOIN user_titles u ON t.id = u.titles_id
         WHERE u.user_id = $1
-        ORDER BY u.awarded_at DESC
-      `, [userId])
-
+        ORDER BY u.awarded_at DESC`,
+        [userId]
+      );
       console.log(`Got ${result.rows.length} achieved titles for user: ${userId}`);
       return result.rows;
     } catch (error) {
-      console.error(`Error getting titles for user: ${userId}:`, error);
+      console.error(`Error getting titles for user ${userId}:`, error);
+      return [];
     }
   },
 
@@ -630,11 +657,56 @@ const User = {
         switch (title.criteria_type) {
           case 'words_typed':
             // Use the detailed stats for words typed
-            if (detailedStats) {
-              if (detailedStats.words_typed >= title.criteria_value) {
+            if (detailedStats && detailedStats.words_typed >= title.criteria_value) {
+                awardTitle = true;
+            }
+            break;
+          case 'races_completed':
+            // Use detailed stats for races completed
+            if (detailedStats && detailedStats.races_completed >= title.criteria_value) {
+                awardTitle = true;
+            }
+            break;
+          case 'avg_wpm':
+            // Use stored average WPM for user
+            if (user.avg_wpm !== undefined && parseFloat(user.avg_wpm) >= title.criteria_value) {
+                awardTitle = true;
+            }
+            break;
+          case 'snippet_completed':
+            // Check if user has completed the specified snippet
+            {
+              const res = await db.query(
+                'SELECT COUNT(*) as count FROM race_results WHERE user_id = $1 AND snippet_id = $2',
+                [userId, title.criteria_value]
+              );
+              if (parseInt(res.rows[0].count) > 0) {
                   awardTitle = true;
               }
-          }
+            }
+            break;
+          case 'global_fastest':
+            // Check if this user has the highest fastest_wpm globally
+            {
+              const res = await db.query('SELECT MAX(fastest_wpm) as max_fastest FROM users');
+              const maxFastest = parseFloat(res.rows[0].max_fastest);
+              if (maxFastest > 0 && parseFloat(user.fastest_wpm) === maxFastest) {
+                  awardTitle = true;
+              }
+            }
+            break;
+          case 'beta_tester':
+            // Check if user completed a race before May 15, 2025
+            {
+              const cutoff = new Date('2025-05-15T00:00:00Z');
+              const res = await db.query(
+                'SELECT COUNT(*) as count FROM race_results WHERE user_id = $1 AND created_at < $2',
+                [userId, cutoff]
+              );
+              if (parseInt(res.rows[0].count) > 0) {
+                  awardTitle = true;
+              }
+            }
             break;
         }
 

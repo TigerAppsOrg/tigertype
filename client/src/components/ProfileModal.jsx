@@ -5,7 +5,7 @@ import defaultProfileImage from '../assets/icons/default-profile.svg';
 import { createPortal } from 'react-dom';
 
 function ProfileModal({ isOpen, onClose, netid }) {
-  const { user, loading, setUser } = useAuth();
+  const { user, loading, setUser, fetchUserProfile } = useAuth();
   const [bio, setBio] = useState('');
   const [isSavingBio, setIsSavingBio] = useState(false);
   const [bioMessage, setBioMessage] = useState('');
@@ -317,16 +317,20 @@ function ProfileModal({ isOpen, onClose, netid }) {
     setShowTitleDropdown(!showTitleDropdown);
   };
 
-  const selectTitle = (titleId) => {
-    const titleIdStr = String(titleId);
-    setSelectedTitle(titleIdStr);
+  const selectTitle = async (titleId) => {
     setShowTitleDropdown(false);
-
     try {
-      localStorage.setItem('selectedTitle', titleIdStr);
-      console.log(`Selected title saved: ${titleIdStr}`);
+      await fetch('/api/profile/title', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titleId }),
+      });
+      // Refresh context and modal titles to reflect the new selection
+      await fetchUserProfile();
+      setSelectedTitle(titleId);
     } catch (error) {
-      console.error('Error saving selected title to localStorage:', error);
+      console.error('Error updating selected title:', error);
     }
   };
 
@@ -360,14 +364,8 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
   useEffect(() => {
     if (isOpen && userTitles?.length > 0) {
-      const savedTitle = localStorage.getItem('selectedTitle');
-      
-      if (savedTitle && userTitles.some(title => String(title.id) === String(savedTitle))) {
-        setSelectedTitle(savedTitle);
-      } else {
-        // Don't auto-select any title if no saved selection
-        setSelectedTitle('');
-      }
+      const equipped = userTitles.find(title => title.is_equipped);
+      setSelectedTitle(equipped ? equipped.id : '');
     }
   }, [isOpen, userTitles]);
 
@@ -642,6 +640,13 @@ function ProfileModal({ isOpen, onClose, netid }) {
                       </div>
                       {showTitleDropdown && (
                         <div className="title-dropdown">
+                          {/* Add Deselect Option */}
+                          <div
+                            className="dropdown-option deselect-option"
+                            onClick={() => selectTitle(null)} // Pass null to deselect
+                          >
+                            Deselect Title
+                          </div>
                           {loadingTitles ? (
                             <div className="dropdown-option loading">Loading titles...</div>
                           ) : userTitles && userTitles.length > 0 ? (
@@ -668,11 +673,12 @@ function ProfileModal({ isOpen, onClose, netid }) {
                     <div className="title-display static-title">
                        {loadingTitles ? (
                          <span>Loading title...</span>
-                       ) : userTitles && userTitles.length > 0 && userTitles[0]?.name ? (
-                         // Display the first title found. Add specific class for styling.
-                         <span className="displayed-title-name">{userTitles[0]?.name}</span>
+                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => t.id === displayUser.selected_title_id)?.name ? (
+                         // Display the equipped title if available
+                         <span className="displayed-title-name">{userTitles.find(t => t.id === displayUser.selected_title_id).name}</span>
                        ) : (
-                         <span className="no-title-display">No Title Set</span>
+                         // Display message if no title is equipped
+                         <span className="no-title-display">User has no title selected</span>
                        )}
                      </div>
                   )}
@@ -743,7 +749,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
                 ) : (
                   // Read-only bio for others
                   <div className="read-only-bio-container">
-                     <p className="bio-text">{displayUser?.bio || 'This user hasn\'t written a bio yet.'}</p>
+                     <p className="bio-text">{displayUser?.bio || ''}</p>
                   </div>
                 )}
               </div>

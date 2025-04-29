@@ -12,5 +12,7 @@ router.post('/avatar', ensureAuthenticated, profileController.uploadAvatar);
 
 // Route to mark tutorial as complete (requires auth)
 router.put('/tutorial-complete', ensureAuthenticated, profileController.markTutorialComplete);
+// Route to update user's selected title (requires auth)
+router.put('/title', ensureAuthenticated, profileController.updateTitle);
 
 module.exports = router; 

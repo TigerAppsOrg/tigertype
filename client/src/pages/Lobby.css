@@ -266,17 +266,17 @@
 .lobby-page .player-card {
   background-color: var(--container-color);
   border-radius: 6px;
-  padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   border: 1px solid var(--border-color);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  position: relative;
+  box-shadow: none;
   min-height: 120px;
   justify-content: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .lobby-page .player-card:hover:not(.empty-slot) {
@@ -288,7 +288,6 @@
 .lobby-page .profile-widget-clickable {
   cursor: pointer;
   width: 100%;
-  padding-left: 5vw;
 }
 
 .lobby-page .player-card.empty-slot {
@@ -303,11 +302,26 @@
   min-height: 120px;
 }
 
+.lobby-page .player-card .profile-widget-clickable {
+  width: 100%;
+  height: 100%;
+}
+
 .lobby-page .player-card .profile-widget {
-  margin-bottom: 0.5rem;
   text-decoration: none;
   color: inherit;
+  padding: 1rem;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  flex-grow: 1;
+  background-color: var(--container-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
+
 .lobby-page .player-card .profile-widget:hover {
   text-decoration: none;
 }
@@ -315,9 +329,14 @@
 .lobby-page .player-status {
   display: flex;
   gap: 0.5rem;
-  margin-top: 0.5rem;
   font-size: 0.8rem;
   font-weight: 500;
+  padding: 0.5rem 1rem;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
 }
 
 .lobby-page .host-tag,
@@ -526,9 +545,8 @@
   }
 
   .lobby-page .profile-widget-clickable {
-    cursor: pointer;
-    width: 100%;
-    padding-right: 22vw;
+    padding-right: 0;
+    padding-left: 0;
   }
 
   .lobby-left-column,
@@ -583,9 +601,7 @@
   }
 
   .lobby-page .profile-widget-clickable {
-    cursor: pointer;
-    width: 100%;
-    padding-left: 5vw;
+    padding-left: 0;
   }
 
   .lobby-code-display {

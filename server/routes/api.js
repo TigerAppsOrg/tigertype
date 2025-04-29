@@ -439,10 +439,37 @@ router.get('/user/titles', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const titles = await UserModel.getTitles(userId);
-    res.json(titles);
+    const profile = await UserModel.findById(userId);
+    const selectedTitleId = profile.selected_title_id;
+    const titlesWithEquip = titles.map(title => ({
+      ...title,
+      is_equipped: title.id === selectedTitleId
+    }));
+    res.json(titlesWithEquip);
     console.log('User titles fetched successfully');
   } catch (err) {
     console.error('Error fetching user titles:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get another user's titles by netid
+router.get('/user/:netid/titles', requireAuth, async (req, res) => {
+  try {
+    const { netid } = req.params;
+    const targetUser = await UserModel.findByNetid(netid);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const titles = await UserModel.getTitles(targetUser.id);
+    const selectedTitleId = targetUser.selected_title_id;
+    const titlesWithEquip = titles.map(title => ({
+      ...title,
+      is_equipped: title.id === selectedTitleId
+    }));
+    res.json(titlesWithEquip);
+  } catch (err) {
+    console.error(`Error fetching titles for user ${req.params.netid}:`, err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -529,7 +556,12 @@ router.get('/user/:netid/titles', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     const titles = await UserModel.getTitles(userToView.id);
-    res.json(titles);
+    const selectedTitleId = userToView.selected_title_id;
+    const titlesWithEquip = titles.map(title => ({
+      ...title,
+      is_equipped: title.id === selectedTitleId
+    }));
+    res.json(titlesWithEquip);
   } catch (err) {
     console.error('Error fetching titles for user by netid:', err);
     res.status(500).json({ error: 'Server error' });

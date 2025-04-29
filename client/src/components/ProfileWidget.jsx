@@ -2,14 +2,18 @@
 
 import PropTypes from 'prop-types';
 import ProfileModal from './ProfileModal.jsx';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './ProfileWidget.css';
+import axios from 'axios';
 
 // Default profile image
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 
-function ProfileWidget({ user, onClick }) {
+// Accept a layout prop ('default' or 'navbar')
+function ProfileWidget({ user, onClick, layout = 'default' }) {
   const [showProfileModal, setShowProfileModal] = useState(false);
+  // Local state for titles (use provided or fetch)
+  const [titles, setTitles] = useState(user?.titles || []);
 
   // Parse numeric value to handle string or number
   const parseNumericValue = (value) => {
@@ -26,6 +30,23 @@ function ProfileWidget({ user, onClick }) {
     setShowProfileModal(false);
   };
 
+  // Fetch titles if not provided
+  useEffect(() => {
+    if (user?.titles) {
+      setTitles(user.titles);
+    } else if (user?.netid) {
+      axios.get(`/api/user/${user.netid}/titles`)
+        .then(res => setTitles(res.data || []))
+        .catch(err => {
+          console.error(`Error fetching titles for ${user.netid}:`, err);
+          setTitles([]);
+        });
+    }
+  }, [user?.netid, user?.titles]);
+
+  // Determine the title to display (use server-provided selection)
+  const displayTitle = titles?.find(title => title.is_equipped) || null;
+
   const content = (
     <div className="profile-widget">
       <div className="profile-image">
@@ -41,6 +62,18 @@ function ProfileWidget({ user, onClick }) {
             ? `${Math.round(parseNumericValue(user.avg_wpm))} WPM`
             : 'No stats yet'
           }
+          {/* Display selected title inline with WPM */}
+          {displayTitle && (
+            <span className="profile-title-inline">
+               · {displayTitle.name}
+            </span>
+          )}
+          {/* Conditionally render title on new line for navbar layout - only if a title is selected */}
+          {layout === 'navbar' && displayTitle && (
+            <div className="profile-title-newline">
+              {displayTitle.name}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -63,6 +96,7 @@ function ProfileWidget({ user, onClick }) {
       </div>
       
       {showProfileModal && (<ProfileModal 
+      netid={user?.netid}
       isOpen={showProfileModal} 
       onClose={closeProfileModal} 
       />)}
@@ -76,9 +110,16 @@ ProfileWidget.propTypes = {
     avatar_url: PropTypes.string,
     avg_wpm: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     avg_accuracy: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    races_completed: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    races_completed: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    // Ensure titles prop type includes id and name
+    titles: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        name: PropTypes.string.isRequired,
+        is_equipped: PropTypes.bool // Optional: if API provides equipped status
+    })),
   }),
-  onClick: PropTypes.func
+  onClick: PropTypes.func,
+  layout: PropTypes.oneOf(['default', 'navbar']) // Add layout prop type
 };
 
 export default ProfileWidget;

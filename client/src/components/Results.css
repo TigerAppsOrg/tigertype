@@ -10,6 +10,40 @@
   position: relative;
   top: 2vh;
 }
+/* Title badges for winners and results */
+/* Winner title styling: single selected title */
+.winner-titles {
+  display: flex;
+  align-items: center;
+  margin: 0.5rem 0;
+}
+
+.winner-title-badge {
+  /* colored left border + tinted background */
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  border-left: 4px solid var(--primary-color);
+  padding-left: 8px;
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+  border-radius: 4px;
+}
+
+.result-titles {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.result-title-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  border-left: 4px solid var(--primary-color);
+  padding-left: 6px;
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+  border-radius: 4px;
+}
 
 .results-container h2 {
   color: #F58025;

@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useTutorial } from '../context/TutorialContext';
 import TutorialAnchor from './TutorialAnchor';
 import './Results.css';
+import axios from 'axios';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 import PropTypes from 'prop-types';
 import ProfileModal from './ProfileModal.jsx';
@@ -17,12 +18,36 @@ function Results({ onShowLeaderboard }) {
   // State for profile modal
   const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  // State for storing fetched titles for result players
+  const [resultTitlesMap, setResultTitlesMap] = useState({});
   
   // --- DEBUG LOG --- 
   useEffect(() => {
     console.log('[Results Component Render] raceState.snippet:', raceState.snippet);
   }, [raceState.snippet]);
   // --- END DEBUG LOG --- 
+  
+  // Fetch titles for each player in race results
+  useEffect(() => {
+    if (raceState.results && raceState.results.length) {
+      raceState.results.forEach(result => {
+        const netid = result.netid;
+        // Sync current user's titles from context
+        if (netid === user?.netid && user?.titles && resultTitlesMap[netid] !== user.titles) {
+          setResultTitlesMap(prev => ({ ...prev, [netid]: user.titles }));
+        }
+        // Fetch other players' titles
+        if (netid !== user?.netid && !(netid in resultTitlesMap)) {
+          axios.get(`/api/user/${netid}/titles`)
+            .then(res => setResultTitlesMap(prev => ({ ...prev, [netid]: res.data || [] })))
+            .catch(err => {
+              console.error(`Error fetching titles for ${netid}:`, err);
+              setResultTitlesMap(prev => ({ ...prev, [netid]: [] }));
+            });
+        }
+      });
+    }
+  }, [raceState.results, user, resultTitlesMap]);
   
   // Handle back button
   const handleBack = () => {
@@ -201,6 +226,16 @@ function Results({ onShowLeaderboard }) {
               <div className="winner-trophy"><i className="bi bi-trophy"></i></div>
               <div className="winner-netid">{winner.netid}</div>
             </div>
+            {/* Display titles for winner */}
+{(() => {
+  const titlesList = resultTitlesMap[winner.netid] || [];
+  const titleToShow = titlesList.find(t => t.is_equipped) || titlesList[0];
+  return titleToShow ? (
+    <div className="winner-titles">
+      <span className="winner-title-badge">{titleToShow.name}</span>
+    </div>
+  ) : null;
+})()}
             <div className="winner-stats">
               <div className="winner-wpm">{winner.wpm?.toFixed(2) || 0} WPM</div>
               <div className="winner-accuracy">{winner.accuracy?.toFixed(2) || 0}% accuracy</div>
@@ -237,7 +272,18 @@ function Results({ onShowLeaderboard }) {
                     onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
                   />
                 </div>
-                <div className="result-netid">{result.netid}</div>
+                <div className="result-text">
+                  <div className="result-netid">{result.netid}</div>
+                  {(() => {
+                    const titlesList = resultTitlesMap[result.netid] || [];
+                    const titleToShow = titlesList.find(t => t.is_equipped) || titlesList[0];
+                    return titleToShow ? (
+                      <div className="result-titles">
+                        <span className="result-title-badge">{titleToShow.name}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
               </div>
               <div className="result-stats">
                 <div className="result-wpm">{result.wpm?.toFixed(2) || 0} WPM</div>
