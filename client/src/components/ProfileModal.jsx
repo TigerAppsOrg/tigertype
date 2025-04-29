@@ -865,7 +865,10 @@ function ProfileModal({ isOpen, onClose, netid }) {
       </div>
 
       {showBadgeSelector && (
-                      <div className="badge-selector-overlay">
+                      <div className="badge-selector-overlay"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      >
                         <div className="badge-selector">
                           <h4>Select Badges to Display</h4>
                           <div className="badge-grid">
