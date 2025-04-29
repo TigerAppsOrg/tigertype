@@ -1,18 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './PlayerStatusBar.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
+import { useAuth } from '../context/AuthContext';
+import ProfileModal from './ProfileModal.jsx';
 
 function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick }) {
   const [enlargedAvatar, setEnlargedAvatar] = useState(null);
+  const { authenticated } = useAuth();
+  const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   
   // For debug
   console.log("PlayerStatusBar - isRaceInProgress:", isRaceInProgress);
   console.log("PlayerStatusBar - players:", players);
   
   const handleAvatarClick = (avatar, netid) => {
-    setEnlargedAvatar({ url: avatar || defaultProfileImage, netid });
-    // Prevent scrolling when modal is open
-    document.body.style.overflow = 'hidden';
+    if (authenticated) {
+      setSelectedProfileNetid(netid);
+      setShowProfileModal(true);
+    } else {
+      setEnlargedAvatar({ url: avatar || defaultProfileImage, netid });
+      // Prevent scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+    }
   };
   
   const closeModal = useCallback(() => {
@@ -140,6 +150,14 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
             </div>
           </div>
         </div>
+      )}
+      {/* Profile Modal for viewing user profiles (authenticated users) */}
+      {authenticated && showProfileModal && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          netid={selectedProfileNetid}
+        />
       )}
     </>
   );

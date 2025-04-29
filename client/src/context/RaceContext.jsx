@@ -517,6 +517,10 @@ export const RaceProvider = ({ children }) => {
 
   // Handle text input, enforce word locking
   const handleInput = (newInput) => {
+    // Disable input handling for non-practice races before countdown begins
+    if (raceState.type !== 'practice' && !raceState.inProgress && raceState.countdown === null) {
+      return;
+    }
     
     // --- Start Practice Race on First Input --- 
     if (raceState.type === 'practice' && !raceState.inProgress && newInput.length > 0) {

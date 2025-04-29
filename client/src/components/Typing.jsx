@@ -881,7 +881,10 @@ function Typing({
                   onChange={handleComponentInput}
                   onPaste={handlePaste}
                   className={isShaking ? 'shake' : ''}
-                  disabled={raceState.countdown > 0 || raceState.completed}
+                  disabled={
+                    raceState.completed ||
+                    (raceState.type !== 'practice' && !raceState.inProgress && raceState.countdown === null)
+                  }
                   autoComplete="off"
                   spellCheck="false"
                   aria-label="Typing input"
