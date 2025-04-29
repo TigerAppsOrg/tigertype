@@ -25,6 +25,9 @@ const TYPING_TIPS = [
   "Two players are needed to start a race",
   "If you are the last player unreadied, you will be kicked for inactivity",
   "For feedback or suggestions, contact us at: it.admin@tigerapps.org",
+  "You'll unlock badges and titles as you finish more races and practice more",
+  "The average typing speed is 40WPM, but for most people who type regularly, it's closer to 65WPM",
+  "Typing accurately is much more important than typing quickly",
 
   // if any of these tooltips are removed i am resigning and dropping the class - ammaar
   "Hoagie Club is irrelevant and should be restructured",
