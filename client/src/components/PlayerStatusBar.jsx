@@ -2,13 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './PlayerStatusBar.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 import ProfileModal from './ProfileModal.jsx';
 
 function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick }) {
   const [enlargedAvatar, setEnlargedAvatar] = useState(null);
-  const { authenticated } = useAuth();
+  const { authenticated, user } = useAuth();
   const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  // State for storing fetched titles per player netid
+  const [playerTitlesMap, setPlayerTitlesMap] = useState({});
   
   // For debug
   console.log("PlayerStatusBar - isRaceInProgress:", isRaceInProgress);
@@ -54,6 +57,26 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
     };
   }, [enlargedAvatar, closeModal]);
   
+  // Fetch titles for each player and current user
+  useEffect(() => {
+    players.forEach(player => {
+      const netid = player.netid;
+      // Use context titles for current user
+      if (netid === user?.netid && user?.titles && !(netid in playerTitlesMap)) {
+        setPlayerTitlesMap(prev => ({ ...prev, [netid]: user.titles }));
+      }
+      // Fetch other players' titles if not already fetched
+      if (netid !== user?.netid && !(netid in playerTitlesMap)) {
+        axios.get(`/api/user/${netid}/titles`)
+          .then(res => setPlayerTitlesMap(prev => ({ ...prev, [netid]: res.data || [] })))
+          .catch(err => {
+            console.error(`Error fetching titles for ${netid}:`, err);
+            setPlayerTitlesMap(prev => ({ ...prev, [netid]: [] }));
+          });
+      }
+    });
+  }, [players, user, playerTitlesMap]);
+  
   return (
     <>
       <div className="player-status-bar">
@@ -64,8 +87,8 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
           >
             <div className="player-info">
               <div className="player-identity">
-                <div 
-                  className="player-avatar" 
+                <div
+                  className="player-avatar"
                   title={`${player.netid}'s avatar (click to enlarge)`}
                   onClick={() => handleAvatarClick(player.avatar_url, player.netid)}
                   role="button"
@@ -84,7 +107,17 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
                     onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
                   />
                 </div>
-                <span className="player-name">{player.netid}</span>
+                <div className="player-text">
+                  <span className="player-name">{player.netid}</span>
+                  {/* Only show selected (most recent) title */}
+                  {playerTitlesMap[player.netid]?.[0] && (
+                    <div className="player-titles">
+                      <span className="player-title-badge">
+                        {playerTitlesMap[player.netid][0].name}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               
               {!isRaceInProgress ? (

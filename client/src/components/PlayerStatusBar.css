@@ -13,6 +13,25 @@
   scrollbar-color: #F58025 #1e1e1e;
   border: 1px solid rgba(245, 128, 37, 0.1);
 }
+/* Title badges for each player */
+.player-titles {
+  display: flex;
+  /* single-line title container, align items vertically */
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.player-title-badge {
+  /* Highlight active title with colored left border */
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  border-left: 4px solid var(--primary-color);
+  padding-left: 6px;
+  /* subtle tinted background */
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+  border-radius: 4px;
+}
 
 /* Styling for the scrollbar */
 .player-status-bar::-webkit-scrollbar {
@@ -117,6 +136,10 @@
   font-weight: 600;
   color: #fff;
   font-size: 0.95rem;
+  /* Prevent wrapping of long netids */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ready-button {

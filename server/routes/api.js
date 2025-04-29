@@ -447,6 +447,22 @@ router.get('/user/titles', requireAuth, async (req, res) => {
   }
 });
 
+// Get another user's titles by netid
+router.get('/user/:netid/titles', requireAuth, async (req, res) => {
+  try {
+    const { netid } = req.params;
+    const targetUser = await UserModel.findByNetid(netid);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const titles = await UserModel.getTitles(targetUser.id);
+    res.json(titles);
+  } catch (err) {
+    console.error(`Error fetching titles for user ${req.params.netid}:`, err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get another user's basic profile by netid
 router.get('/user/:netid/profile', requireAuth, async (req, res) => {
   try {

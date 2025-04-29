@@ -2,14 +2,17 @@
 
 import PropTypes from 'prop-types';
 import ProfileModal from './ProfileModal.jsx';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './ProfileWidget.css';
+import axios from 'axios';
 
 // Default profile image
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 
 function ProfileWidget({ user, onClick }) {
   const [showProfileModal, setShowProfileModal] = useState(false);
+  // Local state for titles (use provided or fetch)
+  const [titles, setTitles] = useState(user?.titles || []);
 
   // Parse numeric value to handle string or number
   const parseNumericValue = (value) => {
@@ -26,6 +29,22 @@ function ProfileWidget({ user, onClick }) {
     setShowProfileModal(false);
   };
 
+  // Fetch titles if not provided
+  useEffect(() => {
+    if (user?.titles) {
+      setTitles(user.titles);
+    } else if (user?.netid) {
+      axios.get(`/api/user/${user.netid}/titles`)
+        .then(res => setTitles(res.data || []))
+        .catch(err => {
+          console.error(`Error fetching titles for ${user.netid}:`, err);
+          setTitles([]);
+        });
+    }
+  }, [user?.netid, user?.titles]);
+
+  // Only display the most recent/unlocked title
+  const selectedTitle = titles && titles.length > 0 ? titles[0] : null;
   const content = (
     <div className="profile-widget">
       <div className="profile-image">
@@ -42,6 +61,14 @@ function ProfileWidget({ user, onClick }) {
             : 'No stats yet'
           }
         </div>
+        {/* Display selected title */}
+        {selectedTitle && (
+          <div className="profile-titles">
+            <span className="profile-title-badge">
+              {selectedTitle.name}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 .profile-widget {
   display: flex;
-  height: 4rem;
+  /* allow auto height while keeping minimum size for consistency */
+  min-height: 4rem;
   width: 10rem;
   align-items: center;
   background-color: var(--secondary-color);
@@ -37,9 +38,38 @@
   font-weight: bold;
   color: var(--mode-text-color);
   font-size: 0.9rem;
+  /* Prevent wrapping of long netids */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-details {
   color: #F58025;
   font-size: 0.8rem;
+}
+  
+/* Titles displayed as badges beneath user info */
+.profile-titles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.profile-title-badge {
+  /* Highlight active title with a colored left border */
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  border-left: 4px solid var(--primary-color);
+  padding-left: 6px;
+  margin-top: 0.25rem;
+  /* Subtle background tint */
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+  border-radius: 4px;
+  /* Prevent wrapping of title text */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

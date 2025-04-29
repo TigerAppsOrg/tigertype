@@ -16,11 +16,19 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await axios.get('/api/user/profile');
       if (response.data) {
-        // Ensure has_completed_tutorial is included, defaulting if necessary
+        // Base user data
         const userData = {
           ...response.data,
           has_completed_tutorial: response.data.has_completed_tutorial ?? false,
         };
+        // Fetch user titles
+        try {
+          const titlesRes = await axios.get('/api/user/titles');
+          userData.titles = titlesRes.data || [];
+        } catch (titlesErr) {
+          console.error('Error fetching user titles:', titlesErr);
+          userData.titles = [];
+        }
         setUserState(userData);
         setAuthenticated(true);
         window.user = userData; // Update window object
