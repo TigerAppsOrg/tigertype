@@ -23,7 +23,7 @@ function AboutUs() {
     <div className="about-us-container">
       <header className="about-us-header">
         <h1>About TigerType</h1>
-        <p className="about-us-subtitle">Meet the team</p>
+        <p className="about-us-subtitle">Meet the original team</p>
       </header>
 
       <section className="developers-section">
