@@ -317,16 +317,18 @@ function ProfileModal({ isOpen, onClose, netid }) {
     setShowTitleDropdown(!showTitleDropdown);
   };
 
-  const selectTitle = (titleId) => {
-    const titleIdStr = String(titleId);
-    setSelectedTitle(titleIdStr);
+  const selectTitle = async (titleId) => {
     setShowTitleDropdown(false);
-
     try {
-      localStorage.setItem('selectedTitle', titleIdStr);
-      console.log(`Selected title saved: ${titleIdStr}`);
+      await fetch('/api/profile/title', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titleId }),
+      });
+      setSelectedTitle(titleId);
     } catch (error) {
-      console.error('Error saving selected title to localStorage:', error);
+      console.error('Error updating selected title:', error);
     }
   };
 
@@ -360,14 +362,8 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
   useEffect(() => {
     if (isOpen && userTitles?.length > 0) {
-      const savedTitle = localStorage.getItem('selectedTitle');
-      
-      if (savedTitle && userTitles.some(title => String(title.id) === String(savedTitle))) {
-        setSelectedTitle(savedTitle);
-      } else {
-        // Don't auto-select any title if no saved selection
-        setSelectedTitle('');
-      }
+      const equipped = userTitles.find(title => title.is_equipped);
+      setSelectedTitle(equipped ? equipped.id : '');
     }
   }, [isOpen, userTitles]);
 

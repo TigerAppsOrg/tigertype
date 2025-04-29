@@ -227,13 +227,15 @@ function Results({ onShowLeaderboard }) {
               <div className="winner-netid">{winner.netid}</div>
             </div>
             {/* Display titles for winner */}
-            {resultTitlesMap[winner.netid]?.[0] && (
-              <div className="winner-titles">
-                <span className="winner-title-badge">
-                  {resultTitlesMap[winner.netid][0].name}
-                </span>
-              </div>
-            )}
+{(() => {
+  const titlesList = resultTitlesMap[winner.netid] || [];
+  const titleToShow = titlesList.find(t => t.is_equipped) || titlesList[0];
+  return titleToShow ? (
+    <div className="winner-titles">
+      <span className="winner-title-badge">{titleToShow.name}</span>
+    </div>
+  ) : null;
+})()}
             <div className="winner-stats">
               <div className="winner-wpm">{winner.wpm?.toFixed(2) || 0} WPM</div>
               <div className="winner-accuracy">{winner.accuracy?.toFixed(2) || 0}% accuracy</div>
@@ -272,13 +274,15 @@ function Results({ onShowLeaderboard }) {
                 </div>
                 <div className="result-text">
                   <div className="result-netid">{result.netid}</div>
-                  {resultTitlesMap[result.netid]?.[0] && (
-                    <div className="result-titles">
-                      <span className="result-title-badge">
-                        {resultTitlesMap[result.netid][0].name}
-                      </span>
-                    </div>
-                  )}
+                  {(() => {
+                    const titlesList = resultTitlesMap[result.netid] || [];
+                    const titleToShow = titlesList.find(t => t.is_equipped) || titlesList[0];
+                    return titleToShow ? (
+                      <div className="result-titles">
+                        <span className="result-title-badge">{titleToShow.name}</span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
               <div className="result-stats">

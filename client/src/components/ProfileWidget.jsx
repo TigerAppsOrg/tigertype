@@ -44,35 +44,8 @@ function ProfileWidget({ user, onClick, layout = 'default' }) {
     }
   }, [user?.netid, user?.titles]);
 
-  // --- Logic to determine the title to display ---
-  let displayTitle = null;
-  // Only read localStorage on the client-side
-  if (typeof window !== 'undefined') {
-    try {
-      const storedTitleId = localStorage.getItem('selectedTitle');
-      if (storedTitleId && titles && titles.length > 0) {
-        // Find the title object matching the stored ID
-        // Ensure comparison handles potential type differences (e.g., string vs number)
-        displayTitle = titles.find(title => String(title.id) === String(storedTitleId));
-      }
-    } catch (err) {
-      console.error('Error reading selected title from localStorage:', err);
-    }
-  }
-
-  // Fallback: If no selected title found in storage or error,
-  // check for an explicitly equipped title from props/API (if API provided one)
-  if (!displayTitle) {
-      const equippedTitleFromAPI = titles?.find(title => title.is_equipped);
-      if (equippedTitleFromAPI) {
-          displayTitle = equippedTitleFromAPI;
-      }
-      // Optional: Further fallback to the first title if desired
-      // else if (titles && titles.length > 0) {
-      //   displayTitle = titles[0];
-      // }
-  }
-  // --- End Title Logic ---
+  // Determine the title to display (use server-provided selection)
+  const displayTitle = titles?.find(title => title.is_equipped) || null;
 
   const content = (
     <div className="profile-widget">

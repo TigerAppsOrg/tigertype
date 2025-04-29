@@ -273,3 +273,23 @@ exports.markTutorialComplete = async (req, res) => {
     res.status(500).json({ message: 'Error updating tutorial completion status.' });
   }
 }; 
+// Update user's selected title
+exports.updateTitle = async (req, res) => {
+  const userId = req.user.id;
+  const { titleId } = req.body;
+  if (!titleId) {
+    return res.status(400).json({ message: 'Title ID is required.' });
+  }
+  try {
+    // Verify user has this title unlocked
+    const userTitles = await UserModel.getTitles(userId);
+    if (!userTitles.some(t => t.id === titleId)) {
+      return res.status(400).json({ message: 'Title not available to user.' });
+    }
+    const result = await UserModel.updateTitle(userId, titleId);
+    res.json({ selected_title_id: result.selected_title_id });
+  } catch (error) {
+    console.error(`Error updating selected title for user ${userId}:`, error);
+    res.status(500).json({ message: 'Error updating selected title.' });
+  }
+};

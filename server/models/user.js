@@ -8,7 +8,7 @@ const User = {
     if (!userId) return null;
     try {
       // Select all relevant fields including the new tutorial flag
-      const result = await pool.query('SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial FROM users WHERE id = $1', [userId]);
+      const result = await pool.query('SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id FROM users WHERE id = $1', [userId]);
       return result.rows[0];
     } catch (err) {
       console.error(`Error finding user by ID ${userId}:`, err);
@@ -22,7 +22,7 @@ const User = {
       // Try to get all fields including fastest_wpm and has_completed_tutorial
       try {
         const result = await db.query(
-          'SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial FROM users WHERE netid = $1',
+          'SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id FROM users WHERE netid = $1',
           [netid]
         );
         return result.rows[0];
@@ -63,6 +63,8 @@ const User = {
 
           // Fetch tutorial flag
           user.has_completed_tutorial = await fetchField('has_completed_tutorial', 'SELECT has_completed_tutorial FROM users WHERE id = $1') ?? false;
+        // Fetch selected title
+        user.selected_title_id = await fetchField('selected_title_id', 'SELECT selected_title_id FROM users WHERE id = $1');
 
           return user;
         }
@@ -80,7 +82,7 @@ const User = {
     try {
       // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
+        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
         [netid]
       );
       return result.rows[0];
@@ -95,7 +97,7 @@ const User = {
     try {
       // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
+        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
         [userId]
       );
       return result.rows[0];
@@ -141,7 +143,7 @@ const User = {
 
       // Update bio and fetch all relevant fields
       const result = await db.query(
-        'UPDATE users SET bio = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
+        'UPDATE users SET bio = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
         [bio, userId]
       );
 
@@ -163,7 +165,7 @@ const User = {
 
       // Update avatar URL and fetch all relevant fields
       const result = await db.query(
-        'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial',
+        'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
         [avatarUrl, userId]
       );
 
@@ -196,6 +198,26 @@ const User = {
       return result.rows[0]; // Return the updated user id and flag status
     } catch (err) {
       console.error(`Error marking tutorial as completed for user ID ${userId}:`, err);
+      throw err;
+    }
+  },
+
+  // Update user's selected title
+  async updateTitle(userId, titleId) {
+    if (!userId) {
+      throw new Error('User ID is required to update selected title');
+    }
+    try {
+      const result = await pool.query(
+        'UPDATE users SET selected_title_id = $1 WHERE id = $2 RETURNING id, selected_title_id',
+        [titleId, userId]
+      );
+      if (result.rowCount === 0) {
+        throw new Error('User not found');
+      }
+      return result.rows[0];
+    } catch (err) {
+      console.error(`Error updating selected title for user ${userId} to ${titleId}:`, err);
       throw err;
     }
   },

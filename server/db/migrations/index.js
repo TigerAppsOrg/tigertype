@@ -432,6 +432,26 @@ const MIGRATIONS = [
         ON CONFLICT (key) DO NOTHING;
       `);
     }
+  },
+  {
+    version: 13,
+    description: 'Add selected_title_id column to users table',
+    up: async (client) => {
+      console.log('Running migration 13: add selected_title_id column to users table...');
+      await client.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS selected_title_id INTEGER REFERENCES titles(id) ON DELETE SET NULL;
+      `);
+      console.log('Migration complete: added selected_title_id to users table');
+    },
+    down: async (client) => {
+      console.log('Reverting migration 13: remove selected_title_id column from users table...');
+      await client.query(`
+        ALTER TABLE users
+        DROP COLUMN IF EXISTS selected_title_id;
+      `);
+      console.log('Revert complete: dropped selected_title_id column from users table');
+    }
   }
 ];
 
