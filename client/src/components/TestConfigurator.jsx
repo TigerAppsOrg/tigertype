@@ -16,7 +16,7 @@ const LeaderboardIcon = () => <i className="bi bi-trophy"></i>;
 // --- Configuration Options ---
 const DURATIONS = [15, 30, 60, 120];
 const DIFFICULTIES = ['all', 'easy', 'medium', 'hard'];
-const TYPES = ['all', 'general', 'princeton', 'course_reviews'];
+const TYPES = ['all', 'general', 'course_reviews'];
 // --- ---
 
 function TestConfigurator({

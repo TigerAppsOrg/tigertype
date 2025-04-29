@@ -20,14 +20,14 @@
 
 .warning-background {
   position: absolute;
-  max-height: 275px;
-  right: 20%;
-  bottom: -4%;
-  opacity: 15%;
+  max-height: 20vh;
+  right: 32.5%;
+  bottom: -2%;
+  opacity: 5%;
 }
 
 .modal-container, .modal-container-shake {
-  background-color: var(--secondary-bg-color, #2c2c2c);
+  background-color: var(--background-color-secondary);
   border-radius: 8px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
   position: relative;
@@ -106,7 +106,7 @@
 }
 
 .modal-header h2 {
-  color: var(--primary-color, #ff9900);
+  color: #F58025;
   margin: 0;
   font-size: 1.5rem;
   text-align: center;
@@ -133,7 +133,7 @@
 
 .modal-button {
   padding: 0.7rem 1.8rem;
-  background-color: var(--primary-color, #ff9900);
+  background-color: #F58025;
   color: white;
   border: none;
   border-radius: 6px;
