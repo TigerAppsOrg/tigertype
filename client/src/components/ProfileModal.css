@@ -827,7 +827,8 @@
   text-align: center;
   color: var(--text-color-secondary);
   font-style: italic;
-  
+}
+
 .no-badges-display {
   font-style: italic;
   color: var(--text-color-secondary);
