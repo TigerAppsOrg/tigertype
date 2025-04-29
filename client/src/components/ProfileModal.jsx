@@ -578,7 +578,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
         <div className="back-button-container">
           <button className="back-button-profile" onClick={onClose}>
-            <span>⟵ </span>Back
+          <span className="material-icons">arrow_back</span> Back
           </button>
           <div className='profile-title'>
             <h2>Profile</h2>
@@ -865,7 +865,10 @@ function ProfileModal({ isOpen, onClose, netid }) {
       </div>
 
       {showBadgeSelector && (
-                      <div className="badge-selector-overlay">
+                      <div className="badge-selector-overlay"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      >
                         <div className="badge-selector">
                           <h4>Select Badges to Display</h4>
                           <div className="badge-grid">

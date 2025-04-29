@@ -15,7 +15,7 @@
 }
 
 .profile-container {
-  width: 110%;
+  width: 110vw;
   height: auto;
   position: absolute;
   margin: 2rem auto;
@@ -27,10 +27,18 @@
   border-color: #F58025;
   align-items: center;
   scale: 80%;
+  max-height: 110vh;
+  overflow-y: auto;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .loading-container {
-  width: 120%;  
+  width: 120vw;  
   margin: 2rem auto;
   padding: 2rem;
   text-align: center;
@@ -71,7 +79,6 @@
 
 .back-button-profile span {
   margin-right: 0.5rem;
-  height: 2.2rem;
 }
 
 .back-button-profile:hover {
@@ -332,7 +339,7 @@
 }
 
 .biography-input::placeholder {
-  color: #aaa;
+  color: var(--text-color);
 }
 
 .biography-input:focus {
@@ -594,6 +601,12 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.profile-stat {
+  flex-direction: column!important;
+}
+
+.stat-card
+
 .stat-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(245, 128, 37, 0.2);
@@ -685,7 +698,7 @@
   transform: translateX(-50%);
   font-size: 0.9rem;
   color: var(--text-color);
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: var(--container-color);
   padding: 4px 8px;
   border-radius: 4px;
   white-space: nowrap;

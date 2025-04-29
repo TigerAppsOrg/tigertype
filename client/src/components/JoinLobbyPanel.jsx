@@ -61,7 +61,7 @@ function JoinLobbyPanel({ className = '' }) {
         <input
           type="text"
           className="join-input"
-          placeholder="Enter lobby code or player NetID"
+          placeholder="e.g. rdondero"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={busy}

@@ -83,7 +83,7 @@ function Home() {
     {
       id: 4,
       name: 'Join Private Match',
-      description: "Enter a code or NetID to join a friend's lobby",
+      description: "Enter a lobby code or host NetID to join a friend's lobby",
       subComponent: <JoinLobbyPanel />,
       iconClass: 'bi bi-key'
     }
@@ -116,12 +116,10 @@ function Home() {
 
         {/* New layout container */}
         <div className="modes-layout-section">
-          {/* Render standard modes directly */}
           <div className="standard-modes-container">
             <Modes modes={standardModes} />
           </div>
 
-          {/* Container for stacked private modes */}
           <div className="private-modes-stack">
             <Modes modes={privateModes} />
           </div>
