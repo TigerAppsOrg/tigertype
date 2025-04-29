@@ -61,8 +61,8 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
   useEffect(() => {
     players.forEach(player => {
       const netid = player.netid;
-      // Use context titles for current user
-      if (netid === user?.netid && user?.titles && !(netid in playerTitlesMap)) {
+      // Sync context titles for current user
+      if (netid === user?.netid && user?.titles && playerTitlesMap[netid] !== user.titles) {
         setPlayerTitlesMap(prev => ({ ...prev, [netid]: user.titles }));
       }
       // Fetch other players' titles if not already fetched

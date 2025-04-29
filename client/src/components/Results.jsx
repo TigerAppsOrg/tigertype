@@ -32,8 +32,8 @@ function Results({ onShowLeaderboard }) {
     if (raceState.results && raceState.results.length) {
       raceState.results.forEach(result => {
         const netid = result.netid;
-        // Use current user's titles from context
-        if (netid === user?.netid && user?.titles && !(netid in resultTitlesMap)) {
+        // Sync current user's titles from context
+        if (netid === user?.netid && user?.titles && resultTitlesMap[netid] !== user.titles) {
           setResultTitlesMap(prev => ({ ...prev, [netid]: user.titles }));
         }
         // Fetch other players' titles

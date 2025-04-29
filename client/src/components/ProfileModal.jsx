@@ -5,7 +5,7 @@ import defaultProfileImage from '../assets/icons/default-profile.svg';
 import { createPortal } from 'react-dom';
 
 function ProfileModal({ isOpen, onClose, netid }) {
-  const { user, loading, setUser } = useAuth();
+  const { user, loading, setUser, fetchUserProfile } = useAuth();
   const [bio, setBio] = useState('');
   const [isSavingBio, setIsSavingBio] = useState(false);
   const [bioMessage, setBioMessage] = useState('');
@@ -326,6 +326,8 @@ function ProfileModal({ isOpen, onClose, netid }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ titleId }),
       });
+      // Refresh context and modal titles to reflect the new selection
+      await fetchUserProfile();
       setSelectedTitle(titleId);
     } catch (error) {
       console.error('Error updating selected title:', error);
