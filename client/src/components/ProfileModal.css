@@ -339,7 +339,7 @@
 }
 
 .biography-input::placeholder {
-  color: var(--text-color);
+  color: gray;
 }
 
 .biography-input:focus {
@@ -898,6 +898,6 @@
 
 .read-only-bio-container .bio-text:empty::before {
   content: 'This user hasn\'t written a bio yet.';
-  color: #aaa;
+  color: gray;
   font-style: italic;
 }

@@ -634,11 +634,56 @@ const User = {
         switch (title.criteria_type) {
           case 'words_typed':
             // Use the detailed stats for words typed
-            if (detailedStats) {
-              if (detailedStats.words_typed >= title.criteria_value) {
+            if (detailedStats && detailedStats.words_typed >= title.criteria_value) {
+                awardTitle = true;
+            }
+            break;
+          case 'races_completed':
+            // Use detailed stats for races completed
+            if (detailedStats && detailedStats.races_completed >= title.criteria_value) {
+                awardTitle = true;
+            }
+            break;
+          case 'avg_wpm':
+            // Use stored average WPM for user
+            if (user.avg_wpm !== undefined && parseFloat(user.avg_wpm) >= title.criteria_value) {
+                awardTitle = true;
+            }
+            break;
+          case 'snippet_completed':
+            // Check if user has completed the specified snippet
+            {
+              const res = await db.query(
+                'SELECT COUNT(*) as count FROM race_results WHERE user_id = $1 AND snippet_id = $2',
+                [userId, title.criteria_value]
+              );
+              if (parseInt(res.rows[0].count) > 0) {
                   awardTitle = true;
               }
-          }
+            }
+            break;
+          case 'global_fastest':
+            // Check if this user has the highest fastest_wpm globally
+            {
+              const res = await db.query('SELECT MAX(fastest_wpm) as max_fastest FROM users');
+              const maxFastest = parseFloat(res.rows[0].max_fastest);
+              if (maxFastest > 0 && parseFloat(user.fastest_wpm) === maxFastest) {
+                  awardTitle = true;
+              }
+            }
+            break;
+          case 'beta_tester':
+            // Check if user completed a race before May 15, 2025
+            {
+              const cutoff = new Date('2025-05-15T00:00:00Z');
+              const res = await db.query(
+                'SELECT COUNT(*) as count FROM race_results WHERE user_id = $1 AND created_at < $2',
+                [userId, cutoff]
+              );
+              if (parseInt(res.rows[0].count) > 0) {
+                  awardTitle = true;
+              }
+            }
             break;
         }
 
