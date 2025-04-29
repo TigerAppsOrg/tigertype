@@ -93,15 +93,34 @@
 /* --- Navbar Specific Styles --- */
 .navbar-links .profile-widget {
   width: auto; /* Let navbar control width */
-  /* Override height/padding if needed for navbar, e.g.: */
-  /* height: 3rem; */
-  /* padding: 0 0.5rem; */
+  /* Make slightly shorter and less padded for navbar */
+  height: 3.5rem; /* Reduced height */
+  padding: 0 0.6rem; /* Reduced horizontal padding */
+  margin-left: 0.5rem; /* Add some space from the logout button */
+  max-width: 150px; /* Limit maximum width */
+  overflow: hidden; /* Ensure content doesn't spill */
+}
+
+/* Reduce avatar size in navbar */
+.navbar-links .profile-image {
+  width: 30px;
+  height: 30px;
+  margin-right: 0.5rem;
+}
+
+/* Reduce font size for name in navbar */
+.navbar-links .profile-name {
+  font-size: 0.85rem;
+  margin-bottom: 0; /* Remove bottom margin */
 }
 
 .navbar-links .profile-details {
   flex-direction: column; /* Stack items vertically */
   align-items: flex-start; /* Align text left */
   white-space: normal; /* Allow wrapping if needed */
+  /* Reduce font size for WPM text */
+  font-size: 0.75rem; 
+  line-height: 1.1; /* Compact line height */
 }
 
 .navbar-links .profile-title-inline {
@@ -110,12 +129,12 @@
 
 .profile-title-newline {
   /* Styles for the title on a new line (used in navbar) */
-  font-size: 0.8rem;
+  font-size: 0.7rem; /* Further reduced title font size */
   font-weight: 400;
   color: #F58025;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 2px; /* Space below WPM */
+  margin-top: 1px; /* Reduced space below WPM */
   width: 100%; /* Ensure it takes available width for ellipsis */
 }
