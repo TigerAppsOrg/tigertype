@@ -68,7 +68,7 @@ function ProfileWidget({ user, onClick, layout = 'default' }) {
                · {displayTitle.name}
             </span>
           )}
-          {/* Conditionally render title on new line for navbar layout */}
+          {/* Conditionally render title on new line for navbar layout - only if a title is selected */}
           {layout === 'navbar' && displayTitle && (
             <div className="profile-title-newline">
               {displayTitle.name}

@@ -208,9 +208,10 @@ const User = {
       throw new Error('User ID is required to update selected title');
     }
     try {
+      // titleId can be null to deselect
       const result = await pool.query(
         'UPDATE users SET selected_title_id = $1 WHERE id = $2 RETURNING id, selected_title_id',
-        [titleId, userId]
+        [titleId, userId] // Pass titleId directly (can be null)
       );
       if (result.rowCount === 0) {
         throw new Error('User not found');

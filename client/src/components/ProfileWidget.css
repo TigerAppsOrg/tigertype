@@ -138,3 +138,9 @@
   margin-top: 1px; /* Reduced space below WPM */
   width: 100%; /* Ensure it takes available width for ellipsis */
 }
+
+/* Style for no title text */
+.no-title-text {
+  color: #888888;
+  font-style: italic;
+}

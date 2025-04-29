@@ -277,17 +277,24 @@ exports.markTutorialComplete = async (req, res) => {
 exports.updateTitle = async (req, res) => {
   const userId = req.user.id;
   const { titleId } = req.body;
-  if (!titleId) {
-    return res.status(400).json({ message: 'Title ID is required.' });
+
+  // Allow titleId to be null for deselection
+  if (titleId !== null && !titleId) {
+    return res.status(400).json({ message: 'Title ID is required or must be null.' });
   }
+
   try {
-    // Verify user has this title unlocked
-    const userTitles = await UserModel.getTitles(userId);
-    if (!userTitles.some(t => t.id === titleId)) {
-      return res.status(400).json({ message: 'Title not available to user.' });
+    // If titleId is not null, verify the user has unlocked it
+    if (titleId !== null) {
+      const userTitles = await UserModel.getTitles(userId);
+      if (!userTitles.some(t => String(t.id) === String(titleId))) {
+        return res.status(400).json({ message: 'Title not available to user.' });
+      }
     }
+
+    // Pass null or the validated titleId to the model
     const result = await UserModel.updateTitle(userId, titleId);
-    res.json({ selected_title_id: result.selected_title_id });
+    res.json({ selected_title_id: result.selected_title_id }); // Send back the potentially null ID
   } catch (error) {
     console.error(`Error updating selected title for user ${userId}:`, error);
     res.status(500).json({ message: 'Error updating selected title.' });

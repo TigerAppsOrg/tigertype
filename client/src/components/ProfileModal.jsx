@@ -640,6 +640,13 @@ function ProfileModal({ isOpen, onClose, netid }) {
                       </div>
                       {showTitleDropdown && (
                         <div className="title-dropdown">
+                          {/* Add Deselect Option */}
+                          <div
+                            className="dropdown-option deselect-option"
+                            onClick={() => selectTitle(null)} // Pass null to deselect
+                          >
+                            Deselect Title
+                          </div>
                           {loadingTitles ? (
                             <div className="dropdown-option loading">Loading titles...</div>
                           ) : userTitles && userTitles.length > 0 ? (
@@ -666,11 +673,12 @@ function ProfileModal({ isOpen, onClose, netid }) {
                     <div className="title-display static-title">
                        {loadingTitles ? (
                          <span>Loading title...</span>
-                       ) : userTitles && userTitles.length > 0 && userTitles[0]?.name ? (
-                         // Display the first title found. Add specific class for styling.
-                         <span className="displayed-title-name">{userTitles[0]?.name}</span>
+                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => t.id === displayUser.selected_title_id)?.name ? (
+                         // Display the equipped title if available
+                         <span className="displayed-title-name">{userTitles.find(t => t.id === displayUser.selected_title_id).name}</span>
                        ) : (
-                         <span className="no-title-display">No Title Set</span>
+                         // Display message if no title is equipped
+                         <span className="no-title-display">User has no title selected</span>
                        )}
                      </div>
                   )}
@@ -741,7 +749,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
                 ) : (
                   // Read-only bio for others
                   <div className="read-only-bio-container">
-                     <p className="bio-text">{displayUser?.bio || 'This user hasn\'t written a bio yet.'}</p>
+                     <p className="bio-text">{displayUser?.bio || ''}</p>
                   </div>
                 )}
               </div>
