@@ -119,7 +119,7 @@
 /* ──────────────────────────────────────────────────────────────── */
 .lobby-main-content {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   align-items: flex-start;
 }
 
@@ -259,9 +259,8 @@
 
 .player-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
-  max-width: 100%;
 }
 
 .lobby-page .player-card {
@@ -289,6 +288,7 @@
 .lobby-page .profile-widget-clickable {
   cursor: pointer;
   width: 100%;
+  padding-left: 5vw;
 }
 
 .lobby-page .player-card.empty-slot {
@@ -525,6 +525,12 @@
     gap: 1.5rem;
   }
 
+  .lobby-page .profile-widget-clickable {
+    cursor: pointer;
+    width: 100%;
+    padding-right: 22vw;
+  }
+
   .lobby-left-column,
   .lobby-right-column {
     min-width: 100%;
@@ -576,13 +582,19 @@
     align-items: flex-start;
   }
 
+  .lobby-page .profile-widget-clickable {
+    cursor: pointer;
+    width: 100%;
+    padding-left: 5vw;
+  }
+
   .lobby-code-display {
     width: 100%;
     justify-content: space-between;
   }
 
   .player-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
     gap: 0.8rem;
   }
 

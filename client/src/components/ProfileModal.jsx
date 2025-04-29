@@ -578,7 +578,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
         <div className="back-button-container">
           <button className="back-button-profile" onClick={onClose}>
-            <span>⟵ </span>Back
+          <span className="material-icons">arrow_back</span> Back
           </button>
           <div className='profile-title'>
             <h2>Profile</h2>
