@@ -64,7 +64,7 @@
   flex-direction: column;
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
-  background-color: var(--player-card-color);
+  background-color: var(--container-color);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   border-left: 4px solid transparent;
@@ -134,7 +134,7 @@
 
 .player-name {
   font-weight: 600;
-  color: #fff;
+  color: var(--text-color);
   font-size: 0.95rem;
   /* Prevent wrapping of long netids */
   white-space: nowrap;

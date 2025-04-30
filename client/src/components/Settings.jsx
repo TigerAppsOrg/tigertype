@@ -66,6 +66,7 @@ function Settings({ isOpen, onClose }) {
 
     if (theme === 'tangerine') {
       document.documentElement.style.setProperty('--primary-color', '#F5821F');
+      document.documentElement.style.setProperty('--primary-color-rgb', '245, 130, 31');
       document.documentElement.style.setProperty('--secondary-color', '#F7EDE4');
       document.documentElement.style.setProperty('--mode-text-color', '#214E34');
       document.documentElement.style.setProperty('--hover-color', '#a2a2a2');
@@ -109,6 +110,7 @@ function Settings({ isOpen, onClose }) {
 
       document.documentElement.style.setProperty('--background-color', '#2C2C34'); //
       document.documentElement.style.setProperty('--primary-color', '#C2AEDD') //
+      document.documentElement.style.setProperty('--primary-color-rgb', '194, 174, 221');
       document.documentElement.style.setProperty('--secondary-color', '#3A3A42'); //
       document.documentElement.style.setProperty('--background-color-secondary', '#3A3A42'); //
 
@@ -136,6 +138,7 @@ function Settings({ isOpen, onClose }) {
     }
     else if (theme === 'light') {
       document.documentElement.style.setProperty('--primary-color', '#F5821F');
+      document.documentElement.style.setProperty('--primary-color-rgb', '245, 130, 31');
       document.documentElement.style.setProperty('--secondary-color', '#f0f0f0');
       document.documentElement.style.setProperty('--mode-text-color', '#1e1e1e');
       document.documentElement.style.setProperty('--hover-color', '#a2a2a2');
@@ -173,11 +176,12 @@ function Settings({ isOpen, onClose }) {
     }
     else { // Default: Dark Mode
       document.documentElement.style.setProperty('--primary-color', '#F5821F');
+      document.documentElement.style.setProperty('--primary-color-rgb', '245, 130, 31');
       document.documentElement.style.setProperty('--secondary-color', '#1e1e1e');
       document.documentElement.style.setProperty('--mode-text-color', '#e0e0e0');
       document.documentElement.style.setProperty('--hover-color','#2a2a2a');
       document.documentElement.style.setProperty('--type-container-color', '#1e1e1e');
-      document.documentElement.style.setProperty('--container-color', '#121212');
+      document.documentElement.style.setProperty('--container-color', '#232323');
       document.documentElement.style.setProperty('--typing-color', '#ffffff53');
       document.documentElement.style.setProperty('--player-card-color', '#2a2a2a');
 
