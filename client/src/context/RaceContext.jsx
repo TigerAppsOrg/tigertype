@@ -221,10 +221,48 @@ export const RaceProvider = ({ children }) => {
     };
 
     const handlePlayersUpdate = (data) => {
-      setRaceState(prev => ({
-        ...prev,
-        players: data.players
-      }));
+      setRaceState(prev => {
+        // For quick-match public races, if the race is already in progress, we want to keep
+        // any players previously marked as disconnected even if they are no longer in the
+        // server-provided list. This preserves their progress bars.
+
+        if (prev.type === 'public' && prev.inProgress) {
+          // Map of players currently reported by server
+          const livePlayersMap = new Map(data.players.map(p => [p.netid, p]));
+
+          // Build merged list starting with live players (server is authoritative for connected users)
+          const mergedPlayers = [...data.players];
+
+          // Helper to avoid duplicates
+          const addOrReplace = (playerObj) => {
+            const idx = mergedPlayers.findIndex(pl => pl.netid === playerObj.netid);
+            if (idx === -1) {
+              mergedPlayers.push(playerObj);
+            } else {
+              mergedPlayers[idx] = { ...mergedPlayers[idx], ...playerObj };
+            }
+          };
+
+          // Iterate over previous players to detect disconnects / rejoins
+          prev.players.forEach(prevPlayer => {
+            const isLive = livePlayersMap.has(prevPlayer.netid);
+
+            if (!isLive) {
+              // Player missing from live list – mark as disconnected (retain last known state)
+              addOrReplace({ ...prevPlayer, disconnected: true });
+            } else if (prevPlayer.disconnected) {
+              // Player was previously marked disconnected but has reappeared -> clear flag
+              const livePlayer = livePlayersMap.get(prevPlayer.netid);
+              addOrReplace({ ...livePlayer, disconnected: false });
+            }
+          });
+
+          return { ...prev, players: mergedPlayers };
+        }
+
+        // Default behaviour – replace list
+        return { ...prev, players: data.players };
+      });
     };
 
     const handleRaceStart = (data) => {
@@ -384,11 +422,36 @@ export const RaceProvider = ({ children }) => {
       const { netid, reason } = data;
       console.log(`Player ${netid} left lobby. Reason: ${reason || 'disconnect'}`);
       setRaceState(prev => {
-        // Filter out the player who left
-        const updatedPlayers = prev.players.filter(p => p.netid !== netid);
+        // If player already exists in list, update according to rules.
+        const existingIndex = prev.players.findIndex(p => p.netid === netid);
+
+        // Rule set as described earlier
+        if (prev.type === 'private' || !prev.inProgress) {
+          // Remove from list entirely
+          const updatedPlayers = prev.players.filter(p => p.netid !== netid);
+          return { ...prev, players: updatedPlayers };
+        }
+
+        // Public race in progress: mark as disconnected
+        let updatedPlayers;
+        if (existingIndex !== -1) {
+          updatedPlayers = prev.players.map(p =>
+            p.netid === netid ? { ...p, disconnected: true } : p
+          );
+        } else {
+          // Player not found (likely already removed by earlier playersUpdate) – create placeholder
+          updatedPlayers = [
+            ...prev.players,
+            {
+              netid,
+              progress: 0,
+              ready: false,
+              disconnected: true
+            }
+          ];
+        }
         return { ...prev, players: updatedPlayers };
       });
-      // Optionally, show a small notification/toast message about the player leaving
     };
 
     // Register event listeners
@@ -771,10 +834,14 @@ export const RaceProvider = ({ children }) => {
 
   const resetRace = (notifyServer = false) => { // Added optional param
     // Optionally notify server about leaving (e.g., for private lobbies)
-    if (notifyServer && socket && connected && raceState.code) {
-       // TODO: Implement a specific 'lobby:leave' event if needed,
-       // otherwise disconnect handles cleanup. For now, rely on disconnect.
-       console.log(`Resetting race state for ${raceState.code}, server cleanup handled by disconnect or explicit leave event.`);
+    if (notifyServer && socket && connected && (raceState.code || raceState.lobbyId)) {
+      const lobbyIdentifier = raceState.lobbyId || raceState.code; // Use lobbyId if available, else code
+      if (lobbyIdentifier) {
+        console.log(`Notifying server: leaving lobby ${lobbyIdentifier}`);
+        socket.emit('lobby:leave', { lobbyId: lobbyIdentifier });
+      } else {
+         console.warn('Cannot notify server of leave: No lobby code or ID found.');
+      }
     }
 
     setRaceState({
