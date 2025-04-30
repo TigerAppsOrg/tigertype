@@ -84,18 +84,18 @@ CREATE TABLE IF NOT EXISTS user_badges (
 -- Title table for tracking user achievements
 CREATE TABLE IF NOT EXISTS titles (
   id SERIAL PRIMARY KEY,
-  key VARCHAR UNIQUE NOT NULL
+  key VARCHAR UNIQUE NOT NULL,
   name VARCHAR UNIQUE NOT NULL,      -- Unique title name
   description TEXT,                  -- Description of the title
   criteria_type VARCHAR NOT NULL,    -- Type of criteria for earning the title
   criteria_value INTEGER NOT NULL     -- Value required to earn the title
-)
+);
 
 -- Junction table for managing user titles
 -- This table tracks which users have been awarded which titles
 CREATE TABLE IF NOT EXISTS user_titles (
   user_id INTEGER REFERENCES users(id)  ON DELETE CASCADE,
-  title_id INTEGER REFERENCES title(id) ON DELETE CASCADE,
+  title_id INTEGER REFERENCES titles(id) ON DELETE CASCADE,
   awarded_at TIMESTAMPTZ DEFAULT now(),
   PRIMARY KEY (user_id, title_id)
 );
@@ -178,8 +178,16 @@ BEGIN
       ('orange_lightning', 'Orange Lightning', 'Achieve an average WPM of 150+', 'avg_wpm', 150),
       ('president_eisgruber', 'President Eisgruber', 'Fastest recorded time for the 15-second global leaderboard', 'global_fastest', 0),
       ('beta_tester', 'Beta Tester', 'Complete a race before May 15, 2025', 'beta_tester', 20250515),
-      ('needs_a_shower', 'Needs A Shower', 'Complete 1000 races', 'races_completed', 1000)
-    ON CONFLICT (key) DO NOTHING;
+      ('needs_a_shower', 'Needs A Shower', 'Complete 1000 tests or sessions', 'sessions_completed', 1000),
+      ('commitment_issues', 'Commitment Issues', 'Achieve a completion rate of less than 5% across all sessions', 'completion_rate_low', 5),
+      ('princetons_fastest_typer', 'Princeton\'s Fastest Typer', 'Highest average WPM across all users', 'global_highest_avg_wpm', 0),
+      ('princetons_slowest_typer', 'Princeton\'s Slowest Typer', 'Lowest average WPM across all users (min 10 sessions)', 'global_lowest_avg_wpm', 0),
+      ('spia_major', 'SPIA Major', 'Type over 10,000 words in total', 'words_typed', 10000)
+    ON CONFLICT (key) DO UPDATE SET
+      name = EXCLUDED.name,
+      description = EXCLUDED.description,
+      criteria_type = EXCLUDED.criteria_type,
+      criteria_value = EXCLUDED.criteria_value;
       
 END $$;
 
