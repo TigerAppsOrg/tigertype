@@ -458,7 +458,11 @@ function ProfileModal({ isOpen, onClose, netid }) {
   };
 
   const handleAvatarClick = () => {
-    fileInputRef.current.click();
+    if (fileInputRef.current) {
+        fileInputRef.current.click();
+    } else {
+        console.error('[handleAvatarClick] fileInputRef.current is null or undefined!');
+    }
   };
 
   const handleImageError = () => {
@@ -481,21 +485,20 @@ function ProfileModal({ isOpen, onClose, netid }) {
   };
 
   const handleFileChange = async (e) => {
-    if (netid) return; // Should not happen if button is hidden, but safety check
+    if (netid && netid !== user?.netid) {
+      return; // Safety check based on isOwnProfile logic
+    }
+
     setUploadError('');
     setUploadSuccess('');
     setImageError(false);
-    const file = e.target.files[0];
-    if (!file) return;
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File too large. Maximum size is 5MB.');
-      return;
+    const file = e.target.files[0];
+    if (!file) {
+        return;
     }
 
     // Validate file type
-    // do we keep gifs? not sure
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setUploadError('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
@@ -503,8 +506,6 @@ function ProfileModal({ isOpen, onClose, netid }) {
     }
 
     // Create a temp local URL for immediate display
-    // i cant get a more efficient way that works lol
-    // this is stupid inefficient but someone smarter than me is needed
     const localImageUrl = URL.createObjectURL(file);
     // Update avatar immediately with local file for better UX
     setUser(prevUser => ({ ...prevUser, avatar_url: localImageUrl }));
@@ -525,15 +526,24 @@ function ProfileModal({ isOpen, onClose, netid }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ message: 'Failed to parse error JSON' }));
         throw new Error(errorData.message || `Error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Avatar upload response:', data);
+
+      if (!data.user || !data.user.avatar_url) {
+          console.error('[handleFileChange] Server response missing user or avatar_url:', data);
+          throw new Error('Invalid response data from server.');
+      }
+
+      const newAvatarUrl = data.user.avatar_url;
 
       // Update user state with new avatar URL from server
-      setUser(prevUser => ({ ...prevUser, avatar_url: data.user.avatar_url }));
+      setUser(prevUser => {
+          const updatedUser = { ...prevUser, avatar_url: newAvatarUrl };
+          return updatedUser;
+      });
 
       // Make sure window.user is updated
       if (window.user) {
@@ -555,12 +565,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
       }, 2500);
 
     } catch (error) {
-      console.error('Error uploading avatar:', error);
-      setUploadError(error.message || 'Failed to upload avatar. Please try again.');
-
-      // If upload fails, revert to the previous avatar
+      console.error('[handleFileChange] ERROR caught during avatar upload:', error);
       if (user && user.avatar_url !== localImageUrl) {
-        setUser(prevUser => ({ ...prevUser, avatar_url: user.avatar_url }));
+         setUser(prevUser => ({ ...prevUser, avatar_url: user.avatar_url }));
       }
 
       // Revoke the temp URL
@@ -648,7 +655,13 @@ function ProfileModal({ isOpen, onClose, netid }) {
                       <input
                         type="file"
                         ref={fileInputRef}
-                        onChange={isOwnProfile ? handleFileChange : undefined}
+                        onChange={(e) => {
+                            const target = e.target;
+                            if (isOwnProfile) {
+                                handleFileChange(e); // Call original handler
+                            }
+                            target.value = null;
+                        }}
                         style={{ display: 'none' }}
                         accept="image/jpeg, image/png, image/gif, image/webp"
                       />
