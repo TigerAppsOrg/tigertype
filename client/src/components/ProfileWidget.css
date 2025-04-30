@@ -1,22 +1,16 @@
 .profile-widget {
   display: flex;
-  /* Use 100% width to fill container like player card slot */
   width: 100%;
-  /* Keep height consistent, adjust padding for vertical centering */
   height: 4rem;
   align-items: center;
   background-color: var(--secondary-color);
-  /* Slightly reduced horizontal padding */
   padding: 0 0.8rem;
   border-radius: 8px;
-  /* Remove grab cursor unless drag-and-drop is implemented */
-  /* cursor: grab; */
-  box-sizing: border-box; /* Ensure padding is included in width/height */
+  box-sizing: border-box;
 }
 
 .profile-widget-clickable {
-  /* Ensure clickable wrapper also takes full width if needed */
-  display: block; /* Or flex, depending on layout */
+  display: block;
   width: 100%;
 }
 
@@ -26,12 +20,12 @@
 }
 
 .profile-image {
-  width: 36px; /* Slightly smaller image */
+  width: 36px;
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  margin-right: 0.7rem; /* Adjust spacing */
-  flex-shrink: 0; /* Prevent image shrinking */
+  margin-right: 0.7rem;
+  flex-shrink: 0;
 }
 
 .profile-image img {
@@ -43,48 +37,41 @@
 .profile-info {
   display: flex;
   flex-direction: column;
-  /* Allow info to take available space */
   flex-grow: 1;
-  /* Prevent overflow issues */
   min-width: 0;
 }
 
 .profile-name {
-  font-weight: 600; /* Slightly bolder name */
+  font-weight: 600;
   color: var(--mode-text-color);
   font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 1px; /* Small space below name */
+  margin-bottom: 1px;
 }
 
 .profile-details {
   display: flex;
   align-items: center;
-  /* Use secondary text color for less emphasis */
   color: var(--text-color-secondary);
-  font-size: 0.85rem; /* Slightly larger stats text */
-  /* Prevent wrapping */
+  font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
-  /* Don't use text-overflow here, let title handle it */
 }
 
 /* Inline title next to details */
 .profile-title-inline {
-  margin-left: 0.4rem; /* Space after WPM */
-  font-size: 0.8rem; /* Slightly smaller title */
-  font-weight: 400; /* Normal weight */
-  color: #F58025; /* Keep title color */
+  margin-left: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #F58025;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* Allow title to shrink if needed, but prioritize WPM */
   flex-shrink: 1;
 }
 
-/* Removed the old multi-title badge display styles */
 .profile-titles,
 .profile-title-badge {
   display: none;
@@ -92,35 +79,31 @@
 
 /* --- Navbar Specific Styles --- */
 .navbar-links .profile-widget {
-  width: auto; /* Let navbar control width */
-  /* Make slightly shorter and less padded for navbar */
-  height: 3.5rem; /* Reduced height */
-  padding: 0 0.6rem; /* Reduced horizontal padding */
-  margin-left: 0.5rem; /* Add some space from the logout button */
-  max-width: 150px; /* Limit maximum width */
-  overflow: hidden; /* Ensure content doesn't spill */
+  width: auto;
+  height: 3.5rem;
+  padding: 0 0.6rem;
+  margin-left: 0.5rem;
+  max-width: 150px;
+  overflow: hidden;
 }
 
-/* Reduce avatar size in navbar */
 .navbar-links .profile-image {
   width: 30px;
   height: 30px;
   margin-right: 0.5rem;
 }
 
-/* Reduce font size for name in navbar */
 .navbar-links .profile-name {
   font-size: 0.85rem;
-  margin-bottom: 0; /* Remove bottom margin */
+  margin-bottom: 0;
 }
 
 .navbar-links .profile-details {
-  flex-direction: column; /* Stack items vertically */
-  align-items: flex-start; /* Align text left */
-  white-space: normal; /* Allow wrapping if needed */
-  /* Reduce font size for WPM text */
+  flex-direction: column;
+  align-items: flex-start;
+  white-space: normal;
   font-size: 0.75rem; 
-  line-height: 1.1; /* Compact line height */
+  line-height: 1.1;
 }
 
 .navbar-links .profile-title-inline {
@@ -128,15 +111,14 @@
 }
 
 .profile-title-newline {
-  /* Styles for the title on a new line (used in navbar) */
-  font-size: 0.7rem; /* Further reduced title font size */
+  font-size: 0.7rem;
   font-weight: 400;
   color: #F58025;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 1px; /* Reduced space below WPM */
-  width: 100%; /* Ensure it takes available width for ellipsis */
+  margin-top: 1px;
+  width: 100%;
 }
 
 /* Style for no title text */

@@ -30,6 +30,8 @@ function ProfileModal({ isOpen, onClose, netid }) {
   const [displayedBadges, setDisplayedBadges] = useState([]);
   const [showBadgeSelector, setShowBadgeSelector] = useState(false);
   const [maxBadges] = useState(5); // Maximum number of badges that can be displayed
+  const [allTitles, setAllTitles] = useState([]);
+  const [loadingAllTitles, setLoadingAllTitles] = useState(false);
   
   const modalRef = useRef();
   const typingInputRef = document.querySelector('.typing-input-container input');
@@ -320,15 +322,38 @@ function ProfileModal({ isOpen, onClose, netid }) {
   const selectTitle = async (titleId) => {
     setShowTitleDropdown(false);
     try {
-      await fetch('/api/profile/title', {
+      // Update the local state immediately for a smooth transition
+      setSelectedTitle(titleId);
+      
+      // Update the userTitles array to reflect the new equipped status
+      setUserTitles(prevTitles => 
+        prevTitles.map(title => ({
+          ...title,
+          is_equipped: String(title.id) === String(titleId)
+        }))
+      );
+      
+      // Send the API request after updating local state
+      const response = await fetch('/api/profile/title', {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ titleId }),
       });
-      // Refresh context and modal titles to reflect the new selection
-      await fetchUserProfile();
-      setSelectedTitle(titleId);
+      
+      if (response.ok) {
+        // Update the user context in the background without forcing a refresh
+        const userData = await fetchUserProfile();
+        if (userData) {
+          setUser(prevUser => ({
+            ...prevUser,
+            selected_title_id: titleId,
+            titles: userData.titles
+          }));
+        }
+      } else {
+        console.error('Failed to update title');
+      }
     } catch (error) {
       console.error('Error updating selected title:', error);
     }
@@ -434,7 +459,11 @@ function ProfileModal({ isOpen, onClose, netid }) {
   };
 
   const handleAvatarClick = () => {
-    fileInputRef.current.click();
+    if (fileInputRef.current) {
+        fileInputRef.current.click();
+    } else {
+        console.error('[handleAvatarClick] fileInputRef.current is null or undefined!');
+    }
   };
 
   const handleImageError = () => {
@@ -457,21 +486,20 @@ function ProfileModal({ isOpen, onClose, netid }) {
   };
 
   const handleFileChange = async (e) => {
-    if (netid) return; // Should not happen if button is hidden, but safety check
+    if (netid && netid !== user?.netid) {
+      return; // Safety check based on isOwnProfile logic
+    }
+
     setUploadError('');
     setUploadSuccess('');
     setImageError(false);
-    const file = e.target.files[0];
-    if (!file) return;
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File too large. Maximum size is 5MB.');
-      return;
+    const file = e.target.files[0];
+    if (!file) {
+        return;
     }
 
     // Validate file type
-    // do we keep gifs? not sure
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setUploadError('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
@@ -479,8 +507,6 @@ function ProfileModal({ isOpen, onClose, netid }) {
     }
 
     // Create a temp local URL for immediate display
-    // i cant get a more efficient way that works lol
-    // this is stupid inefficient but someone smarter than me is needed
     const localImageUrl = URL.createObjectURL(file);
     // Update avatar immediately with local file for better UX
     setUser(prevUser => ({ ...prevUser, avatar_url: localImageUrl }));
@@ -501,15 +527,24 @@ function ProfileModal({ isOpen, onClose, netid }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ message: 'Failed to parse error JSON' }));
         throw new Error(errorData.message || `Error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Avatar upload response:', data);
+
+      if (!data.user || !data.user.avatar_url) {
+          console.error('[handleFileChange] Server response missing user or avatar_url:', data);
+          throw new Error('Invalid response data from server.');
+      }
+
+      const newAvatarUrl = data.user.avatar_url;
 
       // Update user state with new avatar URL from server
-      setUser(prevUser => ({ ...prevUser, avatar_url: data.user.avatar_url }));
+      setUser(prevUser => {
+          const updatedUser = { ...prevUser, avatar_url: newAvatarUrl };
+          return updatedUser;
+      });
 
       // Make sure window.user is updated
       if (window.user) {
@@ -531,12 +566,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
       }, 2500);
 
     } catch (error) {
-      console.error('Error uploading avatar:', error);
-      setUploadError(error.message || 'Failed to upload avatar. Please try again.');
-
-      // If upload fails, revert to the previous avatar
+      console.error('[handleFileChange] ERROR caught during avatar upload:', error);
       if (user && user.avatar_url !== localImageUrl) {
-        setUser(prevUser => ({ ...prevUser, avatar_url: user.avatar_url }));
+         setUser(prevUser => ({ ...prevUser, avatar_url: user.avatar_url }));
       }
 
       // Revoke the temp URL
@@ -553,6 +585,29 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
   // Recalculate avatarUrl based on displayUser
   const avatarUrl = getCacheBustedImageUrl(displayUser?.avatar_url);
+
+  // Fetch all available titles
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchAllTitles = async () => {
+      try {
+        setLoadingAllTitles(true);
+        const response = await fetch('/api/titles', { credentials: 'include' });
+        if (!response.ok) {
+          throw new Error('Failed to fetch titles');
+        }
+        const data = await response.json();
+        setAllTitles(data || []);
+      } catch (error) {
+        console.error('Error fetching all titles:', error);
+        setAllTitles([]);
+      } finally {
+        setLoadingAllTitles(false);
+      }
+    };
+
+    fetchAllTitles();
+  }, [isOpen]);
 
   // Loading state check (consider both auth loading and profile loading)
   if ((isOwnProfile && loading) || (!isOwnProfile && loadingProfile)) {
@@ -601,7 +656,13 @@ function ProfileModal({ isOpen, onClose, netid }) {
                       <input
                         type="file"
                         ref={fileInputRef}
-                        onChange={isOwnProfile ? handleFileChange : undefined}
+                        onChange={(e) => {
+                            const target = e.target;
+                            if (isOwnProfile) {
+                                handleFileChange(e); // Call original handler
+                            }
+                            target.value = null;
+                        }}
                         style={{ display: 'none' }}
                         accept="image/jpeg, image/png, image/gif, image/webp"
                       />
@@ -643,25 +704,34 @@ function ProfileModal({ isOpen, onClose, netid }) {
                           {/* Add Deselect Option */}
                           <div
                             className="dropdown-option deselect-option"
-                            onClick={() => selectTitle(null)} // Pass null to deselect
+                            onClick={() => selectTitle(null)}
                           >
                             Deselect Title
                           </div>
-                          {loadingTitles ? (
+                          {loadingAllTitles ? (
                             <div className="dropdown-option loading">Loading titles...</div>
-                          ) : userTitles && userTitles.length > 0 ? (
-                            userTitles.map(title => (
-                              <div
-                                key={title.id}
-                                className="dropdown-option"
-                                onClick={() => selectTitle(title.id)}
-                              >
-                                 {title.name}
-                                <div className='title-description'>
-                                  - {title.description || 'No description available'}
+                          ) : allTitles && allTitles.length > 0 ? (
+                            allTitles.map(title => {
+                              const isUnlocked = userTitles.some(t => t.id === title.id);
+                              return (
+                                <div
+                                  key={title.id}
+                                  className={`dropdown-option ${isUnlocked ? '' : 'locked'}`}
+                                  onClick={() => isUnlocked && selectTitle(title.id)}
+                                >
+                                  {title.name}
+                                  <div className='title-description'>
+                                    - {title.description || 'No description available'}
+                                  </div>
+                                  {!isUnlocked && (
+                                    <div className='title-locked-indicator'>
+                                      <span className="material-icons">lock</span>
+                                      Locked
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            ))
+                              );
+                            })
                           ) : (
                             <div className="dropdown-option disabled">No titles available</div>
                           )}
@@ -673,9 +743,12 @@ function ProfileModal({ isOpen, onClose, netid }) {
                     <div className="title-display static-title">
                        {loadingTitles ? (
                          <span>Loading title...</span>
-                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => t.id === displayUser.selected_title_id)?.name ? (
+                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.name ? (
                          // Display the equipped title if available
-                         <span className="displayed-title-name">{userTitles.find(t => t.id === displayUser.selected_title_id).name}</span>
+                         <span className="displayed-title-name">{userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)).name}</span>
+                       ) : userTitles.find(t => t.is_equipped)?.name ? (
+                         // Alternatively check for is_equipped flag from the API response
+                         <span className="displayed-title-name">{userTitles.find(t => t.is_equipped).name}</span>
                        ) : (
                          // Display message if no title is equipped
                          <span className="no-title-display">User has no title selected</span>

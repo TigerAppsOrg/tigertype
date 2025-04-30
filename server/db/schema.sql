@@ -174,7 +174,7 @@ BEGIN
 
     INSERT INTO titles (key, name, description, criteria_type, criteria_value)
     VALUES 
-      ('wawa_warrior', 'Wawa Warrior', 'Unlocked by completing a race or practice session with the Wawa snippet (ID 589)', 'snippet_completed', 589),
+      ('wawa_warrior', 'Wawa Warrior', 'Complete a race or practice session with the super secret Wawa snippet', 'snippet_completed', 589),
       ('orange_lightning', 'Orange Lightning', 'Achieve an average WPM of 150+', 'avg_wpm', 150),
       ('president_eisgruber', 'President Eisgruber', 'Fastest recorded time for the 15-second global leaderboard', 'global_fastest', 0),
       ('beta_tester', 'Beta Tester', 'Complete a race before May 15, 2025', 'beta_tester', 20250515),
