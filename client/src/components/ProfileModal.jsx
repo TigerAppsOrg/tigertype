@@ -30,6 +30,8 @@ function ProfileModal({ isOpen, onClose, netid }) {
   const [displayedBadges, setDisplayedBadges] = useState([]);
   const [showBadgeSelector, setShowBadgeSelector] = useState(false);
   const [maxBadges] = useState(5); // Maximum number of badges that can be displayed
+  const [allTitles, setAllTitles] = useState([]);
+  const [loadingAllTitles, setLoadingAllTitles] = useState(false);
   
   const modalRef = useRef();
   const typingInputRef = document.querySelector('.typing-input-container input');
@@ -320,15 +322,37 @@ function ProfileModal({ isOpen, onClose, netid }) {
   const selectTitle = async (titleId) => {
     setShowTitleDropdown(false);
     try {
-      await fetch('/api/profile/title', {
+      const response = await fetch('/api/profile/title', {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ titleId }),
       });
-      // Refresh context and modal titles to reflect the new selection
-      await fetchUserProfile();
-      setSelectedTitle(titleId);
+      
+      if (response.ok) {
+        // Update the local state immediately for a smooth transition
+        setSelectedTitle(titleId);
+        
+        // Update the userTitles array to reflect the new equipped status
+        setUserTitles(prevTitles => 
+          prevTitles.map(title => ({
+            ...title,
+            is_equipped: String(title.id) === String(titleId)
+          }))
+        );
+        
+        // Update the user context in the background without forcing a refresh
+        const userData = await fetchUserProfile();
+        if (userData) {
+          setUser(prevUser => ({
+            ...prevUser,
+            selected_title_id: titleId,
+            titles: userData.titles
+          }));
+        }
+      } else {
+        console.error('Failed to update title');
+      }
     } catch (error) {
       console.error('Error updating selected title:', error);
     }
@@ -554,6 +578,29 @@ function ProfileModal({ isOpen, onClose, netid }) {
   // Recalculate avatarUrl based on displayUser
   const avatarUrl = getCacheBustedImageUrl(displayUser?.avatar_url);
 
+  // Fetch all available titles
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchAllTitles = async () => {
+      try {
+        setLoadingAllTitles(true);
+        const response = await fetch('/api/titles', { credentials: 'include' });
+        if (!response.ok) {
+          throw new Error('Failed to fetch titles');
+        }
+        const data = await response.json();
+        setAllTitles(data || []);
+      } catch (error) {
+        console.error('Error fetching all titles:', error);
+        setAllTitles([]);
+      } finally {
+        setLoadingAllTitles(false);
+      }
+    };
+
+    fetchAllTitles();
+  }, [isOpen]);
+
   // Loading state check (consider both auth loading and profile loading)
   if ((isOwnProfile && loading) || (!isOwnProfile && loadingProfile)) {
      return (
@@ -643,25 +690,34 @@ function ProfileModal({ isOpen, onClose, netid }) {
                           {/* Add Deselect Option */}
                           <div
                             className="dropdown-option deselect-option"
-                            onClick={() => selectTitle(null)} // Pass null to deselect
+                            onClick={() => selectTitle(null)}
                           >
                             Deselect Title
                           </div>
-                          {loadingTitles ? (
+                          {loadingAllTitles ? (
                             <div className="dropdown-option loading">Loading titles...</div>
-                          ) : userTitles && userTitles.length > 0 ? (
-                            userTitles.map(title => (
-                              <div
-                                key={title.id}
-                                className="dropdown-option"
-                                onClick={() => selectTitle(title.id)}
-                              >
-                                 {title.name}
-                                <div className='title-description'>
-                                  - {title.description || 'No description available'}
+                          ) : allTitles && allTitles.length > 0 ? (
+                            allTitles.map(title => {
+                              const isUnlocked = userTitles.some(t => t.id === title.id);
+                              return (
+                                <div
+                                  key={title.id}
+                                  className={`dropdown-option ${isUnlocked ? '' : 'locked'}`}
+                                  onClick={() => isUnlocked && selectTitle(title.id)}
+                                >
+                                  {title.name}
+                                  <div className='title-description'>
+                                    - {title.description || 'No description available'}
+                                  </div>
+                                  {!isUnlocked && (
+                                    <div className='title-locked-indicator'>
+                                      <span className="material-icons">lock</span>
+                                      Locked
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            ))
+                              );
+                            })
                           ) : (
                             <div className="dropdown-option disabled">No titles available</div>
                           )}
@@ -673,9 +729,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
                     <div className="title-display static-title">
                        {loadingTitles ? (
                          <span>Loading title...</span>
-                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => t.id === displayUser.selected_title_id)?.name ? (
+                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.name ? (
                          // Display the equipped title if available
-                         <span className="displayed-title-name">{userTitles.find(t => t.id === displayUser.selected_title_id).name}</span>
+                         <span className="displayed-title-name">{userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)).name}</span>
                        ) : (
                          // Display message if no title is equipped
                          <span className="no-title-display">User has no title selected</span>

@@ -9,7 +9,7 @@ const UserModel = require('../models/user');
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
 const profileRoutes = require('./profileRoutes'); // Import profile routes
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 // Middleware to ensure API requests are authenticated
 const requireAuth = (req, res, next) => {
@@ -341,7 +341,7 @@ router.get('/snippets/filters', requireAuth, async (req, res) => {
       query += ' WHERE ' + conditions.join(' AND ');
     }
 
-    const result = await db.query(query, params);
+    const result = await pool.query(query, params);
     // Map numeric difficulties to string labels
     const difficultyMapReverse = { 1: 'easy', 2: 'medium', 3: 'hard' };
     const difficulties = result.rows
@@ -564,6 +564,21 @@ router.get('/user/:netid/titles', requireAuth, async (req, res) => {
     res.json(titlesWithEquip);
   } catch (err) {
     console.error('Error fetching titles for user by netid:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get all available titles
+router.get('/titles', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, key, name, description, criteria_type, criteria_value
+      FROM titles
+      ORDER BY id ASC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching all titles:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

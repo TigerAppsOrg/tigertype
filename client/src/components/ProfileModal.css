@@ -260,41 +260,91 @@
   border-top: none;
   border-radius: 0 0 4px 4px;
   z-index: 100;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdown-option {
-  padding: 0.5rem 0.8rem;
-  font-size: 1.5rem;
+  padding: 0.8rem 1rem;
+  font-size: 1.1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   text-align: left;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
+  border-bottom: 1px solid rgba(245, 128, 37, 0.1);
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
 }
 
 .dropdown-option:hover {
   background-color: rgba(245, 128, 37, 0.1);
 }
 
+.dropdown-option.locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-option.locked:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.title-locked-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+.title-locked-indicator .material-icons {
+  font-size: 1rem;
+}
+
 .dropdown-option.loading,
 .dropdown-option.disabled {
   font-style: italic;
   cursor: default;
+  padding: 1rem;
+  text-align: center;
 }
 
 .title-description {
-  position: relative;
-  top: 2px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #929292;
   font-style: italic;
   margin-left: 8px;
   border-left: 2px solid rgba(245, 128, 37, 0.3);
   padding-left: 8px;
+}
+
+.deselect-option {
+  color: #F58025;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(245, 128, 37, 0.3);
+}
+
+.deselect-option:hover {
+  background-color: rgba(245, 128, 37, 0.15);
 }
 
 /* When dropdown is open, change arrow direction */
