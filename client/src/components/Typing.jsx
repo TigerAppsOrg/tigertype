@@ -798,6 +798,17 @@ function Typing({
     );
   };
   
+  // Render cancel message when countdown is cancelled due to insufficient players
+  const getCancelledMessage = () => {
+    return (
+      <div className="stats countdown-stats">
+        <div className="stat-item countdown-item">
+          <span className="countdown-value">Start cancelled: not enough players</span>
+        </div>
+      </div>
+    );
+  };
+  
   // Render countdown in the stats area
   const getCountdown = () => {
     return (
@@ -850,6 +861,8 @@ function Typing({
     else {
       if (raceState.countdown !== null) {
         return getCountdown();
+      } else if (raceState.cancelledCountdown) {
+        return getCancelledMessage();
       } else if (!raceState.inProgress) {
         return getTips();
       } else {

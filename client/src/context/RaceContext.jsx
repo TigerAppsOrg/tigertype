@@ -174,7 +174,8 @@ export const RaceProvider = ({ children }) => {
         if (raceState.type === 'practice') {
           socket.emit('practice:join');
         } else if (raceState.type === 'public') {
-          socket.emit('public:join');
+          // Rejoin existing public lobby after reconnect
+          socket.emit('public:join', { code: raceState.code });
         } else if (raceState.type === 'private') {
           joinPrivateLobby({ code: raceState.code });
         }
@@ -522,8 +523,14 @@ export const RaceProvider = ({ children }) => {
 
   const joinPublicRace = () => {
     if (!socket || !connected) return;
-    console.log('Joining public race...');
-    socket.emit('public:join');
+    // Rejoin existing public lobby if available, otherwise start a new one
+    if (raceState.code && raceState.type === 'public') {
+      console.log('Rejoining public race with code:', raceState.code);
+      socket.emit('public:join', { code: raceState.code });
+    } else {
+      console.log('Joining public race...');
+      socket.emit('public:join');
+    }
   };
 
   const setPlayerReady = () => {
