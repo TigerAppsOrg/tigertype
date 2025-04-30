@@ -1,6 +1,7 @@
 const { pool } = require('../config/database');
 const migrations = require('./migrations');
 const { runMigrations, logDatabaseState } = migrations;
+const User = require('../models/user');
 
 /**
  * Initialize the database
@@ -144,18 +145,36 @@ const insertTimedResult = async (userId, duration, wpm, accuracy) => {
     console.error('Invalid data for insertTimedResult:', { userId, duration, wpm, accuracy });
     return null;
   }
+  let insertedResult = null;
   try {
     const result = await pool.query(
-      `INSERT INTO timed_leaderboard (user_id, duration, wpm, accuracy) 
+      `INSERT INTO timed_leaderboard (user_id, duration, wpm, accuracy)
        VALUES ($1, $2, $3, $4) RETURNING id`,
       [userId, duration, wpm, accuracy]
     );
+    insertedResult = result.rows[0];
     console.log(`Inserted timed result for user ${userId}, duration ${duration}: WPM ${wpm}, Accuracy ${accuracy}`);
-    return result.rows[0];
+
+    // Update user stats (avg wpm, acc) - mark as timed
+    await User.updateStats(userId, wpm, accuracy, true);
+
+    // Specifically check exclusive titles if it was a 15s test, as this affects Eisgruber
+    if (duration === 15) {
+      console.log('15s timed test completed, triggering exclusive title update check.');
+      // No need to await this necessarily, can run in background
+      User.updateExclusiveTitles(userId).catch(err => {
+        console.error('Background updateExclusiveTitles failed after 15s test:', err);
+      });
+    } else {
+      // For other timed tests, exclusive titles (Fastest/Slowest) are already checked within updateStats
+      // No separate call needed here unless other exclusive titles depend solely on non-15s timed tests.
+    }
+
   } catch (error) {
     console.error('Error inserting timed result:', error);
-    throw error;
+    throw error; // Re-throw error if insertion fails
   }
+  return insertedResult; // Return the result of the insertion query
 };
 
 const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) => {

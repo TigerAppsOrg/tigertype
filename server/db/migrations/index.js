@@ -452,6 +452,96 @@ const MIGRATIONS = [
       `);
       console.log('Revert complete: dropped selected_title_id column from users table');
     }
+  },
+  {
+    version: 14,
+    description: "Update titles: Modify Needs A Shower, Add Commitment Issues, Fastest/Slowest Typer, SPIA Major",
+    up: async (client) => {
+      console.log('Running migration 14: Update existing titles and add new ones...');
+      // Update 'Needs A Shower'
+      await client.query(`
+        UPDATE titles
+        SET 
+          description = 'Complete 1000 tests',
+          criteria_type = 'sessions_completed'
+        WHERE key = 'needs_a_shower';
+      `);
+
+      // Add new titles
+      await client.query(`
+        INSERT INTO titles (key, name, description, criteria_type, criteria_value) VALUES
+          ('commitment_issues', 'Commitment Issues', 'Achieve a completion rate of less than 5%', 'completion_rate_low', 5),
+          ('princetons_fastest_typer', 'Princeton''s Fastest Typer', 'Highest average WPM across all users', 'global_highest_avg_wpm', 0),
+          ('princetons_slowest_typer', 'Princeton''s Slowest Typer', 'Lowest average WPM across all users (min 10 sessions)', 'global_lowest_avg_wpm', 0),
+          ('spia_major', 'SPIA Major', 'Type over 10,000 words in total', 'words_typed', 10000)
+        ON CONFLICT (key) DO UPDATE SET -- Use UPDATE here in case migration is re-run
+          name = EXCLUDED.name,
+          description = EXCLUDED.description,
+          criteria_type = EXCLUDED.criteria_type,
+          criteria_value = EXCLUDED.criteria_value;
+      `);
+      console.log('Migration 14 complete: Titles updated and added.');
+    },
+    down: async (client) => {
+      console.log('Reverting migration 14: Remove new titles and revert Needs A Shower...');
+      // Remove the four new titles
+      await client.query(
+        `DELETE FROM titles WHERE key IN ('commitment_issues', 'princetons_fastest_typer', 'princetons_slowest_typer', 'spia_major');`
+      );
+
+      // Restore 'Needs A Shower' to its state before migration 14
+      await client.query(`
+        UPDATE titles
+        SET 
+          description = 'Complete 1000 races', -- Original description
+          criteria_type = 'races_completed'   -- Original criteria type
+        WHERE key = 'needs_a_shower';
+      `);
+      console.log('Revert migration 14 complete.');
+    }
+  },
+  {
+    version: 15,
+    description: "Fix column name inconsistency in user_titles table",
+    up: async (client) => {
+      console.log('Running migration 15: Checking for column name inconsistency in user_titles...');
+      
+      // Check if titles_id column exists
+      const columnCheck = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'user_titles' AND column_name = 'titles_id';
+      `);
+      
+      if (columnCheck.rows.length > 0) {
+        console.log('Found titles_id column (plural). Converting to title_id (singular) for consistency...');
+        
+        // Need to drop existing primary key constraint and foreign key constraint before renaming
+        await client.query(`
+          ALTER TABLE user_titles DROP CONSTRAINT IF EXISTS user_titles_pkey;
+          ALTER TABLE user_titles DROP CONSTRAINT IF EXISTS user_titles_titles_id_fkey;
+        `);
+        
+        // Rename column
+        await client.query(`
+          ALTER TABLE user_titles RENAME COLUMN titles_id TO title_id;
+        `);
+        
+        // Recreate constraints
+        await client.query(`
+          ALTER TABLE user_titles ADD CONSTRAINT user_titles_pkey PRIMARY KEY (user_id, title_id);
+          ALTER TABLE user_titles ADD CONSTRAINT user_titles_title_id_fkey FOREIGN KEY (title_id) REFERENCES titles(id) ON DELETE CASCADE;
+        `);
+        
+        console.log('Successfully renamed column to title_id and recreated constraints.');
+      } else {
+        console.log('Column is already named title_id or table structure is different. No changes needed.');
+      }
+    },
+    down: async (client) => {
+      console.log('Reverting migration 15: Not implementing downgrade for column rename to avoid data loss.');
+      // Not implementing downgrade as it could cause data loss
+    }
   }
 ];
 
