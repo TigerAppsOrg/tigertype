@@ -21,8 +21,8 @@ const PROGRESS_THROTTLE = 100; // ms
 const lastProgressUpdate = new Map();
 
 // Inactivity warning and timeout settings
-const INACTIVITY_WARNING_DELAY = 60000; // 60 seconds before warning
-const INACTIVITY_KICK_DELAY = 30000; // 30 seconds before kick (45 seconds total)
+const INACTIVITY_WARNING_DELAY = 10000; // 10 seconds before warning
+const INACTIVITY_KICK_DELAY = 15000; // 15 seconds before kick (30 seconds total)
 const inactivityTimers = new Map(); // Store timers for inactivity warnings and kicks
 
 // Store user avatar URLs for quicker lookup
@@ -1979,7 +1979,7 @@ const checkForInactivePlayers = (io, code) => {
     const warningTimer = setTimeout(() => {
       // Send inactivity warning
       io.to(inactivePlayer.id).emit('inactivity:warning', {
-        message: 'You will be kicked for inactivity in 45 seconds if you do not ready up.',
+        message: 'You will be kicked for inactivity in 15 seconds if you do not ready up.',
         timeRemaining: INACTIVITY_KICK_DELAY / 1000
       });
       console.log(`Sent inactivity warning to ${inactivePlayer.netid} in lobby ${code}`);
