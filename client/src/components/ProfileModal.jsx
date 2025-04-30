@@ -322,6 +322,18 @@ function ProfileModal({ isOpen, onClose, netid }) {
   const selectTitle = async (titleId) => {
     setShowTitleDropdown(false);
     try {
+      // Update the local state immediately for a smooth transition
+      setSelectedTitle(titleId);
+      
+      // Update the userTitles array to reflect the new equipped status
+      setUserTitles(prevTitles => 
+        prevTitles.map(title => ({
+          ...title,
+          is_equipped: String(title.id) === String(titleId)
+        }))
+      );
+      
+      // Send the API request after updating local state
       const response = await fetch('/api/profile/title', {
         method: 'PUT',
         credentials: 'include',
@@ -330,17 +342,6 @@ function ProfileModal({ isOpen, onClose, netid }) {
       });
       
       if (response.ok) {
-        // Update the local state immediately for a smooth transition
-        setSelectedTitle(titleId);
-        
-        // Update the userTitles array to reflect the new equipped status
-        setUserTitles(prevTitles => 
-          prevTitles.map(title => ({
-            ...title,
-            is_equipped: String(title.id) === String(titleId)
-          }))
-        );
-        
         // Update the user context in the background without forcing a refresh
         const userData = await fetchUserProfile();
         if (userData) {
@@ -745,6 +746,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
                        ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.name ? (
                          // Display the equipped title if available
                          <span className="displayed-title-name">{userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)).name}</span>
+                       ) : userTitles.find(t => t.is_equipped)?.name ? (
+                         // Alternatively check for is_equipped flag from the API response
+                         <span className="displayed-title-name">{userTitles.find(t => t.is_equipped).name}</span>
                        ) : (
                          // Display message if no title is equipped
                          <span className="no-title-display">User has no title selected</span>
