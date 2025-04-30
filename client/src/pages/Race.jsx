@@ -46,7 +46,7 @@ function Race() {
   
   // Handle back button
   const handleBack = () => {
-    resetRace();
+    resetRace(true);
     navigate('/home');
   };
   
