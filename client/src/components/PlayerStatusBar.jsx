@@ -80,89 +80,96 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
   return (
     <>
       <div className="player-status-bar">
-        {players.map((player, index) => (
-          <div
-            key={index}
-            className={`player-card ${!isRaceInProgress && player.ready ? 'player-ready' : ''}`}
-          >
-            <div className="player-info">
-              <div className="player-identity">
-                <div
-                  className="player-avatar"
-                  title={`${player.netid}'s avatar (click to enlarge)`}
-                  onClick={() => handleAvatarClick(player.avatar_url, player.netid)}
-                  role="button"
-                  aria-label={`View ${player.netid}'s avatar`}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      handleAvatarClick(player.avatar_url, player.netid);
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <img 
-                    src={player.avatar_url || defaultProfileImage} 
-                    alt={`${player.netid}'s avatar`}
-                    onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
-                  />
-                </div>
-                <div className="player-text">
-                  <span className="player-name">{player.netid}</span>
-                  {/* Determine the title to display */}
-                  {(() => {
-                    const titles = playerTitlesMap[player.netid];
-                    let titleToShow = null;
-
-                    if (titles && titles.length > 0) {
-                      const equippedTitle = titles.find(t => t.is_equipped);
-                      titleToShow = equippedTitle || titles[0];
-                    }
-
-                    return titleToShow ? (
-                      <div className="player-titles">
-                        <span className="player-title-badge">
-                          {titleToShow.name}
-                        </span>
-                      </div>
-                    ) : null; // Return null if no title should be displayed
-                  })()}
-                </div>
-              </div>
-              
-              {!isRaceInProgress ? (
-                // Lobby mode - show ready status/button
-                player.netid === currentUser?.netid ? (
-                  <button
-                    className={`ready-button ${player.ready ? 'ready-active' : ''}`}
-                    onClick={onReadyClick}
-                    disabled={player.ready}
-                  >
-                    {player.ready ? 'Ready' : 'Ready Up'}
-                  </button>
-                ) : (
-                  <span className={`ready-status ${player.ready ? 'ready-active' : ''}`}>
-                    {player.ready ? 'Ready' : 'Not Ready'}
-                  </span>
-                )
-              ) : null}
-            </div>
-            
-            {isRaceInProgress && (
-              <div className="progress-container">
-                <div className="progress-bar">
+        {players.map((player, index) => {
+          const isDisconnected = !!player.disconnected;
+          return (
+            <div
+              key={index}
+              className={`player-card ${!isRaceInProgress && player.ready ? 'player-ready' : ''} ${isDisconnected ? 'player-disconnected' : ''}`}
+            >
+              <div className="player-info">
+                <div className="player-identity">
                   <div
-                    className="progress-fill"
-                    style={{ width: `${player.progress || 0}%` }}
-                  ></div>
-                  <div className="progress-label">
-                    {player.progress || 0}%
+                    className="player-avatar"
+                    title={`${player.netid}'s avatar (click to enlarge)`}
+                    onClick={() => handleAvatarClick(player.avatar_url, player.netid)}
+                    role="button"
+                    aria-label={`View ${player.netid}'s avatar`}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleAvatarClick(player.avatar_url, player.netid);
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <img 
+                      src={player.avatar_url || defaultProfileImage} 
+                      alt={`${player.netid}'s avatar`}
+                      onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
+                    />
+                  </div>
+                  <div className="player-text">
+                    <span className="player-name">{player.netid}</span>
+                    {/* Determine the title to display */}
+                    {(() => {
+                      const titles = playerTitlesMap[player.netid];
+                      let titleToShow = null;
+
+                      if (titles && titles.length > 0) {
+                        const equippedTitle = titles.find(t => t.is_equipped);
+                        titleToShow = equippedTitle || titles[0];
+                      }
+
+                      return titleToShow ? (
+                        <div className="player-titles">
+                          <span className="player-title-badge">
+                            {titleToShow.name}
+                          </span>
+                        </div>
+                      ) : null; // Return null if no title should be displayed
+                    })()}
+                    {/* Disconnected badge */}
+                    {isDisconnected && (
+                      <span className="player-disconnected-badge">Disconnected</span>
+                    )}
                   </div>
                 </div>
+                
+                {!isRaceInProgress ? (
+                  // Lobby mode - show ready status/button
+                  player.netid === currentUser?.netid ? (
+                    <button
+                      className={`ready-button ${player.ready ? 'ready-active' : ''}`}
+                      onClick={onReadyClick}
+                      disabled={player.ready}
+                    >
+                      {player.ready ? 'Ready' : 'Ready Up'}
+                    </button>
+                  ) : (
+                    <span className={`ready-status ${player.ready ? 'ready-active' : ''}`}>
+                      {player.ready ? 'Ready' : 'Not Ready'}
+                    </span>
+                  )
+                ) : null}
               </div>
-            )}
-          </div>
-        ))}
+              
+              {isRaceInProgress && (
+                <div className="progress-container">
+                  <div className="progress-bar">
+                    <div
+                      className={`progress-fill ${isDisconnected ? 'disconnected' : ''}`}
+                      style={{ width: `${player.progress || 0}%` }}
+                    ></div>
+                    <div className="progress-label">
+                      {isDisconnected ? 'DC' : `${player.progress || 0}%`}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       
       {/* Enlarged Avatar Modal */}
