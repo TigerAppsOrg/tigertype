@@ -9,7 +9,7 @@ import tigerLogo from '../assets/logos/tigertype-logo.png';
 
 const HONOR_CODE = "I pledge my honour that I have not violated the honour code during this examination.";
 const TYPING_SPEED_MS = 80;
-const MISTAKE_CHANCE = 0.2;
+const MISTAKE_CHANCE = 0.1;
 const MISTAKE_PAUSE_MS = 400;
 const BACKSPACE_SPEED_MS = 60;
 const POST_CORRECTION_PAUSE_MS = 250;
@@ -17,9 +17,9 @@ const PAUSE_DURATION_MS = 3000;
 
 function Landing() {
   const { login } = useAuth();
-  const [fullText, setFullText] = useState(HONOR_CODE);
+  const [fullText, setFullText] = useState(''); // Start empty, effect sets initial text
   const [charIndex, setCharIndex] = useState(0);
-  const [stage, setStage] = useState('honorCode');
+  const [stage, setStage] = useState(''); // Start empty, mount effect sets it
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const intervalRef = useRef(null); // Holds the main typing/mistake/backspace interval
   const timeoutRef = useRef(null); // Holds stage transition/pause timeouts
@@ -41,6 +41,7 @@ function Landing() {
   }, []);
 
   const startAnimationProgress = useCallback((textToAnimate) => {
+    // console.log(`startAnimationProgress called for: ${textToAnimate.substring(0, 10)}... Ref: ${isMountedRef.current}`) // Debug
     if (!isMountedRef.current) return;
     // console.log("Starting animation for:", textToAnimate.substring(0, 10) + "..."); // Debug log
 
@@ -61,13 +62,17 @@ function Landing() {
         // --- End Condition ---
         if (prevIndex >= textToAnimate.length) {
           clearTimersAndIntervals();
-          if (stage === 'honorCode') {
-            // console.log("Honor code finished, setting timeout for fetch"); // Debug log
-            timeoutRef.current = setTimeout(() => {
-              if (isMountedRef.current) setStage('fetching');
-            }, PAUSE_DURATION_MS);
-          }
-          return prevIndex;
+          // Determine the next stage based on the text just completed
+          // IMPORTANT: Use the 'textToAnimate' argument, not 'fullText' state, as state might not be updated yet
+          const nextStage = textToAnimate === HONOR_CODE ? 'fetching' : 'honorCode';
+          // console.log(`Animation finished for ${textToAnimate === HONOR_CODE ? 'Honor Code' : 'Snippet'}. Setting timeout for stage: ${nextStage}`); // Debug log
+          timeoutRef.current = setTimeout(() => {
+            if (isMountedRef.current) {
+              // console.log(`Timeout finished. Setting stage to: ${nextStage}`); // Debug log
+              setStage(nextStage); // Trigger the next step in the cycle
+            }
+          }, PAUSE_DURATION_MS);
+          return prevIndex; // Stop incrementing index
         }
 
         // --- Mistake Trigger ---
@@ -140,47 +145,71 @@ function Landing() {
     // Start the initial typing interval
     intervalRef.current = setInterval(performTypingStep, TYPING_SPEED_MS);
 
-  }, [stage, clearTimersAndIntervals]);
+  }, [clearTimersAndIntervals]);
 
 
-   // Fetch random snippet
-   useEffect(() => {
-    if (stage === 'fetching' && isMountedRef.current) {
-       // console.log("Fetching new snippet..."); // Debug log
-       clearTimersAndIntervals();
+  // Effect to handle stage transitions (start animation, fetch)
+  useEffect(() => {
+    if (!isMountedRef.current) return; // Don't run if not mounted
 
-       fetch('/api/landing-snippet')
-         .then(res => {
-           if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-           return res.json();
-         })
-         .then(data => {
-           if (isMountedRef.current && data && data.text) {
-             startAnimationProgress(data.text);
-             setStage('snippet');
-           } else {
-             console.error("Could not fetch landing snippet or snippet was empty.");
-             if (isMountedRef.current) startAnimationProgress(HONOR_CODE); // Fallback
-           }
-         })
-         .catch(error => {
-           console.error('Error fetching landing snippet:', error);
-           if (isMountedRef.current) startAnimationProgress(HONOR_CODE); // Fallback
-         });
+    // console.log(`Stage changed to: ${stage}`); // Debug log
+
+    if (stage === 'honorCode') {
+      // console.log("Stage is 'honorCode', starting Honor Code animation."); // Debug log
+      clearTimersAndIntervals(); // Clear before starting new animation
+      startAnimationProgress(HONOR_CODE);
+    } else if (stage === 'fetching') {
+      // console.log("Stage is 'fetching', fetching new snippet..."); // Debug log
+      clearTimersAndIntervals(); // Clear before fetch
+
+      fetch('/api/landing-snippet')
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          if (isMountedRef.current && data && data.text) {
+            // console.log("Snippet fetched, starting animation and setting stage to snippet"); // Debug log
+            // No need to clear here, startAnimationProgress does it
+            startAnimationProgress(data.text); // Start animation first
+            setStage('snippet');           // Then set stage
+          } else {
+            console.error("Could not fetch landing snippet or snippet was empty. Falling back to Honor Code.");
+            if (isMountedRef.current) {
+              // console.log("Fetch failed, starting honor code and setting stage to honor code"); // Debug log
+              // No need to clear here, startAnimationProgress does it
+              startAnimationProgress(HONOR_CODE); // Start fallback animation
+              setStage('honorCode');            // Set stage accordingly (will trigger the effect again)
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching landing snippet:', error);
+          if (isMountedRef.current) {
+            // console.log("Fetch error, starting honor code and setting stage to honor code"); // Debug log
+            // No need to clear here, startAnimationProgress does it
+            startAnimationProgress(HONOR_CODE); // Start fallback animation
+            setStage('honorCode');            // Set stage accordingly (will trigger the effect again)
+          }
+        });
     }
+    // No action needed for stage 'snippet', animation is already running
   }, [stage, startAnimationProgress, clearTimersAndIntervals]);
 
 
-  // Start Honor Code animation on mount & cleanup
+  // Effect for initial mount and cleanup
   useEffect(() => {
+    // console.log("Mount effect running"); // Debug log
     isMountedRef.current = true;
-    startAnimationProgress(HONOR_CODE);
+    setStage('honorCode'); // Start the cycle
 
+    // Cleanup function for unmount
     return () => {
+      // console.log("Unmount cleanup running"); // Debug log
       isMountedRef.current = false;
       clearTimersAndIntervals();
     };
-  }, [startAnimationProgress, clearTimersAndIntervals]);
+  }, [clearTimersAndIntervals]); // Only depends on the stable cleanup function reference
 
 
   // --- Highlighted Text Generation ---
