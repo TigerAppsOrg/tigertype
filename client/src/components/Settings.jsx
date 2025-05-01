@@ -181,7 +181,7 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--mode-text-color', '#e0e0e0');
       document.documentElement.style.setProperty('--hover-color','#2a2a2a');
       document.documentElement.style.setProperty('--type-container-color', '#1e1e1e');
-      document.documentElement.style.setProperty('--container-color', '#232323');
+      document.documentElement.style.setProperty('--container-color', '#1A1A1A');
       document.documentElement.style.setProperty('--typing-color', '#ffffff53');
       document.documentElement.style.setProperty('--player-card-color', '#2a2a2a');
 
