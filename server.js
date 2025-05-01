@@ -78,8 +78,7 @@ const sessionMiddleware = session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none', // explicitly allow cross-site navigation (CAS redirects)
-    domain: process.env.NODE_ENV === 'production' ? new URL(process.env.SERVICE_URL).hostname : undefined
+    sameSite: 'lax'
   }
 });
 
