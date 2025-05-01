@@ -38,18 +38,22 @@ const io = socketIO(server, {
 });
 
 // --- Trust Proxy --- 
-// Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
-app.set('trust proxy', 1);
+// // Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
+// app.set('trust proxy', 1);
 
-// Force HTTPS redirect in production to ensure secure cookies are set over HTTPS
-if (process.env.NODE_ENV === 'production') {
-  app.use((req, res, next) => {
-    if (req.secure) {
-      return next();
-    }
-    return res.redirect(301, 'https://' + req.headers.host + req.url);
-  });
-}
+// // Force HTTPS redirect in production to ensure secure cookies are set over HTTPS
+// if (process.env.NODE_ENV === 'production') {
+//   app.use((req, res, next) => {
+//     if (req.secure) {
+//       return next();
+//     }
+//     return res.redirect(301, 'https://' + req.headers.host + req.url);
+//   });
+// }
+
+// Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare; 
+// trust the full chain so req.secure works correctly
+app.set('trust proxy', true);
 
 // Configure CORS
 const corsOptions = {
