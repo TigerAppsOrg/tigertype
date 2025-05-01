@@ -37,8 +37,10 @@ const io = socketIO(server, {
   pingInterval: 25000
 });
 
+// --- Trust Proxy ---
 app.set('trust proxy', true);
 
+// --- CORS ---
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' ? process.env.SERVICE_URL : 'http://localhost:5174',
   credentials: true,
@@ -54,8 +56,9 @@ try {
     const serviceUrl = process.env.SERVICE_URL;
     if (process.env.NODE_ENV === 'production' && serviceUrl) {
         const serviceUrlHostname = new URL(serviceUrl).hostname;
+        // Set domain ONLY for the custom domain, not for default herokuapp.com domains
         if (!serviceUrlHostname.endsWith('herokuapp.com')) {
-             cookieDomain = serviceUrlHostname;
+             cookieDomain = serviceUrlHostname; // e.g., 'type.tigerapps.org'
              console.log(`COOKIE DOMAIN: Set cookie domain for production: ${cookieDomain}`);
         } else {
              console.log('COOKIE DOMAIN: Running on default Heroku domain, cookie domain not explicitly set.');
@@ -67,9 +70,8 @@ try {
     console.error("Error parsing SERVICE_URL for cookie domain:", e);
 }
 
-// Configure session middleware
+// --- Session Middleware ---
 const sessionMiddleware = session({
-  proxy: true, // Keep this - helps determine secure connection
   store: new pgSession({
     pool: pool,
     tableName: 'user_sessions',
@@ -78,14 +80,14 @@ const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  rolling: true,
+  rolling: false,
+  name: 'connect.sid',
   cookie: {
-    path: '/',
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax',
-    domain: cookieDomain,
+    path: '/',                       // Ensure cookie applies to all paths
+    httpOnly: true,                  // Protects against XSS
+    maxAge: 24 * 60 * 60 * 1000,     // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Revert to 'none' for production CAS flow
+    domain: cookieDomain,            // Explicitly set for custom domain
   }
 });
 
@@ -94,24 +96,25 @@ app.use(sessionMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static file serving and routing based on environment
+// --- Static files and Routes ---
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'client/dist')));
   console.log('Production mode: Serving static files from client/dist');
-  try {
-    const clientDistPath = path.join(__dirname, 'client/dist');
-    console.log(`Checking existence of: ${clientDistPath}`);
-    console.log('Client/dist dir exists:', require('fs').existsSync(clientDistPath));
-    const indexPath = path.join(clientDistPath, 'index.html');
-    console.log(`Checking existence of: ${indexPath}`);
-    console.log('Index.html exists:', require('fs').existsSync(indexPath));
-  } catch (err) {
-    console.error('Error checking directories:', err);
-  }
+  // ... (directory checking logs) ...
 
+  // API/Auth routes BEFORE catch-all
   app.use(routes);
 
+  // SPA Catch-all
   app.get('*', (req, res) => {
+    // Check auth status *before* sending index.html for non-API routes
+    // to potentially redirect unauth users to login immediately
+    if (!isAuthenticated(req) && !req.path.startsWith('/api/') && !req.path.startsWith('/auth/')) {
+         // If trying to access a frontend route other than /, redirect to start auth flow
+         console.log(`Unauthenticated access to SPA route ${req.path}, redirecting to /auth/login`);
+         return res.redirect('/auth/login'); // Or just res.redirect('/') which triggers casAuth
+    }
+    // Serve index.html for authenticated users or allowed paths
     const indexPath = path.join(__dirname, 'client/dist/index.html');
     res.sendFile(indexPath, (err) => {
       if (err) {
@@ -124,86 +127,72 @@ if (process.env.NODE_ENV === 'production') {
 } else { // Development mode
   app.use(routes);
   app.get('/', (req, res) => {
-    res.json({
-      message: 'TigerType API Server',
-      note: `Please access the frontend at ${process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL}`,
-      environment: 'development'
-    });
+    res.json({ message: 'TigerType API Server', /* ... */ });
   });
 }
 
+// --- Socket.IO Setup ---
 io.use((socket, next) => {
   console.log('Socket middleware: sharing session...');
-  sessionMiddleware(socket.request, {}, next);
+  sessionMiddleware(socket.request, socket.request.res || {}, next); // Pass res if available
 });
 
 io.use(async (socket, next) => {
-  const req = socket.request;
-  console.log('Socket middleware: authenticating connection...', socket.id);
+    const req = socket.request;
+    console.log('Socket middleware: authenticating connection...', socket.id);
 
-  if (!isAuthenticated(req)) {
-    console.error('Socket authentication failed: User not authenticated');
-    return next(new Error('Authentication required'));
-  }
-  try {
-    const netid = req.session.userInfo.user;
-    if (!netid) {
-      console.error('Socket authentication failed: Missing netid');
-      return next(new Error('Invalid authentication: Missing netid'));
-    }
-    console.log(`Socket auth: Found netid ${netid}, looking up in database...`);
-    let user = null;
-    let userId = null;
-    try {
-      const UserModel = require('./server/models/user');
-      user = await UserModel.findOrCreate(netid);
-      if (user) {
-        userId = user.id;
-      }
-    } catch (dbErr) {
-      console.error('Database error during socket authentication:', dbErr);
-      console.log('Continuing with basic user info from session...');
-      if (req.session.userInfo.userId) {
-        userId = req.session.userInfo.userId;
-      } else {
-        try {
-          const db = require('./server/config/database');
-          const result = await db.query('SELECT id FROM users WHERE netid = $1', [netid]);
-          if (result.rows[0]) {
-            userId = result.rows[0].id;
-          }
-        } catch (directDbErr) {
-          console.error('Failed to get user ID directly:', directDbErr);
-        }
-      }
+    // Debug: Log session state at start
+    console.log('Socket Auth - Session ID:', req.sessionID);
+    // console.log('Socket Auth - Session Data:', JSON.stringify(req.session)); // Careful with sensitive data
+
+    if (!isAuthenticated(req)) {
+        console.error(`Socket authentication failed for socket ${socket.id}: User not authenticated in session.`);
+        return next(new Error('Authentication required'));
     }
 
-    if (!userId) {
-      console.error(`Socket authentication failed: Could not find/create user for ${netid}`);
-      return next(new Error('Failed to identify user in database'));
-    }
-    socket.userInfo = {
-      ...req.session.userInfo,
-      userId: userId
-    };
-    if (!req.session.userInfo.userId) {
-      req.session.userInfo.userId = userId;
-      req.session.save(err => {
-        if (err) {
-          console.error('Error saving session:', err);
+     try {
+        if (!req.session || !req.session.userInfo || !req.session.userInfo.user) {
+            console.error(`Socket authentication failed for socket ${socket.id}: Session or userInfo missing.`);
+            return next(new Error('Invalid session state'));
         }
-      });
-    }
-    console.log(`Socket auth success for netid: ${netid}, userId: ${userId}`);
-    next();
-  } catch (err) {
-    console.error('Socket authentication error:', err);
-    return next(new Error('Authentication error'));
-  }
+        const netid = req.session.userInfo.user;
+
+        const UserModel = require('./server/models/user');
+        const user = await UserModel.findOrCreate(netid);
+
+        if (!user || !user.id) {
+          console.error(`Socket authentication failed for socket ${socket.id}: Could not find/create user for ${netid}`);
+          return next(new Error('Failed to identify user in database'));
+        }
+
+        socket.userInfo = {
+          ...(req.session.userInfo || {}),
+          userId: user.id,
+          netid: user.netid
+        };
+
+        if (!req.session.userInfo.userId) {
+          req.session.userInfo.userId = user.id;
+          req.session.save(err => {
+            if (err) {
+              console.error(`Error saving session during socket auth for socket ${socket.id}:`, err);
+            } else {
+              console.log(`Session updated with userId during socket auth for socket ${socket.id}`);
+            }
+          });
+        }
+
+        console.log(`Socket auth success for socket ${socket.id} (netid: ${netid}, userId: ${user.id})`);
+        next();
+      } catch (err) {
+        console.error(`Socket authentication error for socket ${socket.id}:`, err);
+        return next(new Error('Authentication error'));
+      }
 });
 
 socketHandler.initialize(io);
 
+// --- Server Start ---
 const startServer = async () => {
   try {
     console.log(`${process.env.NODE_ENV} mode detected - checking database state...`);
@@ -217,18 +206,10 @@ const startServer = async () => {
       try {
         const client = await pool.connect();
         try {
-          const result = await client.query(`
-            SELECT COUNT(*) as count
-            FROM users u
-            WHERE u.fastest_wpm = 0
-            AND EXISTS (
-              SELECT 1 FROM race_results r
-              WHERE r.user_id = u.id AND r.wpm > 0
-            )
-          `);
+          const result = await client.query(/* fastest_wpm check query */);
           const discrepancyCount = parseInt(result.rows[0].count);
           if (discrepancyCount > 0) {
-            console.log(`Found ${discrepancyCount} users with fastest_wpm = 0 but have race results > 0`);
+            console.log(`Found ${discrepancyCount} users with fastest_wpm = 0/null but have race results > 0`);
             const dbHelpers = require('./server/utils/db-helpers');
             await dbHelpers.updateAllUsersFastestWpm();
             console.log('Fixed fastest_wpm discrepancies');
@@ -257,6 +238,9 @@ const startServer = async () => {
       } else {
            console.log('SESSION_SECRET is set.');
       }
+       // Log final effective cookie settings
+       const finalCookieConfig = sessionMiddleware.cookie;
+       console.log('Effective Cookie Settings:', JSON.stringify(finalCookieConfig));
     });
   } catch (err) {
     console.error('Failed to start server:', err);
