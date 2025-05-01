@@ -38,7 +38,7 @@ const io = socketIO(server, {
 });
 
 // --- Trust Proxy ---
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // --- CORS ---
 const corsOptions = {
@@ -82,6 +82,7 @@ const sessionMiddleware = session({
   saveUninitialized: false,
   rolling: true,
   name: 'connect.sid',
+  proxy: true,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     path: '/',                       // Ensure cookie applies to all paths
@@ -101,7 +102,6 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'client/dist')));
   console.log('Production mode: Serving static files from client/dist');
-  // ... (directory checking logs) ...
 
   // API/Auth routes BEFORE catch-all
   app.use(routes);
