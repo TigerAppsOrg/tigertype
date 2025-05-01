@@ -72,8 +72,10 @@ function Results({ onShowLeaderboard }) {
   
   // Add handler to queue another public race
   const handleQueueNext = () => {
+    // Reset local race state before queuing
     resetRace();
-    joinPublicRace();
+    // Force a new public race queue, ignoring previous lobby code
+    joinPublicRace(true);
   };
   
   // Render practice mode results

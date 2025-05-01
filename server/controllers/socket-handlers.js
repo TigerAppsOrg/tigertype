@@ -31,6 +31,8 @@ const playerAvatars = new Map(); // socketId -> avatar_url
 // Store host disconnect timers for private lobbies
 const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds
 const hostDisconnectTimers = new Map(); // lobbyCode -> { timer: NodeJS.Timeout, userId: number }
+// Store countdown timers for public races to allow aborting countdown
+const countdownTimers = new Map(); // lobbyCode -> NodeJS.Timeout
 
 // Helper functions
 // Get player data for client, including avatar URL and basic stats
@@ -459,11 +461,16 @@ const initialize = (io) => {
       }
     });
 
-    // Handle joining public lobby
-    socket.on('public:join', async () => {
+    // Handle joining public lobby (supports rejoin via code)
+    socket.on('public:join', async (opts = {}) => {
       const { user: netid, userId } = socket.userInfo; // Get user info
       try {
-        console.log(`User ${netid} joining public lobby`);
+        // Log join or rejoin
+        if (opts.code) {
+          console.log(`User ${netid} rejoining public lobby with code ${opts.code}`);
+        } else {
+          console.log(`User ${netid} joining public lobby`);
+        }
 
         // Force disconnect any existing sessions for this user ID FIRST
         await forceDisconnectExistingSessions(io, socket, userId);
@@ -471,11 +478,24 @@ const initialize = (io) => {
         // Leave any existing race first
         await leaveCurrentRace(io, socket, netid);
 
-        // Try to find an existing public lobby
-        let lobby = await RaceModel.findPublicLobby();
+        // Try to find or rejoin public lobby
+        let lobby;
         let snippet;
+        if (opts.code) {
+          // Rejoin specific public lobby
+          const joinCode = opts.code.toString().trim();
+          lobby = await RaceModel.findByCode(joinCode);
+          if (!lobby) {
+            console.error(`Public lobby ${joinCode} not found`);
+            socket.emit('error', { message: 'Public lobby not found' });
+            return;
+          }
+        } else {
+          // Join any available public lobby
+          lobby = await RaceModel.findPublicLobby();
+        }
 
-        // If no lobby exists, create a new one with a random snippet
+        // If no lobby exists (fresh join), create a new one
         if (!lobby) {
           console.log('No existing public lobby found, creating a new one');
           snippet = await SnippetModel.getRandom();
@@ -508,8 +528,6 @@ const initialize = (io) => {
           console.log(`Found existing public lobby with code ${lobby.code}`);
           // Ensure active race exists for this lobby
           if (!activeRaces.has(lobby.code)) {
-            // This is a safeguard against a race condition where the lobby exists in DB
-            // but not in memory (server restart, etc.)
             console.log(`Lobby ${lobby.code} exists in database but not in memory, initializing...`);
             activeRaces.set(lobby.code, {
               id: lobby.id,
@@ -930,8 +948,30 @@ const initialize = (io) => {
     socket.on('lobby:leave', async () => {
       const { user: netid } = socket.userInfo;
       console.log(`User ${netid} manually leaving lobby via leave event.`);
-      // Reuse disconnect logic to leave the current race and broadcast
-      await leaveCurrentRace(io, socket, netid);
+      // Reuse leave logic to remove the player and broadcast updates
+      const leftCode = await leaveCurrentRace(io, socket, netid);
+      // Abort countdown if public race with insufficient players
+      if (leftCode) {
+        const race = activeRaces.get(leftCode);
+        const players = racePlayers.get(leftCode) || [];
+        if (race && race.type === 'public' && race.status === 'countdown' && players.length > 0 && players.length < 2) {
+          console.log(`Aborting countdown for public race ${leftCode} due to insufficient players (${players.length}) after manual leave.`);
+          const timer = countdownTimers.get(leftCode);
+          if (timer) {
+            clearTimeout(timer);
+            countdownTimers.delete(leftCode);
+          }
+          race.status = 'waiting';
+          activeRaces.set(leftCode, race);
+          try {
+            await RaceModel.updateStatus(race.id, 'waiting');
+            console.log(`Race ${leftCode} status reset to 'waiting' in database`);
+          } catch (err) {
+            console.error(`Error resetting race ${leftCode} status in database:`, err);
+          }
+          io.to(leftCode).emit('race:countdown', { seconds: null, code: leftCode });
+        }
+      }
     });
 
     // Handle kicking a player (host only)
@@ -1595,6 +1635,27 @@ const initialize = (io) => {
             }
           }
           console.log(`[Disconnect] Finished DB removal attempt for ${netid} in ${code}. Proceeding with broadcast.`);
+          // Abort countdown if public race has fewer than 2 players during countdown
+          if (race && race.type === 'public' && race.status === 'countdown' && players.length > 0 && players.length < 2) {
+            console.log(`Aborting countdown for public race ${code} due to insufficient players (${players.length}) after disconnect.`);
+            const timer = countdownTimers.get(code);
+            if (timer) {
+              clearTimeout(timer);
+              countdownTimers.delete(code);
+            }
+            // Reset race status to waiting
+            race.status = 'waiting';
+            activeRaces.set(code, race);
+            // Persist reset status in database
+            try {
+              await RaceModel.updateStatus(race.id, 'waiting');
+              console.log(`Race ${code} status reset to 'waiting' in database`);
+            } catch (err) {
+              console.error(`Error resetting race ${code} status in database:`, err);
+            }
+            // Notify clients to clear countdown
+            io.to(code).emit('race:countdown', { seconds: null, code });
+          }
 
           // --- Lobby Cleanup / Player List Update ---
           if (players.length === 0) {
@@ -1806,8 +1867,12 @@ const startCountdown = async (io, code) => {
     // Broadcast countdown start - 5 seconds for multiplayer races
     io.to(code).emit('race:countdown', { seconds: 5, code });
     
-    // Wait 5 seconds and start the race
-    setTimeout(() => startRace(io, code), 5000);
+    // Wait 5 seconds and start the race (store timer to allow abort)
+    const timer = setTimeout(() => {
+      countdownTimers.delete(code);
+      startRace(io, code);
+    }, 5000);
+    countdownTimers.set(code, timer);
   } catch (err) {
     console.error('Error starting countdown:', err);
   }
