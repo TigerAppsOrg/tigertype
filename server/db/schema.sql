@@ -180,9 +180,10 @@ BEGIN
       ('beta_tester', 'Beta Tester', 'Complete a race before May 15, 2025', 'beta_tester', 20250515),
       ('needs_a_shower', 'Needs A Shower', 'Complete 1000 tests or sessions', 'sessions_completed', 1000),
       ('commitment_issues', 'Commitment Issues', 'Achieve a completion rate of less than 5% across all sessions', 'completion_rate_low', 5),
-      ('princetons_fastest_typer', 'Princeton\'s Fastest Typer', 'Highest average WPM across all users', 'global_highest_avg_wpm', 0),
-      ('princetons_slowest_typer', 'Princeton\'s Slowest Typer', 'Lowest average WPM across all users (min 10 sessions)', 'global_lowest_avg_wpm', 0),
-      ('spia_major', 'SPIA Major', 'Type over 10,000 words in total', 'words_typed', 10000)
+      ('princetons_fastest_typer', 'Princeton''s Fastest Typer', 'Highest average WPM across all users', 'global_highest_avg_wpm', 0),
+      ('princetons_slowest_typer', 'Princeton''s Slowest Typer', 'Lowest average WPM across all users (min 10 sessions)', 'global_lowest_avg_wpm', 0),
+      ('spia_major', 'SPIA Major', 'Type over 10,000 words in total', 'words_typed', 10000),
+      ('fastest_tiger_alive', 'Fastest Tiger Alive', 'Highest recorded fastest WPM across all users', 'global_highest_fastest_wpm', 0)
     ON CONFLICT (key) DO UPDATE SET
       name = EXCLUDED.name,
       description = EXCLUDED.description,
