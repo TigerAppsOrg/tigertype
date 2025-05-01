@@ -1,6 +1,7 @@
 /**
  * auth.js
  * CAS Authentication module for TigerType
+ * slighlty modiifed from og
  */
 
 const axios = require('axios');
@@ -131,7 +132,7 @@ async function casAuth(req, res, next) {
 
   console.debug('CAS ticket found, validating ticket:', ticket);
 
-  // Fix: Generate the proper request URL with HTTPS protocol in production
+  // Generate the proper request URL with HTTPS protocol in production
   let incomingRequestUrl;
   try {
     // Force HTTPS protocol in production, regardless of detected protocol
@@ -198,7 +199,7 @@ async function casAuth(req, res, next) {
       });
     }
 
-    const homeUrl = new URL('/', FRONTEND_URL).toString();
+    const homeUrl = new URL('/home', FRONTEND_URL).toString();
     console.debug('Redirecting to frontend root after DB operation:', homeUrl);
     res.redirect(homeUrl);
 
