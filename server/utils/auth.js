@@ -39,8 +39,9 @@ function stripTicket(urlStr) {
   try {
     const parsedUrl = new URL(urlStr);
     parsedUrl.searchParams.delete('ticket');
+    // Always use HTTPS in production
     if (process.env.NODE_ENV === 'production') {
-        parsedUrl.protocol = 'https:';
+      parsedUrl.protocol = 'https:';
     }
     return parsedUrl.toString();
   } catch (error) {
@@ -57,7 +58,13 @@ function stripTicket(urlStr) {
  */
 async function validate(ticket, requestUrl) {
   try {
-    const serviceUrl = stripTicket(requestUrl);
+    const serviceUrl = (() => {
+      // Try to use the protocol from x-forwarded-proto first (Cloudflare/Heroku)
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      const url = `${protocol}://${host}${req.originalUrl}`;
+      return stripTicket(url);
+    })();
 
     if (!serviceUrl || !serviceUrl.startsWith('http')) {
          console.error("Invalid serviceUrl generated for CAS validation:", serviceUrl, "Original Request URL:", requestUrl);

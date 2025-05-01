@@ -39,6 +39,15 @@ const io = socketIO(server, {
 
 // --- Trust Proxy ---
 app.set('trust proxy', true); // Use true for built-in trust
+app.use((req, res, next) => {
+  // Fix HTTPS detection through Cloudflare
+  if (req.headers['x-forwarded-proto'] === 'https' || 
+      req.headers['cf-visitor'] && JSON.parse(req.headers['cf-visitor']).scheme === 'https') {
+    req.protocol = 'https';
+    req.secure = true;
+  }
+  next();
+});
 
 // --- CORS ---
 const corsOptions = {
@@ -101,14 +110,14 @@ const sessionMiddleware = session({
   saveUninitialized: false,
   rolling: true,
   name: 'connect.sid',
-  proxy: true, // Keep this alongside app.set('trust proxy', ...)
+  proxy: true,
   cookie: {
-    secure: isProd,               // Should be true in production
+    secure: process.env.NODE_ENV === 'production',
     path: '/',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'lax',             // Keep as 'lax' (default works too)
-    domain: cookieDomain,        // Use the calculated domain
+    sameSite: 'none',
+    domain: cookieDomain,
   }
 });
 
