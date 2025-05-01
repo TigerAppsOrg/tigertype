@@ -24,7 +24,6 @@ const { initDB, logDatabaseState } = require('./server/db');
 const { runMigrations } = require('./server/db/migrations');
 const { URL } = require('url');
 
-// Initialize Express app
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
@@ -38,11 +37,8 @@ const io = socketIO(server, {
   pingInterval: 25000
 });
 
-// Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare;
-// trust the full chain so req.secure works correctly
 app.set('trust proxy', true);
 
-// Configure CORS
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' ? process.env.SERVICE_URL : 'http://localhost:5174',
   credentials: true,
@@ -73,6 +69,7 @@ try {
 
 // Configure session middleware
 const sessionMiddleware = session({
+  proxy: true, // Keep this - helps determine secure connection
   store: new pgSession({
     pool: pool,
     tableName: 'user_sessions',
@@ -81,20 +78,19 @@ const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
-    path: '/', // Explicitly set Path to root,,, istg is this was the problem
+    path: '/',
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: cookieDomain, 
+    sameSite: 'lax',
+    domain: cookieDomain,
   }
 });
 
-// Use session middleware for Express
 app.use(sessionMiddleware);
 
-// Parse JSON + URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -113,10 +109,8 @@ if (process.env.NODE_ENV === 'production') {
     console.error('Error checking directories:', err);
   }
 
-  // API and auth routes should be defined before the catch-all
   app.use(routes);
 
-  // For any other routes in production, serve the React app's index.html
   app.get('*', (req, res) => {
     const indexPath = path.join(__dirname, 'client/dist/index.html');
     res.sendFile(indexPath, (err) => {
@@ -138,13 +132,11 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Share session between Express and Socket.io
 io.use((socket, next) => {
   console.log('Socket middleware: sharing session...');
   sessionMiddleware(socket.request, {}, next);
 });
 
-// Socket authentication middleware
 io.use(async (socket, next) => {
   const req = socket.request;
   console.log('Socket middleware: authenticating connection...', socket.id);
@@ -210,10 +202,8 @@ io.use(async (socket, next) => {
   }
 });
 
-// Initialize socket handlers
 socketHandler.initialize(io);
 
-// Start the server
 const startServer = async () => {
   try {
     console.log(`${process.env.NODE_ENV} mode detected - checking database state...`);
