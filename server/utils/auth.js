@@ -1,7 +1,6 @@
 /**
  * auth.js
  * CAS Authentication module for TigerType
- * slightly modified from og template
  */
 
 const axios = require('axios');
@@ -25,7 +24,6 @@ try {
     process.exit(1); // Exit if the base URL is invalid
 }
 
-
 /**
  * strip ticket parameter from URL
  * @param {string} urlStr - URL to strip the ticket from
@@ -39,7 +37,7 @@ function stripTicket(urlStr) {
   try {
     const parsedUrl = new URL(urlStr);
     parsedUrl.searchParams.delete('ticket');
-    // Always use HTTPS in production
+    // Always enforce HTTPS in production
     if (process.env.NODE_ENV === 'production') {
       parsedUrl.protocol = 'https:';
     }
@@ -51,24 +49,19 @@ function stripTicket(urlStr) {
 }
 
 /**
- * valide a login ticket by contacting CAS server
+ * validate a login ticket by contacting CAS server
  * @param {string} ticket - CAS ticket to validate
  * @param {string} requestUrl - original request URL (used to derive serviceUrl)
  * @returns {Promise<Object|null>} user info if auth successful, null otherwise
  */
 async function validate(ticket, requestUrl) {
   try {
-    const serviceUrl = (() => {
-      // Try to use the protocol from x-forwarded-proto first (Cloudflare/Heroku)
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-      const host = req.headers['x-forwarded-host'] || req.get('host');
-      const url = `${protocol}://${host}${req.originalUrl}`;
-      return stripTicket(url);
-    })();
+    // Generate serviceUrl from requestUrl parameter (NOT req)
+    const serviceUrl = stripTicket(requestUrl);
 
     if (!serviceUrl || !serviceUrl.startsWith('http')) {
-         console.error("Invalid serviceUrl generated for CAS validation:", serviceUrl, "Original Request URL:", requestUrl);
-         throw new Error("Invalid service URL for CAS validation");
+      console.error("Invalid serviceUrl generated for CAS validation:", serviceUrl, "Original Request URL:", requestUrl);
+      throw new Error("Invalid service URL for CAS validation");
     }
 
     const validationUrl = `${CAS_URL}validate?service=${encodeURIComponent(serviceUrl)}&ticket=${encodeURIComponent(ticket)}&format=json`;
@@ -97,11 +90,11 @@ async function validate(ticket, requestUrl) {
     return null;
   } catch (error) {
     if (error.response) {
-        console.error('Error validating CAS ticket - Axios Response Error:', { status: error.response.status, data: error.response.data });
+      console.error('Error validating CAS ticket - Axios Response Error:', { status: error.response.status, data: error.response.data });
     } else if (error.request) {
-        console.error('Error validating CAS ticket - Axios Request Error (No Response)');
+      console.error('Error validating CAS ticket - Axios Request Error (No Response)');
     } else {
-        console.error('Error validating CAS ticket - General Error:', error.message);
+      console.error('Error validating CAS ticket - General Error:', error.message);
     }
     console.error('Validation URL attempted (ticket redacted):', `${CAS_URL}validate?service=${encodeURIComponent(stripTicket(requestUrl))}&ticket=REDACTED&format=json`);
     return null;
@@ -115,13 +108,6 @@ async function validate(ticket, requestUrl) {
 async function casAuth(req, res, next) {
   console.debug('CAS Auth middleware called, checking authentication...');
 
-  // Add check for session existence
-  if (!req.session) {
-      console.error('Session object is missing from request during casAuth!');
-      return res.status(500).send('Session configuration error.');
-  }
-
-
   if (req.session && req.session.userInfo && req.session.userInfo.user) {
     console.debug('User already authenticated:', req.session.userInfo.user);
     return next();
@@ -132,7 +118,6 @@ async function casAuth(req, res, next) {
   if (!ticket) {
     console.debug('No CAS ticket found, redirecting to CAS login...');
     try {
-      // Use FRONTEND_URL to construct the service URL's base path
       const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
       const loginUrl = new URL('login', CAS_URL);
       loginUrl.searchParams.set('service', serviceUrl);
@@ -146,27 +131,21 @@ async function casAuth(req, res, next) {
 
   console.debug('CAS ticket found, validating ticket:', ticket);
 
+  // Fix: Generate the proper request URL with HTTPS protocol in production
   let incomingRequestUrl;
   try {
-    // Construct the URL based on the reliable FRONTEND_URL base
-    // and the original path + query string from the request.
-    // This ensures the protocol and host match the expected service URL.
-    const base = new URL(FRONTEND_URL);
-    const currentPathAndQuery = req.originalUrl; // e.g., /auth/login?ticket=...
-    incomingRequestUrl = new URL(currentPathAndQuery, base).toString();
-
-    // Log the revised URL
+    // Force HTTPS protocol in production, regardless of detected protocol
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    incomingRequestUrl = `${protocol}://${host}${req.originalUrl}`;
     console.debug('Constructed Incoming Request URL for validation (Revised):', incomingRequestUrl);
-
-    // Basic validation
-    new URL(incomingRequestUrl);
-
   } catch (error) {
     console.error("Error constructing request URL for validation:", error);
     return res.status(500).send('Authentication error: Could not determine request URL');
   }
 
   try {
+    // Pass the properly constructed URL to validate
     const userInfo = await validate(ticket, incomingRequestUrl);
 
     if (!userInfo) {
@@ -184,80 +163,47 @@ async function casAuth(req, res, next) {
 
     console.debug('CAS authentication successful, user info:', userInfo);
 
-    // Ensure req.session exists before trying to assign to it
-    if (!req.session) {
-       console.error('Session object became unavailable before assignment!');
-       // Handle error: maybe redirect to login again or show an error page
-       return res.status(500).send('Session error after validation.');
-    }
-
     req.session.userInfo = userInfo;
     const netid = userInfo.user;
 
-    // Make session saving robust
     await new Promise((resolve, reject) => {
-        req.session.save(err => {
-            if (err) {
-                console.error('Error saving session after validation:', err);
-                return reject(new Error('Failed to save session after validation.'));
-            }
-            console.debug('Session saved successfully after validation. Session ID:', req.sessionID);
-            resolve();
-        });
+      req.session.save(err => {
+        if (err) {
+          console.error('Error saving session after validation:', err);
+          return reject(err);
+        }
+        console.debug('Session saved successfully after validation. Session ID:', req.sessionID);
+        resolve();
+      });
     });
 
-
-    // Ensure UserModel is required here if not globally available
     const UserModel = require('../models/user');
-    console.debug('(Post-session save) Creating or updating user in database for netid:', netid);
-    const user = await UserModel.findOrCreate(netid); // This already handles findOrCreate
-    console.debug('User created/found in database:', user ? { id: user.id, netid: user.netid } : null);
+    console.log('(Post-session save) Creating or updating user in database for netid:', netid);
+    const user = await UserModel.findOrCreate(netid);
+    console.log('User created/found in database:', user);
 
-    // Add userId to session if found/created and not already there
-    if (user && user.id) {
-      // Check if session still exists (paranoia check)
-      if (!req.session) {
-          console.error('Session object became unavailable before adding userId!');
-          throw new Error('Session became unavailable before adding userId.');
-      }
-      if (!req.session.userInfo) {
-          console.warn('req.session.userInfo was missing before adding userId, recreating.');
-          req.session.userInfo = {}; // Recreate if somehow lost
-      }
-       if (!req.session.userInfo.userId || req.session.userInfo.userId !== user.id) {
-         console.debug(`Updating session with userId: ${user.id}`);
-         req.session.userInfo.userId = user.id;
-         // Save session again after adding userId
-         await new Promise((resolve, reject) => {
-             req.session.save(err => {
-                  if (err) {
-                     console.error('Error saving session after adding userId:', err);
-                     // Don't necessarily reject, log the error but proceed with redirect
-                     resolve(); // Or decide to reject based on severity
-                  } else {
-                     console.debug('Session updated successfully with userId.');
-                     resolve();
-                  }
-             });
-         });
-       } else {
-           console.debug('userId already present and correct in session.');
-       }
-    } else {
-        console.error('Failed to get user ID after findOrCreate for netid:', netid);
-        // Handle appropriately - maybe user creation failed silently?
-        throw new Error('Failed to retrieve user ID after database operation.');
+    if (user && user.id && (!req.session.userInfo.userId)) {
+      req.session.userInfo.userId = user.id;
+      console.log("Updating session with userId:", user.id);
+      await new Promise((resolve, reject) => {
+        req.session.save(err => {
+          if (err) {
+            console.error('Error saving session after adding userId:', err);
+            reject(err);
+          } else {
+            console.log('Session updated successfully with userId.');
+            resolve();
+          }
+        });
+      });
     }
 
-    // Redirect to the frontend home page (React Router will handle /home)
-    // Use FRONTEND_URL to ensure correct protocol and domain
-    const homeRedirectUrl = new URL('/', FRONTEND_URL).toString(); // Redirect to root, let client handle /home route
-    console.debug('Redirecting to frontend root after DB operation:', homeRedirectUrl);
-    res.redirect(homeRedirectUrl);
+    const homeUrl = new URL('/', FRONTEND_URL).toString();
+    console.debug('Redirecting to frontend root after DB operation:', homeUrl);
+    res.redirect(homeUrl);
 
   } catch (error) {
     console.error('Error during CAS authentication process or post-validation:', error);
-    // Fallback redirect to login
     try {
       const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
       const loginUrl = new URL('login', CAS_URL);
@@ -278,13 +224,12 @@ async function casAuth(req, res, next) {
 function isAuthenticated(req) {
   const authenticated = !!(req.session && req.session.userInfo && req.session.userInfo.user);
   if (!authenticated) {
-      console.debug('isAuthenticated check: FALSE. Session ID:', req.sessionID, 'Session Exists:', !!req.session, 'UserInfo Exists:', !!req.session?.userInfo);
+    console.debug('isAuthenticated check: FALSE. Session ID:', req.sessionID, 'Session Exists:', !!req.session, 'UserInfo Exists:', !!req.session?.userInfo);
   } else {
-       console.debug('isAuthenticated check: TRUE. User:', req.session.userInfo.user, 'Session ID:', req.sessionID);
+    console.debug('isAuthenticated check: TRUE. User:', req.session.userInfo.user, 'Session ID:', req.sessionID);
   }
   return authenticated;
 }
-
 
 /**
  * Get authenticated user info
@@ -305,39 +250,39 @@ function logoutApp(req, res) {
   console.log(`Logging out user ${userNetid} from the application.`);
   if (req.session) {
     req.session.destroy((err) => {
-        if (err) {
-            console.error('Error destroying session:', err);
+      if (err) {
+        console.error('Error destroying session:', err);
+      }
+      
+      let cookieDomain;
+      try {
+        if (process.env.NODE_ENV === 'production' && FRONTEND_URL) {
+          const hostname = new URL(FRONTEND_URL).hostname;
+          if (!hostname.endsWith('herokuapp.com')) {
+            cookieDomain = hostname;
+          }
         }
-         let cookieDomain;
-         try {
-             if (process.env.NODE_ENV === 'production' && FRONTEND_URL) {
-                 const hostname = new URL(FRONTEND_URL).hostname;
-                 if (!hostname.endsWith('herokuapp.com')) {
-                     cookieDomain = hostname;
-                 }
-             }
-         } catch(e) { console.error("Error parsing FRONTEND_URL for cookie domain in logout", e); }
-         res.clearCookie('connect.sid', { path: '/', domain: cookieDomain });
+      } catch(e) { console.error("Error parsing FRONTEND_URL for cookie domain in logout", e); }
+      res.clearCookie('connect.sid', { path: '/', domain: cookieDomain });
 
-        try {
-            const landingUrl = new URL('/', FRONTEND_URL).toString();
-            console.log(`Redirecting logged out user to: ${landingUrl}`);
-            res.redirect(landingUrl);
-        } catch (error) {
-            console.error('Error constructing landing page URL during logout:', error);
-            res.redirect('/');
-        }
+      try {
+        const landingUrl = new URL('/', FRONTEND_URL).toString();
+        console.log(`Redirecting logged out user to: ${landingUrl}`);
+        res.redirect(landingUrl);
+      } catch (error) {
+        console.error('Error constructing landing page URL during logout:', error);
+        res.redirect('/');
+      }
     });
   } else {
-     try {
-        const landingUrl = new URL('/', FRONTEND_URL).toString();
-        res.redirect(landingUrl);
-     } catch (error) {
-        res.redirect('/');
-     }
+    try {
+      const landingUrl = new URL('/', FRONTEND_URL).toString();
+      res.redirect(landingUrl);
+    } catch (error) {
+      res.redirect('/');
+    }
   }
 }
-
 
 /**
  * Log out from CAS and then from the application
@@ -354,8 +299,8 @@ function logoutCAS(req, res) {
     console.log(`Redirecting user ${userNetid} to CAS logout URL: ${logoutUrl.toString()}`);
     res.redirect(logoutUrl.toString());
   } catch(error) {
-      console.error('Error constructing CAS logout URL:', error);
-      res.status(500).send('Logout configuration error');
+    console.error('Error constructing CAS logout URL:', error);
+    res.status(500).send('Logout configuration error');
   }
 }
 
@@ -364,6 +309,5 @@ module.exports = {
   isAuthenticated,
   getAuthenticatedUser,
   logoutApp,
-  logoutCAS,
-  stripTicket // Ensure stripTicket is also exported if needed elsewhere
+  logoutCAS
 };

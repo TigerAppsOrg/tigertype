@@ -83,18 +83,21 @@ try {
 console.log(`COOKIE DOMAIN: Effective value being used: ${cookieDomain}`);
 
 app.use((req, res, next) => {
-  // Only log for relevant paths to reduce noise
-  if (req.path.startsWith('/auth/') || req.path === '/' || req.path === '/home') {
-      console.log(`[DIAGNOSTIC LOG] Path: ${req.path}`);
-      console.log(`[DIAGNOSTIC LOG] Headers:`, {
-          'host': req.headers['host'],
-          'x-forwarded-proto': req.headers['x-forwarded-proto'],
-          'x-forwarded-for': req.headers['x-forwarded-for'],
-          'cookie': req.headers['cookie'] || 'None'
-      });
-      // req.secure relies on 'trust proxy' having been set already
-      console.log(`[DIAGNOSTIC LOG] req.protocol: ${req.protocol}, req.secure: ${req.secure}`);
+  console.log('[DIAGNOSTIC LOG] Path:', req.path);
+  console.log('[DIAGNOSTIC LOG] Headers:', {
+    host: req.headers.host,
+    'x-forwarded-proto': req.headers['x-forwarded-proto'],
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    cookie: req.headers.cookie ? 'Present' : 'None'
+  });
+  
+  // Force HTTPS protocol detection when behind Cloudflare or Heroku
+  if (process.env.NODE_ENV === 'production') {
+    // This allows secure cookies to work even if the request appears as HTTP
+    req.headers['x-forwarded-proto'] = 'https';
   }
+  
+  console.log('[DIAGNOSTIC LOG] req.protocol:', req.protocol, 'req.secure:', req.secure);
   next();
 });
 
@@ -109,14 +112,14 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   rolling: true,
-  name: 'connect.sid',
+  name: 'connect.sid', 
   proxy: true,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production', // Secure in production, but we'll force HTTPS
     path: '/',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'none', // Changed from 'lax' to 'none' to work with cross-site redirects
     domain: cookieDomain,
   }
 });
