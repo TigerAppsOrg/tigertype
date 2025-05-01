@@ -57,28 +57,53 @@ app.set('trust proxy', true);
 
 // Configure CORS
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL,
+  origin: process.env.NODE_ENV === 'production' ? process.env.SERVICE_URL : 'http://localhost:5174',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'], // Ensure Cookie header is allowed if needed explicitly
+  exposedHeaders: ['Set-Cookie'] // Expose Set-Cookie header if needed
 };
 app.use(cors(corsOptions));
 
+// --- Cookie Domain Logic ---
+let cookieDomain;
+try {
+    const serviceUrl = process.env.SERVICE_URL;
+    if (process.env.NODE_ENV === 'production' && serviceUrl) {
+        const serviceUrlHostname = new URL(serviceUrl).hostname;
+        // Only set the domain if its NOT the default Heroku domain
+        if (!serviceUrlHostname.endsWith('herokuapp.com')) {
+             cookieDomain = serviceUrlHostname; // 'type.tigerapps.org'
+             console.log(`COOKIE DOMAIN: Set cookie domain for production: ${cookieDomain}`);
+        } else {
+             console.log('COOKIE DOMAIN: Running on default Heroku domain, cookie domain not explicitly set.');
+        }
+    } else {
+         console.log('COOKIE DOMAIN: Not in production or SERVICE_URL not set, cookie domain not explicitly set.');
+    }
+} catch (e) {
+    console.error("Error parsing SERVICE_URL for cookie domain:", e);
+    // Decide on fallback behavior - maybe don't set domain if URL is invalid
+}
+
 // Configure session middleware
 const sessionMiddleware = session({
-  proxy: process.env.NODE_ENV === 'production', // trust first proxy in Heroku for proper secure cookie handling
+  // proxy: true is automatically handled by 'trust proxy' setting above
   store: new pgSession({
     pool: pool,
-    tableName: 'user_sessions'
+    tableName: 'user_sessions',
+    errorLog: console.error.bind(console, 'Postgres Session Store Error:')
   }),
-  secret: process.env.SESSION_SECRET || 'tigertype-fallback-secret',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // Only secure in production (requires HTTPS)
+    httpOnly: true, // Protects against XSS
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none' // explicitly allow cross-site navigation (CAS redirects)
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-site CAS, requires 'secure: true'
+    // Set the domain explicitly for production custom domain
+    domain: cookieDomain, // Use the derived domain or undefined
   }
 });
 
