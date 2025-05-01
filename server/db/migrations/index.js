@@ -543,6 +543,26 @@ const MIGRATIONS = [
       console.log('Reverting migration 15: Not implementing downgrade for column rename to avoid data loss.');
       // Not implementing downgrade as it could cause data loss
     }
+  },
+  {
+    version: 16,
+    description: "Add 'Fastest Tiger Alive' title",
+    up: async (client) => {
+      console.log("Running migration 16: Add 'Fastest Tiger Alive' title...");
+      await client.query(`
+        INSERT INTO titles (key, name, description, criteria_type, criteria_value) VALUES
+          ('fastest_tiger_alive', 'Fastest Tiger Alive', 'Highest recorded fastest WPM across all users', 'global_highest_fastest_wpm', 0)
+        ON CONFLICT (key) DO NOTHING;
+      `);
+      console.log("Migration 16 complete: Added 'Fastest Tiger Alive' title.");
+    },
+    down: async (client) => {
+      console.log("Reverting migration 16: Remove 'Fastest Tiger Alive' title...");
+      await client.query(
+        `DELETE FROM titles WHERE key = 'fastest_tiger_alive';`
+      );
+      console.log("Revert migration 16 complete.");
+    }
   }
 ];
 

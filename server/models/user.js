@@ -1034,6 +1034,29 @@ const User = {
            }
 
 
+          // --- 4. Fastest Tiger Alive (Highest Fastest WPM overall) ---
+          let fastestWpmHolderId = null;
+          try {
+              // Query for user with highest fastest_wpm (must be > 0)
+              const fastestResult = await client.query(`
+                  SELECT id
+                  FROM users
+                  WHERE fastest_wpm IS NOT NULL AND fastest_wpm > 0
+                  ORDER BY fastest_wpm DESC, last_login DESC -- Tie-break by recent activity
+                  LIMIT 1
+              `);
+              if (fastestResult.rows.length > 0) {
+                  fastestWpmHolderId = fastestResult.rows[0].id;
+                  console.log(`Highest Fastest WPM user: ${fastestWpmHolderId}`);
+              } else {
+                  console.log('No eligible user found for Fastest Tiger Alive title.');
+              }
+              await manageExclusiveTitle('fastest_tiger_alive', fastestWpmHolderId);
+          } catch (fastestWpmError) {
+              console.error("Error processing 'Fastest Tiger Alive' title:", fastestWpmError);
+          }
+
+
           // --- Commit Transaction ---
           await client.query('COMMIT');
           console.log("Finished updating exclusive titles.");
