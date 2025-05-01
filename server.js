@@ -80,13 +80,14 @@ const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  rolling: false,
+  rolling: true,
   name: 'connect.sid',
   cookie: {
+    secure: process.env.NODE_ENV === 'production',
     path: '/',                       // Ensure cookie applies to all paths
     httpOnly: true,                  // Protects against XSS
     maxAge: 24 * 60 * 60 * 1000,     // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Revert to 'none' for production CAS flow
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     domain: cookieDomain,            // Explicitly set for custom domain
   }
 });
