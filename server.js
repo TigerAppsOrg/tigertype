@@ -41,13 +41,18 @@ const io = socketIO(server, {
 // // Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
 // app.set('trust proxy', 1);
 
-// Force HTTPS redirect in production to ensure secure cookies are set over HTTPS
+// Force HTTPS redirect in production based on x-forwarded-proto
 if (process.env.NODE_ENV === 'production') {
   app.use((req, res, next) => {
-    if (req.secure) {
+    // Check the header Heroku sets
+    const proto = req.headers['x-forwarded-proto'];
+    if (proto === 'https') {
+      // Request is already HTTPS
       return next();
     }
-    return res.redirect(301, 'https://' + req.headers.host + req.url);
+    // If proto is not 'https' (or missing), redirect to HTTPS
+    console.log(`Redirecting non-HTTPS request to HTTPS: https://${req.headers.host}${req.url}`);
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
   });
 }
 
