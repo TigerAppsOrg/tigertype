@@ -73,7 +73,6 @@ try {
 // Log the final value being used
 console.log(`COOKIE DOMAIN: Effective value being used: ${cookieDomain}`);
 
-
 app.use((req, res, next) => {
   // Only log for relevant paths to reduce noise
   if (req.path.startsWith('/auth/') || req.path === '/' || req.path === '/home') {
@@ -89,7 +88,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
 
 // --- Session Middleware ---
 const sessionMiddleware = session({
@@ -265,9 +263,15 @@ const startServer = async () => {
       } else {
            console.log('SESSION_SECRET is set.');
       }
-       // Log final effective cookie settings
-       const finalCookieConfig = sessionMiddleware.settings.cookie; // Access settings correctly
-       console.log('Effective Cookie Settings Applied:', JSON.stringify(finalCookieConfig));
+       // Log the intended cookie settings using the variables available
+       console.log('Effective Cookie Settings Expected:', JSON.stringify({
+           secure: isProd,
+           path: '/',
+           httpOnly: true,
+           maxAge: 24 * 60 * 60 * 1000,
+           sameSite: 'lax',
+           domain: cookieDomain,
+       }));
     });
   } catch (err) {
     console.error('Failed to start server:', err);
