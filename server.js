@@ -88,7 +88,7 @@ const sessionMiddleware = session({
     path: '/',                       // Ensure cookie applies to all paths
     httpOnly: true,                  // Protects against XSS
     maxAge: 24 * 60 * 60 * 1000,     // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: 'lax',
     domain: cookieDomain,            // Explicitly set for custom domain
   }
 });
