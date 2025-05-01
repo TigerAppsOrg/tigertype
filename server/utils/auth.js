@@ -39,14 +39,13 @@ function stripTicket(urlStr) {
   try {
     const parsedUrl = new URL(urlStr);
     parsedUrl.searchParams.delete('ticket');
-    // Ensure the stripped URL uses HTTPS in production
     if (process.env.NODE_ENV === 'production') {
         parsedUrl.protocol = 'https:';
     }
     return parsedUrl.toString();
   } catch (error) {
     console.error("Error parsing URL in stripTicket:", urlStr, error);
-    return urlStr; // Return original string if parsing fails
+    return urlStr;
   }
 }
 
@@ -58,7 +57,6 @@ function stripTicket(urlStr) {
  */
 async function validate(ticket, requestUrl) {
   try {
-    // Use stripTicket to get the *correct* HTTPS service URL
     const serviceUrl = stripTicket(requestUrl);
 
     if (!serviceUrl || !serviceUrl.startsWith('http')) {
@@ -84,7 +82,6 @@ async function validate(ticket, requestUrl) {
     }
 
     if (serviceResponse.authenticationFailure) {
-      // Log the expected vs supplied service from the error message
       console.warn('CAS authentication failure:', serviceResponse.authenticationFailure);
       return null;
     }
@@ -121,8 +118,7 @@ async function casAuth(req, res, next) {
   if (!ticket) {
     console.debug('No CAS ticket found, redirecting to CAS login...');
     try {
-      // Ensure service URL for initial login is HTTPS
-      const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString(); // FRONTEND_URL is now guaranteed HTTPS in prod
+      const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
       const loginUrl = new URL('login', CAS_URL);
       loginUrl.searchParams.set('service', serviceUrl);
       console.debug('Redirecting to CAS login:', loginUrl.toString());
@@ -135,9 +131,6 @@ async function casAuth(req, res, next) {
 
   console.debug('CAS ticket found, validating ticket:', ticket);
 
-  // Construct the original request URL correctly for validation
-  // This URL *might* initially be HTTP if the redirect middleware hasn't run yet
-  // or if headers aren't perfectly interpreted, but stripTicket will fix it for validation.
   let incomingRequestUrl;
   try {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -151,16 +144,12 @@ async function casAuth(req, res, next) {
   }
 
   try {
-    // Validate the ticket using the potentially HTTP incoming URL,
-    // but validate() internally uses stripTicket() to send the correct HTTPS serviceUrl to CAS.
     const userInfo = await validate(ticket, incomingRequestUrl);
 
     if (!userInfo) {
       console.warn('Invalid CAS ticket received (validation failed), redirecting to CAS login...');
       try {
-        // --- CRUCIAL: Ensure service URL for re-login is HTTPS ---
         const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
-         // --- End modification ---
         const loginUrl = new URL('login', CAS_URL);
         loginUrl.searchParams.set('service', serviceUrl);
         return res.redirect(loginUrl.toString());
@@ -206,7 +195,6 @@ async function casAuth(req, res, next) {
          });
     }
 
-    // Redirect to the HTTPS home URL
     const homeUrl = new URL('/home', FRONTEND_URL).toString();
     console.debug('Redirecting to home after DB operation:', homeUrl);
     res.redirect(homeUrl);
@@ -214,7 +202,6 @@ async function casAuth(req, res, next) {
   } catch (error) {
     console.error('Error during CAS authentication process or post-validation:', error);
     try {
-      // Ensure fallback service URL is HTTPS
       const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
       const loginUrl = new URL('login', CAS_URL);
       loginUrl.searchParams.set('service', serviceUrl);
@@ -273,24 +260,20 @@ function logoutApp(req, res) {
                  }
              }
          } catch(e) { console.error("Error parsing FRONTEND_URL for cookie domain in logout", e); }
-         res.clearCookie('connect.sid', { path: '/', domain: cookieDomain }); // Use default 'connect.sid' or your session name
+         res.clearCookie('connect.sid', { path: '/', domain: cookieDomain });
 
         try {
-            // --- CRUCIAL: Redirect to HTTPS landing ---
             const landingUrl = new URL('/', FRONTEND_URL).toString();
-             // --- End modification ---
             console.log(`Redirecting logged out user to: ${landingUrl}`);
             res.redirect(landingUrl);
         } catch (error) {
             console.error('Error constructing landing page URL during logout:', error);
-            res.redirect('/'); // Fallback redirect
+            res.redirect('/');
         }
     });
   } else {
      try {
-        // --- CRUCIAL: Redirect to HTTPS landing ---
         const landingUrl = new URL('/', FRONTEND_URL).toString();
-         // --- End modification ---
         res.redirect(landingUrl);
      } catch (error) {
         res.redirect('/');
@@ -308,9 +291,7 @@ function logoutCAS(req, res) {
   const userNetid = req.session?.userInfo?.user || 'unknown';
   console.log(`Initiating CAS logout for user ${userNetid}.`);
   try {
-    // --- CRUCIAL: Ensure app logout URL is HTTPS ---
     const appLogoutUrl = new URL('/auth/logout', FRONTEND_URL).toString();
-    // --- End modification ---
     const logoutUrl = new URL('logout', CAS_URL);
     logoutUrl.searchParams.set('service', appLogoutUrl);
     console.log(`Redirecting user ${userNetid} to CAS logout URL: ${logoutUrl.toString()}`);

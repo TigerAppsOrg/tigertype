@@ -22,6 +22,7 @@ const pgSession = require('connect-pg-simple')(session);
 const { pool } = require('./server/config/database');
 const { initDB, logDatabaseState } = require('./server/db');
 const { runMigrations } = require('./server/db/migrations');
+const { URL } = require('url');
 
 // Initialize Express app
 const app = express();
@@ -37,21 +38,7 @@ const io = socketIO(server, {
   pingInterval: 25000
 });
 
-// --- Trust Proxy --- 
-// // Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
-// app.set('trust proxy', 1);
-
-// // Force HTTPS redirect in production to ensure secure cookies are set over HTTPS
-// if (process.env.NODE_ENV === 'production') {
-//   app.use((req, res, next) => {
-//     if (req.secure) {
-//       return next();
-//     }
-//     return res.redirect(301, 'https://' + req.headers.host + req.url);
-//   });
-// }
-
-// Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare; 
+// Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare;
 // trust the full chain so req.secure works correctly
 app.set('trust proxy', true);
 
@@ -60,8 +47,8 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' ? process.env.SERVICE_URL : 'http://localhost:5174',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'], // Ensure Cookie header is allowed if needed explicitly
-  exposedHeaders: ['Set-Cookie'] // Expose Set-Cookie header if needed
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
 };
 app.use(cors(corsOptions));
 
@@ -71,9 +58,8 @@ try {
     const serviceUrl = process.env.SERVICE_URL;
     if (process.env.NODE_ENV === 'production' && serviceUrl) {
         const serviceUrlHostname = new URL(serviceUrl).hostname;
-        // Only set the domain if its NOT the default Heroku domain
         if (!serviceUrlHostname.endsWith('herokuapp.com')) {
-             cookieDomain = serviceUrlHostname; // 'type.tigerapps.org'
+             cookieDomain = serviceUrlHostname;
              console.log(`COOKIE DOMAIN: Set cookie domain for production: ${cookieDomain}`);
         } else {
              console.log('COOKIE DOMAIN: Running on default Heroku domain, cookie domain not explicitly set.');
@@ -83,12 +69,10 @@ try {
     }
 } catch (e) {
     console.error("Error parsing SERVICE_URL for cookie domain:", e);
-    // Decide on fallback behavior - maybe don't set domain if URL is invalid
 }
 
 // Configure session middleware
 const sessionMiddleware = session({
-  // proxy: true is automatically handled by 'trust proxy' setting above
   store: new pgSession({
     pool: pool,
     tableName: 'user_sessions',
@@ -98,12 +82,12 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Only secure in production (requires HTTPS)
-    httpOnly: true, // Protects against XSS
+    path: '/', // Explicitly set Path to root,,, istg is this was the problem
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-site CAS, requires 'secure: true'
-    // Set the domain explicitly for production custom domain
-    domain: cookieDomain, // Use the derived domain or undefined
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: cookieDomain, 
   }
 });
 
@@ -116,10 +100,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Static file serving and routing based on environment
 if (process.env.NODE_ENV === 'production') {
-  // Serve the React app's static files FROM client/dist
   app.use(express.static(path.join(__dirname, 'client/dist')));
-
-  // Log directory contents for debugging (optional, can be removed after verification)
   console.log('Production mode: Serving static files from client/dist');
   try {
     const clientDistPath = path.join(__dirname, 'client/dist');
@@ -147,14 +128,11 @@ if (process.env.NODE_ENV === 'production') {
   });
 
 } else { // Development mode
-  // Use API and auth routes
   app.use(routes);
-
-  // Development mode - return API message for root route
   app.get('/', (req, res) => {
     res.json({
       message: 'TigerType API Server',
-      note: `Please access the frontend at ${process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL}`, // Assuming 5174 for Vite dev server
+      note: `Please access the frontend at ${process.env.NODE_ENV === 'development' ? 'http://localhost:5174' : process.env.SERVICE_URL}`,
       environment: 'development'
     });
   });
@@ -169,49 +147,33 @@ io.use((socket, next) => {
 // Socket authentication middleware
 io.use(async (socket, next) => {
   const req = socket.request;
-  
   console.log('Socket middleware: authenticating connection...', socket.id);
-  
-  // If user isn't authenticated, reject the socket connection
+
   if (!isAuthenticated(req)) {
     console.error('Socket authentication failed: User not authenticated');
     return next(new Error('Authentication required'));
   }
-  
   try {
-    // Get the netid from session
     const netid = req.session.userInfo.user;
-    
-    // Make sure we have a valid netid
     if (!netid) {
       console.error('Socket authentication failed: Missing netid');
       return next(new Error('Invalid authentication: Missing netid'));
     }
-    
     console.log(`Socket auth: Found netid ${netid}, looking up in database...`);
-    
-    // Get user from db
     let user = null;
     let userId = null;
-
     try {
-      // First try to use the UserModel
       const UserModel = require('./server/models/user');
       user = await UserModel.findOrCreate(netid);
-      
       if (user) {
         userId = user.id;
       }
     } catch (dbErr) {
-      // If db error, log but continue w/ basic authentication
       console.error('Database error during socket authentication:', dbErr);
       console.log('Continuing with basic user info from session...');
-      
-      // Use the user ID from session if available
       if (req.session.userInfo.userId) {
         userId = req.session.userInfo.userId;
       } else {
-        // Last resort - try a direct DB query for just the ID
         try {
           const db = require('./server/config/database');
           const result = await db.query('SELECT id FROM users WHERE netid = $1', [netid]);
@@ -223,30 +185,23 @@ io.use(async (socket, next) => {
         }
       }
     }
-    
-    // If we couldn't find/create a user at all, reject the connection
+
     if (!userId) {
       console.error(`Socket authentication failed: Could not find/create user for ${netid}`);
       return next(new Error('Failed to identify user in database'));
     }
-    
-    // Add user info to socket for handlers
     socket.userInfo = {
       ...req.session.userInfo,
-      userId: userId // Ensure userId is available
+      userId: userId
     };
-    
-    // Also update session with userId if not present
     if (!req.session.userInfo.userId) {
       req.session.userInfo.userId = userId;
-      // Save session to persist the userId
       req.session.save(err => {
         if (err) {
           console.error('Error saving session:', err);
         }
       });
     }
-    
     console.log(`Socket auth success for netid: ${netid}, userId: ${userId}`);
     next();
   } catch (err) {
@@ -261,28 +216,17 @@ socketHandler.initialize(io);
 // Start the server
 const startServer = async () => {
   try {
-    // Initialize database in all environments
     console.log(`${process.env.NODE_ENV} mode detected - checking database state...`);
-    
     try {
-      // Import DB module
       const db = require('./server/db');
-      
-      // Run database initialization
       await db.initDB();
       console.log('Database initialized successfully.');
-
-      // Run pending database migrations
       console.log('Running database migrations...');
       await runMigrations();
       console.log('Database migrations completed.');
-      
-      // Check for discrepancies in fastest_wpm values and fix if needed
       try {
         const client = await pool.connect();
-        
         try {
-          // Check if there are users with race results but fastest_wpm = 0
           const result = await client.query(`
             SELECT COUNT(*) as count
             FROM users u
@@ -292,16 +236,11 @@ const startServer = async () => {
               WHERE r.user_id = u.id AND r.wpm > 0
             )
           `);
-          
           const discrepancyCount = parseInt(result.rows[0].count);
-          
           if (discrepancyCount > 0) {
             console.log(`Found ${discrepancyCount} users with fastest_wpm = 0 but have race results > 0`);
-            
-            // Fix discrepancies
             const dbHelpers = require('./server/utils/db-helpers');
             await dbHelpers.updateAllUsersFastestWpm();
-            
             console.log('Fixed fastest_wpm discrepancies');
           } else {
             console.log('No fastest_wpm discrepancies found');
@@ -311,19 +250,23 @@ const startServer = async () => {
         }
       } catch (err) {
         console.error('Error checking/fixing fastest_wpm discrepancies:', err);
-        // Continue starting the server even if this check fails
       }
     } catch (err) {
       console.error('Database initialization failed:', err);
       console.log('Continuing server startup despite database initialization failure');
     }
-    
-    // Start the server
+
     const port = process.env.PORT || 3000;
     server.listen(port, () => {
       console.log(`Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
       console.log(`Frontend URL: ${process.env.NODE_ENV === 'production' ? process.env.SERVICE_URL : 'http://localhost:5174'}`);
+      console.log(`Cookie Domain Configured: ${cookieDomain || 'Default (Host Only)'}`);
+      if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'tigertype-fallback-secret-change-me') {
+          console.warn('WARNING: SESSION_SECRET is not set or using the insecure default. Please set a strong secret in Heroku Config Vars.');
+      } else {
+           console.log('SESSION_SECRET is set.');
+      }
     });
   } catch (err) {
     console.error('Failed to start server:', err);
