@@ -83,13 +83,13 @@ try {
 console.log(`COOKIE DOMAIN: Effective value being used: ${cookieDomain}`);
 
 app.use((req, res, next) => {
-  console.log('[DIAGNOSTIC LOG] Path:', req.path);
-  console.log('[DIAGNOSTIC LOG] Headers:', {
-    host: req.headers.host,
-    'x-forwarded-proto': req.headers['x-forwarded-proto'],
-    'x-forwarded-for': req.headers['x-forwarded-for'],
-    cookie: req.headers.cookie ? 'Present' : 'None'
-  });
+  // console.log('[DIAGNOSTIC LOG] Path:', req.path);
+  // console.log('[DIAGNOSTIC LOG] Headers:', {
+  //   host: req.headers.host,
+  //   'x-forwarded-proto': req.headers['x-forwarded-proto'],
+  //   'x-forwarded-for': req.headers['x-forwarded-for'],
+  //   cookie: req.headers.cookie ? 'Present' : 'None'
+  // });
   
   // Force HTTPS protocol detection when behind Cloudflare or Heroku
   if (process.env.NODE_ENV === 'production') {
@@ -97,7 +97,7 @@ app.use((req, res, next) => {
     req.headers['x-forwarded-proto'] = 'https';
   }
   
-  console.log('[DIAGNOSTIC LOG] req.protocol:', req.protocol, 'req.secure:', req.secure);
+  // console.log('[DIAGNOSTIC LOG] req.protocol:', req.protocol, 'req.secure:', req.secure);
   next();
 });
 
