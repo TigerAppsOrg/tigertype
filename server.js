@@ -28,7 +28,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5174',
+    origin: process.env.NODE_ENV === 'production' ? process.env.SERVICE_URL : 'http://localhost:5174',
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -39,21 +39,17 @@ const io = socketIO(server, {
 
 // --- Trust Proxy --- 
 // Required for secure cookies/protocol detection behind proxies like Heroku + Cloudflare
-app.set('trust proxy', true); 
+app.set('trust proxy', 1);
 
-// // Force HTTPS redirect in production
-// if (process.env.NODE_ENV === 'production') {
-//   app.use((req, res, next) => {
-//     if (req.secure) {
-//       // Request is alr secure, proceed
-//       next();
-//     } else {
-//       // Redirect to HTTPS with 301 permanent redirect
-//       const httpsUrl = 'https://' + req.headers.host + req.url;
-//       res.redirect(301, httpsUrl);
-//     }
-//   });
-// }
+// Force HTTPS redirect in production to ensure secure cookies are set over HTTPS
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.secure) {
+      return next();
+    }
+    return res.redirect(301, 'https://' + req.headers.host + req.url);
+  });
+}
 
 // Configure CORS
 const corsOptions = {
@@ -66,6 +62,7 @@ app.use(cors(corsOptions));
 
 // Configure session middleware
 const sessionMiddleware = session({
+  proxy: process.env.NODE_ENV === 'production', // trust first proxy in Heroku for proper secure cookie handling
   store: new pgSession({
     pool: pool,
     tableName: 'user_sessions'
@@ -75,13 +72,10 @@ const sessionMiddleware = session({
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    httpOnly: false,
+    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-    // explicitly set domain for production to avoid ambiguity with custom domains
-    domain: process.env.NODE_ENV === 'production' && process.env.SERVICE_URL 
-            ? new URL(process.env.SERVICE_URL).hostname 
-            : undefined
+    sameSite: 'none', // explicitly allow cross-site navigation (CAS redirects)
+    domain: process.env.NODE_ENV === 'production' ? new URL(process.env.SERVICE_URL).hostname : undefined
   }
 });
 
@@ -301,7 +295,7 @@ const startServer = async () => {
     server.listen(port, () => {
       console.log(`Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
-      console.log(`Frontend URL: ${process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5174'}`);
+      console.log(`Frontend URL: ${process.env.NODE_ENV === 'production' ? process.env.SERVICE_URL : 'http://localhost:5174'}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);
