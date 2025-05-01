@@ -529,14 +529,24 @@ const initialize = (io) => {
           // Ensure active race exists for this lobby
           if (!activeRaces.has(lobby.code)) {
             console.log(`Lobby ${lobby.code} exists in database but not in memory, initializing...`);
+
+            // Fetch full snippet details (stops bug where snippet was not found in quick match)
+            const fullSnippet = await SnippetModel.getById(lobby.snippet_id);
+            if (!fullSnippet) {
+               console.error(`Failed to load snippet details (ID: ${lobby.snippet_id}) for existing lobby ${lobby.code}`);
+               socket.emit('error', { message: 'Failed to load race details.' });
+               return; // Stop processing if snippet can't be loaded
+            }
+
             activeRaces.set(lobby.code, {
               id: lobby.id,
               code: lobby.code,
               snippet: {
-                id: lobby.snippet_id,
-                text: lobby.snippet_text,
-                princeton_course_url: lobby.princeton_course_url || null,
-                course_name: lobby.course_name || null
+                // Use fetched snippet data
+                id: fullSnippet.id, // Use fetched snippet ID
+                text: fullSnippet.text, // Use fetched text
+                princeton_course_url: fullSnippet.princeton_course_url || null, // Use fetched URL
+                course_name: fullSnippet.course_name || null // Use fetched name
               },
               status: lobby.status || 'waiting',
               type: lobby.type,

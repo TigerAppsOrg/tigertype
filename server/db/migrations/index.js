@@ -190,27 +190,28 @@ const MIGRATIONS = [
   },
   {
     version: 6,
-    description: 'Add source URL and IDs to snippets table',
+    description: 'Add Princeton course URL and ID details to snippets table',
     up: async (client) => {
-      console.log('Running migration to add source URL and IDs to snippets table...');
+      console.log('Running migration to add Princeton course URL and ID details to snippets table...');
       await client.query(`
         ALTER TABLE snippets
-        ADD COLUMN IF NOT EXISTS evaluation_url TEXT, -- Stores the full URL of the evaluation page
-        ADD COLUMN IF NOT EXISTS source_course_id VARCHAR(10), -- Stores course ID like '002065'
-        ADD COLUMN IF NOT EXISTS source_term_id VARCHAR(4); -- Stores term ID like '1252'
+        ADD COLUMN IF NOT EXISTS princeton_course_url TEXT,
+        ADD COLUMN IF NOT EXISTS term_code VARCHAR(4),
+        ADD COLUMN IF NOT EXISTS course_id VARCHAR(10),
+        ADD COLUMN IF NOT EXISTS course_name TEXT;
       `);
-      console.log('Successfully added source columns to snippets table.');
+      console.log('Successfully added Princeton course columns to snippets table.');
     },
     down: async (client) => {
-      // Optional: Add logic to remove the columns if needed for rollback
-      console.log('Reverting migration to remove source columns from snippets table...');
+      console.log('Reverting migration to remove Princeton course columns from snippets table...');
       await client.query(`
         ALTER TABLE snippets
-        DROP COLUMN IF EXISTS evaluation_url,
-        DROP COLUMN IF EXISTS source_course_id,
-        DROP COLUMN IF EXISTS source_term_id;
+        DROP COLUMN IF EXISTS princeton_course_url,
+        DROP COLUMN IF EXISTS term_code,
+        DROP COLUMN IF EXISTS course_id,
+        DROP COLUMN IF EXISTS course_name;
       `);
-      console.log('Successfully removed source columns from snippets table.');
+      console.log('Successfully removed Princeton course columns from snippets table.');
     }
   },
   {
