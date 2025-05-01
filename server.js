@@ -38,7 +38,7 @@ const io = socketIO(server, {
 });
 
 // --- Trust Proxy ---
-app.set('trust proxy', 1);
+app.set('trust proxy', true); // Use true for built-in trust
 
 // --- CORS ---
 const corsOptions = {
@@ -52,23 +52,44 @@ app.use(cors(corsOptions));
 
 // --- Cookie Domain Logic ---
 let cookieDomain;
+const isProd = process.env.NODE_ENV === 'production';
 try {
     const serviceUrl = process.env.SERVICE_URL;
-    if (process.env.NODE_ENV === 'production' && serviceUrl) {
+    if (isProd && serviceUrl) {
         const serviceUrlHostname = new URL(serviceUrl).hostname;
         // Set domain ONLY for the custom domain, not for default herokuapp.com domains
         if (!serviceUrlHostname.endsWith('herokuapp.com')) {
-             cookieDomain = serviceUrlHostname; // e.g., 'type.tigerapps.org'
-             console.log(`COOKIE DOMAIN: Set cookie domain for production: ${cookieDomain}`);
+             cookieDomain = serviceUrlHostname;
+             console.log(`COOKIE DOMAIN: Calculated cookie domain for production: ${cookieDomain}`);
         } else {
              console.log('COOKIE DOMAIN: Running on default Heroku domain, cookie domain not explicitly set.');
         }
     } else {
-         console.log('COOKIE DOMAIN: Not in production or SERVICE_URL not set, cookie domain not explicitly set.');
+         console.log(`COOKIE DOMAIN: Not in production (isProd=${isProd}) or SERVICE_URL not set, cookie domain not explicitly set.`);
     }
 } catch (e) {
     console.error("Error parsing SERVICE_URL for cookie domain:", e);
 }
+// Log the final value being used
+console.log(`COOKIE DOMAIN: Effective value being used: ${cookieDomain}`);
+
+
+app.use((req, res, next) => {
+  // Only log for relevant paths to reduce noise
+  if (req.path.startsWith('/auth/') || req.path === '/' || req.path === '/home') {
+      console.log(`[DIAGNOSTIC LOG] Path: ${req.path}`);
+      console.log(`[DIAGNOSTIC LOG] Headers:`, {
+          'host': req.headers['host'],
+          'x-forwarded-proto': req.headers['x-forwarded-proto'],
+          'x-forwarded-for': req.headers['x-forwarded-for'],
+          'cookie': req.headers['cookie'] || 'None'
+      });
+      // req.secure relies on 'trust proxy' having been set already
+      console.log(`[DIAGNOSTIC LOG] req.protocol: ${req.protocol}, req.secure: ${req.secure}`);
+  }
+  next();
+});
+
 
 // --- Session Middleware ---
 const sessionMiddleware = session({
@@ -82,14 +103,14 @@ const sessionMiddleware = session({
   saveUninitialized: false,
   rolling: true,
   name: 'connect.sid',
-  proxy: true,
+  proxy: true, // Keep this alongside app.set('trust proxy', ...)
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',                       // Ensure cookie applies to all paths
-    httpOnly: true,                  // Protects against XSS
-    maxAge: 24 * 60 * 60 * 1000,     // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: cookieDomain,            // Explicitly set for custom domain
+    secure: isProd,               // Should be true in production
+    path: '/',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'lax',             // Keep as 'lax' (default works too)
+    domain: cookieDomain,        // Use the calculated domain
   }
 });
 
@@ -207,11 +228,16 @@ const startServer = async () => {
       try {
         const client = await pool.connect();
         try {
-          const result = await client.query(/* fastest_wpm check query */);
+          // check for users with null/0 fastest_wpm but have race results > 0
+          const result = await client.query(`
+            SELECT COUNT(*) FROM users
+            WHERE (fastest_wpm IS NULL OR fastest_wpm = 0)
+            AND id IN (SELECT DISTINCT user_id FROM race_results WHERE wpm > 0)
+          `);
           const discrepancyCount = parseInt(result.rows[0].count);
           if (discrepancyCount > 0) {
             console.log(`Found ${discrepancyCount} users with fastest_wpm = 0/null but have race results > 0`);
-            const dbHelpers = require('./server/utils/db-helpers');
+            const dbHelpers = require('./server/utils/db-helpers'); // Ensure db-helpers is required correctly
             await dbHelpers.updateAllUsersFastestWpm();
             console.log('Fixed fastest_wpm discrepancies');
           } else {
@@ -240,8 +266,8 @@ const startServer = async () => {
            console.log('SESSION_SECRET is set.');
       }
        // Log final effective cookie settings
-       const finalCookieConfig = sessionMiddleware.cookie;
-       console.log('Effective Cookie Settings:', JSON.stringify(finalCookieConfig));
+       const finalCookieConfig = sessionMiddleware.settings.cookie; // Access settings correctly
+       console.log('Effective Cookie Settings Applied:', JSON.stringify(finalCookieConfig));
     });
   } catch (err) {
     console.error('Failed to start server:', err);

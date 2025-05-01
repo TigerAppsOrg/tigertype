@@ -108,6 +108,13 @@ async function validate(ticket, requestUrl) {
 async function casAuth(req, res, next) {
   console.debug('CAS Auth middleware called, checking authentication...');
 
+  // Add check for session existence
+  if (!req.session) {
+      console.error('Session object is missing from request during casAuth!');
+      return res.status(500).send('Session configuration error.');
+  }
+
+
   if (req.session && req.session.userInfo && req.session.userInfo.user) {
     console.debug('User already authenticated:', req.session.userInfo.user);
     return next();
@@ -118,6 +125,7 @@ async function casAuth(req, res, next) {
   if (!ticket) {
     console.debug('No CAS ticket found, redirecting to CAS login...');
     try {
+      // Use FRONTEND_URL to construct the service URL's base path
       const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
       const loginUrl = new URL('login', CAS_URL);
       loginUrl.searchParams.set('service', serviceUrl);
@@ -133,11 +141,19 @@ async function casAuth(req, res, next) {
 
   let incomingRequestUrl;
   try {
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const host = req.headers['x-forwarded-host'] || req.get('host');
-    incomingRequestUrl = `${protocol}://${host}${req.originalUrl}`;
+    // Construct the URL based on the reliable FRONTEND_URL base
+    // and the original path + query string from the request.
+    // This ensures the protocol and host match the expected service URL.
+    const base = new URL(FRONTEND_URL);
+    const currentPathAndQuery = req.originalUrl; // e.g., /auth/login?ticket=...
+    incomingRequestUrl = new URL(currentPathAndQuery, base).toString();
+
+    // Log the revised URL
+    console.debug('Constructed Incoming Request URL for validation (Revised):', incomingRequestUrl);
+
+    // Basic validation
     new URL(incomingRequestUrl);
-    console.debug('Constructed Incoming Request URL for validation:', incomingRequestUrl);
+
   } catch (error) {
     console.error("Error constructing request URL for validation:", error);
     return res.status(500).send('Authentication error: Could not determine request URL');
@@ -161,46 +177,80 @@ async function casAuth(req, res, next) {
 
     console.debug('CAS authentication successful, user info:', userInfo);
 
+    // Ensure req.session exists before trying to assign to it
+    if (!req.session) {
+       console.error('Session object became unavailable before assignment!');
+       // Handle error: maybe redirect to login again or show an error page
+       return res.status(500).send('Session error after validation.');
+    }
+
     req.session.userInfo = userInfo;
     const netid = userInfo.user;
 
+    // Make session saving robust
     await new Promise((resolve, reject) => {
         req.session.save(err => {
             if (err) {
                 console.error('Error saving session after validation:', err);
-                return reject(err);
+                return reject(new Error('Failed to save session after validation.'));
             }
             console.debug('Session saved successfully after validation. Session ID:', req.sessionID);
             resolve();
         });
     });
 
-    const UserModel = require('../models/user');
-    console.log('(Post-session save) Creating or updating user in database for netid:', netid);
-    const user = await UserModel.findOrCreate(netid);
-    console.log('User created/found in database:', user);
 
-    if (user && user.id && (!req.session.userInfo.userId)) {
+    // Ensure UserModel is required here if not globally available
+    const UserModel = require('../models/user');
+    console.debug('(Post-session save) Creating or updating user in database for netid:', netid);
+    const user = await UserModel.findOrCreate(netid); // This already handles findOrCreate
+    console.debug('User created/found in database:', user ? { id: user.id, netid: user.netid } : null);
+
+    // Add userId to session if found/created and not already there
+    if (user && user.id) {
+      // Check if session still exists (paranoia check)
+      if (!req.session) {
+          console.error('Session object became unavailable before adding userId!');
+          throw new Error('Session became unavailable before adding userId.');
+      }
+      if (!req.session.userInfo) {
+          console.warn('req.session.userInfo was missing before adding userId, recreating.');
+          req.session.userInfo = {}; // Recreate if somehow lost
+      }
+       if (!req.session.userInfo.userId || req.session.userInfo.userId !== user.id) {
+         console.debug(`Updating session with userId: ${user.id}`);
          req.session.userInfo.userId = user.id;
+         // Save session again after adding userId
          await new Promise((resolve, reject) => {
              req.session.save(err => {
                   if (err) {
                      console.error('Error saving session after adding userId:', err);
-                     reject(err);
+                     // Don't necessarily reject, log the error but proceed with redirect
+                     resolve(); // Or decide to reject based on severity
                   } else {
-                     console.log('Session updated with userId.');
+                     console.debug('Session updated successfully with userId.');
                      resolve();
                   }
              });
          });
+       } else {
+           console.debug('userId already present and correct in session.');
+       }
+    } else {
+        console.error('Failed to get user ID after findOrCreate for netid:', netid);
+        // Handle appropriately - maybe user creation failed silently?
+        throw new Error('Failed to retrieve user ID after database operation.');
     }
 
-    const homeUrl = new URL('/home', FRONTEND_URL).toString();
-    console.debug('Redirecting to home after DB operation:', homeUrl);
-    res.redirect(homeUrl);
+    // Redirect to the frontend home page (React Router will handle /home)
+    // Use FRONTEND_URL to ensure correct protocol and domain
+    const homeRedirectUrl = new URL('/', FRONTEND_URL).toString(); // Redirect to root, let client handle /home route
+    console.debug('Redirecting to frontend root after DB operation:', homeRedirectUrl);
+    res.redirect(homeRedirectUrl);
 
   } catch (error) {
     console.error('Error during CAS authentication process or post-validation:', error);
+    // Fallback redirect to login
     try {
       const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
       const loginUrl = new URL('login', CAS_URL);
@@ -307,5 +357,6 @@ module.exports = {
   isAuthenticated,
   getAuthenticatedUser,
   logoutApp,
-  logoutCAS
+  logoutCAS,
+  stripTicket // Ensure stripTicket is also exported if needed elsewhere
 };
