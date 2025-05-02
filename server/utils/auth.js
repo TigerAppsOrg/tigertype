@@ -119,7 +119,16 @@ async function casAuth(req, res, next) {
   if (!ticket) {
     console.debug('No CAS ticket found, redirecting to CAS login...');
     try {
-      const serviceUrl = new URL('/auth/login', FRONTEND_URL).toString();
+      // Construct the serviceUrl based on the backend server's host and protocol,
+      // ensuring it points to the endpoint that will actually validate the ticket.
+      // Use x-forwarded-* headers if present (common in production proxies).
+      const protocol = (process.env.NODE_ENV === 'production' || req.headers['x-forwarded-proto'] === 'https') ? 'https' : req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host'); // Get backend host
+      // Ensure the path is correctly appended
+      const servicePath = '/auth/login'; // The path where ticket validation occurs
+      const serviceUrl = `${protocol}://${host}${servicePath}`;
+      console.debug('Constructed Service URL for CAS redirect:', serviceUrl);
+
       const loginUrl = new URL('login', CAS_URL);
       loginUrl.searchParams.set('service', serviceUrl);
       console.debug('Redirecting to CAS login:', loginUrl.toString());

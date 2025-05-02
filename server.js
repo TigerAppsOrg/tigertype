@@ -119,7 +119,7 @@ const sessionMiddleware = session({
     path: '/',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none', // Changed from 'lax' to 'none' to work with cross-site redirects
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     domain: cookieDomain,
   }
 });
