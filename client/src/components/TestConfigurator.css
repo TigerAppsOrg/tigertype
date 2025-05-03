@@ -12,12 +12,12 @@
   max-width: 90%;
   margin-left: auto;
   margin-right: auto;
-  background-color: var(--secondary-color);
+  background-color: var(--secondary-bg-color, #2c2c2c); /* Updated background */
   border-radius: 8px;
   position: relative;
   z-index: 10;
   min-height: 40px;
-  /* overflow: hidden; */ /* Allow content to overflow if needed */
+  overflow: hidden; /* Added overflow */
 }
 
 /* Mode selection group */
@@ -73,30 +73,31 @@
   position: relative;
   display: flex;
   align-items: center;
-  /* flex-grow: 1; */ /* Let container size naturally based on content */
-  /* min-width: 250px; */ /* Remove fixed min-width */
+  flex-grow: 1; /* Added flex-grow */
+  min-width: 250px; /* Added min-width */
   height: 100%;
+  /* overflow: hidden; */ /* Remove overflow to prevent clipping absolute children - User provided code comments this out*/
 }
 
-/* Wrapper for options - use relative positioning and display toggle */
+/* Wrapper for options - absolute positioning for transition */
 .options-wrapper {
-  /* position: absolute; */
-  /* left: 0; */
-  /* top: 50%; */
-  /* transform: translateY(-50%) translateX(-20px); */
+  position: absolute; /* Changed to absolute */
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) translateX(-20px); /* Added transform */
   width: auto;
-  display: none; /* Hide by default */
+  display: flex; /* Changed from none to flex */
   align-items: center;
   opacity: 0;
-  transition: opacity 0.25s ease-out;
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out; /* Added transform to transition */
   pointer-events: none;
   white-space: nowrap;
 }
 
 .options-wrapper.visible {
-  display: flex; /* Show when visible */
+  /* display: flex; */ /* No longer needed as display is flex by default */
   opacity: 1;
-  /* transform: translateY(-50%) translateX(0); */
+  transform: translateY(-50%) translateX(0); /* Animate transform */
   pointer-events: auto;
 }
 
@@ -105,7 +106,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 10px;
+  gap: 0.5rem;
   padding: 5px 0;
 }
 
