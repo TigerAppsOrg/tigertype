@@ -190,11 +190,11 @@
   color: var(--text-disabled-color, #555);
   background-color: var(--button-bg-color, #3a3a3a);
 }
-.config-select:not([value=""]) {
+.config-select:not([value=""]):not([value="all"]) {
    color: var(--primary-color, #ff9900);
    font-weight: 600;
 }
-.config-select.non-functional:not([value=""]) {
+.config-select.non-functional:not([value=""]):not([value="all"]) {
    color: var(--text-disabled-color, #555);
    font-weight: 500;
 }
