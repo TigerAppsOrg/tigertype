@@ -8,16 +8,17 @@
   gap: 15px;
   padding: 8px 5%;
   margin-bottom: 20px;
-  width: fit-content;
-  max-width: 90%;
+  width: -webkit-fill-available;
+  max-width: max-content;
   margin-left: auto;
   margin-right: auto;
-  background-color: var(--secondary-color);
+  background-color: var(--type-container-color);
   border-radius: 8px;
   position: relative;
   z-index: 10;
   min-height: 40px;
-  /* overflow: hidden; */ /* Allow content to overflow if needed */
+  overflow: visible;
+  /* justify-content: center; */
 }
 
 /* Mode selection group */
@@ -65,7 +66,7 @@
 }
 
 .leaderboard-button-section .config-button:hover {
-  color: var(--primary-color, #ff9900); /* Highlight on hover */
+  color: var(--primary-color, #ff9900);
 }
 
 /* Container for conditional options - defines the area */
@@ -73,31 +74,46 @@
   position: relative;
   display: flex;
   align-items: center;
-  /* flex-grow: 1; */ /* Let container size naturally based on content */
-  /* min-width: 250px; */ /* Remove fixed min-width */
+  width: auto;
+  flex-shrink: 0;
+  margin-right: 15px;
   height: 100%;
 }
 
-/* Wrapper for options - use relative positioning and display toggle */
+/* Wrapper for options - slide-and-fade in flow */
 .options-wrapper {
-  /* position: absolute; */
-  /* left: 0; */
-  /* top: 50%; */
-  /* transform: translateY(-50%) translateX(-20px); */
-  width: auto;
-  display: none; /* Hide by default */
+  position: relative;
+  width: 0;
+  height: 40px;
+  display: flex;
   align-items: center;
-  opacity: 0;
-  transition: opacity 0.25s ease-out;
-  pointer-events: none;
   white-space: nowrap;
+  overflow: hidden;
+  margin: 0;
+  transform: translateX(-20px);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    opacity 0.25s ease-out,
+    width 0.25s ease-out,
+    margin 0.25s ease-out,
+    transform 0.25s ease-out,
+    visibility 0s linear 0.25s;
 }
-
 .options-wrapper.visible {
-  display: flex; /* Show when visible */
+  width: auto;
+  margin: 0 10px;
+  transform: translateX(0);
   opacity: 1;
-  /* transform: translateY(-50%) translateX(0); */
   pointer-events: auto;
+  visibility: visible;
+  transition:
+    opacity 0.25s ease-out,
+    width 0.25s ease-out,
+    margin 0.25s ease-out,
+    transform 0.25s ease-out,
+    visibility 0s linear;
 }
 
 /* Inner sections */
@@ -107,6 +123,7 @@
   justify-content: flex-start;
   gap: 10px;
   padding: 5px 0;
+  flex-wrap: nowrap;
 }
 
 /* Sub-option buttons (duration, department) */
@@ -140,7 +157,7 @@
 }
 
 /* Icon sizes */
-.config-button i { /* General icon style */
+.config-button i {
   line-height: 1;
   margin-right: -2px;
 }
@@ -156,17 +173,17 @@
 .select-wrapper {
   display: inline-flex;
   align-items: center;
-  gap: 5px; /* Reduced gap */
+  gap: 5px;
   color: var(--text-secondary-color, #888);
 }
 .select-wrapper i {
-  margin-left: 5px; /* Add space before icon */
+  margin-left: 5px;
 }
 
 /* Pill style dropdown */
 .config-select {
   background-color: var(--button-bg-color, #3a3a3a);
-  border: none; /* Remove border */
+  border: none;
   color: var(--text-secondary-color, #888);
   font-size: 0.9rem;
   font-weight: 500;
@@ -190,11 +207,11 @@
   color: var(--text-disabled-color, #555);
   background-color: var(--button-bg-color, #3a3a3a);
 }
-.config-select:not([value=""]) {
+.config-select:not([value=""]):not([value="all"]) {
    color: var(--primary-color, #ff9900);
    font-weight: 600;
 }
-.config-select.non-functional:not([value=""]) {
+.config-select.non-functional:not([value=""]):not([value="all"]) {
    color: var(--text-disabled-color, #555);
    font-weight: 500;
 }
@@ -213,43 +230,42 @@
 
 /* Department Filter Animation */
 .department-filter {
-  display: inline-flex; /* Keep as inline-flex to contain the select-wrapper */
+  display: inline-flex;
   align-items: center;
-  /* gap: 5px; */ /* No longer needed as it contains only one select-wrapper */
-  max-width: 0;
+  gap: 5px;
+  width: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-width 0.3s ease-out, opacity 0.3s ease-out, margin-left 0.3s ease-out;
+  transition: width 0.3s ease-out, opacity 0.3s ease-out, margin-left 0.3s ease-out, transform 0.3s ease-out;
   vertical-align: middle;
   margin-left: 0;
   pointer-events: none;
+  transform: translateX(-20px);
 }
 .department-filter.visible {
-  max-width: 300px;
+  width: auto;
   opacity: 1;
   margin-left: 5px;
   pointer-events: auto;
+  transform: translateX(0);
 }
-/* Remove rule for .department-filter .config-button as it's now a select */
-/*
 .department-filter .config-button {
   white-space: nowrap;
 }
-*/
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .test-configurator {
     width: 95%;
-    padding: 8px 10px; /* Adjust padding */
-    gap: 8px; /* Adjust gap */
+    padding: 8px 10px;
+    gap: 8px;
   }
   .mode-selection {
     gap: 8px;
   }
   .conditional-options-container {
-     min-width: 100px; /* Reduce min width */
-     flex-grow: 0; /* Don't grow excessively */
+     min-width: 100px;
+     flex-grow: 0;
   }
   .snippet-filters-inner, .duration-selection-inner {
     flex-wrap: wrap;

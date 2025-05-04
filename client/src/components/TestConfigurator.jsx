@@ -298,30 +298,6 @@ function TestConfigurator({
           {/* Snippet Filters Wrapper */}
           <div className={`options-wrapper snippet-options ${testMode === 'snippet' ? 'visible' : ''}`}>
             <div className="config-section snippet-filters-inner">
-              {/* Difficulty filter */}
-              <div className="select-wrapper">
-                <DifficultyIcon />
-                <select
-                  className="config-select"
-                  value={snippetDifficulty}
-                  onChange={handleSelectChange(setSnippetDifficulty)}
-                >
-                  <option value="" disabled hidden={snippetDifficulty !== ''}>difficulty</option>
-                  {DIFFICULTIES.map(diff => (
-                    <option
-                      key={diff}
-                      value={diff}
-                      disabled={!availableDifficulties.includes(diff)}
-                      title={!availableDifficulties.includes(diff) ? 'No snippets available for selected filters' : undefined}
-                    >
-                      {diff}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="config-separator-inner"></div>
-
               {/* Type filter */}
               <div className="select-wrapper">
                 <TypeIcon />
@@ -330,9 +306,10 @@ function TestConfigurator({
                   value={snippetType}
                   onChange={handleSelectChange(setSnippetType)}
                 >
-                  <option value="" disabled hidden={snippetType !== ''}>type</option>
                   {TYPES.map(type => (
-                    <option key={type} value={type}>{type.replace('_', ' ')}</option>
+                    <option key={type} value={type}>
+                      {type === 'all' ? 'type' : type.replace('_', ' ')}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -355,6 +332,29 @@ function TestConfigurator({
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="config-separator-inner"></div>
+
+              {/* Difficulty filter */}
+              <div className="select-wrapper">
+                <DifficultyIcon />
+                <select
+                  className="config-select"
+                  value={snippetDifficulty}
+                  onChange={handleSelectChange(setSnippetDifficulty)}
+                >
+                  {DIFFICULTIES.map(diff => (
+                    <option
+                      key={diff}
+                      value={diff}
+                      disabled={!availableDifficulties.includes(diff)}
+                      title={!availableDifficulties.includes(diff) ? 'No snippets available for selected filters' : undefined}
+                    >
+                      {diff === 'all' ? 'difficulty' : diff}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
