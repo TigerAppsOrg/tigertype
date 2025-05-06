@@ -152,14 +152,14 @@ function Results({ onShowLeaderboard }) {
         <h3>Practice Results</h3>
         {statsContent}
         {/* Snippet Source Info */}
-        {raceState.snippet && (
+        {raceState.type !== 'timed' && raceState.snippet && raceState.snippet.course_name && (
           <div className="snippet-info">
             Where is this excerpt from?{' '}
             <strong>{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</strong>
           </div>
         )}
         {/* Course Review Button */}
-        {raceState.snippet?.princeton_course_url && (
+        {raceState.type !== 'timed' && raceState.snippet?.course_name && raceState.snippet?.princeton_course_url && (
           <a
             href={raceState.snippet.princeton_course_url}
             className="course-review-btn"
@@ -297,14 +297,14 @@ function Results({ onShowLeaderboard }) {
         </div>
         
         {/* Snippet Source Info */}
-        {raceState.snippet && (
+        {raceState.type !== 'timed' && raceState.snippet && raceState.snippet.course_name && (
           <div className="snippet-info">
             Where is this excerpt from?{' '}
             <strong>{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</strong>
           </div>
         )}
         {/* Course Review Button for multiplayer results */}
-        {raceState.snippet?.princeton_course_url && (
+        {raceState.type !== 'timed' && raceState.snippet?.course_name && raceState.snippet?.princeton_course_url && (
           <a
             href={raceState.snippet.princeton_course_url}
             className="course-review-btn"
