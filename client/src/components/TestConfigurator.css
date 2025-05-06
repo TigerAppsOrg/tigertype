@@ -76,10 +76,15 @@
   align-items: center;
   justify-content: center;
   width: auto;
-  min-width: 480px;
+  min-width: 350px;
   flex-shrink: 0;
   margin-right: 15px;
   height: 40px;
+  transition: min-width 0.3s ease-out;
+}
+
+.conditional-options-container.department-active {
+  min-width: 480px;
 }
 
 /* Wrapper for options - slide-and-fade in flow */
@@ -235,17 +240,17 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  width: 0;
+  max-width: 0;
   opacity: 0;
   overflow: hidden;
-  transition: width 0.3s ease-out, opacity 0.3s ease-out, margin-left 0.3s ease-out, transform 0.3s ease-out;
+  transition: max-width 0.3s ease-out, opacity 0.3s ease-out, margin-left 0.3s ease-out, transform 0.3s ease-out;
   vertical-align: middle;
   margin-left: 0;
   pointer-events: none;
   transform: translateX(-20px);
 }
 .department-filter.visible {
-  width: auto;
+  max-width: 200px;
   opacity: 1;
   margin-left: 5px;
   pointer-events: auto;

@@ -293,7 +293,7 @@ function TestConfigurator({
         <div className="config-separator"></div>
 
         {/* Conditional Options Area */}
-        <div className="conditional-options-container">
+        <div className={`conditional-options-container ${testMode === 'snippet' && snippetType === 'course_reviews' ? 'department-active' : ''}`}>
 
           {/* Snippet Filters Wrapper */}
           <div className={`options-wrapper snippet-options ${testMode === 'snippet' ? 'visible' : ''}`}>
