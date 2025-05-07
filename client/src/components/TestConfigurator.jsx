@@ -112,24 +112,6 @@ function TestConfigurator({
      };
   }, [testMode]); // Watch testMode
 
-
-  // Ensure the component always shows the current active test mode
-  React.useEffect(() => {
-    // When the component loads, make sure we're showing the correct mode's options
-    if (testMode === 'timed' || testMode === 'snippet') {
-      const timedOptions = document.querySelector('.timed-options');
-      const snippetOptions = document.querySelector('.snippet-options');
-      
-      if (timedOptions) {
-        timedOptions.classList.toggle('visible', testMode === 'timed');
-      }
-      
-      if (snippetOptions) {
-        snippetOptions.classList.toggle('visible', testMode === 'snippet');
-      }
-    }
-  }, [testMode]);
-
   // Updated handler for select changes to directly set state
   // The useEffect hook above will handle reloading the snippet
   const handleSelectChange = (setter) => (event) => {
@@ -293,7 +275,7 @@ function TestConfigurator({
         <div className="config-separator"></div>
 
         {/* Conditional Options Area */}
-        <div className="conditional-options-container">
+        <div className={`conditional-options-container ${testMode === 'snippet' && snippetType === 'course_reviews' ? 'department-active' : ''}`}>
 
           {/* Snippet Filters Wrapper */}
           <div className={`options-wrapper snippet-options ${testMode === 'snippet' ? 'visible' : ''}`}>
