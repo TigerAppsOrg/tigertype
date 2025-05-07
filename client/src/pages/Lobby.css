@@ -176,54 +176,104 @@
   display: none;
 }
 
+/* NEW RULE: Ensure the container for conditional options behaves correctly in vertical layout */
+.lobby-settings .test-configurator .conditional-options-container {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  margin-right: 0;
+}
+
 /* Base state for conditional option wrappers — hidden */
 .lobby-settings .test-configurator .options-wrapper {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-  transform: translateY(-12px);
-  transition: max-height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
+  height: auto;
+  transition: max-height 0.35s ease, opacity 0.35s ease;
   pointer-events: none;
+  visibility: hidden;
+  margin-top: 0;
 }
 
 /* Visible state when React adds .visible */
 .lobby-settings .test-configurator .options-wrapper.visible {
-  max-height: 400px;
+  margin-top: 25px;
+  max-height: 600px;
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
+  visibility: visible;
 }
 
-/* Inner rows */
+/* Inner rows - now stacking vertically */
 .lobby-settings .test-configurator .snippet-filters-inner,
 .lobby-settings .test-configurator .duration-selection-inner {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  padding: 2px 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 10px 0 0 0;
+  width: 100%;
+}
+
+/* Style for select-wrapper specifically in lobby to ensure full width and proper icon/select layout */
+.lobby-settings .test-configurator .select-wrapper {
+  display: flex;
   align-items: center;
-  justify-content: center;
+  width: 100%;
+  gap: 8px;
+}
+.lobby-settings .test-configurator .select-wrapper i {
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* Fine‑tune dropdown pills */
 .lobby-settings .test-configurator .config-select {
-  min-width: 130px;
+  min-width: 0;
+  flex-grow: 1;
+  width: auto;
+  padding: 4px 10px;
 }
 
-/* Vertical separator inside filter rows */
+/* Department filter specific styling for lobby */
+.lobby-settings .test-configurator .department-filter {
+  display: flex;
+  width: 100%;
+  margin-left: 0;
+}
+
+.lobby-settings .test-configurator .department-filter.visible {
+  max-width: 100%;
+  transform: none;
+  margin-left: 0;
+}
+
+
+/* Vertical separator inside filter rows - now horizontal line */
 .lobby-settings .test-configurator .config-separator-inner {
-  width: 1px;
-  height: 16px;
+  width: 100%;
+  height: 1px;
   background-color: var(--border-color-light);
+  margin: 0;
+}
+
+/* Duration buttons in lobby */
+.lobby-settings .test-configurator .duration-selection-inner .config-button {
+  width: 100%;
+  justify-content: center;
+  padding: 8px 10px;
+}
+.lobby-settings .test-configurator .duration-selection-inner .config-button.active {
+  background-color: var(--button-hover-bg-color);
+  color: var(--primary-color);
 }
 
 /* Leaderboard button */
 .lobby-settings .test-configurator .leaderboard-button-section {
-  /* Hide the leaderboard button when TestConfigurator is used in Lobby */
   display: none;
-  /* Original margin preserved below in case needed elsewhere or restored later */
-  /* margin-top: 18px; */
-  /* justify-content: flex-start; */
 }
 
 /* ──────────────────────────────────────────────────────────────── */
