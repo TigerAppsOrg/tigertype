@@ -99,6 +99,20 @@ export const RaceProvider = ({ children }) => {
   const [snippetSubject, setSnippetSubject] = useState('');
   const [snippetError, setSnippetError] = useState(null);
 
+  // Add state for word pool size, loaded from localStorage
+  const [wordDifficulty, setWordDifficulty] = useState(() => {
+    return localStorage.getItem('wordDifficulty') || 'easy'; // 'easy' (200) or 'hard' (1000)
+  });
+
+  // Persist wordDifficulty to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('wordDifficulty', wordDifficulty);
+    } catch (err) {
+      console.error('Error saving wordDifficulty to localStorage:', err);
+    }
+  }, [wordDifficulty]);
+
   // Clear snippetError when filters change
   useEffect(() => {
     setSnippetError(null);
@@ -511,6 +525,7 @@ export const RaceProvider = ({ children }) => {
     const options = {
       testMode: raceState.timedTest?.enabled ? 'timed' : 'snippet',
       testDuration: raceState.timedTest?.duration || 15,
+      wordPoolSize: wordDifficulty === 'easy' ? '200' : '1000', // Map difficulty to size
       snippetFilters: {
         difficulty: snippetDifficulty || 'all',
         type: snippetCategory || 'all',
@@ -583,6 +598,7 @@ export const RaceProvider = ({ children }) => {
       const options = {
         testMode: currentState.timedTest?.enabled ? 'timed' : 'snippet',
         testDuration: currentState.timedTest?.duration || 15,
+        wordPoolSize: wordDifficulty === 'easy' ? '200' : '1000', // Map difficulty to size
         snippetFilters: {
           difficulty: difficulty,
           type: category,
@@ -914,6 +930,7 @@ export const RaceProvider = ({ children }) => {
     const lobbyOptions = {
       testMode: options.testMode || raceState.settings.testMode,
       testDuration: options.testDuration || raceState.settings.testDuration,
+      wordPoolSize: options.wordPoolSize || (wordDifficulty === 'easy' ? '200' : '1000'),
       snippetFilters: options.snippetFilters || {
         difficulty: snippetDifficulty || 'all',
         type: snippetCategory || 'all',
@@ -1057,7 +1074,9 @@ export const RaceProvider = ({ children }) => {
         setSnippetCategory,
         snippetSubject,
         setSnippetSubject,
-        snippetError
+        snippetError,
+        wordDifficulty,
+        setWordDifficulty
       }}
     >
       {children}
@@ -1089,10 +1108,34 @@ const useEnhancedRace = () => {
     }
   }, [context]);
 
+  // Add setter for word pool size if needed for TestConfigurator or other components
+  const setConfigWordPoolSize = useCallback((size) => {
+    if (typeof context.setWordPoolSize === 'function') context.setWordPoolSize(size);
+    // Optionally, trigger a reload if in practice mode
+    if (context.raceState.type === 'practice') {
+      context.loadNewSnippet(); // Reload snippet on word pool size change
+    }
+  }, [context]);
+
+  // Getter for wordDifficulty, setter for wordDifficulty that maps to internal state
+  const currentWordDifficulty = context.wordDifficulty;
+  const setConfigWordDifficulty = useCallback((difficulty) => {
+    if (typeof context.setWordDifficulty === 'function') {
+      context.setWordDifficulty(difficulty);
+      // Reload snippet in practice mode if difficulty changes
+      if (context.raceState.type === 'practice') {
+        context.loadNewSnippet();
+      }
+    }
+  }, [context]);
+
   return {
     ...context,
     setConfigTestMode,
-    setConfigTestDuration
+    setConfigTestDuration,
+    setConfigWordPoolSize,
+    wordDifficulty: currentWordDifficulty,
+    setWordDifficulty: setConfigWordDifficulty
   };
 };
 

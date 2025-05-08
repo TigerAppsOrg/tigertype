@@ -341,9 +341,10 @@ const initialize = (io) => {
 
         // Get or create snippet text
         if (isTimedTest) {
-          snippet = createTimedTestSnippet(duration);
+          // Pass wordPoolSize option for filtering commonWords
+          snippet = createTimedTestSnippet(duration, { wordPoolSize: options.wordPoolSize });
           snippetId = `timed-${duration}`; // Use a special ID for timed tests in memory
-          console.log(`Created timed test (${duration}s) for practice mode`);
+          console.log(`Created timed test (${duration}s) for practice mode with wordPoolSize=${options.wordPoolSize}`);
         } else {
           // Implement progressive snippet filtering based on options.snippetFilters
           const { difficulty, type, department } = options.snippetFilters || {};

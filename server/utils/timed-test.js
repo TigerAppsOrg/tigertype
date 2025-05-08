@@ -13,17 +13,25 @@ const { commonWords } = require('../../client/src/lib/commonWords.cjs');
  * @param {Object} options - Generation options
  * @param {boolean} options.capitalize - Whether to capitalize the first letter of each sentence
  * @param {boolean} options.punctuation - Whether to add punctuation
+ * @param {number} options.wordPoolSize - Size of the word pool to select from
  * @returns {string} Generated text
  */
 function generateTimedText(wordCount = 100, options = {}) {
-  const { capitalize = true, punctuation = true } = options;
+  const { capitalize = true, punctuation = true, wordPoolSize } = options;
   
-  // Default: select words randomly from the common words list
+  let availableWords = commonWords;
+  if (wordPoolSize && !isNaN(parseInt(wordPoolSize))) {
+    const limit = parseInt(wordPoolSize, 10);
+    if (limit > 0 && limit < commonWords.length) {
+      availableWords = commonWords.slice(0, limit);
+    }
+  }
+
   let selectedWords = [];
   
   for (let i = 0; i < wordCount; i++) {
-    const randomIndex = Math.floor(Math.random() * commonWords.length);
-    selectedWords.push(commonWords[randomIndex]);
+    const randomIndex = Math.floor(Math.random() * availableWords.length);
+    selectedWords.push(availableWords[randomIndex]);
   }
   
   // Add punctuation and capitalization if requested
@@ -85,9 +93,10 @@ function generateTimedText(wordCount = 100, options = {}) {
  * but generated programmatically for timed tests
  *
  * @param {number} duration - Test duration in seconds (used to determine word count)
+ * @param {Object} options - Additional options like wordPoolSize
  * @returns {Object} Snippet object with the same structure as database snippets
  */
-function createTimedTestSnippet(duration = 15) {
+function createTimedTestSnippet(duration = 15, options = {}) {
   // For the initial words, we'll generate enough for about 20 seconds of typing
   // This ensures users will need to request more words frequently
   const initialWordCount = 100;
@@ -95,7 +104,8 @@ function createTimedTestSnippet(duration = 15) {
   // Generate the text content - NO capitalization or punctuation for timed tests
   const text = generateTimedText(initialWordCount, { 
     capitalize: false, 
-    punctuation: false 
+    punctuation: false,
+    wordPoolSize: options.wordPoolSize
   });
   
   // Create a snippet object similar to what the database would return

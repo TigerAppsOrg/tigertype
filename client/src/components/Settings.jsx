@@ -1,7 +1,11 @@
 import './Settings.css';
 import { useState, useEffect, useRef } from 'react';
+import { useRace } from '../context/RaceContext';
 
 function Settings({ isOpen, onClose }) {
+
+  // Use context for word difficulty and reloading practice snippets
+  const { wordDifficulty, setWordDifficulty, raceState, loadNewSnippet } = useRace();
 
   // Define our font size options as 5 distinct sizes
   const fontSizeOptions = [
@@ -61,8 +65,8 @@ function Settings({ isOpen, onClose }) {
     localStorage.setItem('preferredFont', whichFont);
     localStorage.setItem('typingSound', typingSound);
     localStorage.setItem('snippetFontSize', fontSize.toString());
-
     localStorage.setItem('theme', theme);
+    // Word difficulty persistence is managed by RaceContext
 
     if (theme === 'tangerine') {
       document.documentElement.style.setProperty('--primary-color', '#F5821F');
@@ -290,6 +294,14 @@ function Settings({ isOpen, onClose }) {
     setTypingSound(prev => !prev);
   };
 
+  const handleWordDifficultyChange = (difficulty) => {
+    setWordDifficulty(difficulty);
+    // Reload snippet in practice mode when difficulty changes
+    if (raceState.type === 'practice') {
+      loadNewSnippet();
+    }
+  };
+
   const handleThemeChange = (e) => {
     setTheme(e.target.value);
   };
@@ -319,11 +331,13 @@ function Settings({ isOpen, onClose }) {
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         <div className="settings-content">
-          {/* Customization Category */}
-          <h3>Customization</h3>
+          {/* Removed explicit categories for simplicity, direct listing or grouped by relevance */}
           <div className="setting-item setting-item-select">
-            <label htmlFor="font-select">Fonts</label>
-            <select 
+            <label htmlFor="font-select">
+              Font
+              <span className="info-icon" data-tooltip="Select your preferred font for typing.">ⓘ</span>
+            </label>
+            <select
               id="font-select"
               className="font-select" 
               value={whichFont} 
@@ -338,7 +352,10 @@ function Settings({ isOpen, onClose }) {
             </select>
           </div>
           <div className="setting-item setting-item-slider">
-            <label htmlFor="font-size-slider">Excerpt Font Size</label>
+            <label htmlFor="font-size-slider">
+              Excerpt Font Size
+              <span className="info-icon" data-tooltip="Adjust the font size of the text excerpt.">ⓘ</span>
+            </label>
             <div className="slider-container">
               <input
                 id="font-size-slider"
@@ -365,7 +382,10 @@ function Settings({ isOpen, onClose }) {
             </div>
           </div>
           <div className="setting-item setting-item-toggle">
-            <label htmlFor="block-cursor-toggle">Block Cursor</label>
+            <label htmlFor="block-cursor-toggle">
+              Block Cursor
+              <span className="info-icon" data-tooltip="Toggle between a block cursor and a line cursor.">ⓘ</span>
+            </label>
             <div className="toggle">
               <label className="switch">
                 <input 
@@ -380,7 +400,10 @@ function Settings({ isOpen, onClose }) {
             </div>
           </div>
           <div className="setting-item setting-item-toggle">
-            <label htmlFor="sound-toggle">Typing Sound</label>
+            <label htmlFor="sound-toggle">
+              Typing Sound
+              <span className="info-icon" data-tooltip="Enable or disable sound effects for typing.">ⓘ</span>
+            </label>
             <div className="toggle">
               <label className="switch">
                 <input
@@ -392,6 +415,29 @@ function Settings({ isOpen, onClose }) {
                 <span className="slider"></span>
               </label>
               <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
+            </div>
+          </div>
+          
+          {/* Word Difficulty Setting */}
+          <h3 className="settings-subheader">Test Settings</h3>
+          <div className="setting-item">
+            <label htmlFor="word-difficulty-toggle">
+              Word Difficulty
+              <span className="info-icon" data-tooltip="Easy: Top 200 common words. Hard: Top 1000 common words. Affects timed tests.">ⓘ</span>
+            </label>
+            <div className="difficulty-toggle-group">
+              <button
+                className={`difficulty-toggle-btn ${wordDifficulty === 'easy' ? 'active' : ''}`}
+                onClick={() => handleWordDifficultyChange('easy')}
+              >
+                Easy
+              </button>
+              <button
+                className={`difficulty-toggle-btn ${wordDifficulty === 'hard' ? 'active' : ''}`}
+                onClick={() => handleWordDifficultyChange('hard')}
+              >
+                Hard
+              </button>
             </div>
           </div>
 
@@ -410,8 +456,6 @@ function Settings({ isOpen, onClose }) {
             </select>
           </div>
           
-          {/* Add more categories below as needed */}
-
         </div>
       </div>
     </div>
