@@ -8,28 +8,28 @@ import TutorialAnchor from './TutorialAnchor';
 const ClockIcon = () => <i className="bi bi-clock"></i>;
 const QuoteIcon = () => <i className="bi bi-quote"></i>;
 const DifficultyIcon = () => <i className="bi bi-bar-chart-line"></i>;
-const TypeIcon = () => <i className="bi bi-tags"></i>;
-const DepartmentIcon = () => <i className="bi bi-building"></i>;
+const CategoryIcon = () => <i className="bi bi-tags"></i>;
+const SubjectIcon = () => <i className="bi bi-building"></i>;
 const LeaderboardIcon = () => <i className="bi bi-trophy"></i>;
 // --- ---
 
 // --- Configuration Options ---
 const DURATIONS = [15, 30, 60, 120];
-const DIFFICULTIES = ['all', 'easy', 'medium', 'hard'];
-const TYPES = ['all', 'general', 'course_reviews'];
+const DIFFICULTIES = ['all', 'Easy', 'Medium', 'Hard'];
+const CATEGORIES = ['all', 'general', 'course_reviews'];
 // --- ---
 
 function TestConfigurator({
   testMode,
   testDuration,
   snippetDifficulty,
-  snippetType,
-  snippetDepartment,
+  snippetCategory,
+  snippetSubject,
   setTestMode,
   setTestDuration,
   setSnippetDifficulty,
-  setSnippetType,
-  setSnippetDepartment,
+  setSnippetCategory,
+  setSnippetSubject,
   setRaceState,
   loadNewSnippet,
   onShowLeaderboard,
@@ -37,64 +37,68 @@ function TestConfigurator({
   snippetError = null,
 }) {
 
-  const [departments, setDepartments] = React.useState(['all']); // State for dynamic departments
-  const isMounted = React.useRef(false); // Ref to track initial mount
+  const [subjects, setSubjects] = React.useState(['all']);
+  const isMounted = React.useRef(false);
 
-  // Store available difficulties for the current type/department filters
+  // Store available difficulties for the current category/subject filters
   const [availableDifficulties, setAvailableDifficulties] = React.useState(DIFFICULTIES);
 
-  // Fetch available difficulties when type or department filters change
+  // Fetch available difficulties when category or subject filters change
   React.useEffect(() => {
     const fetchDifficulties = async () => {
       try {
-        const params = new URLSearchParams({ type: snippetType, department: snippetDepartment });
+        const queryParams = {};
+        if (snippetCategory && snippetCategory !== 'all') {
+          queryParams.type = snippetCategory;
+        }
+        if (snippetCategory === 'course_reviews' && snippetSubject && snippetSubject !== 'all') {
+          queryParams.department = snippetSubject;
+        }
+
+        const params = new URLSearchParams(queryParams);
         const response = await fetch(`/api/snippets/filters?${params.toString()}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        setAvailableDifficulties(data.difficulties || DIFFICULTIES);
+        setAvailableDifficulties(data.difficulties || []);
       } catch (error) {
         console.error('Failed to fetch available difficulties:', error);
-        setAvailableDifficulties(DIFFICULTIES);
+        setAvailableDifficulties([]);
       }
     };
     fetchDifficulties();
-  }, [snippetType, snippetDepartment]);
+  }, [snippetCategory, snippetSubject]);
 
-  // Fetch departments on mount
+  // Fetch subjects on mount
   React.useEffect(() => {
-    const fetchDepartments = async () => {
+    const fetchSubjects = async () => {
       try {
-        // Assuming fetch is available or imported appropriately
-        const response = await fetch('/api/snippets/course-subjects'); // Use the new API endpoint
+        const response = await fetch('/api/snippets/course-subjects');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const fetchedSubjects = await response.json();
-        // Ensure 'all' is always the first option and handle potential duplicates if API includes 'all'
-        setDepartments(['all', ...new Set(fetchedSubjects.filter(s => s !== 'all'))]);
+        setSubjects(['all', ...new Set(fetchedSubjects.filter(s => s !== 'all'))]);
       } catch (error) {
-        console.error("Failed to fetch departments:", error);
-        // Keep the default ['all'] or set a specific error state if needed
+        console.error("Failed to fetch subjects:", error);
       }
     };
-    fetchDepartments();
-  }, []); // Empty dependency array ensures this runs only once on mount
+    fetchSubjects();
+  }, []);
 
-  // Reset department if type changes away from course reviews
+  // Reset subject if category changes away from course reviews
   React.useEffect(() => {
-    if (snippetType !== 'course_reviews' && snippetDepartment !== 'all') {
-      setSnippetDepartment('all');
+    if (snippetCategory !== 'course_reviews' && snippetSubject !== 'all') {
+      setSnippetSubject('all');
     }
-  }, [snippetType, snippetDepartment, setSnippetDepartment]);
+  }, [snippetCategory, snippetSubject, setSnippetSubject]);
 
   // Trigger snippet reload when filters change (after initial mount)
   React.useEffect(() => {
-    // Only reload if it's not the initial mount and we are in snippet mode
     if (isMounted.current && testMode === 'snippet') {
        console.log('Snippet filter changed, loading new snippet...');
        loadNewSnippet && loadNewSnippet();
     }
-  }, [snippetDifficulty, snippetType, snippetDepartment]); // Watch filter states
+  }, [snippetDifficulty, snippetCategory, snippetSubject]);
 
   // Track initial mount & ensure reload on mode switch to snippet
    React.useEffect(() => {
@@ -275,44 +279,63 @@ function TestConfigurator({
         <div className="config-separator"></div>
 
         {/* Conditional Options Area */}
-        <div className={`conditional-options-container ${testMode === 'snippet' && snippetType === 'course_reviews' ? 'department-active' : ''}`}>
+        <div className={`conditional-options-container ${testMode === 'snippet' && snippetCategory === 'course_reviews' ? 'subject-active' : ''}`}>
 
           {/* Snippet Filters Wrapper */}
           <div className={`options-wrapper snippet-options ${testMode === 'snippet' ? 'visible' : ''}`}>
             <div className="config-section snippet-filters-inner">
-              {/* Type filter */}
+              {/* Category filter */}
               <div className="select-wrapper">
-                <TypeIcon />
+                <CategoryIcon />
+                <div className="select-container">
                 <select
-                  className="config-select"
-                  value={snippetType}
-                  onChange={handleSelectChange(setSnippetType)}
+                    className="select-native"
+                    value={snippetCategory}
+                    onChange={handleSelectChange(setSnippetCategory)}
                 >
-                  {TYPES.map(type => (
-                    <option key={type} value={type}>
-                      {type === 'all' ? 'type' : type.replace('_', ' ')}
+                    <option value="all">All</option>
+                    {CATEGORIES.filter(c => c !== 'all').map(category => (
+                      <option key={category} value={category}>
+                        {category === 'course_reviews' ? 'Course Reviews' : category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}
                     </option>
                   ))}
                 </select>
+                  <div className={`select-display ${(!snippetCategory || snippetCategory === 'all') ? 'placeholder' : 'selected'}`}>
+                    {(!snippetCategory || snippetCategory === 'all')
+                      ? 'Category'
+                      : snippetCategory === 'course_reviews'
+                        ? 'Course Reviews'
+                        : snippetCategory.charAt(0).toUpperCase() + snippetCategory.slice(1).replace('_', ' ')
+                    }
+                    <i className="bi bi-chevron-down"></i>
+                  </div>
+                </div>
               </div>
 
-              {/* Department filter – only shown for course reviews */}
-              <div className={`department-filter ${snippetType === 'course_reviews' ? 'visible' : ''}`}>
+              {/* Subject filter – only shown for course reviews */}
+              <div className={`subject-filter ${snippetCategory === 'course_reviews' ? 'visible' : ''}`}>
                 <div className="config-separator-inner"></div>
                 <div className="select-wrapper">
-                  <DepartmentIcon />
+                  <SubjectIcon />
+                  <div className="select-container">
                   <select
-                    className="config-select"
-                    value={snippetDepartment}
-                    onChange={handleSelectChange(setSnippetDepartment)}
-                    aria-label="Select Department"
+                      className="select-native"
+                      value={snippetSubject}
+                      onChange={handleSelectChange(setSnippetSubject)}
+                      aria-label="Select Subject"
                   >
-                    {departments.map(dept => (
-                      <option key={dept} value={dept}>
-                        {dept === 'all' ? 'department' : dept}
+                      <option value="all">All</option>
+                      {subjects.filter(s => s !== 'all').map(subj => (
+                        <option key={subj} value={subj}>
+                          {subj}
                       </option>
                     ))}
                   </select>
+                    <div className={`select-display ${(!snippetSubject || snippetSubject === 'all') ? 'placeholder' : 'selected'}`}>
+                      {(!snippetSubject || snippetSubject === 'all') ? 'Subject' : snippetSubject}
+                      <i className="bi bi-chevron-down"></i>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -321,22 +344,29 @@ function TestConfigurator({
               {/* Difficulty filter */}
               <div className="select-wrapper">
                 <DifficultyIcon />
+                <div className="select-container">
                 <select
-                  className="config-select"
+                    className="select-native"
                   value={snippetDifficulty}
                   onChange={handleSelectChange(setSnippetDifficulty)}
                 >
-                  {DIFFICULTIES.map(diff => (
+                    <option value="all">All</option>
+                    {DIFFICULTIES.filter(diff => diff !== 'all').map(diff => (
                     <option
                       key={diff}
                       value={diff}
                       disabled={!availableDifficulties.includes(diff)}
-                      title={!availableDifficulties.includes(diff) ? 'No snippets available for selected filters' : undefined}
+                        title={!availableDifficulties.includes(diff) ? 'No snippets available for this filter combination' : undefined}
                     >
-                      {diff === 'all' ? 'difficulty' : diff}
+                        {diff}
                     </option>
                   ))}
                 </select>
+                  <div className={`select-display ${(!snippetDifficulty || snippetDifficulty === 'all') ? 'placeholder' : 'selected'}`}>
+                    {(!snippetDifficulty || snippetDifficulty === 'all') ? 'Difficulty' : snippetDifficulty}
+                    <i className="bi bi-chevron-down"></i>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -369,13 +399,13 @@ TestConfigurator.propTypes = {
   testMode: PropTypes.oneOf(['snippet', 'timed']).isRequired,
   testDuration: PropTypes.number.isRequired,
   snippetDifficulty: PropTypes.string.isRequired,
-  snippetType: PropTypes.string.isRequired,
-  snippetDepartment: PropTypes.string.isRequired,
+  snippetCategory: PropTypes.string.isRequired,
+  snippetSubject: PropTypes.string.isRequired,
   setTestMode: PropTypes.func.isRequired,
   setTestDuration: PropTypes.func.isRequired,
   setSnippetDifficulty: PropTypes.func.isRequired,
-  setSnippetType: PropTypes.func.isRequired,
-  setSnippetDepartment: PropTypes.func.isRequired,
+  setSnippetCategory: PropTypes.func.isRequired,
+  setSnippetSubject: PropTypes.func.isRequired,
   setRaceState: PropTypes.func.isRequired,
   loadNewSnippet: PropTypes.func,
   onShowLeaderboard: PropTypes.func.isRequired,

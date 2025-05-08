@@ -92,8 +92,8 @@ function Lobby() {
   const currentSettings = raceState.settings || { testMode: 'snippet', testDuration: 15 };
   // Local state for filters not yet in raceState.settings
   const [snippetDifficulty, setSnippetDifficulty] = useState('');
-  const [snippetType, setSnippetType] = useState('');
-  const [snippetDepartment, setSnippetDepartment] = useState('');
+  const [snippetCategory, setSnippetCategory] = useState('');
+  const [snippetSubject, setSnippetSubject] = useState('');
   // --- ---
 
   // Handler for settings changes (only host can trigger)
@@ -108,14 +108,13 @@ function Lobby() {
   const handleSettingChange = (setter) => (value) => {
     if (!isHost) return; // Only the host may change settings
 
-    // Ensure snippetFilters exist in settings
-    const defaultFilters = { difficulty: 'all', type: 'all', department: 'all' };
+    // Ensure snippetFilters exist in settings. Key should be 'department' for backend.
+    const defaultFilters = { difficulty: 'all', type: 'all', department: 'all' }; 
     const current = {
       ...(raceState.settings || { testMode: 'snippet', testDuration: 15 }),
       snippetFilters: raceState.settings?.snippetFilters || defaultFilters
     };
 
-    // Build a new settings object beginning with the current ones
     let updatedSettings = { ...current };
 
     switch (setter) {
@@ -129,19 +128,19 @@ function Lobby() {
         setSnippetDifficulty(value);
         updatedSettings.snippetFilters = { ...current.snippetFilters, difficulty: value };
         break;
-      case 'setSnippetType':
-        setSnippetType(value);
-        updatedSettings.snippetFilters = { ...current.snippetFilters, type: value };
+      case 'setSnippetCategory':
+        setSnippetCategory(value);
+        // API expects 'type'. If snippetCategory is 'all', pass 'all', else pass the value.
+        updatedSettings.snippetFilters = { ...current.snippetFilters, type: value }; 
         break;
-      case 'setSnippetDepartment':
-        setSnippetDepartment(value);
-        updatedSettings.snippetFilters = { ...current.snippetFilters, department: value };
+      case 'setSnippetSubject': 
+        setSnippetSubject(value); 
+        // UI uses 'snippetSubject', but pass as 'department' to backend/RaceContext
+        updatedSettings.snippetFilters = { ...current.snippetFilters, department: value }; 
         break;
       default:
-        return; // Unknown setter – do nothing
+        return;
     }
-
-    // Send the updated settings (including snippetFilters) to the server
     updateLobbySettings(updatedSettings);
   };
 
@@ -241,16 +240,16 @@ function Lobby() {
                   <TestConfigurator
                     testMode={currentSettings.testMode ?? 'snippet'}
                     testDuration={currentSettings.testDuration ?? 15}
-                    snippetDifficulty={snippetDifficulty} // Still local state
-                    snippetType={snippetType}           // Still local state
-                    snippetDepartment={snippetDepartment} // Still local state
+                    snippetDifficulty={snippetDifficulty}
+                    snippetCategory={snippetCategory}
+                    snippetSubject={snippetSubject}
                     setTestMode={handleSettingChange('setTestMode')}
                     setTestDuration={handleSettingChange('setTestDuration')}
                     setSnippetDifficulty={handleSettingChange('setSnippetDifficulty')}
-                    setSnippetType={handleSettingChange('setSnippetType')}
-                    setSnippetDepartment={handleSettingChange('setSnippetDepartment')}
-                    setRaceState={setRaceState} // Pass down if needed by TestConfigurator internals
-                    loadNewSnippet={loadNewSnippet} // Pass down if needed
+                    setSnippetCategory={handleSettingChange('setSnippetCategory')}
+                    setSnippetSubject={handleSettingChange('setSnippetSubject')}
+                    setRaceState={setRaceState}
+                    loadNewSnippet={loadNewSnippet}
                     snippetError={snippetError}
                     onShowLeaderboard={() => {}} // Disable leaderboard button in lobby
                   />

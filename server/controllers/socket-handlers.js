@@ -347,7 +347,7 @@ const initialize = (io) => {
         } else {
           // Implement progressive snippet filtering based on options.snippetFilters
           const { difficulty, type, department } = options.snippetFilters || {};
-          const difficultyMap = { easy: 1, medium: 2, hard: 3 };
+          const difficultyMap = { Easy: 1, Medium: 2, Hard: 3 };
           const numericDifficulty = difficultyMap[difficulty] || null;
           const category = type && type !== 'all'
             ? (type === 'course_reviews' ? 'course-reviews' : type)
@@ -647,7 +647,7 @@ const initialize = (io) => {
         } else {
           // Implement progressive snippet filtering based on options.snippetFilters
           const { difficulty, type, department } = options.snippetFilters || {};
-          const difficultyMap = { easy: 1, medium: 2, hard: 3 };
+          const difficultyMap = { Easy: 1, Medium: 2, Hard: 3 };
           const numericDifficulty = difficultyMap[difficulty] || null;
           const category = type && type !== 'all'
             ? (type === 'course_reviews' ? 'course-reviews' : type)
@@ -1078,7 +1078,7 @@ const initialize = (io) => {
         if (settings.snippetFilters && (settings.testMode === 'snippet' || race.settings.testMode === 'snippet')) {
           // Apply progressive filter combos, prioritizing difficulty
           const { difficulty, type, department } = settings.snippetFilters;
-          const difficultyMap = { easy: 1, medium: 2, hard: 3 };
+          const difficultyMap = { Easy: 1, Medium: 2, Hard: 3 };
           const numericDifficulty = difficultyMap[difficulty] || null;
           const category = type && type !== 'all'
             ? (type === 'course_reviews' ? 'course-reviews' : type)

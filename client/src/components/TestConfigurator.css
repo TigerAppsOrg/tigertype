@@ -83,7 +83,7 @@
   transition: min-width 0.3s ease-out;
 }
 
-.conditional-options-container.department-active {
+.conditional-options-container.subject-active {
   min-width: 480px;
 }
 
@@ -133,7 +133,7 @@
   flex-wrap: nowrap;
 }
 
-/* Sub-option buttons (duration, department) */
+/* Sub-option buttons (duration, subject) */
 .options-wrapper .config-button {
   padding: 5px 10px;
   border: none;
@@ -194,39 +194,55 @@
   color: var(--text-secondary-color, #888);
   font-size: 0.9rem;
   font-weight: 500;
-  padding: 5px 12px;
+  padding: 5px 25px 5px 12px;
   cursor: pointer;
   border-radius: 15px;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, font-style 0.2s ease;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   line-height: 1;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27292.4%27%20height%3D%27292.4%27%3E%3Cpath%20fill%3D%27%23888888%27%20d%3D%27M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%27%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px;
+  text-align-last: center;
+  font-style: normal;
 }
 .config-select:hover {
   background-color: var(--button-hover-bg-color, #484848);
   color: var(--text-color, #ddd);
+  font-style: normal;
 }
 .config-select.non-functional {
   color: var(--text-disabled-color, #555);
+  font-style: normal;
 }
 .config-select.non-functional:hover {
   color: var(--text-disabled-color, #555);
   background-color: var(--button-bg-color, #3a3a3a);
-}
-.config-select:not([value=""]):not([value="all"]) {
-   color: var(--primary-color, #ff9900);
-   font-weight: 600;
-}
-.config-select.non-functional:not([value=""]):not([value="all"]) {
-   color: var(--text-disabled-color, #555);
-   font-weight: 500;
+  font-style: normal;
 }
 .config-select option {
   background-color: var(--secondary-bg-color, #333);
   color: var(--text-color, #ddd);
+  padding-right: 12px;
+  font-style: normal;
 }
-/* --- End Dropdown Styles --- */
+
+/* Replace placeholder class styling with attribute selector */
+.config-select[value=""] {
+  color: var(--text-secondary-color, #888) !important;
+  font-style: italic !important;
+  font-weight: 500 !important;
+}
+
+/* Specific value (any non-empty) selections: normal, primary color */
+.config-select:not([value=""]) {
+  color: var(--primary-color, #ff9900) !important;
+  font-weight: 600 !important;
+  font-style: normal !important;
+}
 
 /* Inner Separator */
 .config-separator-inner {
@@ -235,8 +251,8 @@
   background-color: var(--border-color-light, #383838);
 }
 
-/* Department Filter Animation */
-.department-filter {
+/* Subject Filter Animation */
+.subject-filter {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -249,14 +265,14 @@
   pointer-events: none;
   transform: translateX(-20px);
 }
-.department-filter.visible {
+.subject-filter.visible {
   max-width: 200px;
   opacity: 1;
   margin-left: 5px;
   pointer-events: auto;
   transform: translateX(0);
 }
-.department-filter .config-button {
+.subject-filter .config-button {
   white-space: nowrap;
 }
 
@@ -289,7 +305,7 @@
   .config-separator, .config-separator-inner {
      width: auto;
   }
-  .department-filter {
+  .subject-filter {
      margin-left: 0;
      margin-top: 5px;
   }
@@ -305,4 +321,59 @@
   margin-bottom: 8px;
   width: 100%;
   text-align: center;
+}
+
+/* Custom select wrapper to decouple display from native select */
+.select-container {
+  position: relative;
+  display: inline-block;
+  height: 100%;
+}
+.select-container .select-native {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.select-container .select-display {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 25px 5px 12px;
+  border-radius: 15px;
+  background-color: var(--button-bg-color, #3a3a3a);
+  border: none;
+  color: var(--text-secondary-color, #888);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+}
+.select-container .select-display.placeholder {
+  color: var(--text-secondary-color, #888);
+  font-style: italic;
+  font-weight: 500;
+}
+.select-container .select-display.selected {
+  color: var(--primary-color, #ff9900);
+  font-weight: 600;
+  font-style: normal;
+}
+.select-container .select-display i {
+  margin-left: 5px;
+  font-size: 1em;
+  line-height: 1;
+}
+
+/* Ensure native select appears on top to capture focus and open dropdown */
+.select-native {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
 }
