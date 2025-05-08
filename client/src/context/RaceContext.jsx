@@ -94,15 +94,15 @@ export const RaceProvider = ({ children }) => {
   // Explicit state for TestConfigurator to avoid passing setRaceState
   const [testMode, setTestMode] = useState('snippet');
   const [testDuration, setTestDuration] = useState(15);
-  const [snippetDifficulty, setSnippetDifficulty] = useState('all');
-  const [snippetType, setSnippetType] = useState('all');
-  const [snippetDepartment, setSnippetDepartment] = useState('all');
+  const [snippetDifficulty, setSnippetDifficulty] = useState('');
+  const [snippetCategory, setSnippetCategory] = useState('');
+  const [snippetSubject, setSnippetSubject] = useState('');
   const [snippetError, setSnippetError] = useState(null);
 
   // Clear snippetError when filters change
   useEffect(() => {
     setSnippetError(null);
-  }, [snippetDifficulty, snippetType, snippetDepartment]);
+  }, [snippetDifficulty, snippetCategory, snippetSubject]);
 
   // Local typing state
   const [typingState, setTypingState] = useState({
@@ -512,9 +512,9 @@ export const RaceProvider = ({ children }) => {
       testMode: raceState.timedTest?.enabled ? 'timed' : 'snippet',
       testDuration: raceState.timedTest?.duration || 15,
       snippetFilters: {
-        difficulty: snippetDifficulty,
-        type: snippetType,
-        department: snippetDepartment
+        difficulty: snippetDifficulty || 'all',
+        type: snippetCategory || 'all',
+        department: snippetSubject || 'all'
       }
     };
     console.log('Joining practice with options:', options);
@@ -545,11 +545,18 @@ export const RaceProvider = ({ children }) => {
   };
 
   // Load a new snippet for practice mode
-  const loadNewSnippet = () => {
+  const loadNewSnippet = async (modeOverride, durationOverride, difficultyOverride, categoryOverride, subjectOverride) => {
+    const currentMode = modeOverride || testMode;
+    const currentDuration = durationOverride || testDuration;
+    // Use overrides if provided, otherwise use current state from RaceContext
+    const difficulty = difficultyOverride || snippetDifficulty || 'all';
+    const category = categoryOverride || snippetCategory || 'all';
+    const subjectValue = subjectOverride || snippetSubject || 'all';
+
+    console.log(`Loading new snippet. Mode: ${currentMode}, Duration: ${currentDuration}, Difficulty: ${difficulty}, Category: ${category}, Subject: ${subjectValue}`);
+    setSnippetError(null); // Clear previous errors
+
     if (!socket || !connected || raceState.type !== 'practice') return;
-    // Clear any previous snippet errors
-    setSnippetError(null);
-    console.log('Loading new practice snippet...');
     
     // Reset typing state
     setTypingState({
@@ -577,9 +584,9 @@ export const RaceProvider = ({ children }) => {
         testMode: currentState.timedTest?.enabled ? 'timed' : 'snippet',
         testDuration: currentState.timedTest?.duration || 15,
         snippetFilters: {
-          difficulty: snippetDifficulty,
-          type: snippetType,
-          department: snippetDepartment
+          difficulty: difficulty,
+          type: category,
+          department: subjectValue
         }
       };
       
@@ -908,9 +915,9 @@ export const RaceProvider = ({ children }) => {
       testMode: options.testMode || raceState.settings.testMode,
       testDuration: options.testDuration || raceState.settings.testDuration,
       snippetFilters: options.snippetFilters || {
-        difficulty: snippetDifficulty,
-        type: snippetType,
-        department: snippetDepartment
+        difficulty: snippetDifficulty || 'all',
+        type: snippetCategory || 'all',
+        department: snippetSubject || 'all'
       }
     };
     socket.emit('private:create', lobbyOptions, (response) => {
@@ -950,6 +957,18 @@ export const RaceProvider = ({ children }) => {
       } else {
         console.log('Lobby settings updated successfully:', response);
         // State update handled by 'lobby:settingsUpdated' listener
+        // Only set snippet if test mode is snippet, or if it's timed and no snippet exists or duration changed
+        if (newSettings.testMode === 'snippet' || 
+            (newSettings.testMode === 'timed' && 
+             (!raceState.snippet || (newSettings.testDuration && newSettings.testDuration !== raceState.settings?.testDuration)))) {
+          loadNewSnippet(
+            newSettings.testMode,
+            newSettings.testDuration,
+            newSettings.snippetFilters?.difficulty,
+            newSettings.snippetFilters?.type,
+            newSettings.snippetFilters?.subject
+          );
+        }
       }
     });
   };
@@ -1034,10 +1053,10 @@ export const RaceProvider = ({ children }) => {
         setTestDuration,
         snippetDifficulty,
         setSnippetDifficulty,
-        snippetType,
-        setSnippetType,
-        snippetDepartment,
-        setSnippetDepartment,
+        snippetCategory,
+        setSnippetCategory,
+        snippetSubject,
+        setSnippetSubject,
         snippetError
       }}
     >

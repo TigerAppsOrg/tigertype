@@ -133,7 +133,7 @@ BEGIN
         INSERT INTO snippets (text, source, category, difficulty)
         VALUES 
             ('The quick brown fox jumps over the lazy dog.', 'Typing Exercise', 'beginner', 1),
-            ('Princeton University is located in Princeton, New Jersey and is one of the oldest universities in the United States.', 'Princeton Facts', 'medium', 2),
+            ('Princeton University is located in Princeton, New Jersey and is one of the oldest universities in the United States.', 'Princeton Facts', 'Medium', 2),
             ('To be or not to be, that is the question. Whether ''tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles, and by opposing end them.', 'Shakespeare', 'advanced', 3);
     END IF;
 
@@ -183,7 +183,7 @@ BEGIN
       ('princetons_fastest_typer', 'Princeton''s Fastest Typer', 'Highest average WPM across all users', 'global_highest_avg_wpm', 0),
       ('princetons_slowest_typer', 'Princeton''s Slowest Typer', 'Lowest average WPM across all users (min 10 sessions)', 'global_lowest_avg_wpm', 0),
       ('spia_major', 'SPIA Major', 'Type over 10,000 words in total', 'words_typed', 10000),
-      ('fastest_tiger_alive', 'Fastest Tiger Alive', 'Highest recorded fastest WPM across all users', 'global_highest_fastest_wpm', 0)
+      ('record_holder', 'Record Holder', 'Highest recorded fastest WPM across all users', 'global_highest_fastest_wpm', 0)
     ON CONFLICT (key) DO UPDATE SET
       name = EXCLUDED.name,
       description = EXCLUDED.description,

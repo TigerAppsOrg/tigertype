@@ -235,7 +235,7 @@ router.get('/snippets/random', requireAuth, async (req, res) => {
 
     // Map difficulty string to number
     if (difficultyStr && difficultyStr !== 'all') {
-      const difficultyMap = { easy: 1, medium: 2, hard: 3 };
+      const difficultyMap = { Easy: 1, Medium: 2, Hard: 3 };
       if (difficultyMap[difficultyStr]) {
         filters.difficulty = difficultyMap[difficultyStr];
       } else {
@@ -343,7 +343,7 @@ router.get('/snippets/filters', requireAuth, async (req, res) => {
 
     const result = await pool.query(query, params);
     // Map numeric difficulties to string labels
-    const difficultyMapReverse = { 1: 'easy', 2: 'medium', 3: 'hard' };
+    const difficultyMapReverse = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
     const difficulties = result.rows
       .map(row => difficultyMapReverse[row.difficulty])
       .filter(Boolean);

@@ -546,20 +546,20 @@ const MIGRATIONS = [
   },
   {
     version: 16,
-    description: "Add 'Fastest Tiger Alive' title",
+    description: "Add 'Record Holder' title",
     up: async (client) => {
-      console.log("Running migration 16: Add 'Fastest Tiger Alive' title...");
+      console.log("Running migration 16: Add 'Record Holder' title...");
       await client.query(`
         INSERT INTO titles (key, name, description, criteria_type, criteria_value) VALUES
-          ('fastest_tiger_alive', 'Fastest Tiger Alive', 'Highest recorded fastest WPM across all users', 'global_highest_fastest_wpm', 0)
+          ('record_holder', 'Record Holder', 'Highest recorded fastest WPM across all users', 'global_highest_fastest_wpm', 0)
         ON CONFLICT (key) DO NOTHING;
       `);
-      console.log("Migration 16 complete: Added 'Fastest Tiger Alive' title.");
+      console.log("Migration 16 complete: Added 'Record Holder' title.");
     },
     down: async (client) => {
-      console.log("Reverting migration 16: Remove 'Fastest Tiger Alive' title...");
+      console.log("Reverting migration 16: Remove 'Record Holder' title...");
       await client.query(
-        `DELETE FROM titles WHERE key = 'fastest_tiger_alive';`
+        `DELETE FROM titles WHERE key = 'record_holder';`
       );
       console.log("Revert migration 16 complete.");
     }

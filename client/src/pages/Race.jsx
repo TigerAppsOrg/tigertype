@@ -32,10 +32,10 @@ function Race() {
     setTestDuration,
     snippetDifficulty,
     setSnippetDifficulty,
-    snippetType,
-    setSnippetType,
-    snippetDepartment,
-    setSnippetDepartment,
+    snippetCategory,
+    setSnippetCategory,
+    snippetSubject,
+    setSnippetSubject,
     snippetError
   } = useRace();
   const { isRunning, currentSection, currentStepIndex } = useTutorial();
@@ -122,13 +122,13 @@ function Race() {
                 testMode={testMode}
                 testDuration={testDuration}
                 snippetDifficulty={snippetDifficulty}
-                snippetType={snippetType}
-                snippetDepartment={snippetDepartment}
+                snippetCategory={snippetCategory}
+                snippetSubject={snippetSubject}
                 setTestMode={setTestMode}
                 setTestDuration={setTestDuration}
                 setSnippetDifficulty={setSnippetDifficulty}
-                setSnippetType={setSnippetType}
-                setSnippetDepartment={setSnippetDepartment}
+                setSnippetCategory={setSnippetCategory}
+                setSnippetSubject={setSnippetSubject}
                 setRaceState={setRaceState}
                 loadNewSnippet={loadNewSnippet}
                 snippetError={snippetError}
@@ -151,8 +151,8 @@ function Race() {
                   testMode={raceState.type === 'practice' ? testMode : null}
                   testDuration={raceState.type === 'practice' ? testDuration : null}
                   snippetDifficulty={raceState.type === 'practice' ? snippetDifficulty : null}
-                  snippetType={raceState.type === 'practice' ? snippetType : null}
-                  snippetDepartment={raceState.type === 'practice' ? snippetDepartment : null}
+                  snippetCategory={raceState.type === 'practice' ? snippetCategory : null}
+                  snippetSubject={raceState.type === 'practice' ? snippetSubject : null}
                 />
               )}
 
