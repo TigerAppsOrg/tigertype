@@ -1034,7 +1034,7 @@ const User = {
            }
 
 
-          // --- 4. Fastest Tiger Alive (Highest Fastest WPM overall) ---
+          // --- 4. Record Holder (Highest Fastest WPM overall) ---
           let fastestWpmHolderId = null;
           try {
               // Query for user with highest fastest_wpm (must be > 0)
@@ -1049,11 +1049,11 @@ const User = {
                   fastestWpmHolderId = fastestResult.rows[0].id;
                   console.log(`Highest Fastest WPM user: ${fastestWpmHolderId}`);
               } else {
-                  console.log('No eligible user found for Fastest Tiger Alive title.');
+                  console.log('No eligible user found for Record Holder title.');
               }
-              await manageExclusiveTitle('fastest_tiger_alive', fastestWpmHolderId);
+              await manageExclusiveTitle('record_holder', fastestWpmHolderId);
           } catch (fastestWpmError) {
-              console.error("Error processing 'Fastest Tiger Alive' title:", fastestWpmError);
+              console.error("Error processing 'Record Holder' title:", fastestWpmError);
           }
 
 

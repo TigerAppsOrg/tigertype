@@ -183,7 +183,7 @@ BEGIN
       ('princetons_fastest_typer', 'Princeton''s Fastest Typer', 'Highest average WPM across all users', 'global_highest_avg_wpm', 0),
       ('princetons_slowest_typer', 'Princeton''s Slowest Typer', 'Lowest average WPM across all users (min 10 sessions)', 'global_lowest_avg_wpm', 0),
       ('spia_major', 'SPIA Major', 'Type over 10,000 words in total', 'words_typed', 10000),
-      ('fastest_tiger_alive', 'Fastest Tiger Alive', 'Highest recorded fastest WPM across all users', 'global_highest_fastest_wpm', 0)
+      ('record_holder', 'Record Holder', 'Highest recorded fastest WPM across all users', 'global_highest_fastest_wpm', 0)
     ON CONFLICT (key) DO UPDATE SET
       name = EXCLUDED.name,
       description = EXCLUDED.description,
