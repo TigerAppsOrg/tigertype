@@ -5,7 +5,7 @@ import { useRace } from '../context/RaceContext';
 function Settings({ isOpen, onClose }) {
 
   // Use context for word difficulty and reloading practice snippets
-  const { wordDifficulty, setWordDifficulty, raceState, loadNewSnippet } = useRace();
+  const { wordDifficulty, setWordDifficulty, raceState, loadNewSnippet, testMode, testDuration } = useRace();
 
   // Define our font size options as 5 distinct sizes
   const fontSizeOptions = [
@@ -296,10 +296,9 @@ function Settings({ isOpen, onClose }) {
 
   const handleWordDifficultyChange = (difficulty) => {
     setWordDifficulty(difficulty);
-    // Reload snippet in practice mode when difficulty changes
-    if (raceState.type === 'practice') {
-      loadNewSnippet();
-    }
+    // Reload snippet when difficulty changes - works for both practice and timed tests
+    // Pass current testMode and testDuration directly to ensure correct reload
+    loadNewSnippet(testMode, testDuration);
   };
 
   const handleThemeChange = (e) => {
@@ -331,11 +330,27 @@ function Settings({ isOpen, onClose }) {
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         <div className="settings-content">
-          {/* Removed explicit categories for simplicity, direct listing or grouped by relevance */}
+
+          {/* Appearance Category */}
+          <h3 className="settings-category-header">Appearance</h3>
+          <div className="setting-item setting-item-select">
+            <label htmlFor="theme-select">Theme</label>
+            <select
+              id="theme-select"
+              className="theme-select" 
+              value={theme}
+              onChange={handleThemeChange}
+            >
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="lavender-asphalt">Lavender Asphalt</option>
+              <option value="tangerine">Tangerine</option>
+            </select>
+          </div>
           <div className="setting-item setting-item-select">
             <label htmlFor="font-select">
               Font
-              <span className="info-icon" data-tooltip="Select your preferred font for typing.">ⓘ</span>
+              <span className="info-icon" data-tooltip="Select your preferred font for all text on the site.">ⓘ</span>
             </label>
             <select
               id="font-select"
@@ -354,7 +369,7 @@ function Settings({ isOpen, onClose }) {
           <div className="setting-item setting-item-slider">
             <label htmlFor="font-size-slider">
               Excerpt Font Size
-              <span className="info-icon" data-tooltip="Adjust the font size of the text excerpt.">ⓘ</span>
+              <span className="info-icon" data-tooltip="Adjust the font size of the text/excerpt within the snippet display.">ⓘ</span>
             </label>
             <div className="slider-container">
               <input
@@ -399,33 +414,17 @@ function Settings({ isOpen, onClose }) {
               <span className="sound-label">{defaultCursor ? ' On' : ' Off'}</span>
             </div>
           </div>
-          <div className="setting-item setting-item-toggle">
-            <label htmlFor="sound-toggle">
-              Typing Sound
-              <span className="info-icon" data-tooltip="Enable or disable sound effects for typing.">ⓘ</span>
-            </label>
-            <div className="toggle">
-              <label className="switch">
-                <input
-                  id="sound-toggle"
-                  type="checkbox"
-                  checked={typingSound}
-                  onChange={handleSoundToggle}
-                />
-                <span className="slider"></span>
-              </label>
-              <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
-            </div>
-          </div>
-          
-          {/* Word Difficulty Setting */}
-          <h3 className="settings-subheader">Test Settings</h3>
+
+          {/* Behavior Category */}
+          <h3 className="settings-category-header">Behavior</h3>
           <div className="setting-item">
             <label htmlFor="word-difficulty-toggle">
               Word Difficulty
-              <span className="info-icon" data-tooltip="Easy: Top 200 common words. Hard: Top 1000 common words. Affects timed tests.">ⓘ</span>
+              <span className="info-icon" data-tooltip="Easy: Word pool consists of the top 200 most common English words, which are more familiar.
+Hard: Word pool includes the top 1000 most common English words, adding less frequently used words.
+This affects the difficulty of your typing tests.">ⓘ</span>
             </label>
-            <div className="difficulty-toggle-group">
+            <div className="difficulty-toggle-group" id="word-difficulty-toggle">
               <button
                 className={`difficulty-toggle-btn ${wordDifficulty === 'easy' ? 'active' : ''}`}
                 onClick={() => handleWordDifficultyChange('easy')}
@@ -441,21 +440,27 @@ function Settings({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div className="setting-item setting-item-select">
-            <label htmlFor="theme-select">Theme</label>
-            <select
-              id="theme-select"
-              className="theme-select" 
-              value={theme}
-              onChange={handleThemeChange}
-            >
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-              <option value="lavender-asphalt">Lavender Asphalt</option>
-              <option value="tangerine">Tangerine</option>
-            </select>
+          {/* Miscellaneous Category */}
+          <h3 className="settings-category-header">Miscellaneous</h3>
+          <div className="setting-item setting-item-toggle">
+            <label htmlFor="sound-toggle">
+              Typing Sound
+              <span className="info-icon" data-tooltip="Enable or disable sound effects for typing. Sound effects are played when a letter is typed correctly .">ⓘ</span>
+            </label>
+            <div className="toggle">
+              <label className="switch">
+                <input
+                  id="sound-toggle"
+                  type="checkbox"
+                  checked={typingSound}
+                  onChange={handleSoundToggle}
+                />
+                <span className="slider"></span>
+              </label>
+              <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
+            </div>
           </div>
-          
+
         </div>
       </div>
     </div>
