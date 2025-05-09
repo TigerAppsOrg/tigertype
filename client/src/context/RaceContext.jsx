@@ -532,7 +532,7 @@ export const RaceProvider = ({ children }) => {
         department: snippetSubject || 'all'
       }
     };
-    console.log('Joining practice with options:', options);
+    // console.log('Joining practice with options:', options);
     socket.emit('practice:join', options);
   };
 
@@ -545,7 +545,7 @@ export const RaceProvider = ({ children }) => {
       socket.emit('public:join', { code: raceState.code });
     } else {
       if (hasExisting && forceNew) {
-        console.log('Forcing join of a new public race, ignoring old code:', raceState.code);
+        // console.log('Forcing join of a new public race, ignoring old code:', raceState.code);
       } else {
         console.log('Joining public race...');
       }
@@ -555,7 +555,7 @@ export const RaceProvider = ({ children }) => {
 
   const setPlayerReady = () => {
     if (!socket || !connected) return;
-    console.log('Setting player ready...');
+    // console.log('Setting player ready...');
     socket.emit('player:ready');
   };
 
@@ -606,7 +606,7 @@ export const RaceProvider = ({ children }) => {
         }
       };
       
-      console.log('Requesting new practice snippet with options:', options);
+      // console.log('Requesting new practice snippet with options:', options);
       socket.emit('practice:join', options);
       
       return currentState;
@@ -622,7 +622,7 @@ export const RaceProvider = ({ children }) => {
     
     // --- Start Practice Race on First Input --- 
     if (raceState.type === 'practice' && !raceState.inProgress && newInput.length > 0) {
-      console.log("First input detected in practice mode, starting race locally.");
+      // console.log("First input detected in practice mode, starting race locally.");
       setRaceState(prev => ({
         ...prev,
         inProgress: true,
@@ -861,7 +861,7 @@ export const RaceProvider = ({ children }) => {
             accuracy,
             completion_time: finalCompletionTime // Send fixed duration or actual time
           });
-          console.log(`Emitted race:result for ${raceState.type} race ${raceState.code} with WPM: ${finalWpm}`);
+          // console.log(`Emitted race:result for ${raceState.type} race ${raceState.code} with WPM: ${finalWpm}`);
         }
       }
     }
@@ -872,7 +872,7 @@ export const RaceProvider = ({ children }) => {
     if (notifyServer && socket && connected && (raceState.code || raceState.lobbyId)) {
       const lobbyIdentifier = raceState.lobbyId || raceState.code; // Use lobbyId if available, else code
       if (lobbyIdentifier) {
-        console.log(`Notifying server: leaving lobby ${lobbyIdentifier}`);
+        // console.log(`Notifying server: leaving lobby ${lobbyIdentifier}`);
         socket.emit('lobby:leave', { lobbyId: lobbyIdentifier });
       } else {
          console.warn('Cannot notify server of leave: No lobby code or ID found.');
@@ -952,7 +952,7 @@ export const RaceProvider = ({ children }) => {
 
   const kickPlayer = (targetNetId) => {
     if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
-    console.log(`Attempting to kick player ${targetNetId} from lobby ${raceState.code}`);
+    // console.log(`Attempting to kick player ${targetNetId} from lobby ${raceState.code}`);
     socket.emit('lobby:kick', { code: raceState.code, targetNetId }, (response) => {
       if (!response.success) {
         console.error(`Failed to kick player ${targetNetId}:`, response.error);
@@ -992,7 +992,7 @@ export const RaceProvider = ({ children }) => {
 
   const startPrivateRace = () => {
     if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
-    console.log(`Attempting to start race for private lobby ${raceState.code}`);
+    // console.log(`Attempting to start race for private lobby ${raceState.code}`);
     socket.emit('lobby:startRace', { code: raceState.code }, (response) => {
       if (!response.success) {
         console.error('Failed to start private race:', response.error);
