@@ -57,6 +57,7 @@ function Typing({
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const tabActionInProgressRef = useRef(false);
   const [displayedWpm, setDisplayedWpm] = useState(0);
+  const [capsLockEnabled, setCapsLockEnabled] = useState(false);
   
   // Use testMode and testDuration for timed tests if provided
   useEffect(() => {
@@ -871,6 +872,35 @@ function Typing({
     }
   };
   
+  // Add caps lock detection
+  useEffect(() => {
+    const checkCapsLock = (e) => {
+      const capsLockOn = e.getModifierState && e.getModifierState('CapsLock');
+      setCapsLockEnabled(capsLockOn);
+    };
+
+    // Check on key events
+    window.addEventListener('keydown', checkCapsLock);
+    window.addEventListener('keyup', checkCapsLock);
+    
+    // Check on focus events (in case caps lock state changes while window is not focused)
+    window.addEventListener('focus', checkCapsLock);
+    inputRef.current?.addEventListener('focus', checkCapsLock);
+
+    // Initial check
+    if (document.activeElement) {
+      setCapsLockEnabled(document.activeElement.getModifierState && 
+                         document.activeElement.getModifierState('CapsLock'));
+    }
+
+    return () => {
+      window.removeEventListener('keydown', checkCapsLock);
+      window.removeEventListener('keyup', checkCapsLock);
+      window.removeEventListener('focus', checkCapsLock);
+      inputRef.current?.removeEventListener('focus', checkCapsLock);
+    };
+  }, []);
+
   return (
     <>
       <div className="stats-container">
@@ -912,10 +942,23 @@ function Typing({
           </div>
       )}
       
-      {/* Render error message BELOW typing area if needed */}
+      {/* Render warnings */}
       {showErrorMessage && (
         <div className="error-message">
           Fix your mistake to continue
+        </div>
+      )}
+
+      {/* Caps Lock Warning */}
+      {capsLockEnabled && (
+        <div className="caps-lock-warning">
+          <span className="caps-lock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </span>
+          Caps Lock
         </div>
       )}
 
