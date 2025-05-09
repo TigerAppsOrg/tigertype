@@ -95,7 +95,7 @@ function TestConfigurator({
   // Trigger snippet reload when filters change (after initial mount)
   React.useEffect(() => {
     if (isMounted.current && testMode === 'snippet') {
-       console.log('Snippet filter changed, loading new snippet...');
+      //  console.log('Snippet filter changed, loading new snippet...');
        loadNewSnippet && loadNewSnippet();
     }
   }, [snippetDifficulty, snippetCategory, snippetSubject]);
@@ -106,7 +106,7 @@ function TestConfigurator({
       isMounted.current = true;
     } else if (testMode === 'snippet') {
       // Reload when switching *to* snippet mode after initial mount
-      console.log('Switched to snippet mode, loading new snippet...');
+      // console.log('Switched to snippet mode, loading new snippet...');
       loadNewSnippet && loadNewSnippet();
     }
      // Optional: Cleanup function to reset ref on unmount

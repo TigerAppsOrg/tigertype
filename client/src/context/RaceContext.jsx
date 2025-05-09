@@ -99,6 +99,20 @@ export const RaceProvider = ({ children }) => {
   const [snippetSubject, setSnippetSubject] = useState('');
   const [snippetError, setSnippetError] = useState(null);
 
+  // Add state for word pool size, loaded from localStorage
+  const [wordDifficulty, setWordDifficulty] = useState(() => {
+    return localStorage.getItem('wordDifficulty') || 'easy'; // 'easy' (200) or 'hard' (1000)
+  });
+
+  // Persist wordDifficulty to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('wordDifficulty', wordDifficulty);
+    } catch (err) {
+      console.error('Error saving wordDifficulty to localStorage:', err);
+    }
+  }, [wordDifficulty]);
+
   // Clear snippetError when filters change
   useEffect(() => {
     setSnippetError(null);
@@ -208,7 +222,7 @@ export const RaceProvider = ({ children }) => {
     
     // Event handlers
     const handleRaceJoined = (data) => {
-      console.log('Joined race:', data);
+      // console.log('Joined race:', data);
       setRaceState(prev => ({
         ...prev,
         code: data.code,
@@ -366,7 +380,7 @@ export const RaceProvider = ({ children }) => {
 
     // --- New Lobby Event Handlers ---
     const handleLobbySettingsUpdated = (data) => {
-      console.log('Lobby settings updated:', data);
+      // console.log('Lobby settings updated:', data);
       setRaceState(prev => ({
         ...prev,
         settings: { ...prev.settings, ...data.settings },
@@ -397,7 +411,7 @@ export const RaceProvider = ({ children }) => {
     };
 
     const handleLobbyTerminated = (data) => {
-       console.log('Lobby terminated:', data.reason);
+      // console.log('Lobby terminated:', data.reason);
        // Show a message
        setInactivityState(prev => ({
          ...prev,
@@ -409,7 +423,7 @@ export const RaceProvider = ({ children }) => {
     };
 
     const handleRaceCountdown = (data) => {
-      console.log('Received race countdown:', data);
+      // console.log('Received race countdown:', data);
       setRaceState(prev => ({ ...prev, countdown: data.seconds }));
     };
 
@@ -511,13 +525,14 @@ export const RaceProvider = ({ children }) => {
     const options = {
       testMode: raceState.timedTest?.enabled ? 'timed' : 'snippet',
       testDuration: raceState.timedTest?.duration || 15,
+      wordPoolSize: wordDifficulty === 'easy' ? '200' : '1000', // Map difficulty to size
       snippetFilters: {
         difficulty: snippetDifficulty || 'all',
         type: snippetCategory || 'all',
         department: snippetSubject || 'all'
       }
     };
-    console.log('Joining practice with options:', options);
+    // console.log('Joining practice with options:', options);
     socket.emit('practice:join', options);
   };
 
@@ -530,7 +545,7 @@ export const RaceProvider = ({ children }) => {
       socket.emit('public:join', { code: raceState.code });
     } else {
       if (hasExisting && forceNew) {
-        console.log('Forcing join of a new public race, ignoring old code:', raceState.code);
+        // console.log('Forcing join of a new public race, ignoring old code:', raceState.code);
       } else {
         console.log('Joining public race...');
       }
@@ -540,7 +555,7 @@ export const RaceProvider = ({ children }) => {
 
   const setPlayerReady = () => {
     if (!socket || !connected) return;
-    console.log('Setting player ready...');
+    // console.log('Setting player ready...');
     socket.emit('player:ready');
   };
 
@@ -553,7 +568,7 @@ export const RaceProvider = ({ children }) => {
     const category = categoryOverride || snippetCategory || 'all';
     const subjectValue = subjectOverride || snippetSubject || 'all';
 
-    console.log(`Loading new snippet. Mode: ${currentMode}, Duration: ${currentDuration}, Difficulty: ${difficulty}, Category: ${category}, Subject: ${subjectValue}`);
+    // console.log(`Loading new snippet. Mode: ${currentMode}, Duration: ${currentDuration}, Difficulty: ${difficulty}, Category: ${category}, Subject: ${subjectValue}`);
     setSnippetError(null); // Clear previous errors
 
     if (!socket || !connected || raceState.type !== 'practice') return;
@@ -583,6 +598,7 @@ export const RaceProvider = ({ children }) => {
       const options = {
         testMode: currentState.timedTest?.enabled ? 'timed' : 'snippet',
         testDuration: currentState.timedTest?.duration || 15,
+        wordPoolSize: wordDifficulty === 'easy' ? '200' : '1000', // Map difficulty to size
         snippetFilters: {
           difficulty: difficulty,
           type: category,
@@ -590,7 +606,7 @@ export const RaceProvider = ({ children }) => {
         }
       };
       
-      console.log('Requesting new practice snippet with options:', options);
+      // console.log('Requesting new practice snippet with options:', options);
       socket.emit('practice:join', options);
       
       return currentState;
@@ -606,7 +622,7 @@ export const RaceProvider = ({ children }) => {
     
     // --- Start Practice Race on First Input --- 
     if (raceState.type === 'practice' && !raceState.inProgress && newInput.length > 0) {
-      console.log("First input detected in practice mode, starting race locally.");
+      // console.log("First input detected in practice mode, starting race locally.");
       setRaceState(prev => ({
         ...prev,
         inProgress: true,
@@ -845,7 +861,7 @@ export const RaceProvider = ({ children }) => {
             accuracy,
             completion_time: finalCompletionTime // Send fixed duration or actual time
           });
-          console.log(`Emitted race:result for ${raceState.type} race ${raceState.code} with WPM: ${finalWpm}`);
+          // console.log(`Emitted race:result for ${raceState.type} race ${raceState.code} with WPM: ${finalWpm}`);
         }
       }
     }
@@ -856,7 +872,7 @@ export const RaceProvider = ({ children }) => {
     if (notifyServer && socket && connected && (raceState.code || raceState.lobbyId)) {
       const lobbyIdentifier = raceState.lobbyId || raceState.code; // Use lobbyId if available, else code
       if (lobbyIdentifier) {
-        console.log(`Notifying server: leaving lobby ${lobbyIdentifier}`);
+        // console.log(`Notifying server: leaving lobby ${lobbyIdentifier}`);
         socket.emit('lobby:leave', { lobbyId: lobbyIdentifier });
       } else {
          console.warn('Cannot notify server of leave: No lobby code or ID found.');
@@ -914,6 +930,7 @@ export const RaceProvider = ({ children }) => {
     const lobbyOptions = {
       testMode: options.testMode || raceState.settings.testMode,
       testDuration: options.testDuration || raceState.settings.testDuration,
+      wordPoolSize: options.wordPoolSize || (wordDifficulty === 'easy' ? '200' : '1000'),
       snippetFilters: options.snippetFilters || {
         difficulty: snippetDifficulty || 'all',
         type: snippetCategory || 'all',
@@ -935,7 +952,7 @@ export const RaceProvider = ({ children }) => {
 
   const kickPlayer = (targetNetId) => {
     if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
-    console.log(`Attempting to kick player ${targetNetId} from lobby ${raceState.code}`);
+    // console.log(`Attempting to kick player ${targetNetId} from lobby ${raceState.code}`);
     socket.emit('lobby:kick', { code: raceState.code, targetNetId }, (response) => {
       if (!response.success) {
         console.error(`Failed to kick player ${targetNetId}:`, response.error);
@@ -949,13 +966,13 @@ export const RaceProvider = ({ children }) => {
 
   const updateLobbySettings = (newSettings) => {
     if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
-    console.log(`Attempting to update lobby ${raceState.code} settings:`, newSettings);
+    // console.log(`Attempting to update lobby ${raceState.code} settings:`, newSettings);
     socket.emit('lobby:updateSettings', { code: raceState.code, settings: newSettings }, (response) => {
       if (!response.success) {
         console.error('Failed to update lobby settings:', response.error);
         // TODO: Show error to host
       } else {
-        console.log('Lobby settings updated successfully:', response);
+        // console.log('Lobby settings updated successfully:', response);
         // State update handled by 'lobby:settingsUpdated' listener
         // Only set snippet if test mode is snippet, or if it's timed and no snippet exists or duration changed
         if (newSettings.testMode === 'snippet' || 
@@ -975,7 +992,7 @@ export const RaceProvider = ({ children }) => {
 
   const startPrivateRace = () => {
     if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
-    console.log(`Attempting to start race for private lobby ${raceState.code}`);
+    // console.log(`Attempting to start race for private lobby ${raceState.code}`);
     socket.emit('lobby:startRace', { code: raceState.code }, (response) => {
       if (!response.success) {
         console.error('Failed to start private race:', response.error);
@@ -1057,7 +1074,9 @@ export const RaceProvider = ({ children }) => {
         setSnippetCategory,
         snippetSubject,
         setSnippetSubject,
-        snippetError
+        snippetError,
+        wordDifficulty,
+        setWordDifficulty
       }}
     >
       {children}
@@ -1089,10 +1108,34 @@ const useEnhancedRace = () => {
     }
   }, [context]);
 
+  // Add setter for word pool size if needed for TestConfigurator or other components
+  const setConfigWordPoolSize = useCallback((size) => {
+    if (typeof context.setWordPoolSize === 'function') context.setWordPoolSize(size);
+    // Optionally, trigger a reload if in practice mode
+    if (context.raceState.type === 'practice') {
+      context.loadNewSnippet(); // Reload snippet on word pool size change
+    }
+  }, [context]);
+
+  // Getter for wordDifficulty, setter for wordDifficulty that maps to internal state
+  const currentWordDifficulty = context.wordDifficulty;
+  const setConfigWordDifficulty = useCallback((difficulty) => {
+    if (typeof context.setWordDifficulty === 'function') {
+      context.setWordDifficulty(difficulty);
+      // Reload snippet in practice mode if difficulty changes
+      if (context.raceState.type === 'practice') {
+        context.loadNewSnippet();
+      }
+    }
+  }, [context]);
+
   return {
     ...context,
     setConfigTestMode,
-    setConfigTestDuration
+    setConfigTestDuration,
+    setConfigWordPoolSize,
+    wordDifficulty: currentWordDifficulty,
+    setWordDifficulty: setConfigWordDifficulty
   };
 };
 

@@ -53,12 +53,12 @@ const ConditionalNavbar = () => {
     if (!loading && authenticated && user && !user.has_completed_tutorial && !isTutorialRunning) {
       const tutorialCompleted = localStorage.getItem('tutorial_completed') === 'true';
       if (!tutorialCompleted) {
-        console.log('User logged in and has not completed tutorial. Starting tutorial automatically.');
+        // console.log('User logged in and has not completed tutorial. Starting tutorial automatically.');
         setTimeout(() => {
           startTutorial();
         }, 1000);
       } else {
-        console.log('Tutorial was previously completed according to localStorage flag.');
+        // console.log('Tutorial was previously completed according to localStorage flag.');
       }
     }
   }, [authenticated, user, loading, isTutorialRunning, startTutorial]);

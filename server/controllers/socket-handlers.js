@@ -341,9 +341,10 @@ const initialize = (io) => {
 
         // Get or create snippet text
         if (isTimedTest) {
-          snippet = createTimedTestSnippet(duration);
+          // Pass wordPoolSize option for filtering commonWords
+          snippet = createTimedTestSnippet(duration, { wordPoolSize: options.wordPoolSize });
           snippetId = `timed-${duration}`; // Use a special ID for timed tests in memory
-          console.log(`Created timed test (${duration}s) for practice mode`);
+          console.log(`Created timed test (${duration}s) for practice mode with wordPoolSize=${options.wordPoolSize}`);
         } else {
           // Implement progressive snippet filtering based on options.snippetFilters
           const { difficulty, type, department } = options.snippetFilters || {};
@@ -1393,8 +1394,8 @@ const initialize = (io) => {
         const { user: netid, userId } = socket.userInfo;
 
         // --- BEGIN DEBUG LOGGING --- 
-        console.log(`[DEBUG race:result] Received data:`, JSON.stringify(data));
-        console.log(`[DEBUG race:result] User info: netid=${netid}, userId=${userId}`);
+        // console.log(`[DEBUG race:result] Received data:`, JSON.stringify(data));
+        // console.log(`[DEBUG race:result] User info: netid=${netid}, userId=${userId}`);
         // --- END DEBUG LOGGING ---
 
         if (!userId) {
@@ -1412,9 +1413,9 @@ const initialize = (io) => {
         const isPrivate = race?.type === 'private';
         
         // --- BEGIN DEBUG LOGGING --- 
-        console.log(`[DEBUG race:result] Found player: ${!!player}, Found race: ${!!race}`);
+        // console.log(`[DEBUG race:result] Found player: ${!!player}, Found race: ${!!race}`);
         if (race) {
-          console.log(`[DEBUG race:result] Race snippet info: is_timed=${race.snippet?.is_timed_test}, duration=${race.snippet?.duration}`);
+          // console.log(`[DEBUG race:result] Race snippet info: is_timed=${race.snippet?.is_timed_test}, duration=${race.snippet?.duration}`);
         }
         // --- END DEBUG LOGGING ---
 
@@ -1427,8 +1428,8 @@ const initialize = (io) => {
         if (race.snippet?.is_timed_test && race.snippet?.duration) {
           const duration = race.snippet.duration;
           // --- BEGIN DEBUG LOGGING --- 
-          console.log(`[DEBUG race:result] Processing as TIMED test. Duration: ${duration}`);
-          console.log(`[DEBUG race:result] Calling insertTimedResult with: userId=${userId}, duration=${duration}, wpm=${wpm}, accuracy=${accuracy}`);
+          // console.log(`[DEBUG race:result] Processing as TIMED test. Duration: ${duration}`);
+          // console.log(`[DEBUG race:result] Calling insertTimedResult with: userId=${userId}, duration=${duration}, wpm=${wpm}, accuracy=${accuracy}`);
           // --- END DEBUG LOGGING ---
           try {
             await insertTimedResult(userId, duration, wpm, accuracy);
@@ -1443,7 +1444,7 @@ const initialize = (io) => {
             if (!isPrivate) {
               await UserModel.updateStats(userId, wpm, accuracy, true);
               await UserModel.updateFastestWpm(userId, wpm);
-              console.log(`[DEBUG race:result] Updated user stats for ${netid}`);
+              // console.log(`[DEBUG race:result] Updated user stats for ${netid}`);
             }
           } catch (statsError) {
             console.error(`[ERROR race:result] Failed to update user stats for ${userId} after timed result:`, statsError);
@@ -1451,8 +1452,8 @@ const initialize = (io) => {
 
         } else if (snippetId) {
            // --- BEGIN DEBUG LOGGING --- 
-           console.log(`[DEBUG race:result] Processing as REGULAR race. Snippet ID: ${snippetId}`);
-           console.log(`[DEBUG race:result] Calling RaceModel.recordResult with: userId=${userId}, lobbyId=${lobbyId}, snippetId=${snippetId}, wpm=${wpm}, accuracy=${accuracy}, completion_time=${completion_time}`);
+           // console.log(`[DEBUG race:result] Processing as REGULAR race. Snippet ID: ${snippetId}`);
+           // console.log(`[DEBUG race:result] Calling RaceModel.recordResult with: userId=${userId}, lobbyId=${lobbyId}, snippetId=${snippetId}, wpm=${wpm}, accuracy=${accuracy}, completion_time=${completion_time}`);
           // --- END DEBUG LOGGING ---
           // Regular race result, save to race_results table
           try {
@@ -1467,7 +1468,7 @@ const initialize = (io) => {
             if (!isPrivate) {
               await UserModel.updateStats(userId, wpm, accuracy, false);
               await UserModel.updateFastestWpm(userId, wpm);
-              console.log(`[DEBUG race:result] Updated user stats for ${netid}`);
+              // console.log(`[DEBUG race:result] Updated user stats for ${netid}`);
             }
           } catch (statsError) {
             console.error(`[ERROR race:result] Failed to update user stats for ${userId} after regular result:`, statsError);
@@ -1480,7 +1481,7 @@ const initialize = (io) => {
         // Wrap in try/catch as well
         try {
           await handlePlayerFinish(io, code, socket.id, { wpm, accuracy, completion_time });
-          console.log(`[DEBUG race:result] Successfully handled player finish logic for ${netid}`);
+          // console.log(`[DEBUG race:result] Successfully handled player finish logic for ${netid}`);
         } catch (finishError) {
           console.error(`[ERROR race:result] Error in handlePlayerFinish for ${netid}:`, finishError);
         }

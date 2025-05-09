@@ -175,7 +175,7 @@ function Lobby() {
   const handleLeaveLobby = () => {
     // Notify the server of manual lobby leave so other players are updated
     if (socket && socket.connected) {
-      console.log(`Emitting manual leave for lobby ${raceState.code}`);
+      // console.log(`Emitting manual leave for lobby ${raceState.code}`);
       socket.emit('lobby:leave');
     }
     // Reset local race state and navigate home

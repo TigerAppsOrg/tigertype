@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }) => {
     // If user is already available
     if (user && user.netid) {
       try {
-        console.log('Marking tutorial as completed for user:', user.netid);
+        // console.log('Marking tutorial as completed for user:', user.netid);
         const response = await fetch('/api/users/tutorial/complete', {
           method: 'POST',
           headers: {
@@ -137,17 +137,17 @@ export const AuthProvider = ({ children }) => {
         });
         
         if (response.ok) {
-          console.log('Tutorial marked as completed successfully');
+          // console.log('Tutorial marked as completed successfully');
           // Update local user state
           setUser(prev => ({ ...prev, has_completed_tutorial: true }));
         } else {
-          console.error('Failed to mark tutorial as completed:', await response.text());
+          // console.error('Failed to mark tutorial as completed:', await response.text());
         }
       } catch (error) {
         console.error('Error marking tutorial as completed:', error);
       }
     } else {
-      console.log('User data not immediately available for markTutorialComplete, waiting 500ms...');
+      // console.log('User data not immediately available for markTutorialComplete, waiting 500ms...');
       try {
         // Wait a moment and try again
         await new Promise(resolve => setTimeout(resolve, 500));
