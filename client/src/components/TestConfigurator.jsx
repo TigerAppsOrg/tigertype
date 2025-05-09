@@ -95,7 +95,7 @@ function TestConfigurator({
   // Trigger snippet reload when filters change (after initial mount)
   React.useEffect(() => {
     if (isMounted.current && testMode === 'snippet') {
-       console.log('Snippet filter changed, loading new snippet...');
+      //  console.log('Snippet filter changed, loading new snippet...');
        loadNewSnippet && loadNewSnippet();
     }
   }, [snippetDifficulty, snippetCategory, snippetSubject]);

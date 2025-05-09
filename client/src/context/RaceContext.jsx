@@ -380,7 +380,7 @@ export const RaceProvider = ({ children }) => {
 
     // --- New Lobby Event Handlers ---
     const handleLobbySettingsUpdated = (data) => {
-      console.log('Lobby settings updated:', data);
+      // console.log('Lobby settings updated:', data);
       setRaceState(prev => ({
         ...prev,
         settings: { ...prev.settings, ...data.settings },
@@ -568,7 +568,7 @@ export const RaceProvider = ({ children }) => {
     const category = categoryOverride || snippetCategory || 'all';
     const subjectValue = subjectOverride || snippetSubject || 'all';
 
-    console.log(`Loading new snippet. Mode: ${currentMode}, Duration: ${currentDuration}, Difficulty: ${difficulty}, Category: ${category}, Subject: ${subjectValue}`);
+    // console.log(`Loading new snippet. Mode: ${currentMode}, Duration: ${currentDuration}, Difficulty: ${difficulty}, Category: ${category}, Subject: ${subjectValue}`);
     setSnippetError(null); // Clear previous errors
 
     if (!socket || !connected || raceState.type !== 'practice') return;
@@ -966,13 +966,13 @@ export const RaceProvider = ({ children }) => {
 
   const updateLobbySettings = (newSettings) => {
     if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
-    console.log(`Attempting to update lobby ${raceState.code} settings:`, newSettings);
+    // console.log(`Attempting to update lobby ${raceState.code} settings:`, newSettings);
     socket.emit('lobby:updateSettings', { code: raceState.code, settings: newSettings }, (response) => {
       if (!response.success) {
         console.error('Failed to update lobby settings:', response.error);
         // TODO: Show error to host
       } else {
-        console.log('Lobby settings updated successfully:', response);
+        // console.log('Lobby settings updated successfully:', response);
         // State update handled by 'lobby:settingsUpdated' listener
         // Only set snippet if test mode is snippet, or if it's timed and no snippet exists or duration changed
         if (newSettings.testMode === 'snippet' || 

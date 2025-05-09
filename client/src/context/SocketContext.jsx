@@ -32,7 +32,7 @@ export const SocketProvider = ({ children }) => {
     // Avoid recreating socket connection if already exist
     if (socket && connected) return;
     
-    console.log('Initializing socket connection');
+    // console.log('Initializing socket connection');
     
     // Initialize Socket.IO connection
     const socketInstance = io(socketOptions);
@@ -42,7 +42,7 @@ export const SocketProvider = ({ children }) => {
     
     // Set up event listeners
     socketInstance.on('connect', () => {
-      console.log('Socket connected successfully with ID:', socketInstance.id);
+      // console.log('Socket connected successfully with ID:', socketInstance.id);
       setConnected(true);
       setError(null);
       
@@ -64,7 +64,7 @@ export const SocketProvider = ({ children }) => {
     });
     
     socketInstance.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
+      // console.log('Socket disconnected:', reason);
       setConnected(false);
       
       if (reason === 'io server disconnect') {
