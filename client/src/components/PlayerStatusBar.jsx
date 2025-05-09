@@ -14,8 +14,8 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
   const [playerTitlesMap, setPlayerTitlesMap] = useState({});
   
   // For debug
-  console.log("PlayerStatusBar - isRaceInProgress:", isRaceInProgress);
-  console.log("PlayerStatusBar - players:", players);
+  // console.log("PlayerStatusBar - isRaceInProgress:", isRaceInProgress);
+  // console.log("PlayerStatusBar - players:", players);
   
   const handleAvatarClick = (avatar, netid) => {
     if (authenticated) {

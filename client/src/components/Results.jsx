@@ -23,7 +23,7 @@ function Results({ onShowLeaderboard }) {
   
   // --- DEBUG LOG --- 
   useEffect(() => {
-    console.log('[Results Component Render] raceState.snippet:', raceState.snippet);
+    // console.log('[Results Component Render] raceState.snippet:', raceState.snippet);
   }, [raceState.snippet]);
   // --- END DEBUG LOG --- 
   

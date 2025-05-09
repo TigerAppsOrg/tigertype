@@ -138,7 +138,7 @@ function Typing({
     if (!socket || raceState.type === 'practice') return;
     
     const handleCountdown = (data) => {
-      console.log('Countdown received:', data);
+      // console.log('Countdown received:', data);
       setRaceState(prev => ({
         ...prev,
         countdown: data.seconds
@@ -158,7 +158,7 @@ function Typing({
     
     const handleTextUpdate = (data) => {
       if (data.code === raceState.code) {
-        console.log('Received new words for timed test');
+        // console.log('Received new words for timed test');
         
         // Update the snippet text with the new combined text
         setRaceState(prev => ({
@@ -442,7 +442,7 @@ function Typing({
           
           // When time is up, mark race as completed AND EMIT RESULT
           if (elapsed >= duration && !raceState.completed) {
-            console.log('Timed test completed due to time limit');
+            // console.log('Timed test completed due to time limit');
 
             // Recalculate final WPM using fixed duration and total characters typed
             const durationInMinutes = duration / 60;
@@ -475,7 +475,7 @@ function Typing({
                 accuracy: finalAccuracy, // Use captured Accuracy
                 completion_time: duration // Use fixed duration as completion time
               });
-              console.log(`[Typing.jsx] Emitted race:result for timed test completion (time limit) with WPM: ${finalWpm}`);
+              // console.log(`[Typing.jsx] Emitted race:result for timed test completion (time limit) with WPM: ${finalWpm}`);
             } else {
               console.warn('[Typing.jsx] Cannot emit race:result - socket / race code missing, or not a timed test.');
             }

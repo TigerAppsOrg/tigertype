@@ -41,7 +41,7 @@ function JoinLobbyPanel({ className = '' }) {
       payload.code = value.toUpperCase(); // Add code field if it matches format
     }
 
-    console.log('Sending join payload:', payload); // Add log to verify
+    // console.log('Sending join payload:', payload); // Add log to verify
 
     joinPrivateLobby(payload, (res) => {
       setBusy(false);

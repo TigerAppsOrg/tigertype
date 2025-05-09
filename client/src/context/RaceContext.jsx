@@ -222,7 +222,7 @@ export const RaceProvider = ({ children }) => {
     
     // Event handlers
     const handleRaceJoined = (data) => {
-      console.log('Joined race:', data);
+      // console.log('Joined race:', data);
       setRaceState(prev => ({
         ...prev,
         code: data.code,
@@ -411,7 +411,7 @@ export const RaceProvider = ({ children }) => {
     };
 
     const handleLobbyTerminated = (data) => {
-       console.log('Lobby terminated:', data.reason);
+      // console.log('Lobby terminated:', data.reason);
        // Show a message
        setInactivityState(prev => ({
          ...prev,
@@ -423,7 +423,7 @@ export const RaceProvider = ({ children }) => {
     };
 
     const handleRaceCountdown = (data) => {
-      console.log('Received race countdown:', data);
+      // console.log('Received race countdown:', data);
       setRaceState(prev => ({ ...prev, countdown: data.seconds }));
     };
 

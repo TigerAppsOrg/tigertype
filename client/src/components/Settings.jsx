@@ -420,8 +420,8 @@ function Settings({ isOpen, onClose }) {
           <div className="setting-item">
             <label htmlFor="word-difficulty-toggle">
               Word Difficulty
-              <span className="info-icon" data-tooltip="Easy: Word pool consists of the top 200 most common English words, which are more familiar.
-Hard: Word pool includes the top 1000 most common English words, adding less frequently used words.
+              <span className="info-icon" data-tooltip="Easy: Word pool consists of the 200 most common English words, which are more familiar.
+Hard: Word pool includes the 1000 most common English words, adding less frequently used words.
 This affects the difficulty of your typing tests.">ⓘ</span>
             </label>
             <div className="difficulty-toggle-group" id="word-difficulty-toggle">

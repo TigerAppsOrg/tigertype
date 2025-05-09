@@ -72,7 +72,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
           }
           
           const data = await response.json();
-          console.log('Leaderboard data received via public API:', data.leaderboard);
+          // console.log('Leaderboard data received via public API:', data.leaderboard);
           setLeaderboard(data.leaderboard || []);
         } catch (err) {
           console.error('Error fetching leaderboard via public API:', err);

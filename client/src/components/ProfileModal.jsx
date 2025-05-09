@@ -169,7 +169,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
   // Update timestamp when avatar URL changes (for self-view)
   useEffect(() => {
     if (!netid && user && user.avatar_url) {
-      console.log('Avatar URL from user data:', user.avatar_url);
+      // console.log('Avatar URL from user data:', user.avatar_url);
       setImageError(false);
       setTimestamp(Date.now());
     }
@@ -189,7 +189,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
         const data = await response.json();
 
-        console.log('Full match history response from API:', data); // Log the raw data
+        // console.log('Full match history response from API:', data); // Log the raw data
 
         for (let i of data) {
           let temp = String(i['lobby_type']);
