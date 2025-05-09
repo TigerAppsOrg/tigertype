@@ -224,6 +224,26 @@ function AboutUs() {
             All these metrics help you understand your typing performance comprehensively and show your improvement over time.
           </p>
         </CollapsibleSection>
+        <CollapsibleSection title="Acknowledgements">
+          <p>
+            Although many individuals contributed to the development of TigerType, we'd like to extend special thanks to:
+          </p>
+          <ul>
+            <li>
+              <strong>Professor Dondero</strong> (<code>rdondero</code>): COS 333 Instructor; for supporting our unorthodox project choice and providing valuable guidance, despite it being beyond the typical scope of the course.
+            </li>
+            <li>
+              <strong>Ambri Ma</strong> (<code>jiaweim</code>): Project Advisor; for being flexible and constructive throughout our sporadic development process, and for just being enjoyable and easygoing to work with.
+            </li>
+            <li>
+              <strong>Our Beta Testers</strong>: Thanks to the nearly 50 individuals who helped test TigerType in its early stages, providing feedback, and identifying bugs. Special recognition to these two for their extensive and ongoing contributions:
+              <ul>
+                <li>Angelina Ji (<code>aj2126</code>)</li>
+                <li>Julia Ying (<code>jy2920</code>)</li>
+              </ul>
+            </li>
+          </ul>
+        </CollapsibleSection>
       </section>
     </div>
   );
