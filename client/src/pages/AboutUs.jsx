@@ -242,6 +242,9 @@ function AboutUs() {
                 <li>Julia Ying (<code>jy2920</code>)</li>
               </ul>
             </li>
+            <li>
+              <strong>TigerApps</strong>: Joshua Lau (<code>jl9926</code>) and Leo Stepanewk (<code>ls3841</code>) for their general guidance/feedback as well as access to the TigerApps subdomain.
+            </li>
           </ul>
         </CollapsibleSection>
       </section>
