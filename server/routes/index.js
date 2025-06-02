@@ -52,6 +52,26 @@ router.get('/', casAuth, (req, res) => {
   });
 });
 
+// Specific lobby route with server-side validation
+router.get('/lobby/:lobbyCode', casAuth, (req, res) => {
+  const rawCode = req.params.lobbyCode || '';
+  const sanitized = rawCode.toString().trim().toUpperCase();
+
+  // Allow only alphanumeric codes up to 20 characters
+  const codeRegex = /^[A-Z0-9]{1,20}$/;
+  if (!codeRegex.test(sanitized)) {
+    return res.status(400).send('Invalid lobby code');
+  }
+
+  const indexPath = getIndexPath();
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error(`Error sending file ${indexPath}:`, err);
+      res.status(500).send('Error serving application.');
+    }
+  });
+});
+
 // Fallback route for single-page application
 router.get('*', (req, res) => {
   // If authenticated, serve index.html for client-side routing
