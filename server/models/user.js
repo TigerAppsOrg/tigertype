@@ -479,14 +479,14 @@ const User = {
   },
 
   // Get a user's badges
-  async getBadges(userId) {
+  async getBadges(userId, includeUnselected = true) {
     if (!userId) return [];
     try {
       const result = await pool.query(
-        `SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at 
-        FROM badges b 
-        JOIN user_badges u on b.id = u.badge_id 
-        WHERE u.user_id = $1
+        `SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at, u.is_selected
+        FROM badges b
+        JOIN user_badges u on b.id = u.badge_id
+        WHERE u.user_id = $1 ${includeUnselected ? '' : 'AND u.is_selected = true'}
         ORDER BY u.awarded_at DESC`,
         [userId]
       );
@@ -525,10 +525,10 @@ const User = {
 
       const badgeId = badgeResult.rows[0].id;
 
-      // Award the badge
+      // Award the badge, defaulting to not selected for display
       await db.query(`
-      INSERT INTO user_badges (user_id, badge_id, awarded_at)
-      VALUES ($1, $2, CURRENT_TIMESTAMP)
+      INSERT INTO user_badges (user_id, badge_id, awarded_at, is_selected)
+      VALUES ($1, $2, CURRENT_TIMESTAMP, FALSE)
       `, [userId, badgeId]);
 
       console.log(`Awarded badge ${badgeKey} for user: ${userId}`);
@@ -548,6 +548,29 @@ const User = {
     } catch (err) {
       console.error('Error awarding badge:', err);
       throw err;
+    }
+  },
+
+  // Update which badges are publicly displayed
+  async setSelectedBadges(userId, badgeIds) {
+    if (!userId) return;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('UPDATE user_badges SET is_selected = FALSE WHERE user_id = $1', [userId]);
+      if (badgeIds && badgeIds.length > 0) {
+        await client.query(
+          'UPDATE user_badges SET is_selected = TRUE WHERE user_id = $1 AND badge_id = ANY($2::int[])',
+          [userId, badgeIds]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Error updating badge selections:', err);
+      throw err;
+    } finally {
+      client.release();
     }
   },
 

@@ -299,3 +299,21 @@ exports.updateTitle = async (req, res) => {
     res.status(500).json({ message: 'Error updating selected title.' });
   }
 };
+
+// Update which badges should be publicly visible
+exports.updateBadgeSelections = async (req, res) => {
+  const userId = req.user.id;
+  const { badgeIds } = req.body;
+
+  if (!Array.isArray(badgeIds)) {
+    return res.status(400).json({ message: 'badgeIds must be an array' });
+  }
+
+  try {
+    await UserModel.setSelectedBadges(userId, badgeIds.map(id => parseInt(id)));
+    res.json({ message: 'Badge selections updated.' });
+  } catch (error) {
+    console.error('Error updating badge selections:', error);
+    res.status(500).json({ message: 'Error updating badge selections.' });
+  }
+};

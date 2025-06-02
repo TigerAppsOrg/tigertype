@@ -239,10 +239,12 @@ function ProfileModal({ isOpen, onClose, netid }) {
     const targetNetId = netid || user?.netid;
     if (!targetNetId) return;
 
+    const isOwn = !netid || (user && netid === user.netid);
+
     const fetchUserBadges = async () => {
       try {
         setLoadingBadges(true);
-        const url = `/api/user/${targetNetId}/badges`;
+        const url = isOwn ? '/api/user/badges' : `/api/user/${targetNetId}/badges`;
         const response = await fetch(url, { credentials: 'include' });
 
         const data = await response.json();
@@ -309,9 +311,17 @@ function ProfileModal({ isOpen, onClose, netid }) {
       id: badge.id.toString(),
       order: index
     }));
-    
+
     localStorage.setItem('displayedBadgeIds', JSON.stringify(badgeIds));
     localStorage.setItem('badgeDisplayOrder', JSON.stringify(orderedBadges));
+
+    // Persist selections to server
+    fetch('/api/profile/badges', {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ badgeIds })
+    }).catch(err => console.error('Error saving badge selections:', err));
     setShowBadgeSelector(false);
   };
   
