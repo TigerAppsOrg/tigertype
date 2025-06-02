@@ -43,6 +43,14 @@ function Race() {
   const practiceResultIndex = tutorialSteps.practice.findIndex(s => s.id === 'practice-results-screen');
   
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  // If there is no active race context, redirect to home
+  useEffect(() => {
+    // raceState.code is set whenever a race or practice session exists
+    if (!raceState.code) {
+      navigate('/home', { replace: true });
+    }
+  }, [raceState.code, navigate]);
   
   // Handle back button
   const handleBack = () => {
