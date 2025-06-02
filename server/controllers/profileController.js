@@ -310,7 +310,7 @@ exports.updateBadgeSelections = async (req, res) => {
   }
 
   try {
-    await UserModel.setSelectedBadges(userId, badgeIds.map(id => parseInt(id)));
+    await UserModel.setSelectedBadges(userId, badgeIds.map(id => parseInt(id, 10)));
     res.json({ message: 'Badge selections updated.' });
   } catch (error) {
     console.error('Error updating badge selections:', error);
