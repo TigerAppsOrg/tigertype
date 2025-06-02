@@ -434,7 +434,7 @@ This affects the difficulty of your typing tests.">ⓘ</span>
               <button
                 className={`difficulty-toggle-btn ${wordDifficulty === 'hard' ? 'active' : ''}`}
                 onClick={() => handleWordDifficultyChange('hard')}
-              >
+              > 
                 Hard
               </button>
             </div>
