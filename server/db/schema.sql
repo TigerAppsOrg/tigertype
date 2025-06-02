@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS user_badges (
   user_id INTEGER REFERENCES users(id)  ON DELETE CASCADE,
   badge_id INTEGER REFERENCES badges(id) ON DELETE CASCADE,
   awarded_at TIMESTAMPTZ DEFAULT now(),
+  is_selected BOOLEAN DEFAULT FALSE,
   PRIMARY KEY (user_id, badge_id)
 );
 

@@ -425,7 +425,7 @@ router.get('/stats', async (req, res) => {
 router.get('/user/badges', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const badges = await UserModel.getBadges(userId);
+    const badges = await UserModel.getBadges(userId, true);
     res.json(badges);
     console.log('User badges fetched successfully');
   } catch (err) {
@@ -539,7 +539,7 @@ router.get('/user/:netid/badges', requireAuth, async (req, res) => {
     if (!userToView) {
       return res.status(404).json({ error: 'User not found' });
     }
-    const badges = await UserModel.getBadges(userToView.id);
+    const badges = await UserModel.getBadges(userToView.id, false);
     res.json(badges);
   } catch (err) {
     console.error('Error fetching badges for user by netid:', err);

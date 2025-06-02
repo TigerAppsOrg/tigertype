@@ -563,6 +563,26 @@ const MIGRATIONS = [
       );
       console.log("Revert migration 16 complete.");
     }
+  },
+  {
+    version: 17,
+    description: 'Add is_selected column to user_badges',
+    up: async (client) => {
+      console.log('Running migration 17: add is_selected column to user_badges...');
+      await client.query(`
+        ALTER TABLE user_badges
+        ADD COLUMN IF NOT EXISTS is_selected BOOLEAN DEFAULT FALSE;
+      `);
+      console.log('Migration 17 complete.');
+    },
+    down: async (client) => {
+      console.log('Reverting migration 17: drop is_selected column from user_badges...');
+      await client.query(`
+        ALTER TABLE user_badges
+        DROP COLUMN IF EXISTS is_selected;
+      `);
+      console.log('Revert migration 17 complete.');
+    }
   }
 ];
 
