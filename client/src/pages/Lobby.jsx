@@ -12,7 +12,8 @@ import './Lobby.css';
 import './Race.css';
 
 function Lobby() {
-  const { lobbyCode } = useParams();
+  const { lobbyCode: rawLobbyCode } = useParams();
+  const sanitizedLobbyCode = (rawLobbyCode || '').replace(/[^a-zA-Z0-9]/g, '');
   const navigate = useNavigate();
   const { user } = useAuth();
   const { socket } = useSocket();
@@ -42,15 +43,15 @@ function Lobby() {
 
   // Effect to handle joining the lobby via URL or if state is lost
   useEffect(() => {
-    // Only attempt to join if lobbyCode is present and doesn't match current state
-    if (lobbyCode && (!raceState.code || raceState.code !== lobbyCode)) {
-      console.log(`Attempting to join lobby ${lobbyCode} from URL...`);
+    // Only attempt to join if sanitizedLobbyCode is present and doesn't match current state
+    if (sanitizedLobbyCode && (!raceState.code || raceState.code !== sanitizedLobbyCode)) {
+      console.log(`Attempting to join lobby ${sanitizedLobbyCode} from URL...`);
       setIsLoading(true); // Set loading while joining
-      joinPrivateLobby({ code: lobbyCode });
-    } else if (raceState.code === lobbyCode) {
+      joinPrivateLobby({ code: sanitizedLobbyCode });
+    } else if (raceState.code === sanitizedLobbyCode) {
       // If code matches, we are likely already joined or reconnected
       setIsLoading(false);
-    } else if (!lobbyCode && raceState.code) {
+    } else if (!sanitizedLobbyCode && raceState.code) {
        // If no lobby code in URL but we have one in state, likely navigated away improperly
        console.warn("In lobby page without code in URL, but have state. Resetting.");
        resetRace();
@@ -59,7 +60,7 @@ function Lobby() {
        // Default case, likely no lobby active
        setIsLoading(false);
     }
-  }, [lobbyCode, raceState.code, joinPrivateLobby, navigate, resetRace]); // Added navigate/resetRace
+  }, [sanitizedLobbyCode, raceState.code, joinPrivateLobby, navigate, resetRace]); // Added navigate/resetRace
 
   // Effect to handle navigation away if kicked or lobby terminated, or state mismatch
   useEffect(() => {
@@ -68,23 +69,23 @@ function Lobby() {
        // Context's useEffect for redirectToHome handles the navigation
     }
     // If the raceState code becomes null OR doesn't match the URL code while on this page
-    if (!isLoading && (!raceState.code || (lobbyCode && raceState.code !== lobbyCode))) {
+    if (!isLoading && (!raceState.code || (sanitizedLobbyCode && raceState.code !== sanitizedLobbyCode))) {
         console.log('Lobby state lost or mismatched, redirecting home.');
         resetRace(); // Ensure state is cleared
         navigate('/home');
     }
-  }, [inactivityState.kicked, inactivityState.redirectToHome, raceState.code, isLoading, navigate, lobbyCode, resetRace]); // Added lobbyCode/resetRace
+  }, [inactivityState.kicked, inactivityState.redirectToHome, raceState.code, isLoading, navigate, sanitizedLobbyCode, resetRace]); // Added sanitizedLobbyCode/resetRace
 
   useEffect(() => {
     // Only trigger navigation if we have successfully joined this lobby
-    if (raceState.code !== lobbyCode) return;
+    if (raceState.code !== sanitizedLobbyCode) return;
 
     // When countdown begins (raceState.countdown becomes a number) or
     // the race is already marked as in progress / completed, navigate.
     if (raceState.countdown !== null || raceState.inProgress || raceState.completed) {
       navigate('/race', { replace: true });
     }
-  }, [raceState.countdown, raceState.inProgress, raceState.completed, raceState.code, lobbyCode, navigate]);
+  }, [raceState.countdown, raceState.inProgress, raceState.completed, raceState.code, sanitizedLobbyCode, navigate]);
 
 
   // --- TestConfigurator State ---
@@ -185,15 +186,15 @@ function Lobby() {
 
   // Render loading state
   if (isLoading) {
-    return <Loading message={`Joining lobby ${lobbyCode}...`} />;
+    return <Loading message={`Joining lobby ${sanitizedLobbyCode}...`} />;
   }
 
   // Render if lobby code doesn't match URL (error state after loading)
-  if (!raceState.code || raceState.code !== lobbyCode) {
+  if (!raceState.code || raceState.code !== sanitizedLobbyCode) {
      return (
         <div className="lobby-page error-page">
             <h2>Error</h2>
-            <p>Could not join or find lobby "{lobbyCode}". It might be invalid or closed.</p>
+            <p>Could not join or find lobby "{sanitizedLobbyCode}". It might be invalid or closed.</p>
             <button onClick={() => navigate('/home')}>Go Home</button>
         </div>
      );
