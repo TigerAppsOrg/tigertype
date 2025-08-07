@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
@@ -37,10 +37,36 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
   const [period, setPeriod] = useState(defaultPeriod);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showSpinner, setShowSpinner] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState(null);
+  // Ref to manage delayed spinner timer
+  const spinnerTimerRef = useRef(null);
   // State to track which user's profile to view
   const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+
+  useEffect(() => {
+    // Avoid flash of spinner: only show after a brief delay
+    const spinnerDelayMs = 250;
+    const timerRef = spinnerTimerRef.current;
+    if (loading) {
+      // Start a timer to show spinner if loading persists
+      spinnerTimerRef.current = setTimeout(() => setShowSpinner(true), spinnerDelayMs);
+    } else {
+      // Loading finished quickly: hide spinner and clear any pending timers
+      setShowSpinner(false);
+      if (timerRef) clearTimeout(timerRef);
+      spinnerTimerRef.current = null;
+    }
+
+    return () => {
+      if (spinnerTimerRef.current) {
+        clearTimeout(spinnerTimerRef.current);
+        spinnerTimerRef.current = null;
+      }
+    };
+  }, [loading]);
 
   useEffect(() => {
     // Fetch from API directly if socket isn't available (user not logged in)
@@ -53,6 +79,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
         // Use socket if available (user is logged in)
         socket.emit('leaderboard:timed', { duration, period }, (response) => {
           setLoading(false);
+          setHasLoadedOnce(true);
           if (response.error) {
             console.error('Error fetching leaderboard:', response.error);
             setError(response.error);
@@ -80,6 +107,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
           setLeaderboard([]);
         } finally {
           setLoading(false);
+          setHasLoadedOnce(true);
         }
       }
     };
@@ -137,9 +165,9 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
              </div>
           </div>
           <div className="leaderboard-landing-list-area">
-            {loading && ( <div className="loading-indicator"><div className="spinner-border text-orange" role="status"><span className="visually-hidden">Loading...</span></div><p>Loading Leaderboard...</p></div> )}
+            {(hasLoadedOnce ? showSpinner : loading) && ( <div className="loading-indicator"><div className="spinner-border text-orange" role="status"><span className="visually-hidden">Loading...</span></div><p>Loading Leaderboard...</p></div> )}
             {error && <p className="error-message">Error: {error}</p>}
-            {!loading && !error && (
+            {(hasLoadedOnce ? !showSpinner : !loading) && !error && (
               <div className="leaderboard-list">
                 {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <span className="leaderboard-netid">{entry.netid}</span> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.adjusted_wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? formatRelativeTime(entry.created_at) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
               </div>
@@ -174,7 +202,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
               ))}
             </div>
           </div>
-          {loading && (
+          {(hasLoadedOnce ? showSpinner : loading) && (
             <div className="loading-indicator">
               <div className="spinner-border text-orange" role="status">
                 <span className="visually-hidden">Loading...</span>
@@ -184,7 +212,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
           )}
           {error && <p className="error-message">Error: {error}</p>}
 
-          {!loading && !error && (
+          {(hasLoadedOnce ? !showSpinner : !loading) && !error && (
             <div className="leaderboard-list">
               {leaderboard.length > 0 ? (
                 leaderboard.map((entry, index) => (
