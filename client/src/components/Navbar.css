@@ -85,9 +85,15 @@
   color: inherit;
 }
 
+/* Smooth hover/focus transitions for icon buttons */
+.navbar-icons button {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
 /* Hover accent: turn icons orange on hover */
 .navbar-icons button:hover {
   color: #F58025;
+  transform: translateY(-1px);
 }
 
 /* Spin the settings gear on hover */
@@ -108,6 +114,7 @@
   outline-offset: 2px;
   color: #F58025;
   background-color: rgba(245, 128, 37, 0.1);
+  transform: translateY(-1px);
 }
 
 .navbar-links {
