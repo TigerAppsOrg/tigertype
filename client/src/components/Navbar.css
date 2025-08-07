@@ -21,6 +21,30 @@
   gap: 1.5rem;
 }
 
+/* Icons to the right of the logo */
+.navbar-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-github-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--mode-text-color);
+  border-radius: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.navbar-github-icon:hover {
+  background-color: rgba(245, 128, 37, 0.1);
+  color: #F58025;
+  transform: translateY(-1px);
+}
+
 .settings-icon {
   font-size: 28px;
   color: #F58025;
