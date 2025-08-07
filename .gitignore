@@ -3,6 +3,13 @@
 *.iml
 .DS_Store
 
+# AI/MCP Related Files
+CLAUDE.md
+AGENTS.md
+AGENTS.*
+.serena
+.codex
+.claude
 
 # Environment and Configuration
 .env
