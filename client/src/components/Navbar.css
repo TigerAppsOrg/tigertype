@@ -20,8 +20,6 @@
   left: 7%;
   gap: 1.5rem;
 }
-
-/* Icons to the right of the logo */
 .navbar-icons {
   display: inline-flex;
   align-items: center;
@@ -45,19 +43,6 @@
   transform: translateY(-1px);
 }
 
-.settings-icon {
-  font-size: 28px;
-  color: #F58025;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  position: relative;
-  top: 0;
-}
-
-.settings-icon:hover {
-  transform: rotate(90deg);
-}
-
 .navbar-logo button {
   color: var(--mode-text-color);
   background: none;
@@ -79,24 +64,16 @@
 .navbar-logo button:hover img {
   transform: scale(1.05);
 }
-
-/* Ensure material icons inherit the button/link color */
 .navbar-icons .material-icons {
   color: inherit;
 }
-
-/* Smooth hover/focus transitions for icon buttons */
 .navbar-icons button {
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
-
-/* Hover accent: turn icons orange on hover */
 .navbar-icons button:hover {
   color: #F58025;
   transform: translateY(-1px);
 }
-
-/* Spin the settings gear on hover */
 .navbar-settings-icon .material-icons {
   transition: transform 0.2s ease;
   transform-origin: 50% 50%;
@@ -105,8 +82,6 @@
 .navbar-settings-icon:hover .material-icons {
   transform: rotate(90deg);
 }
-
-/* Accessible focus styles mirror hover behavior */
 .navbar-icons button:focus-visible,
 .navbar-github-icon:focus-visible,
 .navbar-logo button:focus-visible {
@@ -164,7 +139,7 @@
   .navbar-logo {
     font-size: 1.5rem;
   }
-
+  
   .navbar-logo img {
     max-height: 45px;
   }
@@ -186,23 +161,12 @@
   background-color: rgba(245, 128, 37, 0.1);
 }
 
-.settings-button:hover .settings-icon {
-  transform: rotate(90deg);
-}
-
 .navbar-logo img {
   max-height: 75px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   transition: transform 0.2s ease;
-}
-
-/* Style for the container holding the settings and help icons */
-.navbar-icons {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 .navbar-link {

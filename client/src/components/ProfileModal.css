@@ -1,5 +1,3 @@
-/* alignment debugged with ai */
-
 .profile-overlay {
   position: fixed;
   top: 0;
@@ -52,7 +50,6 @@
   color: var(--secondary-color);
 }
 
-/* alignment debugged with ai */
 .back-button-container {
   padding-bottom: 2rem;
   display: flex;
@@ -452,11 +449,8 @@
   flex-direction: column;
 }
 
-.match-history h2{
-  font-size: 2rem;
-}
-
 .match-history h2 {
+  font-size: 2rem;
   color: var(--mode-text-color);
   margin-bottom: 0.5rem;
 }
@@ -472,8 +466,6 @@
   overflow-y: auto;
 }
 
-/* Custom Scrollbar for Match History */
-/* i like this alot should make it global later */
 .match-history-list::-webkit-scrollbar {
   width: 8px;
 }
