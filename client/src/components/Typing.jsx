@@ -748,13 +748,14 @@ function Typing({
 
     // Size overlay to target element
     const height = rect.height;
-    const width = useCaret ? 2 : rect.width; // constant caret width for stability
+    const width = useCaret ? 0 : rect.width; // caret drawn via border-left for crispness
     overlay.style.height = `${height}px`;
     overlay.style.width = `${width}px`;
     overlay.className = `cursor-overlay ${useCaret ? 'caret' : 'block'}`;
 
     // Cursor-specific duration (caret snappier)
-    overlay.style.setProperty('--cursor-glide-duration', useCaret ? '70ms' : '95ms');
+    // Slightly slower caret slide for a smoother feel
+    overlay.style.setProperty('--cursor-glide-duration', useCaret ? '80ms' : '95ms');
 
     // First placement should not animate from origin
     if (!initialCursorSetRef.current) {

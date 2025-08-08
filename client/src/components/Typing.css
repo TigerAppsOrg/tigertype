@@ -313,11 +313,12 @@
 .current::before {
   visibility: var(--line-cursor);
   position: absolute;
-  content: "|";
-  color: var(--caret-color)!important;
-  animation: slide 0.08s ease-out;
-  right: 50%;
-  transform: scale(180%, 1);
+  content: "";
+  left: 0;
+  top: 0;
+  width: var(--caret-width, 3px);
+  height: 100%;
+  background: var(--caret-color)!important;
 }
 
 /* Animation for smooth line-cursor */
@@ -331,6 +332,13 @@
   50% { opacity: 0.7; }
 }
 
+/* Smooth caret blink (independent of letter blink) */
+@keyframes caretBlink {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+
 /*
   Smooth glide overlay cursor
   - Renders an absolutely-positioned overlay that we move via transform
@@ -339,7 +347,7 @@
 .glide-on .current {
   background-color: transparent !important; /* background from overlay */
   color: var(--current-color) !important;   /* keep white highlight */
-  animation: none !important;               /* avoid blink flicker */
+  animation: blink 1s infinite !important;  /* restore subtle white blink */
 }
 
 .glide-on .current::before {
@@ -373,8 +381,16 @@
 }
 
 .cursor-overlay.caret {
-  background-color: var(--caret-color);
+  background: transparent;
+  border-left: var(--caret-width, 3px) solid var(--caret-color);
+  box-shadow: 0 0 0.001px var(--caret-color); /* sub-pixel hinting */
   z-index: 2; /* above text so thin caret remains visible */
+  animation: caretBlink 1.2s ease-in-out infinite;
+}
+
+/* Non-glide caret (pseudo) also blinks smoothly */
+.current::before {
+  animation: caretBlink 1.2s ease-in-out infinite;
 }
 
 /* Avoid smooth container scroll while gliding to prevent desync */

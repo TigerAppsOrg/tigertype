@@ -55,7 +55,8 @@ function Settings({ isOpen, onClose }) {
 
   const [defaultCursor, setDefaultCursor] = useState(true);
   const [glideCursor, setGlideCursor] = useState(() => {
-    return localStorage.getItem('glideCursor') === 'true';
+    const v = localStorage.getItem('glideCursor');
+    return v === null ? true : v === 'true';
   });
 
   const modalRef = useRef(); // Create a ref for the modal content

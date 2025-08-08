@@ -10,6 +10,20 @@ import 'regenerator-runtime/runtime';
 // Tutorial anchor provider
 import { AnchorProvider } from './components/TutorialAnchor';
 
+// Ensure smooth-glide is ON by default for all users
+try {
+  const v = localStorage.getItem('glideCursor');
+  if (v === null) localStorage.setItem('glideCursor', 'true');
+  const enabled = localStorage.getItem('glideCursor') === 'true';
+  document.documentElement.style.setProperty('--glide-cursor-enabled', enabled ? '1' : '0');
+  document.documentElement.setAttribute('data-glide', enabled ? '1' : '0');
+  if (!document.documentElement.getAttribute('data-cursor')) {
+    document.documentElement.setAttribute('data-cursor', 'block');
+  }
+} catch (_) {
+  // ignore storage errors (private mode, etc.)
+}
+
 // Create root
 const container = document.getElementById('root');
 const root = createRoot(container);
