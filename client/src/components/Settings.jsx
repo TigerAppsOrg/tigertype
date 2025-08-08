@@ -53,7 +53,15 @@ function Settings({ isOpen, onClose }) {
     return sizeOption.value;
   });
 
-  const [defaultCursor, setDefaultCursor] = useState(true);
+  const [defaultCursor, setDefaultCursor] = useState(() => {
+    try {
+      const t = localStorage.getItem('cursorType');
+      if (t === 'caret') return false;
+      return true; // default to block
+    } catch {
+      return true;
+    }
+  });
   const [glideCursor, setGlideCursor] = useState(() => {
     const v = localStorage.getItem('glideCursor');
     return v === null ? true : v === 'true';
@@ -244,6 +252,9 @@ function Settings({ isOpen, onClose }) {
     document.documentElement.style.setProperty('--default-cursor', color);
     document.documentElement.style.setProperty('--line-cursor', line);
     document.documentElement.setAttribute('data-cursor', defaultCursor ? 'block' : 'caret');
+    try {
+      localStorage.setItem('cursorType', defaultCursor ? 'block' : 'caret');
+    } catch {}
   }, [defaultCursor, theme]);
 
   // Persist smooth cursor glide preference and expose to CSS
