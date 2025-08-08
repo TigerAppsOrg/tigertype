@@ -755,7 +755,7 @@ function Typing({
 
     // Cursor-specific duration (caret snappier)
     // Slightly slower caret slide for a smoother feel
-    overlay.style.setProperty('--cursor-glide-duration', useCaret ? '80ms' : '95ms');
+    overlay.style.setProperty('--cursor-glide-duration', useCaret ? '95ms' : '95ms');
 
     // First placement should not animate from origin
     if (!initialCursorSetRef.current) {
