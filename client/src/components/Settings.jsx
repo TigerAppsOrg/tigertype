@@ -70,6 +70,20 @@ function Settings({ isOpen, onClose }) {
   const modalRef = useRef(); // Create a ref for the modal content
   const typingInputRef = document.querySelector('.typing-input-container input');
 
+  // Tabbed layout: show one section at a time
+  const tabs = ['appearance', 'behavior', 'audio'];
+  const [activeTab, setActiveTab] = useState('appearance');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [animDirection, setAnimDirection] = useState(null); // 'up' | 'down' | null
+
+  const handleTabChange = (nextTab) => {
+    const nextIndex = tabs.indexOf(nextTab);
+    if (nextIndex === -1) return;
+    setAnimDirection(nextIndex > activeIndex ? 'down' : 'up');
+    setActiveIndex(nextIndex);
+    setActiveTab(nextTab);
+  };
+
   // Apply fonts when component mounts or fonts change
   useEffect(() => {
     document.documentElement.style.setProperty('--main-font', whichFont);
@@ -81,42 +95,61 @@ function Settings({ isOpen, onClose }) {
     // Word difficulty persistence is managed by RaceContext
 
     if (theme === 'tangerine') {
-      document.documentElement.style.setProperty('--primary-color', '#F5821F');
-      document.documentElement.style.setProperty('--primary-color-rgb', '245, 130, 31');
-      document.documentElement.style.setProperty('--secondary-color', '#F7EDE4');
-      document.documentElement.style.setProperty('--mode-text-color', '#214E34');
-      document.documentElement.style.setProperty('--hover-color', '#a2a2a2');
-      document.documentElement.style.setProperty('--type-container-color', '#FFF8F2');
-      document.documentElement.style.setProperty('--container-color', '#D7BFB1');
-      document.documentElement.style.setProperty('--typing-color', '#FFB577');
-      document.documentElement.style.setProperty('--player-card-color', '#aeaeae');
+      document.documentElement.style.setProperty('--primary-color', '#FF6B35');
+      document.documentElement.style.setProperty('--primary-color-rgb', '255, 107, 53');
+      document.documentElement.style.setProperty('--secondary-color', '#2B1810');
+      document.documentElement.style.setProperty('--mode-text-color', '#FFE5D9');
+      document.documentElement.style.setProperty('--hover-color', '#3D2418');
+      document.documentElement.style.setProperty('--type-container-color', '#2B1810');
+      document.documentElement.style.setProperty('--container-color', '#1F120A');
+      document.documentElement.style.setProperty('--typing-color', '#FFE5D9');
+      document.documentElement.style.setProperty('--player-card-color', '#3D2418');
 
-      document.documentElement.style.setProperty('--background-color', '#F5D8C4');
-      document.documentElement.style.setProperty('--background-color-secondary', '#F0CDB3');
+      document.documentElement.style.setProperty('--background-color', '#1A0E08');
+      document.documentElement.style.setProperty('--background-color-secondary', '#2B1810');
 
-      document.documentElement.style.setProperty('--text-color', '#214E34');
-      document.documentElement.style.setProperty('--text-color-secondary', '#505050');
-      document.documentElement.style.setProperty('--text-color-highlight', '#000000');
-      document.documentElement.style.setProperty('--subtle-text-color', 'rgba(60, 60, 60, 0.8)');
+      document.documentElement.style.setProperty('--text-color', '#FFE5D9');
+      document.documentElement.style.setProperty('--text-color-secondary', '#FFB799');
+      document.documentElement.style.setProperty('--text-color-highlight', '#FFFFFF');
+      document.documentElement.style.setProperty('--subtle-text-color', 'rgba(255, 229, 217, 0.7)');
 
-      document.documentElement.style.setProperty('--correct-bg-color', '#0A970A');
-      document.documentElement.style.setProperty('--incorrect-color', '#FF0000');
-      document.documentElement.style.setProperty('--incorrect-bg-color', 'rgba(255,116,108, 0.30)');
-      document.documentElement.style.setProperty('--current-color', '#000000');
+      document.documentElement.style.setProperty('--correct-bg-color', '#4CAF50');
+      document.documentElement.style.setProperty('--incorrect-color', '#FF5252');
+      document.documentElement.style.setProperty('--incorrect-bg-color', 'rgba(255,82,82, 0.25)');
+      document.documentElement.style.setProperty('--current-color', '#FF6B35');
 
-      document.documentElement.style.setProperty('--caret-color', '#F58025')
+      document.documentElement.style.setProperty('--caret-color', '#FF6B35');
 
-      document.documentElement.style.setProperty('--mode-title-color', '#F58025');
-      document.documentElement.style.setProperty('--stat-card-color', 'rgba(175, 175, 175, 0.4)');
-      document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
-      document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
-      document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
-      document.documentElement.style.setProperty('--button-bg-color', 'rgb(120, 120, 120)');
+      document.documentElement.style.setProperty('--mode-title-color', '#FF6B35');
+      document.documentElement.style.setProperty('--stat-card-color', 'rgba(255, 107, 53, 0.15)');
+      document.documentElement.style.setProperty('--developer-link-color', '#FF9568');
+      document.documentElement.style.setProperty('--developer-link-hover-color', '#FF6B35');
+      document.documentElement.style.setProperty('--modal-bg-color', '#2B1810');
+      document.documentElement.style.setProperty('--button-bg-color', 'rgba(255, 107, 53, 0.2)');
       
-      document.documentElement.style.setProperty('--background-color-tertiary', '#d5d5d5');
-      document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
+      document.documentElement.style.setProperty('--background-color-tertiary', '#1A0E08');
+      document.documentElement.style.setProperty('--text-color-tertiary', '#CC9980');
 
-      document.documentElement.style.setProperty('--border-color', '#3a3a3a');
+      document.documentElement.style.setProperty('--border-color', '#4A2E1F');
+      // Glass variables for warm tangerine
+      document.documentElement.style.setProperty('--glass-surface', 'rgba(43,24,16,0.85)');
+      document.documentElement.style.setProperty('--glass-card', 'rgba(61,36,24,0.75)');
+      document.documentElement.style.setProperty('--glass-border', 'rgba(255,107,53,0.15)');
+      document.documentElement.style.setProperty('--input-bg', '#3D2418');
+      document.documentElement.style.setProperty('--input-border', 'rgba(255,107,53,0.25)');
+      document.documentElement.style.setProperty('--toggle-bg', 'rgba(255,107,53,0.12)');
+      document.documentElement.style.setProperty('--toggle-border', 'rgba(255,107,53,0.2)');
+      document.documentElement.style.setProperty('--thumb-color', '#FFE5D9');
+      // Segmented control for tangerine
+      document.documentElement.style.setProperty('--segmented-bg', 'rgba(245,130,31,0.12)');
+      document.documentElement.style.setProperty('--segmented-text', 'rgba(255,255,255,0.65)');
+      document.documentElement.style.setProperty('--segmented-active', 'linear-gradient(135deg, #FF6B35, #FF8C5A)');
+      document.documentElement.style.setProperty('--segmented-active-text', '#ffffff');
+      // Select arrow for tangerine
+      document.documentElement.style.setProperty('--select-arrow-color', '%23F5821F');
+      // Slider track for tangerine
+      document.documentElement.style.setProperty('--slider-track-bg', 'rgba(245,130,31,0.15)');
+      document.documentElement.style.setProperty('--slider-track-border', 'rgba(245,130,31,0.25)');
     }
     else if (theme === 'lavender-asphalt') {
       document.documentElement.style.setProperty('--mode-text-color', '#A59EB5'); //
@@ -127,7 +160,7 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--background-color', '#2C2C34'); //
       document.documentElement.style.setProperty('--primary-color', '#C2AEDD') //
       document.documentElement.style.setProperty('--primary-color-rgb', '194, 174, 221');
-      document.documentElement.style.setProperty('--secondary-color', '#3A3A42'); //
+      document.documentElement.style.setProperty('--secondary-color', '#2A2831'); // refined base
       document.documentElement.style.setProperty('--background-color-secondary', '#3A3A42'); //
 
       document.documentElement.style.setProperty('--type-container-color', '#2C2C34'); // 
@@ -149,27 +182,46 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--stat-card-color', 'rgba(175, 175, 175, 0.4)'); //
       document.documentElement.style.setProperty('--developer-link-color', '#C2AEDD'); //
       document.documentElement.style.setProperty('--developer-link-hover-color', '#6B4796'); //
-      document.documentElement.style.setProperty('--modal-bg-color', '#2E2E33'); //
+      document.documentElement.style.setProperty('--modal-bg-color', '#2A2831'); //
       document.documentElement.style.setProperty('--button-bg-color', 'rgba(125, 125, 125, 0.8)'); //
+      // Glass tuning for lavender
+      document.documentElement.style.setProperty('--glass-surface', 'rgba(36,34,41,0.75)');
+      document.documentElement.style.setProperty('--glass-card', 'rgba(48,46,54,0.65)');
+      document.documentElement.style.setProperty('--glass-border', 'rgba(255,255,255,0.08)');
+      document.documentElement.style.setProperty('--input-bg', '#2C2A33');
+      document.documentElement.style.setProperty('--input-border', 'rgba(255,255,255,0.12)');
+      document.documentElement.style.setProperty('--toggle-bg', 'rgba(255,255,255,0.08)');
+      document.documentElement.style.setProperty('--toggle-border', 'rgba(255,255,255,0.12)');
+      document.documentElement.style.setProperty('--thumb-color', '#fff');
+      // Segmented control for lavender
+      document.documentElement.style.setProperty('--segmented-bg', 'rgba(194,174,221,0.15)');
+      document.documentElement.style.setProperty('--segmented-text', 'rgba(255,255,255,0.65)');
+      document.documentElement.style.setProperty('--segmented-active', 'linear-gradient(135deg, #C2AEDD, #9B7FC4)');
+      document.documentElement.style.setProperty('--segmented-active-text', '#ffffff');
+      // Select arrow for lavender
+      document.documentElement.style.setProperty('--select-arrow-color', '%23C2AEDD');
+      // Slider track for lavender
+      document.documentElement.style.setProperty('--slider-track-bg', 'rgba(194,174,221,0.15)');
+      document.documentElement.style.setProperty('--slider-track-border', 'rgba(194,174,221,0.25)');
     }
     else if (theme === 'light') {
-      document.documentElement.style.setProperty('--primary-color', '#F5821F');
-      document.documentElement.style.setProperty('--primary-color-rgb', '245, 130, 31');
-      document.documentElement.style.setProperty('--secondary-color', '#f0f0f0');
-      document.documentElement.style.setProperty('--mode-text-color', '#1e1e1e');
-      document.documentElement.style.setProperty('--hover-color', '#a2a2a2');
-      document.documentElement.style.setProperty('--type-container-color', '#dfdfdf');
+      document.documentElement.style.setProperty('--primary-color', '#F58025');
+      document.documentElement.style.setProperty('--primary-color-rgb', '245, 128, 37');
+      document.documentElement.style.setProperty('--secondary-color', '#f7f7f8');
+      document.documentElement.style.setProperty('--mode-text-color', '#191a1c');
+      document.documentElement.style.setProperty('--hover-color', '#c9c9cf');
+      document.documentElement.style.setProperty('--type-container-color', '#ffffff');
       document.documentElement.style.setProperty('--container-color', '#ffffff');
-      document.documentElement.style.setProperty('--typing-color', '#000000');
-      document.documentElement.style.setProperty('--player-card-color', '#aeaeae');
+      document.documentElement.style.setProperty('--typing-color', '#191a1c');
+      document.documentElement.style.setProperty('--player-card-color', '#f0f0f2');
 
-      document.documentElement.style.setProperty('--background-color', '#ffffff');
-      document.documentElement.style.setProperty('--background-color-secondary', '#e0e0e0');
+      document.documentElement.style.setProperty('--background-color', '#fbfbfc');
+      document.documentElement.style.setProperty('--background-color-secondary', '#f0f1f4');
 
-      document.documentElement.style.setProperty('--text-color', '#000000');
-      document.documentElement.style.setProperty('--text-color-secondary', '#505050');
+      document.documentElement.style.setProperty('--text-color', '#191a1c');
+      document.documentElement.style.setProperty('--text-color-secondary', '#4b4f56');
       document.documentElement.style.setProperty('--text-color-highlight', '#000000');
-      document.documentElement.style.setProperty('--subtle-text-color', 'rgba(60, 60, 60, 0.8)');
+      document.documentElement.style.setProperty('--subtle-text-color', 'rgba(30, 33, 39, 0.7)');
 
       document.documentElement.style.setProperty('--correct-bg-color', '#0A970A');
       document.documentElement.style.setProperty('--incorrect-color', '#FF0000');
@@ -182,13 +234,32 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--stat-card-color', 'rgba(175, 175, 175, 0.4)');
       document.documentElement.style.setProperty('--developer-link-color', '#FFAD6B');
       document.documentElement.style.setProperty('--developer-link-hover-color', '#C25A00');
-      document.documentElement.style.setProperty('--modal-bg-color', '#DDDDDD');
-      document.documentElement.style.setProperty('--button-bg-color', 'rgb(120, 120, 120)');
+      document.documentElement.style.setProperty('--modal-bg-color', '#ffffff');
+      document.documentElement.style.setProperty('--button-bg-color', '#e7e7ea');
       
-      document.documentElement.style.setProperty('--background-color-tertiary', '#d5d5d5');
-      document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
+      document.documentElement.style.setProperty('--background-color-tertiary', '#eceef2');
+      document.documentElement.style.setProperty('--text-color-tertiary', '#6f7480');
 
       document.documentElement.style.setProperty('--border-color', '#3a3a3a');
+      // Glass variables for light
+      document.documentElement.style.setProperty('--glass-surface', 'rgba(255,255,255,0.95)');
+      document.documentElement.style.setProperty('--glass-card', 'rgba(255,255,255,0.98)');
+      document.documentElement.style.setProperty('--glass-border', 'rgba(0,0,0,0.08)');
+      document.documentElement.style.setProperty('--input-bg', '#ffffff');
+      document.documentElement.style.setProperty('--input-border', 'rgba(0,0,0,0.12)');
+      document.documentElement.style.setProperty('--toggle-bg', 'rgba(0,0,0,0.05)');
+      document.documentElement.style.setProperty('--toggle-border', 'rgba(0,0,0,0.08)');
+      document.documentElement.style.setProperty('--thumb-color', '#ffffff');
+      // Segmented control for light
+      document.documentElement.style.setProperty('--segmented-bg', 'rgba(0,0,0,0.06)');
+      document.documentElement.style.setProperty('--segmented-text', 'rgba(0,0,0,0.6)');
+      document.documentElement.style.setProperty('--segmented-active', '#ffffff');
+      document.documentElement.style.setProperty('--segmented-active-text', '#1a1d23');
+      // Select arrow for light mode
+      document.documentElement.style.setProperty('--select-arrow-color', '%236b7280');
+      // Slider track for light mode
+      document.documentElement.style.setProperty('--slider-track-bg', 'rgba(0,0,0,0.08)');
+      document.documentElement.style.setProperty('--slider-track-border', 'rgba(0,0,0,0.12)');
     }
     else { // Default: Dark Mode
       document.documentElement.style.setProperty('--primary-color', '#F5821F');
@@ -220,13 +291,39 @@ function Settings({ isOpen, onClose }) {
       document.documentElement.style.setProperty('--stat-card-color', 'rgba(30, 30, 30, 0.4)');
       document.documentElement.style.setProperty('--developer-link-color', '#C25A00');
       document.documentElement.style.setProperty('--developer-link-hover-color', '#FFAD6B');
-      document.documentElement.style.setProperty('--modal-bg-color', '#222222');
+      document.documentElement.style.setProperty('--modal-bg-color', '#1b1e23');
       document.documentElement.style.setProperty('--button-bg-color', '#3a3a3a');
 
       document.documentElement.style.setProperty('--background-color-tertiary', '#2a2a2a');
       document.documentElement.style.setProperty('--text-color-tertiary', '#888888');
 
-      document.documentElement.style.setProperty('--border-color', '#3a3a3a');
+      document.documentElement.style.setProperty('--border-color', '#2b3038');
+      // Glass variables for default dark
+      document.documentElement.style.setProperty('--glass-surface', 'rgba(20,22,27,0.75)');
+      document.documentElement.style.setProperty('--glass-card', 'rgba(30,33,40,0.65)');
+      document.documentElement.style.setProperty('--glass-border', 'rgba(255,255,255,0.08)');
+      document.documentElement.style.setProperty('--input-bg', '#0f1115');
+      document.documentElement.style.setProperty('--input-border', 'rgba(255,255,255,0.12)');
+      document.documentElement.style.setProperty('--toggle-bg', 'rgba(255,255,255,0.08)');
+      document.documentElement.style.setProperty('--toggle-border', 'rgba(255,255,255,0.12)');
+      document.documentElement.style.setProperty('--thumb-color', '#fff');
+      // Segmented control for dark
+      document.documentElement.style.setProperty('--segmented-bg', 'rgba(255,255,255,0.08)');
+      document.documentElement.style.setProperty('--segmented-text', 'rgba(255,255,255,0.65)');
+      document.documentElement.style.setProperty('--segmented-active', 'linear-gradient(135deg, #F58025, #E85D20)');
+      document.documentElement.style.setProperty('--segmented-active-text', '#ffffff');
+      // Select arrow for dark
+      document.documentElement.style.setProperty('--select-arrow-color', '%23F58025');
+      // Slider track for dark
+      document.documentElement.style.setProperty('--slider-track-bg', 'rgba(255,255,255,0.08)');
+      document.documentElement.style.setProperty('--slider-track-border', 'rgba(255,255,255,0.12)');
+      // Segmented control for tangerine
+      document.documentElement.style.setProperty('--segmented-bg', 'rgba(255,255,255,0.08)');
+      document.documentElement.style.setProperty('--segmented-text', 'rgba(255,255,255,0.65)');
+      document.documentElement.style.setProperty('--segmented-active', 'linear-gradient(135deg, #F58025, #E85D20)');
+      document.documentElement.style.setProperty('--segmented-active-text', '#ffffff');
+      // Select arrow for tangerine
+      document.documentElement.style.setProperty('--select-arrow-color', '%23F58025');
     }
   }, [whichFont, typingSound, theme, fontSize]);
 
@@ -357,157 +454,207 @@ function Settings({ isOpen, onClose }) {
           <h2>Settings</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
-        <div className="settings-content">
+        <div className="settings-body">
+          {/* Sidebar navigation */}
+          <aside className="settings-sidebar">
+            <button
+              type="button"
+              className={`nav-pill ${activeTab === 'appearance' ? 'active' : ''}`}
+              aria-current={activeTab === 'appearance' ? 'page' : undefined}
+              onClick={() => handleTabChange('appearance')}
+            >
+              Appearance
+            </button>
+            <button
+              type="button"
+              className={`nav-pill ${activeTab === 'behavior' ? 'active' : ''}`}
+              aria-current={activeTab === 'behavior' ? 'page' : undefined}
+              onClick={() => handleTabChange('behavior')}
+            >
+              Behavior
+            </button>
+            <button
+              type="button"
+              className={`nav-pill ${activeTab === 'audio' ? 'active' : ''}`}
+              aria-current={activeTab === 'audio' ? 'page' : undefined}
+              onClick={() => handleTabChange('audio')}
+            >
+              Audio
+            </button>
+          </aside>
 
-          {/* Appearance Category */}
-          <h3 className="settings-category-header">Appearance</h3>
-          <div className="setting-item setting-item-select">
-            <label htmlFor="theme-select">Theme</label>
-            <select
-              id="theme-select"
-              className="theme-select" 
-              value={theme}
-              onChange={handleThemeChange}
-            >
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-              <option value="lavender-asphalt">Lavender Asphalt</option>
-              <option value="tangerine">Tangerine</option>
-            </select>
-          </div>
-          <div className="setting-item setting-item-select">
-            <label htmlFor="font-select">
-              Font
-              <span className="info-icon" data-tooltip="Select your preferred font for all text on the site.">ⓘ</span>
-            </label>
-            <select
-              id="font-select"
-              className="font-select" 
-              value={whichFont} 
-              onChange={handleTypingFontChange}
-            >
-              <option value="Inter, monospace">Inter</option>
-              <option value="Fira Code, monospace">Fira Code</option>
-              <option value="Courier New, monospace">Courier New</option>
-              <option value="Source Code Pro, monospace">Source Code Pro</option>
-              <option value="JetBrains Mono, monospace">JetBrains Mono</option>
-              <option value="Monaco, monospace">Monaco</option>
-            </select>
-          </div>
-          <div className="setting-item setting-item-slider">
-            <label htmlFor="font-size-slider">
-              Excerpt Font Size
-              <span className="info-icon" data-tooltip="Adjust the font size of the text/excerpt within the snippet display.">ⓘ</span>
-            </label>
-            <div className="slider-container">
-              <input
-                id="font-size-slider"
-                type="range"
-                min="0"
-                max="4"
-                step="1"
-                value={getSliderValue()}
-                onChange={handleFontSizeChange}
-                className="font-size-slider"
-                list="font-size-options"
-              />
-              <datalist id="font-size-options">
-                {fontSizeOptions.map((_, index) => (
-                  <option key={index} value={index} />
-                ))}
-              </datalist>
-              <div className="font-size-markers">
-                {fontSizeOptions.map((option, index) => (
-                  <span key={index} className="size-marker">{option.label}</span>
-                ))}
+          {/* Panels */}
+          <div className="settings-panels">
+
+            {activeTab === 'appearance' && (
+            <section id="appearance" className={`settings-card panel-anim ${animDirection === 'down' ? 'from-down' : animDirection === 'up' ? 'from-up' : ''}`}>
+              <h3 className="settings-card-title">Appearance</h3>
+
+              <div className="setting-item setting-item-select">
+                <label htmlFor="theme-select">Theme</label>
+                <select
+                  id="theme-select"
+                  className="theme-select"
+                  value={theme}
+                  onChange={handleThemeChange}
+                >
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="lavender-asphalt">Lavender Asphalt</option>
+                  <option value="tangerine">Tangerine</option>
+                </select>
               </div>
-              <span className="font-size-value">{fontSize}px</span>
-            </div>
-          </div>
-          <div className="setting-item setting-item-toggle">
-            <label htmlFor="block-cursor-toggle">
-              Block Cursor
-              <span className="info-icon" data-tooltip="Toggle between a block cursor and a line cursor.">ⓘ</span>
-            </label>
-            <div className="toggle">
-              <label className="switch">
-                <input 
-                  className='cursor-setting' 
-                  id="block-cursor-toggle"
-                  type='checkbox' 
-                  checked={defaultCursor} 
-                  onChange={handleDefaultCursor} />
-                <span className="slider"></span>
-              </label>
-              <span className="sound-label">{defaultCursor ? ' On' : ' Off'}</span>
-            </div>
-          </div>
 
-          <div className="setting-item setting-item-toggle">
-            <label htmlFor="glide-cursor-toggle">
-              Smooth Cursor Glide
-              <span className="info-icon" data-tooltip="When enabled, the cursor smoothly slides to the next character as you type. Works for both block and line cursors.">ⓘ</span>
-            </label>
-            <div className="toggle">
-              <label className="switch">
-                <input
-                  id="glide-cursor-toggle"
-                  type="checkbox"
-                  checked={glideCursor}
-                  onChange={handleGlideToggle}
-                />
-                <span className="slider"></span>
-              </label>
-              <span className="sound-label">{glideCursor ? ' On' : ' Off'}</span>
-            </div>
-          </div>
+              <div className="setting-item setting-item-select">
+                <label htmlFor="font-select">
+                  Font
+                  <span className="info-icon" data-tooltip="Select your preferred font for all text on the site.">ⓘ</span>
+                </label>
+                <select
+                  id="font-select"
+                  className="font-select"
+                  value={whichFont}
+                  onChange={handleTypingFontChange}
+                >
+                  <option value="Inter, monospace">Inter</option>
+                  <option value="Fira Code, monospace">Fira Code</option>
+                  <option value="Courier New, monospace">Courier New</option>
+                  <option value="Source Code Pro, monospace">Source Code Pro</option>
+                  <option value="JetBrains Mono, monospace">JetBrains Mono</option>
+                  <option value="Monaco, monospace">Monaco</option>
+                </select>
+              </div>
 
-          {/* Behavior Category */}
-          <h3 className="settings-category-header">Behavior</h3>
-          <div className="setting-item">
-            <label htmlFor="word-difficulty-toggle">
-              Word Difficulty
-              <span className="info-icon" data-tooltip="Easy: Word pool consists of the 200 most common English words, which are more familiar.
-Hard: Word pool includes the 1000 most common English words, adding less frequently used words.
-This affects the difficulty of your typing tests.">ⓘ</span>
-            </label>
-            <div className="difficulty-toggle-group" id="word-difficulty-toggle">
-              <button
-                className={`difficulty-toggle-btn ${wordDifficulty === 'easy' ? 'active' : ''}`}
-                onClick={() => handleWordDifficultyChange('easy')}
-              >
-                Easy
-              </button>
-              <button
-                className={`difficulty-toggle-btn ${wordDifficulty === 'hard' ? 'active' : ''}`}
-                onClick={() => handleWordDifficultyChange('hard')}
-              > 
-                Hard
-              </button>
-            </div>
-          </div>
+              <div className="setting-item setting-item-slider">
+                <label htmlFor="font-size-slider">
+                  Excerpt Font Size
+                  <span className="info-icon" data-tooltip="Adjust the font size of the text/excerpt within the snippet display.">ⓘ</span>
+                </label>
+                <div className="slider-container">
+                  <input
+                    id="font-size-slider"
+                    type="range"
+                    min="0"
+                    max="4"
+                    step="1"
+                    value={getSliderValue()}
+                    onChange={handleFontSizeChange}
+                    className="font-size-slider"
+                    list="font-size-options"
+                  />
+                  <datalist id="font-size-options">
+                    {fontSizeOptions.map((_, index) => (
+                      <option key={index} value={index} />
+                    ))}
+                  </datalist>
+                  <div className="font-size-markers">
+                    {fontSizeOptions.map((option, index) => (
+                      <span key={index} className="size-marker">{option.label}</span>
+                    ))}
+                  </div>
+                  <span className="font-size-value">{fontSize}px</span>
+                </div>
+              </div>
 
-          {/* Miscellaneous Category */}
-          <h3 className="settings-category-header">Miscellaneous</h3>
-          <div className="setting-item setting-item-toggle">
-            <label htmlFor="sound-toggle">
-              Typing Sound
-              <span className="info-icon" data-tooltip="Enable or disable sound effects for typing. Sound effects are played when a letter is typed correctly .">ⓘ</span>
-            </label>
-            <div className="toggle">
-              <label className="switch">
-                <input
-                  id="sound-toggle"
-                  type="checkbox"
-                  checked={typingSound}
-                  onChange={handleSoundToggle}
-                />
-                <span className="slider"></span>
-              </label>
-              <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
-            </div>
-          </div>
+              <div className="setting-item setting-item-toggle">
+                <label id="cursor-style-label">
+                  Cursor Style
+                  <span className="info-icon" data-tooltip="Choose between block (rectangle) and caret (line) cursor styles.">ⓘ</span>
+                </label>
+                <div className="toggle">
+                  <button
+                    id="block-cursor-toggle"
+                    type="button"
+                    aria-pressed={defaultCursor}
+                    aria-labelledby="cursor-style-label"
+                    className={`cursor-visual-toggle ${defaultCursor ? 'block' : 'caret'}`}
+                    onClick={handleDefaultCursor}
+                  >
+                    <span className="thumb" />
+                    <span className="segment">Block</span>
+                    <span className="segment">Caret</span>
+                  </button>
+                </div>
+              </div>
 
+              <div className="setting-item setting-item-toggle">
+                <span id="glide-cursor-label">
+                  Smooth Cursor Glide
+                  <span className="info-icon" data-tooltip="When enabled, the cursor smoothly slides to the next character as you type. Works for both block and line cursors.">ⓘ</span>
+                </span>
+                <div className="toggle">
+                  <label className="switch">
+                    <input
+                      id="glide-cursor-toggle"
+                      type="checkbox"
+                      aria-labelledby="glide-cursor-label"
+                      checked={glideCursor}
+                      onChange={handleGlideToggle}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                  <span className="sound-label">{glideCursor ? ' On' : ' Off'}</span>
+                </div>
+              </div>
+            </section>
+            )}
+
+            {activeTab === 'behavior' && (
+            <section id="behavior" className={`settings-card panel-anim ${animDirection === 'down' ? 'from-down' : 'from-up'}`}>
+              <h3 className="settings-card-title">Behavior</h3>
+              <div className="setting-item">
+                <label id="word-difficulty-label">
+                  Word Difficulty
+                  <span className="info-icon" data-tooltip={"Easy: Word pool consists of the 200 most common English words, which are more familiar.\nHard: Word pool includes the 1000 most common English words, adding less frequently used words.\nThis affects the difficulty of your typing tests."}>ⓘ</span>
+                </label>
+                <div
+                  className="difficulty-toggle-group"
+                  id="word-difficulty-toggle"
+                  role="group"
+                  aria-labelledby="word-difficulty-label"
+                >
+                  <button
+                    className={`difficulty-toggle-btn ${wordDifficulty === 'easy' ? 'active' : ''}`}
+                    onClick={() => handleWordDifficultyChange('easy')}
+                  >
+                    Easy
+                  </button>
+                  <button
+                    className={`difficulty-toggle-btn ${wordDifficulty === 'hard' ? 'active' : ''}`}
+                    onClick={() => handleWordDifficultyChange('hard')}
+                  >
+                    Hard
+                  </button>
+                </div>
+              </div>
+            </section>
+            )}
+
+            {activeTab === 'audio' && (
+            <section id="audio" className={`settings-card panel-anim ${animDirection === 'down' ? 'from-down' : 'from-up'}`}>
+              <h3 className="settings-card-title">Audio</h3>
+              <div className="setting-item setting-item-toggle">
+                <span id="sound-toggle-label">
+                  Typing Sound
+                  <span className="info-icon" data-tooltip="Enable or disable sound effects for typing. Sound effects are played when a letter is typed correctly .">ⓘ</span>
+                </span>
+                <div className="toggle">
+                  <label className="switch">
+                    <input
+                      id="sound-toggle"
+                      type="checkbox"
+                      aria-labelledby="sound-toggle-label"
+                      checked={typingSound}
+                      onChange={handleSoundToggle}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                  <span className="sound-label">{typingSound ? ' On' : ' Off'}</span>
+                </div>
+              </div>
+            </section>
+            )}
+          </div>
         </div>
       </div>
     </div>

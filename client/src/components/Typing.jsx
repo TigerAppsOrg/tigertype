@@ -318,7 +318,8 @@ function Typing({
     const handleBodyClick = (e) => {
       // Check if this is something we should allow to be focused
       const isSettingsClick = e.target.closest('.settings-modal') ||
-                              e.target.closest('.settings-icon');
+                              e.target.closest('.settings-icon') ||
+                              e.target.closest('.navbar-settings-icon');
 
       // Check if it's a select dropdown or its options
       const isSelectClick = e.target.tagName === 'SELECT' ||
