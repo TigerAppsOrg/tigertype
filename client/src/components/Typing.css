@@ -300,6 +300,7 @@
   100% { opacity: 0; margin-top: 0; }
 }
 
+/* The next-to-type character */
 .current {
   position: relative;
   background-color: var(--default-cursor);
@@ -308,6 +309,7 @@
   animation: blink 1s infinite;
 }
 
+/* Default caret rendering (line cursor) when block cursor is disabled */
 .current::before {
   visibility: var(--line-cursor);
   position: absolute;
@@ -327,6 +329,57 @@
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/*
+  Smooth glide overlay cursor
+  - Renders an absolutely-positioned overlay that we move via transform
+  - In glide mode, we hide the background on .current and the ::before caret
+*/
+.glide-on .current {
+  background-color: transparent !important; /* background from overlay */
+  color: var(--current-color) !important;   /* keep white highlight */
+  animation: none !important;               /* avoid blink flicker */
+}
+
+.glide-on .current::before {
+  display: none !important;
+}
+
+.snippet-display {
+  position: relative;
+}
+
+.cursor-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(0, 0);
+  will-change: transform;
+  pointer-events: none;
+  z-index: 0; /* behind the text */
+  transition:
+    transform var(--cursor-glide-duration, 95ms) cubic-bezier(0.2, 0.8, 0.2, 1),
+    width     var(--cursor-glide-duration, 95ms) cubic-bezier(0.2, 0.8, 0.2, 1),
+    height    var(--cursor-glide-duration, 95ms) cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity: calc(var(--glide-cursor-enabled, 0)); /* 0 or 1 set by Settings */
+  border-radius: 2px;
+  backface-visibility: hidden;
+}
+
+.cursor-overlay.block {
+  background-color: var(--default-cursor);
+  z-index: 0;
+}
+
+.cursor-overlay.caret {
+  background-color: var(--caret-color);
+  z-index: 2; /* above text so thin caret remains visible */
+}
+
+/* Avoid smooth container scroll while gliding to prevent desync */
+.glide-on.snippet-display {
+  scroll-behavior: auto;
 }
 
 /* Practice mode tooltip */

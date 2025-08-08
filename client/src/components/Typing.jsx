@@ -1,6 +1,6 @@
 // [AI DISCLAIMER: AI was used to help debug socket emit for timed tests; lines 394-408]
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useRace } from '../context/RaceContext';
 import { useSocket } from '../context/SocketContext';
 import playKeySound from './Sound.jsx';
@@ -58,6 +58,13 @@ function Typing({
   const tabActionInProgressRef = useRef(false);
   const [displayedWpm, setDisplayedWpm] = useState(0);
   const [capsLockEnabled, setCapsLockEnabled] = useState(false);
+  // Smooth glide cursor overlay
+  const cursorRef = useRef(null);
+  const currentCharRef = useRef(null);
+  const [glideEnabled, setGlideEnabled] = useState(() => {
+    return (getComputedStyle(document.documentElement).getPropertyValue('--glide-cursor-enabled') || '0').trim() === '1';
+  });
+  const initialCursorSetRef = useRef(false);
   
   // Use testMode and testDuration for timed tests if provided
   useEffect(() => {
@@ -239,6 +246,20 @@ function Typing({
     if (raceState.type === 'practice' && inputRef.current) {
       inputRef.current.focus();
     }
+  }, []);
+
+  // Keep glideEnabled in sync with Settings via root data attribute (no polling)
+  useEffect(() => {
+    const root = document.documentElement;
+    const updateFromAttr = () => {
+      const enabled = root.getAttribute('data-glide') === '1';
+      setGlideEnabled(enabled);
+      if (!enabled) initialCursorSetRef.current = false;
+    };
+    updateFromAttr();
+    const observer = new MutationObserver(() => updateFromAttr());
+    observer.observe(root, { attributes: true, attributeFilter: ['data-glide'] });
+    return () => observer.disconnect();
   }, []);
 
   // Handle special key combinations like Command+Backspace on Mac
@@ -665,7 +686,7 @@ function Typing({
               wordChars.push(<span key={`${wordIndex}-${i}`} className="incorrect">{word[i]}</span>);
             }
           } else if (charPos === input.length) {
-            wordChars.push(<span key={`${wordIndex}-${i}`} className="current">{word[i]}</span>);
+            wordChars.push(<span ref={currentCharRef} key={`${wordIndex}-${i}`} className="current">{word[i]}</span>);
           } else {
             wordChars.push(<span key={`${wordIndex}-${i}`}>{word[i]}</span>);
           }
@@ -690,7 +711,7 @@ function Typing({
               components.push(<span key={`space-${wordIndex}`} className="incorrect"> </span>);
             }
           } else if (spacePos === input.length) {
-            components.push(<span key={`space-${wordIndex}`} className="current"> </span>);
+            components.push(<span ref={currentCharRef} key={`space-${wordIndex}`} className="current"> </span>);
           } else {
             components.push(<span key={`space-${wordIndex}`}> </span>);
           }
@@ -705,6 +726,60 @@ function Typing({
     };
     
     return renderNonBreakingText();
+  };
+
+  // Position/update the overlay cursor to match the `.current` character
+  const updateCursorOverlay = () => {
+    if (!glideEnabled) return;
+    const overlay = cursorRef.current;
+    const container = document.querySelector('.snippet-display');
+    const currentEl = currentCharRef.current || document.querySelector('.current');
+    if (!overlay || !container || !currentEl) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const rect = currentEl.getBoundingClientRect();
+
+    // Round to whole pixels to avoid sub-pixel jitter (use visible offset, no scroll addition)
+    const x = Math.round(rect.left - containerRect.left);
+    const y = Math.round(rect.top - containerRect.top);
+
+    // Determine caret vs block based on Settings-managed CSS var
+    const useCaret = (document.documentElement.getAttribute('data-cursor') === 'caret');
+
+    // Size overlay to target element
+    const height = rect.height;
+    const width = useCaret ? 2 : rect.width; // constant caret width for stability
+    overlay.style.height = `${height}px`;
+    overlay.style.width = `${width}px`;
+    overlay.className = `cursor-overlay ${useCaret ? 'caret' : 'block'}`;
+
+    // Cursor-specific duration (caret snappier)
+    overlay.style.setProperty('--cursor-glide-duration', useCaret ? '70ms' : '95ms');
+
+    // First placement should not animate from origin
+    if (!initialCursorSetRef.current) {
+      const prev = overlay.style.transition;
+      overlay.style.transition = 'none';
+      overlay.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      // force reflow to apply
+      void overlay.offsetHeight; // eslint-disable-line no-unused-expressions
+      overlay.style.transition = prev || '';
+      initialCursorSetRef.current = true;
+    } else {
+      // For large vertical jumps (e.g., auto-scroll to next line), place instantly to avoid trailing
+      const prevY = overlay.__prevY ?? y;
+      const largeJump = Math.abs(prevY - y) > height * 1.2;
+      if (largeJump) {
+        const prev = overlay.style.transition;
+        overlay.style.transition = 'none';
+        overlay.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        void overlay.offsetHeight;
+        overlay.style.transition = prev || '';
+      } else {
+        overlay.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      }
+      overlay.__prevY = y;
+    }
   };
     
   // Auto-scroll to keep cursor in view
@@ -732,6 +807,24 @@ function Typing({
       }
     }
   }, [input.length, raceState.inProgress]);
+
+  // Update overlay when typing or snippet changes (sync with layout)
+  useLayoutEffect(() => {
+    updateCursorOverlay();
+  }, [glideEnabled, input.length, raceState.snippet]);
+
+  // Keep overlay aligned on scroll/resize
+  useEffect(() => {
+    if (!glideEnabled) return;
+    const container = document.querySelector('.snippet-display');
+    const handler = () => updateCursorOverlay();
+    window.addEventListener('resize', handler);
+    container && container.addEventListener('scroll', handler);
+    return () => {
+      window.removeEventListener('resize', handler);
+      container && container.removeEventListener('scroll', handler);
+    };
+  }, [glideEnabled]);
   
   // Render stats placeholder (before practice starts)
   const getStatsPlaceholder = () => {
@@ -922,7 +1015,9 @@ function Typing({
       {/* Only show typing area (snippet + input) if race is NOT completed */}
       {!raceState.completed && (
           <div className="typing-area">
-            <div className={`snippet-display ${isShaking ? 'shake-animation' : ''}`}>
+            <div className={`snippet-display ${isShaking ? 'shake-animation' : ''} ${glideEnabled ? 'glide-on' : ''}`}>
+              {/* Smooth-glide overlay cursor (rendered behind text) */}
+              <div ref={cursorRef} className="cursor-overlay block" aria-hidden="true" />
               {/* Error message moved OUTSIDE snippet-display */}
               {/* 
               {showErrorMessage && (

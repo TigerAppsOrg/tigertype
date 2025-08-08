@@ -54,6 +54,9 @@ function Settings({ isOpen, onClose }) {
   });
 
   const [defaultCursor, setDefaultCursor] = useState(true);
+  const [glideCursor, setGlideCursor] = useState(() => {
+    return localStorage.getItem('glideCursor') === 'true';
+  });
 
   const modalRef = useRef(); // Create a ref for the modal content
   const typingInputRef = document.querySelector('.typing-input-container input');
@@ -239,7 +242,16 @@ function Settings({ isOpen, onClose }) {
 
     document.documentElement.style.setProperty('--default-cursor', color);
     document.documentElement.style.setProperty('--line-cursor', line);
+    document.documentElement.setAttribute('data-cursor', defaultCursor ? 'block' : 'caret');
   }, [defaultCursor, theme]);
+
+  // Persist smooth cursor glide preference and expose to CSS
+  useEffect(() => {
+    localStorage.setItem('glideCursor', glideCursor ? 'true' : 'false');
+    // 1 => enabled, 0 => disabled (used by CSS and Typing.jsx)
+    document.documentElement.style.setProperty('--glide-cursor-enabled', glideCursor ? '1' : '0');
+    document.documentElement.setAttribute('data-glide', glideCursor ? '1' : '0');
+  }, [glideCursor]);
 
   // Handle closing modal on outside click or ESC key
   useEffect(() => {
@@ -288,6 +300,10 @@ function Settings({ isOpen, onClose }) {
 
   const handleDefaultCursor = (e) => {
     setDefaultCursor(!defaultCursor);
+  };
+
+  const handleGlideToggle = () => {
+    setGlideCursor(prev => !prev);
   };
 
   const handleSoundToggle = () => {
@@ -412,6 +428,25 @@ function Settings({ isOpen, onClose }) {
                 <span className="slider"></span>
               </label>
               <span className="sound-label">{defaultCursor ? ' On' : ' Off'}</span>
+            </div>
+          </div>
+
+          <div className="setting-item setting-item-toggle">
+            <label htmlFor="glide-cursor-toggle">
+              Smooth Cursor Glide
+              <span className="info-icon" data-tooltip="When enabled, the cursor smoothly slides to the next character as you type. Works for both block and line cursors.">ⓘ</span>
+            </label>
+            <div className="toggle">
+              <label className="switch">
+                <input
+                  id="glide-cursor-toggle"
+                  type="checkbox"
+                  checked={glideCursor}
+                  onChange={handleGlideToggle}
+                />
+                <span className="slider"></span>
+              </label>
+              <span className="sound-label">{glideCursor ? ' On' : ' Off'}</span>
             </div>
           </div>
 
