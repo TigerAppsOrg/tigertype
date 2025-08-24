@@ -20,8 +20,8 @@ import DeviceGuard from './components/DeviceGuard';
 const Landing = lazy(() => import('./pages/Landing'));
 const Home = lazy(() => import('./pages/Home'));
 const Race = lazy(() => import('./pages/Race'));
-const Lobby = lazy(() => import('./pages/Lobby')); // Lazy load Lobby page
-const AboutUs = lazy(() => import('./pages/AboutUs')); // Add lazy import for AboutUs
+const Lobby = lazy(() => import('./pages/Lobby'));
+const AboutUs = lazy(() => import('./pages/AboutUs'));
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {

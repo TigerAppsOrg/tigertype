@@ -737,12 +737,18 @@ function Typing({
     const currentEl = currentCharRef.current || document.querySelector('.current');
     if (!overlay || !container || !currentEl) return;
 
-    const containerRect = container.getBoundingClientRect();
+    // Measure target character
     const rect = currentEl.getBoundingClientRect();
 
-    // Round to whole pixels to avoid sub-pixel jitter (use visible offset, no scroll addition)
-    const x = Math.round(rect.left - containerRect.left);
-    const y = Math.round(rect.top - containerRect.top);
+    // Compute coordinates relative to the container's content origin (not viewport)
+    // avoids misalignment when the container scrolls
+    const containerRect = container.getBoundingClientRect();
+    const scrollX = container.scrollLeft || 0;
+    const scrollY = container.scrollTop || 0;
+
+    // Visible delta within container + scroll offset -> content-relative coords
+    const x = Math.round((rect.left - containerRect.left) + scrollX);
+    const y = Math.round((rect.top - containerRect.top) + scrollY);
 
     // Determine caret vs block based on Settings-managed CSS var
     const useCaret = (document.documentElement.getAttribute('data-cursor') === 'caret');
@@ -755,7 +761,6 @@ function Typing({
     overlay.className = `cursor-overlay ${useCaret ? 'caret' : 'block'}`;
 
     // Cursor-specific duration (caret snappier)
-    // Slightly slower caret slide for a smoother feel
     overlay.style.setProperty('--cursor-glide-duration', useCaret ? '95ms' : '95ms');
 
     // First placement should not animate from origin
