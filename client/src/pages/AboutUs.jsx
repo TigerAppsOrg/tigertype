@@ -1,6 +1,7 @@
 // [AI-DISCLAIMER: THE COLLAPSIBLE SECTION TEXT AI GENERATED]
 import React, { useState } from 'react';
 import './AboutUs.css';
+import defaultProfileImage from '../assets/icons/default-profile.svg';
 
 const CollapsibleSection = ({ title, children }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +33,7 @@ function AboutUs() {
           <div className="developer-card">
             <div className="developer-image-container">
               <div className="developer-image">
-                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Ryan Chen" />
+                <img src={defaultProfileImage} alt="Ryan Chen" />
               </div>
             </div>
             <h3>Ryan Chen</h3>
@@ -47,7 +48,14 @@ function AboutUs() {
           <div className="developer-card leader">
             <div className="developer-image-container">
               <div className="developer-image">
-                <img src="https://media.licdn.com/dms/image/v2/D4E03AQF2NVaZwBFgtg/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1718231509781?e=1750291200&v=beta&t=YPYS9f3_3ptRrCgKTFV4djUvZAsgKRzLeEAU0ygNoqo" alt="Ammaar Alam" />
+                <img
+                  src="/assets/team/ammaaralam.png"
+                  alt="Ammaar Alam"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = defaultProfileImage;
+                  }}
+                />
               </div>
               <div className="leader-badge">Project Lead</div>
             </div>
@@ -63,7 +71,14 @@ function AboutUs() {
           <div className="developer-card">
             <div className="developer-image-container">
               <div className="developer-image">
-                <img src="https://media.licdn.com/dms/image/v2/D4D03AQFxz0EUKZnBhw/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1695095743340?e=1750291200&v=beta&t=CwOt8lkzXGpadwDx-EFKiJeGe-N2Q67eHUKztvOMh9w" alt="William Guan" />
+                <img
+                  src="/assets/team/williamguan.png"
+                  alt="William Guan"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = defaultProfileImage;
+                  }}
+                />
               </div>
             </div>
             <h3>William Guan</h3>

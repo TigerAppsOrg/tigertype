@@ -24,6 +24,7 @@ package-lock.json
 out
 raw_evaluations.json
 processed_snippets.json
+client/dist/
 
 # Python Specific
 __pycache__
