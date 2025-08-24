@@ -58,7 +58,7 @@ body {
   align-items: flex-start;
   justify-content: center;
   width: 100%;
-  max-width: fit-content;
+  max-width: 1200px;
   gap: 5em;
   flex-grow: 1;
   max-height: fit-content;
@@ -155,7 +155,7 @@ body {
   flex-basis: 60%; 
   justify-content: flex-start;
   align-self: anchor-center;
-  right: 10vh;
+  right: 0; /* helps with shifting off-screen on smaller widths */
 }
 
 .landing-right-column h2 {
@@ -301,6 +301,8 @@ body {
   .landing-description-right {
     text-align: center;
   }
+  .landing-right-column { right: 0; align-items: center; }
+  .animated-text-container { width: 100%; box-sizing: border-box; }
 }
 
 @media (max-width: 600px) {

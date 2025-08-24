@@ -367,6 +367,35 @@ h2 {
   border-radius: 3px;
 }
 
+/* Compact mobile controls */
+.leaderboard-mobile-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.leaderboard-mobile-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.9rem;
+}
+
+.leaderboard-mobile-controls select {
+  background-color: var(--button-bg-color);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 600px) {
+  .leaderboard-landing-controls-area .control-group { display: none; }
+}
+
 .leaderboard-subtitle {
   color: #aaa;
   font-size: 0.85rem;
