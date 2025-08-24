@@ -77,13 +77,13 @@ body {
 }
 
 .landing-logo-large {
-  width: 30vh; 
+  width: 30vh;
   height: 30vh;
-  border-radius: 50%; 
-  background-color: var(--secondary-color, #1e1e1e); 
-  margin-bottom: 2rem; 
+  border-radius: 50%;
+  background-color: var(--primary-color, #1e1e1e);
+  margin-bottom: 2rem;
   object-fit: contain;
-  border: 3px solid var(--hover-color, #2a2a2a);
+  border: 5px solid var(--hover-color, #2a2a2a);
 }
 
 /* Style for the login button in the left column */
@@ -165,11 +165,6 @@ body {
   margin-bottom: 2rem; 
   display: flex;
   align-items: center;
-}
-
-.train-icon {
-  margin-left: 1rem;
-  font-size: 2rem; 
 }
 
 /* Animated Text Area */

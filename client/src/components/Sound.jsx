@@ -1,4 +1,4 @@
-import typingSound from '../assets/typing.mp3';
+import typingSound from '../assets/audio/typing.mp3';
 
 const keySound = new Audio(typingSound);
 

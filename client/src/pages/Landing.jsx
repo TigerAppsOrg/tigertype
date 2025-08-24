@@ -269,7 +269,7 @@ function Landing() {
 
           {/* Right Column */}
           <div className="landing-right-column">
-            <h2>Welcome to TigerType <span className="train-icon">🚂</span></h2>
+            <h2>Welcome to TigerType</h2>
             <div className="animated-text-container">
               <p className="animated-text">
                 {getHighlightedText()}
