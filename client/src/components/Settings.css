@@ -251,9 +251,9 @@
 .info-icon[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: 100%;
+  top: calc(100% + 6px);
   left: 50%;
-  transform: translateX(-50%) translateY(-5px);
+  transform: translateX(-50%);
   background-color: var(--background-color-tertiary);
   color: var(--text-color-tertiary);
   padding: 0.5rem 0.8rem;
@@ -261,7 +261,8 @@
   font-size: 0.85rem;
   white-space: pre-wrap;
   width: max-content;
-  max-width: 250px;
+  max-width: 260px;
+  text-align: left;
   z-index: 10;
   opacity: 0;
   visibility: hidden;

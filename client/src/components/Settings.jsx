@@ -605,7 +605,10 @@ function Settings({ isOpen, onClose }) {
               <div className="setting-item">
                 <label id="word-difficulty-label">
                   Word Difficulty
-                  <span className="info-icon" data-tooltip={"Easy: Word pool consists of the 200 most common English words, which are more familiar.\nHard: Word pool includes the 1000 most common English words, adding less frequently used words.\nThis affects the difficulty of your typing tests."}>ⓘ</span>
+                  <span
+                    className="info-icon"
+                    data-tooltip={"Easy: Word pool consists of the 200 most common English words, which are more familiar.\nHard: Word pool includes the 1000 most common English words, adding less frequently used words."}
+                  >ⓘ</span>
                 </label>
                 <div
                   className="difficulty-toggle-group"
@@ -636,7 +639,7 @@ function Settings({ isOpen, onClose }) {
               <div className="setting-item setting-item-toggle">
                 <span id="sound-toggle-label">
                   Typing Sound
-                  <span className="info-icon" data-tooltip="Enable or disable sound effects for typing. Sound effects are played when a letter is typed correctly .">ⓘ</span>
+                  <span className="info-icon" data-tooltip="Enable or disable sound effects for typing. Sound effects are played when a letter is typed correctly.">ⓘ</span>
                 </span>
                 <div className="toggle">
                   <label className="switch">
