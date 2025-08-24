@@ -45,6 +45,19 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
   // State to track which user's profile to view
   const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Track viewport to switch to compact controls on small screens
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(max-width: 600px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener ? mq.addEventListener('change', update) : mq.addListener(update);
+    return () => {
+      mq.removeEventListener ? mq.removeEventListener('change', update) : mq.removeListener(update);
+    };
+  }, []);
 
   useEffect(() => {
     // Avoid flash of spinner: only show after a brief delay
@@ -139,30 +152,53 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
           {/* Combined Controls Area */}
           <div className="leaderboard-landing-controls-area">
              <h2>Leaderboards</h2>
-             {/* Period Controls (Daily/Alltime) - Separate Row */}
-             <div className="control-group period-controls horizontal">
-               {PERIODS.map(p => (
-                 <button
-                   key={p}
-                   className={`control-button ${period === p ? 'active' : ''}`}
-                   onClick={() => setPeriod(p)}
-                 >
-                   {p.charAt(0).toUpperCase() + p.slice(1)}
-                 </button>
-               ))}
-             </div>
-             {/* Duration Controls (Times) */}
-             <div className="control-group duration-controls vertical">
-               {DURATIONS.map(d => (
-                 <button
-                   key={d}
-                   className={`control-button ${duration === d ? 'active' : ''}`}
-                   onClick={() => setDuration(d)}
-                 >
-                   {d}s
-                 </button>
-               ))}
-             </div>
+             {isMobile ? (
+               <div className="leaderboard-mobile-controls">
+                 <label>
+                   Period
+                   <select value={period} onChange={(e) => setPeriod(e.target.value)} aria-label="Select period">
+                     {PERIODS.map(p => (
+                       <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                     ))}
+                   </select>
+                 </label>
+                 <label>
+                   Duration
+                   <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} aria-label="Select duration">
+                     {DURATIONS.map(d => (
+                       <option key={d} value={d}>{d}s</option>
+                     ))}
+                   </select>
+                 </label>
+               </div>
+             ) : (
+               <>
+                 {/* Period Controls (Daily/Alltime) - Separate Row */}
+                 <div className="control-group period-controls horizontal">
+                   {PERIODS.map(p => (
+                     <button
+                       key={p}
+                       className={`control-button ${period === p ? 'active' : ''}`}
+                       onClick={() => setPeriod(p)}
+                     >
+                       {p.charAt(0).toUpperCase() + p.slice(1)}
+                     </button>
+                   ))}
+                 </div>
+                 {/* Duration Controls (Times) */}
+                 <div className="control-group duration-controls vertical">
+                   {DURATIONS.map(d => (
+                     <button
+                       key={d}
+                       className={`control-button ${duration === d ? 'active' : ''}`}
+                       onClick={() => setDuration(d)}
+                     >
+                       {d}s
+                     </button>
+                   ))}
+                 </div>
+               </>
+             )}
           </div>
           <div className="leaderboard-landing-list-area">
             {(hasLoadedOnce ? showSpinner : loading) && ( <div className="loading-indicator"><div className="spinner-border text-orange" role="status"><span className="visually-hidden">Loading...</span></div><p>Loading Leaderboard...</p></div> )}
