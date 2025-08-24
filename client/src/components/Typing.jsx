@@ -833,6 +833,19 @@ function Typing({
     };
   }, [glideEnabled]);
   
+  // Small chip shown inside stats bar when Caps Lock is on
+  const renderCapsChip = () => (
+    <div className="caps-lock-warning" role="status" aria-live="polite">
+      <span className="caps-lock-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </span>
+      Caps Lock
+    </div>
+  );
+
   // Render stats placeholder (before practice starts)
   const getStatsPlaceholder = () => {
     // Determine if user's in a timed‑test placeholder state
@@ -844,7 +857,7 @@ function Typing({
       : '0.00s';
 
     return (
-      <div className="stats practice-placeholder">
+      <div className={`stats practice-placeholder${capsLockEnabled ? ' caps-on' : ''}`}>
         <div className="stat-item">
           <span className="stat-label">WPM</span>
           <span className="stat-value">--</span>
@@ -857,6 +870,7 @@ function Typing({
           <span className="stat-label">Time</span>
           <span className="stat-value">{defaultTimeDisplay}</span>
         </div>
+        {capsLockEnabled && renderCapsChip()}
       </div>
     );
   };
@@ -881,7 +895,7 @@ function Typing({
     }
       
     return (
-      <div className="stats">
+      <div className={`stats${capsLockEnabled ? ' caps-on' : ''}`}>
         <div className="stat-item">
           <span className="stat-label">WPM</span>
           {/* Use the smoothed displayedWpm state */}
@@ -895,6 +909,7 @@ function Typing({
           <span className="stat-label">Time</span>
           <span className="stat-value">{timeDisplay}</span>
         </div>
+        {capsLockEnabled && renderCapsChip()}
       </div>
     );
   };
@@ -902,10 +917,11 @@ function Typing({
   // Render cancel message when countdown is cancelled due to insufficient players
   const getCancelledMessage = () => {
     return (
-      <div className="stats countdown-stats">
+      <div className={`stats countdown-stats${capsLockEnabled ? ' caps-on' : ''}`}>
         <div className="stat-item countdown-item">
           <span className="countdown-value">Start cancelled: not enough players</span>
         </div>
+        {capsLockEnabled && renderCapsChip()}
       </div>
     );
   };
@@ -913,10 +929,11 @@ function Typing({
   // Render countdown in the stats area
   const getCountdown = () => {
     return (
-      <div className="stats countdown-stats">
+      <div className={`stats countdown-stats${capsLockEnabled ? ' caps-on' : ''}`}>
         <div className="stat-item countdown-item">
           <span className="countdown-value">{raceState.countdown}</span>
         </div>
+        {capsLockEnabled && renderCapsChip()}
       </div>
     );
   };
@@ -924,12 +941,13 @@ function Typing({
   // Render tips before race starts
   const getTips = () => {
     return (
-      <div className="stats tips-stats">
+      <div className={`stats tips-stats${capsLockEnabled ? ' caps-on' : ''}`}>
         <div className="tool-tip tip-item">
           <span className={`tip-text ${tipVisible ? 'tip-visible tip-pulsing' : 'tip-hidden'}`}>
             {tipContentRef.current}
           </span>
         </div>
+        {capsLockEnabled && renderCapsChip()}
       </div>
     );
   };
@@ -1003,21 +1021,7 @@ function Typing({
 
   return (
     <>
-      <div className="stats-container">
-        {/* Caps Lock Warning */}
-        {capsLockEnabled && (
-          <div className="caps-lock-warning">
-            <span className="caps-lock-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            </span>
-            Caps Lock
-          </div>
-        )}
-        {getStatsContent()}
-      </div>
+      <div className="stats-container">{getStatsContent()}</div>
       
       {/* Only show typing area (snippet + input) if race is NOT completed */}
       {!raceState.completed && (
