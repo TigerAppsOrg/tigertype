@@ -6,6 +6,7 @@ const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
 const UserModel = require('../models/user');
 const { insertTimedResult, getTimedLeaderboard, recordPartialSession } = require('../db');
+const User = require('../models/user');
 const analytics = require('../utils/analytics');
 const { createTimedTestSnippet, generateTimedText } = require('../utils/timed-test');
 
@@ -1777,6 +1778,15 @@ const initialize = (io) => {
           );
           
           console.log(`Recorded partial session for user ${netid}: ${wordsTyped} words, ${charactersTyped} characters`);
+
+          // after recording a partial session, re-evaluate titles that depend on
+          // completion rate so users are awarded w/o needing to finish another
+          // session to trigger checks
+          try {
+            await User.checkAndAwardTitles(userId);
+          } catch (titleErr) {
+            console.error(`Error re-checking titles after partial for user ${netid}:`, titleErr);
+          }
         }
       } catch (err) {
         console.error(`Error recording partial session for user ${netid}:`, err);
