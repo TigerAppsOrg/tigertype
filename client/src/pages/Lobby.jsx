@@ -34,8 +34,8 @@ function Lobby() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
-  // State for viewing other users' profiles
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [startWarning, setStartWarning] = useState('');
+  const [showProfileModal, setShowProfileModal] = useState(false);  // viewing other users' profiles
   const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
 
   // Check if the current user is the host
@@ -184,6 +184,26 @@ function Lobby() {
     navigate('/home');
   };
 
+  const handleStartAttempt = (e) => {
+    // Provide user feedback if attempting to start alone
+    const playerCount = raceState.players?.length || 0;
+    if (playerCount < 2) {
+      setStartWarning('You need at least 2 players to start a race.');
+      // Auto-hide after short delay
+      setTimeout(() => setStartWarning(''), 2500);
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
+      return;
+    }
+    // If enough players, delegate to existing start method
+    startPrivateRace((errMsg) => {
+      if (errMsg) {
+        setStartWarning(errMsg);
+        setTimeout(() => setStartWarning(''), 2500);
+      }
+    });
+  };
+
   // Render loading state
   if (isLoading) {
     return <Loading message={`Joining lobby ${sanitizedLobbyCode}...`} />;
@@ -301,14 +321,20 @@ function Lobby() {
               </div>
               <div className="lobby-controls">
                 {isHost ? (
-                  <button
-                    className="start-race-button"
-                    onClick={startPrivateRace}
-                    disabled={raceState.players?.length < 2 && !raceState.players?.every(p => p.ready === true)} // Require 2 players
-                    title={raceState.players?.length < 2 ? "Need at least 2 players to start" : "Start the race!"}
-                  >
-                    Start Race
-                  </button>
+                  <div className="start-controls">
+                    <button
+                      className="start-race-button"
+                      onClick={handleStartAttempt}
+                      title={raceState.players?.length < 2 ? "Need at least 2 players to start" : "Start the race!"}
+                    >
+                      Start Race
+                    </button>
+                    {startWarning && (
+                      <div className="start-warning" role="status" aria-live="polite">
+                        {startWarning}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <button
                     className={`ready-button ${raceState.players?.find(p => p.netid === user?.netid)?.ready ? 'is-ready' : ''}`}

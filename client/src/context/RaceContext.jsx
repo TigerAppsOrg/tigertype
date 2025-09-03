@@ -990,13 +990,13 @@ export const RaceProvider = ({ children }) => {
     });
   };
 
-  const startPrivateRace = () => {
+  const startPrivateRace = (onError) => {
     if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
     // console.log(`Attempting to start race for private lobby ${raceState.code}`);
     socket.emit('lobby:startRace', { code: raceState.code }, (response) => {
       if (!response.success) {
         console.error('Failed to start private race:', response.error);
-        // TODO: Show error to host
+        try { onError?.(response.error); } catch(_) {}
       } else {
         console.log('Private race countdown initiated successfully.');
         // Race start handled by 'race:countdown' and 'race:start' listeners
