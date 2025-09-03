@@ -26,7 +26,6 @@
   gap: 2rem;
   background-color: var(--type-container-color);
   padding: 0.8rem 1.5rem;
-  padding-left: 10rem; /* constant space for things like caps chip to avoid shifts */
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(245, 128, 37, 0.1);
