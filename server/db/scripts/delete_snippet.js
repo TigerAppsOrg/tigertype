@@ -7,41 +7,28 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 const promptly = require('promptly');
 const { pool } = require('../../config/database');
 
-async function main() {
-  let idArg = process.argv[2];
-  if (!idArg) {
-    idArg = await promptly.prompt('Enter snippet ID to delete:');
-  }
-  const snippetId = Number(idArg);
-  if (!Number.isInteger(snippetId) || snippetId <= 0) {
-    console.error('Invalid snippet ID.');
-    process.exit(1);
-  }
-
+async function deleteOne(snippetId) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Load snippet to capture category/difficulty for replacement
     const { rows: snipRows } = await client.query(
       'SELECT id, category, difficulty FROM snippets WHERE id = $1 FOR UPDATE',
       [snippetId]
     );
     if (snipRows.length === 0) {
-      console.error(`Snippet ${snippetId} not found.`);
+      console.warn(`Snippet ${snippetId} not found. Skipping.`);
       await client.query('ROLLBACK');
-      process.exit(1);
+      return { snippetId, deleted: 0, updatedActive: 0, updatedOther: 0, updatedResults: 0, replacementId: null, notFound: true };
     }
     const { category, difficulty } = snipRows[0];
 
-    // Reassign active lobbies (waiting/countdown/racing) to a replacement snippet
     const { rows: replRows } = await client.query(
       `SELECT id FROM snippets WHERE id <> $1 AND category = $2 AND difficulty = $3 ORDER BY random() LIMIT 1`,
       [snippetId, category, difficulty]
     );
     const replacementId = replRows[0]?.id || null;
 
-    // Update lobbies referencing this snippet
     const statuses = ['waiting', 'countdown', 'racing'];
     const { rowCount: updatedActive } = await client.query(
       `UPDATE lobbies
@@ -50,7 +37,6 @@ async function main() {
       [snippetId, replacementId, statuses]
     );
 
-    // For finished lobbies (or any others), set to NULL (if replacement is null, it will be null for all)
     const { rowCount: updatedOther } = await client.query(
       `UPDATE lobbies
          SET snippet_id = NULL
@@ -58,37 +44,64 @@ async function main() {
       [snippetId, statuses]
     );
 
-    // If FK is already ON DELETE SET NULL, the next step is redundant,
-    // but executing it keeps behavior consistent if migration hasn’t run yet.
     const { rowCount: updatedResults } = await client.query(
       `UPDATE race_results SET snippet_id = NULL WHERE snippet_id = $1`,
       [snippetId]
     );
 
-    // Finally, delete the snippet
     const { rowCount: deleted } = await client.query(
       `DELETE FROM snippets WHERE id = $1`,
       [snippetId]
     );
 
     await client.query('COMMIT');
-    console.log('--- Delete Snippet Summary ---');
-    console.log(`Snippet deleted: ${deleted}`);
-    console.log(`Active lobbies reassigned: ${updatedActive}`);
-    console.log(`Other lobbies nulled: ${updatedOther}`);
-    console.log(`Race results nulled: ${updatedResults}`);
-    if (!replacementId) {
-      console.warn('No replacement snippet found for active lobbies; affected lobbies now have NULL snippet_id.');
-    } else {
-      console.log(`Replacement snippet used for active lobbies: ${replacementId}`);
-    }
+    return { snippetId, deleted, updatedActive, updatedOther, updatedResults, replacementId, notFound: false };
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch {}
-    console.error('Delete failed:', err);
-    process.exit(1);
+    console.error(`Delete failed for snippet ${snippetId}:`, err.message || err);
+    return { snippetId, error: err.message || String(err) };
   } finally {
     client.release();
   }
+}
+
+async function main() {
+  let inputs = process.argv.slice(2);
+  if (!inputs.length) {
+    const ans = await promptly.prompt('Enter snippet ID(s) (comma or space separated):');
+    inputs = [ans];
+  }
+  const idSet = new Set();
+  for (const chunk of inputs) {
+    String(chunk)
+      .split(/[\s,]+/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .forEach(s => {
+        const n = Number(s);
+        if (Number.isInteger(n) && n > 0) idSet.add(n);
+      });
+  }
+  const ids = Array.from(idSet);
+  if (!ids.length) {
+    console.error('No valid snippet IDs provided.');
+    process.exit(1);
+  }
+
+  console.log(`Deleting ${ids.length} snippet(s): ${ids.join(', ')}`);
+  const results = [];
+  for (const id of ids) {
+    const res = await deleteOne(id);
+    results.push(res);
+    if (!res.error) {
+      console.log('--- Summary ---');
+      console.log(`Snippet ${id}: deleted=${res.deleted}, active_reassigned=${res.updatedActive}, other_nulled=${res.updatedOther}, results_nulled=${res.updatedResults}, replacement=${res.replacementId ?? 'NULL'}`);
+    }
+  }
+
+  const failed = results.filter(r => r.error).length;
+  const notFound = results.filter(r => r.notFound).length;
+  console.log(`Done. Success: ${results.length - failed - notFound}, Not found: ${notFound}, Failed: ${failed}`);
 }
 
 main();

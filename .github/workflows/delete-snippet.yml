@@ -1,10 +1,10 @@
-name: Delete Snippet
+name: Delete Snippet(s)
 
 on:
   workflow_dispatch:
     inputs:
-      snippet_id:
-        description: "Snippet ID to delete"
+      snippet_ids:
+        description: "Snippet ID(s) to delete (comma or space separated)"
         required: true
         type: string
       environment:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   delete:
-    name: Delete snippet
+    name: Delete snippet(s)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     permissions:
@@ -36,15 +36,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Delete snippet ${{ inputs.snippet_id }}
+      - name: Delete snippet(s) ${{ inputs.snippet_ids }}
         env:
           NODE_ENV: production
           # If you configure environment-level secrets, this resolves to that env; otherwise falls back to repo secret
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          node server/db/scripts/delete_snippet.js "${{ inputs.snippet_id }}"
+          node server/db/scripts/delete_snippet.js "${{ inputs.snippet_ids }}"
 
       - name: Summary
         run: |
-          echo "Deleted snippet ID: ${{ inputs.snippet_id }}" >> $GITHUB_STEP_SUMMARY
-
+          echo "Deleted snippet ID(s): ${{ inputs.snippet_ids }}" >> $GITHUB_STEP_SUMMARY

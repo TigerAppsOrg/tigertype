@@ -179,12 +179,22 @@ This ensures snippet removal is quick and safe, without hand-editing dependent r
 You can delete a snippet without cloning the repo by using the manual workflow:
 
 - Workflow: `.github/workflows/delete-snippet.yml`
-- Trigger: GitHub → Actions → “Delete Snippet” → “Run workflow”
+- Trigger: GitHub → Actions → “Delete Snippet(s)” → “Run workflow”
 - Inputs:
-  - `snippet_id` (required): ID to delete
+  - `snippet_ids` (required): One or more IDs, comma or space separated. Examples: `9`, `9, 19, 30`, `9 19 30`
   - `environment` (optional): `production` (default) or `staging`
 - Secrets:
   - Configure `DATABASE_URL` as a repo secret or an environment-level secret (for the chosen environment). The workflow sets `NODE_ENV=production` so the Node DB client uses `DATABASE_URL` with SSL.
+
+### Local Multi-Delete
+
+You can also delete multiple IDs locally without re-running the command:
+
+```bash
+node server/db/scripts/delete_snippet.js 9 19 30
+# or comma-separated
+node server/db/scripts/delete_snippet.js "9,19,30"
+```
 
 ## ER Diagram
 
