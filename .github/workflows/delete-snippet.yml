@@ -1,0 +1,50 @@
+name: Delete Snippet
+
+on:
+  workflow_dispatch:
+    inputs:
+      snippet_id:
+        description: "Snippet ID to delete"
+        required: true
+        type: string
+      environment:
+        description: "Target environment (uses environment-level secrets if configured)"
+        required: false
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  delete:
+    name: Delete snippet
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.11.1'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Delete snippet ${{ inputs.snippet_id }}
+        env:
+          NODE_ENV: production
+          # If you configure environment-level secrets, this resolves to that env; otherwise falls back to repo secret
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          node server/db/scripts/delete_snippet.js "${{ inputs.snippet_id }}"
+
+      - name: Summary
+        run: |
+          echo "Deleted snippet ID: ${{ inputs.snippet_id }}" >> $GITHUB_STEP_SUMMARY
+

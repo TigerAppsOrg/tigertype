@@ -174,6 +174,18 @@ What it does (transactional):
 
 This ensures snippet removal is quick and safe, without hand-editing dependent rows.
 
+### GitHub Action Workflow
+
+You can delete a snippet without cloning the repo by using the manual workflow:
+
+- Workflow: `.github/workflows/delete-snippet.yml`
+- Trigger: GitHub → Actions → “Delete Snippet” → “Run workflow”
+- Inputs:
+  - `snippet_id` (required): ID to delete
+  - `environment` (optional): `production` (default) or `staging`
+- Secrets:
+  - Configure `DATABASE_URL` as a repo secret or an environment-level secret (for the chosen environment). The workflow sets `NODE_ENV=production` so the Node DB client uses `DATABASE_URL` with SSL.
+
 ## ER Diagram
 
 See the complete Mermaid ER diagram in `docs/DatabaseSchema.md`.
