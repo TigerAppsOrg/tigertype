@@ -658,11 +658,15 @@ function ProfileModal({ isOpen, onClose, netid }) {
                       <input
                         type="image"
                         src={!imageError ? avatarUrl : defaultProfileImage}
-                        alt="Profile"
+                        alt="Upload profile picture"
+                        aria-label="Upload profile picture"
+                        title="Upload profile picture"
                         onClick={imageError && displayUser?.avatar_url ? openImageInNewTab : handleAvatarClick}
                         className={isUploading ? "uploading" : ""}
                         onError={handleImageError}
                       />
+                      {/* Hover hint overlay for discoverability */}
+                      <div className="avatar-hover-hint" aria-hidden="true">Upload Profile Picture</div>
                       <input
                         type="file"
                         ref={fileInputRef}
