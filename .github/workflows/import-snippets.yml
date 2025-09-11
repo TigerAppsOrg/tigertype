@@ -31,7 +31,6 @@ on:
         required: false
         type: string
         default: ""
-      # DATABASE_URL is taken from repository secret, not an input
 
 jobs:
   run:
@@ -49,8 +48,14 @@ jobs:
           node-version: '20.11.1'
           cache: 'npm'
 
-      - name: Install Node dependencies
-        run: npm ci
+      - name: Install Node dependencies (lockfile-aware)
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "package-lock.json not found; using npm install"
+            npm install
+          fi
 
       - name: Mask sensitive inputs
         run: |

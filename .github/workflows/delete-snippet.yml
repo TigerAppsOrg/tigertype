@@ -33,8 +33,14 @@ jobs:
         with:
           node-version: '20.11.1'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (lockfile-aware)
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "package-lock.json not found; using npm install"
+            npm install
+          fi
 
       - name: Delete snippet(s) ${{ inputs.snippet_ids }}
         env:
