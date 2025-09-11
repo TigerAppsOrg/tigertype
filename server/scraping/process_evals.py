@@ -33,6 +33,8 @@ TMP_SUFFIX      = ".tmp"  # for atomic writes
 
 # ── ENV / OPENAI SETUP ─────────────────────────────────────────────────────────
 script_dir  = Path(__file__).resolve().parent
+data_dir    = script_dir / "data"
+data_dir.mkdir(parents=True, exist_ok=True)
 
 # load .env (either at project root or script directory)
 dotenv_path = (script_dir / ".." / ".." / ".env").resolve()
@@ -248,8 +250,8 @@ def call_ai_to_extract_snippets(comment_text):
     return []
 
 # ── STATE LOAD ────────────────────────────────────────────────────────────────
-raw_path       = script_dir / RAW_DATA_FILE
-processed_path = script_dir / PROCESSED_SNIPPETS_FILE
+raw_path       = data_dir / RAW_DATA_FILE
+processed_path = data_dir / PROCESSED_SNIPPETS_FILE
 
 raw_evals      = load_json(raw_path, [])
 processed_snip = load_json(processed_path, [])
@@ -319,4 +321,3 @@ atomic_write(processed_snip, processed_path)
 elapsed = time.perf_counter() - start_time
 print(f"\n✅ Done. Remaining comments: {len(raw_evals)}  |  "
       f"total snippets: {len(processed_snip)}  |  runtime: {elapsed:0.1f}s")
-

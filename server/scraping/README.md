@@ -48,9 +48,21 @@ The provided `scrape_evals.js` script needs the following changes:
     *   Go to the "Application" (or "Storage") tab.
     *   Find the Cookies section for `registrarapps.princeton.edu`.
     *   Copy the value of the `PHPSESSID` cookie.
-3.  **Run the Script:**
-    ```bash
-    node scrape_evals.js
-    ```
-4.  **Paste Cookie:** Paste the copied `PHPSESSID` when prompted.
-5.  **Output:** The script (once modified) will output a `raw_evaluations.json` file in the `server/scraping` directory.
+3.  **Run the Script (non-interactive examples):**
+    - Full subject for a term:
+      ```bash
+      TERM=1252 SUBJECT=COS PHPSESSID=YOUR_PHPSESSID PRINCETON_API_KEY=YOUR_OIT_BEARER \
+        node scrape_evals.js
+      ```
+    - Single course via combined code (term+course):
+      ```bash
+      PHPSESSID=YOUR_PHPSESSID PRINCETON_API_KEY=YOUR_OIT_BEARER \
+        node scrape_evals.js --course 1262002051
+      ```
+      (The script derives `TERM=1262` and course `002051` automatically.)
+    - Single course via 5–6 digit course id (requires term):
+      ```bash
+      TERM=1262 PHPSESSID=YOUR_PHPSESSID PRINCETON_API_KEY=YOUR_OIT_BEARER \
+        node scrape_evals.js --course 2051
+      ```
+4.  **Output:** The script writes `raw_evaluations.json` in `server/scraping/data/`.

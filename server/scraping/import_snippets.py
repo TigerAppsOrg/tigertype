@@ -91,7 +91,8 @@ def strip_trailing_empty_line(text: str) -> str:
     return re.sub(r'(?:\r?\n)+\s*$', '', text or '')
 
 # ── load snippets ─────────────────────────────────────────────────────────────
-file_path = SCRIPT_DIR / PROCESSED_FILE
+DATA_DIR = SCRIPT_DIR / "data"
+file_path = DATA_DIR / PROCESSED_FILE
 try:
     with file_path.open(encoding="utf-8") as f:
         snippets = json.load(f)

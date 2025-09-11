@@ -10,6 +10,10 @@
 //   --apikey   <OIT bearer token>   (or set env PRINCETON_API_KEY)
 //   --term     <4‑digit code>       (e.g. 1252 ⇒ FA 2024)
 //   --subject  <3‑letter>           (optional; blank ⇒ scrape every subject)
+//   --course   <course selector>    (optional) One of:
+//       • 10‑digit combined code: <term(4)><course(6)>  e.g. 1262002051
+//       • 5–6 digit course id (zero‑padded to 6) e.g. 2051 → 002051
+//         When using 5–6 digits, a separate --term is required.
 //   --sessid   <PHPSESSID>          (session cookie for registrar site)
 //
 // Example:
@@ -66,6 +70,31 @@ const API_BASE = 'https://api.princeton.edu/student-app';
   }
   SUBJECT = SUBJECT.trim().toUpperCase();
 
+  // Optional single-course filter:
+  //  • 10 digits combined term+course (first 4 = term, last 6 = course)
+  //  • OR 5–6 digit course id (requires TERM)
+  let COURSE = (argVal('--course') || process.env.COURSE || '').trim();
+  if (COURSE) {
+    if (/^\d{10}$/.test(COURSE)) {
+      const termFromCombined = COURSE.slice(0, 4);
+      const courseFromCombined = COURSE.slice(4);
+      if (TERM && TERM !== termFromCombined) {
+        console.warn(`⚠️  Provided TERM (${TERM}) differs from combined code term (${termFromCombined}); using ${termFromCombined}.`.yellow);
+      }
+      TERM = termFromCombined;
+      COURSE = courseFromCombined; // already 6 digits
+    } else if (/^\d{5,6}$/.test(COURSE)) {
+      COURSE = COURSE.padStart(6, '0');
+      if (!TERM) {
+        console.error('❌  --course provided without a combined code requires --term.'.red);
+        process.exit(1);
+      }
+    } else {
+      console.error('❌  --course must be 10 digits (<term4><course6>) or 5–6 digit course id.'.red);
+      process.exit(1);
+    }
+  }
+
   // Registrar PHPSESSID
   let PHPSESSID = argVal('--sessid') || process.env.PHPSESSID;
   if (!PHPSESSID) {
@@ -81,7 +110,8 @@ const API_BASE = 'https://api.princeton.edu/student-app';
   // ───────────────────── 1) get course list ────────────────────────────────
   console.log(
     `\nFetching course list for term ${TERM}` +
-    (SUBJECT ? ` / subject ${SUBJECT}` : '') + ' …'.yellow
+    (SUBJECT ? ` / subject ${SUBJECT}` : '') +
+    (COURSE ? ` / course ${COURSE}` : '') + ' …'.yellow
   );
 
   const url =
@@ -122,6 +152,14 @@ const API_BASE = 'https://api.princeton.edu/student-app';
     console.error('❌  API returned zero courses – aborting.'.red);
     process.exit(1);
   }
+  // Apply single-course filter if provided
+  if (COURSE) {
+    courses = courses.filter(c => c.courseID === COURSE);
+    if (!courses.length) {
+      console.error(`❌  Course ${COURSE} not found for term ${TERM}${SUBJECT ? ` / subject ${SUBJECT}` : ''}`.red);
+      process.exit(1);
+    }
+  }
   console.log(`✓ Found ${courses.length} course(s)`.green);
 
   // ───────────────────── 2) scrape each evaluation page ─────────────────────
@@ -156,13 +194,12 @@ const API_BASE = 'https://api.princeton.edu/student-app';
     process.stdout.write(`\rProcessed ${done}/${courses.length} courses`);
   }
 
-  // ───────────────────── 3) write output ────────────────────────────────────
-  fs.writeFileSync(
-    'raw_evaluations.json',
-    JSON.stringify(results, null, 2),
-    'utf-8'
-  );
-  console.log(`\n\nDone – saved ${results.length} comment(s) to raw_evaluations.json`.green);
+  // ───────────────────── 3) write output (standardized path) ────────────────
+  const outDir = path.resolve(__dirname, 'data');
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+  const outPath = path.join(outDir, 'raw_evaluations.json');
+  fs.writeFileSync(outPath, JSON.stringify(results, null, 2), 'utf-8');
+  console.log(`\n\nDone – saved ${results.length} comment(s) to ${outPath}`.green);
   process.exit(0);
 })();
 
