@@ -104,25 +104,55 @@ print(f"🔹 Loaded {len(snippets)} snippets from {file_path}")
 
 # ── build rows ────────────────────────────────────────────────────────────────
 rows = []
+skipped = 0
 for s in snippets:
+    # Validate snippet text strictly: must be a non-empty string and not a placeholder like "[]"
+    text = s.get("text", "")
+    if not isinstance(text, str):
+        skipped += 1
+        continue
+    text_clean = strip_trailing_empty_line(text).strip()
+    if not text_clean or text_clean == "[]":
+        skipped += 1
+        continue
+
+    # Validate difficulty in {1,2,3}
+    diff_raw = s.get("difficulty")
+    try:
+        diff = int(diff_raw)
+    except Exception:
+        skipped += 1
+        continue
+    if diff not in (1, 2, 3):
+        skipped += 1
+        continue
+
+    # Derive counts safely if missing
+    wc = s.get("word_count")
+    if not isinstance(wc, int):
+        wc = len(text_clean.split())
+    cc = s.get("character_count")
+    if not isinstance(cc, int):
+        cc = len(text_clean)
+
     term, cid = term_and_course_from_url(s.get("original_url"))
     pc_url    = princeton_courses_url(term, cid)
     rows.append((
-        strip_trailing_empty_line(s["text"]),
-        s["source"],
-        s["category"],
-        s["difficulty"],
+        text_clean,
+        s.get("source"),
+        s.get("category"),
+        diff,
         datetime.utcnow(),            # created_at
-        s["word_count"],
-        s["character_count"],
-        s["is_princeton_themed"],
+        wc,
+        cc,
+        bool(s.get("is_princeton_themed", False)),
         pc_url,                       # princeton_course_url
         term,                         # term_code
         cid,                          # course_id
         s.get("course_name"),         # may be None if not scraped yet
     ))
 
-print(f"🔹 Prepared {len(rows)} row(s) for upsert")
+print(f"🔹 Prepared {len(rows)} row(s) for upsert (skipped {skipped} invalid)")
 
 # ── bulk insert / upsert ──────────────────────────────────────────────────────
 cols = ("text", "source", "category", "difficulty",

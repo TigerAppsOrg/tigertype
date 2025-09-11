@@ -160,7 +160,7 @@ def call_ai_to_extract_snippets(comment_text):
         "Focus on extracting short, self‑contained, interesting, humorous, witty, strongly opinionated, or insightful phrases/sentences (roughly 15‑150 words)."
         "**AGGRESSIVELY AVOID** generic advice ('start early', 'go to office hours'), mundane praise/criticism ('good course', 'learned a lot', 'professor was nice'), boilerplate language, or purely factual statements unless the *wording itself* is exceptionally creative or funny."
         "For EACH valid snippet, include a difficulty rating: 1 (easy), 2 (medium), 3 (hard). Base this on factors like punctuation complexity, sentence structure, word length, and presence of numbers or symbols."
-        "The most important in rating the difficulty is the length of the snippet: Snippets over 40 words are of difficulty 3, snippets over 20 words are of difficulty 2, and snippets under 20 words are of difficulty 1."
+        "The most important in rating the difficulty is the length of the snippet: Snippets with a character_count over 185 are of difficulty 3, snippets with a character_count between 100 and 185 are of difficulty 2, and snippets under 100 characters are of difficulty 1."
         "Fix obvious typos or grammatical errors in the source text, but DO NOT change the meaning or wording significantly. Preserve the original student voice. Also for example, if you are taking a snippet from the middle of a sentence, ensure that enough context is present so that the snippet remains understandably funny, and grammar/punctuation-wise ensure the first letter is capitalized."
         "***Return an empty list [] if absolutely nothing meets these strict criteria. Be EXTREMELY SELECTIVE in your filtering; only return the funniest of course evaluations.*** "
         f"{good_examples_text}"
@@ -228,9 +228,18 @@ def call_ai_to_extract_snippets(comment_text):
                 if not isinstance(item, dict):
                     print(f"⚠️  Skipping non-dict item in list: {item!r}")
                     continue
-                txt  = re.sub(r"\s+", " ", str(item.get("text", ""))).strip()
+                raw_text = item.get("text", "")
+                # Only accept proper strings; avoid coercing arrays/objects into "[]"/"{}"
+                if not isinstance(raw_text, str):
+                    print(f"⚠️  Skipping snippet with non-string text: {raw_text!r}")
+                    continue
+                txt = re.sub(r"\s+", " ", raw_text).strip()
+                # Guard against empty/placeholder values like "[]"
+                if not txt or txt == "[]":
+                    print("⚠️  Skipping empty/placeholder snippet text")
+                    continue
                 diff = int(item.get("difficulty", 0)) if str(item.get("difficulty", "")).isdigit() else None
-                if txt and diff in (1, 2, 3):
+                if diff in (1, 2, 3):
                     cleaned.append({"text": txt, "difficulty": diff})
             return cleaned
 
@@ -288,6 +297,9 @@ for idx, comment in enumerate(raw_evals[:]):          # iterate over *copy*
 
     for snip in snippets:
         txt  = re.sub(r"\s+", " ", snip["text"]).strip()
+        # Double-check guard at write time as well
+        if not txt or txt == "[]":
+            continue
         diff = snip["difficulty"]
         processed_snip.append({
             "text"               : txt,
