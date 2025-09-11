@@ -22,7 +22,9 @@ PROCESSED_SNIPPETS_FILE = "processed_snippets.json"
 DEFAULT_SOURCE    = "Princeton Course Reviews"
 DEFAULT_CATEGORY  = "course-reviews"
 
-MODEL_ID        = "gpt-4.1" # can't wait to try out new model hehe
+# gpt-5 cheaper than 4.1 w/ comparable context; 
+# best model would be ones best at creative writing
+MODEL_ID        = "gpt-5-mini"
 MAX_RETRIES     = 5     # increased from 3 to help w rate limiting
 INITIAL_DELAY   = 1     # seconds between retry back‑off
 FLUSH_INTERVAL  = 1     # write files after every N comments (set 1 = every)
