@@ -198,6 +198,16 @@ TigerType is a Princeton-themed typing race application where users can practice
 **Architecture**  
 - **UI**: A single-page application (React, etc.).  
 - **Server**: Flask or Node.js with real-time (WebSocket) capabilities.  
+
+## Database Schema
+
+- Full, live‑introspected schema with columns, constraints, and ER diagram is available at `docs/DatabaseSchema.md`.
+- To apply pending DB changes (including making snippet deletes safe via `ON DELETE SET NULL` on `lobbies.snippet_id` and `race_results.snippet_id`), run:
+
+```bash
+npm run migrate
+```
+
 - **Database**: PostgreSQL or MongoDB for storing user data, race info, snippet text, etc.
 
 ### Deliverables Roadmap

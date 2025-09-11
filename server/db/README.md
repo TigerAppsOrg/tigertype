@@ -3,18 +3,27 @@
 
 This directory contains the database setup scripts and models for the TigerType application.
 
-## Database Schema
+## Database Schema (Overview)
 
-TigerType uses PostgreSQL to store user data, race results, and text snippets. The schema consists of the following tables:
+TigerType uses PostgreSQL to store users, snippets, lobbies, race results, timed tests, partial sessions, plus badges and titles. For a full, live‑introspected description of every table, column, index, and relationship, see:
 
-- `users`: Princeton netIDs and statistics
-- `snippets`: Text content for typing races
-- `lobbies`: Race sessions (public or practice)
-- `race_results`: Performance data for completed races
-- `lobby_players`: Junction table for players in lobbies
-- `user_sessions`: Stores user session data (managed by `connect-pg-simple`)
-- `timed_leaderboard`: Tracks performance in timed typing tests
-- `partial_sessions`: Records data from unfinished typing sessions when users restart
+- `docs/DatabaseSchema.md` (includes a Mermaid ER diagram)
+
+Schema highlights (tables):
+
+- `users`: Princeton netIDs and stats (avg/fastest WPM, tutorial flag, selected title)
+- `snippets`: Typing text, category, difficulty, counts, Princeton course fields
+- `lobbies`: Race sessions (public/private/practice) with optional `snippet_id`
+- `race_results`: Performance for each race
+- `lobby_players`: Junction for players per lobby (ON DELETE CASCADE)
+- `user_sessions`: Session store for Express (via connect-pg-simple)
+- `timed_leaderboard`: Results for timed mode (15/30/60/120)
+- `partial_sessions`: Words/characters typed in unfinished sessions
+- `badges`, `user_badges`: Achievements and assignments
+- `titles`, `user_titles`: Titles and assignments
+
+Foreign key behavior (important):
+- By default in your live DB, `lobbies.snippet_id` and `race_results.snippet_id` are NO ACTION. The repository includes a migration to change these to `ON DELETE SET NULL` for safe snippet deletion. Apply it with `npm run migrate`.
 
 ## Setup Instructions
 
@@ -32,9 +41,9 @@ TigerType uses PostgreSQL to store user data, race results, and text snippets. T
    DB_PORT=5432
    ```
 
-4. The server will automatically initialize the database when it starts. Alternatively, you can run the migrations manually:
+4. The server will automatically initialize the database when it starts. Or run migrations manually:
    ```bash
-   node server/db/migrations/run_migrations.js
+   npm run migrate
    ```
 
 ## Database Structure
@@ -124,9 +133,47 @@ console.log(`Total words typed: ${stats.total_words_typed}`);
 
 ## Migration System
 
-The application uses a simple version-based migration system to manage database schema changes. Migrations are automatically applied when the server starts. Recent migrations include:
+The application uses a version-based migration system (`server/db/migrations/index.js`). Run all pending migrations with:
 
-- Creation of the `timed_leaderboard` table for timed typing tests
-- Creation of the `partial_sessions` table for tracking unfinished sessions
+```bash
+npm run migrate
+```
 
-To add a new migration, add a new object to the migrations array in `db/migrations/index.js` with an incremented version number.
+Recent/important migrations include:
+- `timed_leaderboard` and indexes
+- `partial_sessions` and index
+- Princeton course fields on `snippets`
+- `lobbies.version` for optimistic concurrency
+- Badges/titles tables and `users.selected_title_id`
+- Migration 18: change `lobbies.snippet_id` and `race_results.snippet_id` to `ON DELETE SET NULL` to make snippet deletion safe
+
+To add a migration, append an object to the migrations array with an incremented `version`.
+
+## Safe Snippet Deletion
+
+Deleting a snippet may be blocked if it is referenced from `lobbies` or `race_results`. The repo includes both a migration and a script to make this easy:
+
+1) Apply the FK changes (recommended)
+
+```bash
+npm run migrate
+```
+
+This sets `lobbies.snippet_id` and `race_results.snippet_id` to `ON DELETE SET NULL` so future deletes won’t fail.
+
+2) Use the helper script to delete a snippet by ID
+
+```bash
+node server/db/scripts/delete_snippet.js 9
+```
+
+What it does (transactional):
+- Finds a replacement snippet with same `category` and `difficulty` for active lobbies, and reassigns them; if none found, sets `snippet_id` to NULL.
+- Sets `snippet_id` to NULL for any `race_results` rows referencing the snippet (also handled by FK once migration is applied).
+- Deletes the snippet.
+
+This ensures snippet removal is quick and safe, without hand-editing dependent rows.
+
+## ER Diagram
+
+See the complete Mermaid ER diagram in `docs/DatabaseSchema.md`.
