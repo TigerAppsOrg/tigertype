@@ -242,7 +242,7 @@ const User = {
          ELSE NULL
         END as position
         FROM race_results r
-        JOIN snippets s ON r.snippet_id = s.id
+        LEFT JOIN snippets s ON r.snippet_id = s.id
         LEFT JOIN lobbies l ON r.lobby_id = l.id
         WHERE r.user_id = $1
         ORDER BY r.created_at DESC

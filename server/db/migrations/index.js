@@ -583,7 +583,45 @@ const MIGRATIONS = [
       `);
       console.log('Revert migration 17 complete.');
     }
-  }
+  },
+  {
+    version: 18,
+    description: 'Set ON DELETE SET NULL for snippet FKs (lobbies, race_results)',
+    up: async (client) => {
+      console.log('Migration 18: updating FK constraints on lobbies.snippet_id and race_results.snippet_id to ON DELETE SET NULL');
+      await client.query(`
+        ALTER TABLE lobbies
+        DROP CONSTRAINT IF EXISTS lobbies_snippet_id_fkey;
+        ALTER TABLE lobbies
+        ADD CONSTRAINT lobbies_snippet_id_fkey
+        FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE SET NULL;
+
+        ALTER TABLE race_results
+        DROP CONSTRAINT IF EXISTS race_results_snippet_id_fkey;
+        ALTER TABLE race_results
+        ADD CONSTRAINT race_results_snippet_id_fkey
+        FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE SET NULL;
+      `);
+      console.log('Migration 18 complete.');
+    },
+    down: async (client) => {
+      console.log('Reverting Migration 18: resetting FK constraints to default NO ACTION');
+      await client.query(`
+        ALTER TABLE lobbies
+        DROP CONSTRAINT IF EXISTS lobbies_snippet_id_fkey;
+        ALTER TABLE lobbies
+        ADD CONSTRAINT lobbies_snippet_id_fkey
+        FOREIGN KEY (snippet_id) REFERENCES snippets(id);
+
+        ALTER TABLE race_results
+        DROP CONSTRAINT IF EXISTS race_results_snippet_id_fkey;
+        ALTER TABLE race_results
+        ADD CONSTRAINT race_results_snippet_id_fkey
+        FOREIGN KEY (snippet_id) REFERENCES snippets(id);
+      `);
+      console.log('Revert Migration 18 complete.');
+    }
+  },
 ];
 
 // Create migrations table if it doesn't exist
