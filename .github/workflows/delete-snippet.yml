@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       snippet_ids:
-        description: "Snippet ID(s) to delete (comma or space separated)"
+        description: "Snippet ID(s) to delete (e.g. '9' or '9, 19')"
         required: true
         type: string
       environment:
