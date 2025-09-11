@@ -189,7 +189,6 @@ def call_ai_to_extract_snippets(comment_text):
                 messages        = [
                     {"role": "system", "content": prompt},
                 ],
-                temperature     = 0.8,
                 response_format = {"type": "json_object"}
             )
 
