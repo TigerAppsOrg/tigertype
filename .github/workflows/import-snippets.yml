@@ -27,14 +27,23 @@ on:
         required: true
         type: string
       oit_api_key:
-        description: "Optional OIT Student-App bearer token (overrides secret if provided)"
+        description: "OIT Student-App bearer token (optional if set as secret)"
         required: false
         type: string
         default: ""
+      environment:
+        description: "Target environment for secrets"
+        required: false
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
 
 jobs:
   run:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,17 +65,21 @@ jobs:
 
       - name: Mask sensitive inputs
         run: |
-          echo "::add-mask::${{ github.event.inputs.phpsessid }}"
-          echo "::add-mask::${{ github.event.inputs.oit_api_key }}"
+          if [ -n "${{ github.event.inputs.phpsessid }}" ]; then echo "::add-mask::${{ github.event.inputs.phpsessid }}"; fi
+          if [ -n "${{ github.event.inputs.oit_api_key }}" ]; then echo "::add-mask::${{ github.event.inputs.oit_api_key }}"; fi
+          if [ -n "${{ secrets.PRINCETON_API_KEY }}" ]; then echo "::add-mask::${{ secrets.PRINCETON_API_KEY }}"; fi
 
       - name: Prepare scraper environment
         run: |
-          # Prefer dispatch input for API key if provided; otherwise use secret
-          if [ -n "${{ github.event.inputs.oit_api_key }}" ]; then
-            echo "PRINCETON_API_KEY=${{ github.event.inputs.oit_api_key }}" >> "$GITHUB_ENV"
-          else
-            echo "PRINCETON_API_KEY=${{ secrets.PRINCETON_API_KEY }}" >> "$GITHUB_ENV"
+          KEY_INPUT="${{ github.event.inputs.oit_api_key }}"
+          KEY_SECRET="${{ secrets.PRINCETON_API_KEY }}"
+          KEY="$KEY_INPUT"
+          if [ -z "$KEY" ]; then KEY="$KEY_SECRET"; fi
+          if [ -z "$KEY" ]; then
+            echo "::error::Missing OIT Student-App token. Provide 'oit_api_key' input or set PRINCETON_API_KEY as a repo/environment secret."
+            exit 1
           fi
+          echo "PRINCETON_API_KEY=$KEY" >> "$GITHUB_ENV"
           # Required PHPSESSID for scraping
           echo "PHPSESSID=${{ github.event.inputs.phpsessid }}" >> "$GITHUB_ENV"
           # Pass term/subject/course via env for non-interactive execution
