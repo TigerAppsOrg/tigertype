@@ -104,4 +104,14 @@ async function main() {
   console.log(`Done. Success: ${results.length - failed - notFound}, Not found: ${notFound}, Failed: ${failed}`);
 }
 
-main();
+main()
+  .then(async () => {
+    try { pool.removeAllListeners('error'); } catch {}
+    try { await pool.end(); } catch {}
+  })
+  .catch(async (e) => {
+    console.error('Fatal error:', e);
+    try { pool.removeAllListeners('error'); } catch {}
+    try { await pool.end(); } catch {}
+    process.exit(1);
+  });

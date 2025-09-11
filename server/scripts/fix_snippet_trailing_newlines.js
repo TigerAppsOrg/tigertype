@@ -79,9 +79,9 @@ async function main() {
   } finally {
     client.release();
     // End pool to allow process to exit cleanly
+    try { pool.removeAllListeners('error'); } catch {}
     pool.end().catch(() => {});
   }
 }
 
 main();
-

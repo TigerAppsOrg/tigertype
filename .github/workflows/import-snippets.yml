@@ -47,6 +47,7 @@ jobs:
         with:
           node-version: '20.11.1'
           cache: 'npm'
+          cache-dependency-path: TigerApps/tigertype/package-lock.json
 
       - name: Install Node dependencies (lockfile-aware)
         run: |
