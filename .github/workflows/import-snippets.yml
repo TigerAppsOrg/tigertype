@@ -35,9 +35,6 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: TigerApps/tigertype
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,8 +43,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.11.1'
-          cache: 'npm'
-          cache-dependency-path: TigerApps/tigertype/package-lock.json
+          # Do not enable cache when lockfile may be absent; avoids hard failures
 
       - name: Install Node dependencies (lockfile-aware)
         run: |
@@ -87,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: raw_evaluations
-          path: TigerApps/tigertype/server/scraping/data/raw_evaluations.json
+          path: server/scraping/data/raw_evaluations.json
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -110,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: processed_snippets
-          path: TigerApps/tigertype/server/scraping/data/processed_snippets.json
+          path: server/scraping/data/processed_snippets.json
 
       - name: Import processed snippets into DB
         if: ${{ github.event.inputs.import_to_db == 'true' }}
