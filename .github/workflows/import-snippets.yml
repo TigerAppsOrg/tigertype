@@ -23,7 +23,7 @@ on:
         type: string
         default: ""
       phpsessid:
-        description: "PHPSESSID cookie value from registrar (required for scraping)"
+        description: "PHPSESSID cookie value from registrar (https://registrarapps.princeton.edu/course-evaluation/search)"
         required: true
         type: string
       oit_api_key:
