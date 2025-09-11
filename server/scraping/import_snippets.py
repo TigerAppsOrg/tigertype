@@ -105,6 +105,8 @@ print(f"🔹 Loaded {len(snippets)} snippets from {file_path}")
 # ── build rows ────────────────────────────────────────────────────────────────
 rows = []
 skipped = 0
+def _difficulty_from_char_count(cc: int) -> int:
+    return 3 if cc > 185 else 2 if cc >= 100 else 1
 for s in snippets:
     # Validate snippet text strictly: must be a non-empty string and not a placeholder like "[]"
     text = s.get("text", "")
@@ -116,24 +118,10 @@ for s in snippets:
         skipped += 1
         continue
 
-    # Validate difficulty in {1,2,3}
-    diff_raw = s.get("difficulty")
-    try:
-        diff = int(diff_raw)
-    except Exception:
-        skipped += 1
-        continue
-    if diff not in (1, 2, 3):
-        skipped += 1
-        continue
-
-    # Derive counts safely if missing
-    wc = s.get("word_count")
-    if not isinstance(wc, int):
-        wc = len(text_clean.split())
-    cc = s.get("character_count")
-    if not isinstance(cc, int):
-        cc = len(text_clean)
+    # Recompute counts and difficulty from the final text to guarantee correctness
+    wc = len(text_clean.split())
+    cc = len(text_clean)
+    diff = _difficulty_from_char_count(cc)
 
     term, cid = term_and_course_from_url(s.get("original_url"))
     pc_url    = princeton_courses_url(term, cid)

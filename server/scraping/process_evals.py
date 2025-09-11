@@ -159,6 +159,8 @@ def call_ai_to_extract_snippets(comment_text):
         "The only users of the app are Princeton students so consider that the snippets, on top of being fun to type, can contain information useful for students deciding whether to take a course, *but only if presented in an interesting or funny way*."
         "Focus on extracting short, self‑contained, interesting, humorous, witty, strongly opinionated, or insightful phrases/sentences (roughly 15‑150 words)."
         "**AGGRESSIVELY AVOID** generic advice ('start early', 'go to office hours'), mundane praise/criticism ('good course', 'learned a lot', 'professor was nice'), boilerplate language, or purely factual statements unless the *wording itself* is exceptionally creative or funny."
+        "Prefer highly specific, vivid, or surprising wording (proper nouns, hyperbole, clever analogies, unexpected twists). Avoid bland lists, administrative info, or content whose humor depends on missing context."
+        "Before returning, internally score each candidate's comedic/interest value from 1–10 and include ONLY items scoring ≥ 6. Return AT MOST 2 snippets per review — the top-scoring ones. If none qualify, return []."
         "For EACH valid snippet, include a difficulty rating: 1 (easy), 2 (medium), 3 (hard). Base this on factors like punctuation complexity, sentence structure, word length, and presence of numbers or symbols."
         "The most important in rating the difficulty is the length of the snippet: Snippets with a character_count over 185 are of difficulty 3, snippets with a character_count between 100 and 185 are of difficulty 2, and snippets under 100 characters are of difficulty 1."
         "Fix obvious typos or grammatical errors in the source text, but DO NOT change the meaning or wording significantly. Preserve the original student voice. Also for example, if you are taking a snippet from the middle of a sentence, ensure that enough context is present so that the snippet remains understandably funny, and grammar/punctuation-wise ensure the first letter is capitalized."
@@ -300,14 +302,18 @@ for idx, comment in enumerate(raw_evals[:]):          # iterate over *copy*
         # Double-check guard at write time as well
         if not txt or txt == "[]":
             continue
-        diff = snip["difficulty"]
+        # Derive counts and difficulty deterministically from final text
+        wc = word_count(txt)
+        cc = char_count(txt)
+        # Difficulty strictly from character count to match system prompt guidance
+        diff = 3 if cc > 185 else 2 if cc >= 100 else 1
         processed_snip.append({
             "text"               : txt,
             "source"             : DEFAULT_SOURCE,
             "category"           : DEFAULT_CATEGORY,
             "difficulty"         : diff,
-            "word_count"         : word_count(txt),
-            "character_count"    : char_count(txt),
+            "word_count"         : wc,
+            "character_count"    : cc,
             "is_princeton_themed": True,
             "original_url"       : comment.get("evaluation_url"),
             "original_course_id" : cid,

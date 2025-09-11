@@ -51,19 +51,11 @@ async function seedSnippets() {
       // Basic validation
       const rawText = snippet?.text;
       const text = typeof rawText === 'string' ? rawText.trim() : '';
-      const diff = Number(snippet?.difficulty);
       const invalidText = !text || text === '[]';
 
-      if (
-        invalidText ||
-        !Number.isInteger(diff) ||
-        diff < 1 ||
-        diff > 3 ||
-        !snippet?.original_url
-      ) {
+      if (invalidText || !snippet?.original_url) {
         console.warn('Skipping snippet due to invalid/missing data:', {
           textPreview: typeof text === 'string' ? text.slice(0, 60) : text,
-          difficulty: snippet?.difficulty,
           original_url: snippet?.original_url,
         });
         skippedCount++;
@@ -100,17 +92,18 @@ async function seedSnippets() {
                 RETURNING id;
             `;
 
+      // Recompute counts and difficulty from final text to ensure correctness
+      const wordCount = text.split(/\s+/).filter(Boolean).length;
+      const charCount = text.length;
+      const diff = charCount > 185 ? 3 : charCount >= 100 ? 2 : 1;
+
       const values = [
         text,
         snippet.source || 'Princeton Course Reviews', // Default source if missing
         snippet.category || 'course-reviews', // Default category if missing
-        diff, // validated difficulty
-        Number.isInteger(snippet.word_count)
-          ? snippet.word_count
-          : text.split(/\s+/).filter(Boolean).length,
-        Number.isInteger(snippet.character_count)
-          ? snippet.character_count
-          : text.length,
+        diff,
+        wordCount,
+        charCount,
         snippet.is_princeton_themed === true, // Ensure boolean
         snippet.original_url,
         snippet.original_course_id, // Can be null if missing
@@ -162,4 +155,3 @@ seedSnippets().catch((err) => {
   console.error('Unhandled error running seed script:', err);
   process.exit(1);
 });
-
