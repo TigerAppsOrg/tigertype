@@ -1,1 +1,165 @@
-// Seeds the snippets table with data from processed_snippets.json\n\nconst fs = require(\'fs\');\nconst path = require(\'path\');\nconst { pool } = require(\'../../config/database\'); // Adjust path if your db config is elsewhere\n\nconst SNIPPETS_FILE_PATH = path.join(__dirname, \'..\', \'..\', \'scraping\', \'processed_snippets.json\');\n\nasync function seedSnippets() {\n    let client;\n    try {\n        // --- 1. Read the JSON file ---\n        console.log(`Reading snippets from: ${SNIPPETS_FILE_PATH}`);\n        if (!fs.existsSync(SNIPPETS_FILE_PATH)) {\n            console.error(`Error: Snippets file not found at ${SNIPPETS_FILE_PATH}`);\n            console.error(\'Please run the scraping and processing scripts first.\');\n            return;\n        }\n        const snippetsData = JSON.parse(fs.readFileSync(SNIPPETS_FILE_PATH, \'utf-8\'));\n\n        if (!Array.isArray(snippetsData) || snippetsData.length === 0) {\n            console.log(\'No snippets found in the JSON file. Nothing to seed.\');\n            return;\n        }\n        console.log(`Found ${snippetsData.length} snippets to potentially seed.`);\n\n        // --- 2. Connect to Database ---\n        client = await pool.connect();\n        console.log(\'Connected to database.\');\n\n        // --- 3. Insert Snippets ---\n        let insertedCount = 0;\n        let skippedCount = 0;\n\n        // Optional: Clear existing course review snippets first?\n        // Consider if you want to delete old snippets from this source before inserting new ones.\n        // await client.query(\"DELETE FROM snippets WHERE source = \'Princeton Course Reviews\'\");\n        // console.log(\'Cleared existing course review snippets.\');\n\n        await client.query(\'BEGIN\'); // Start transaction\n\n        for (const snippet of snippetsData) {\n            // Basic validation\n            if (!snippet.text || snippet.difficulty === undefined || !snippet.original_url) {\n                console.warn(\'Skipping snippet due to missing essential data:\', snippet);\n                skippedCount++;\n                continue;\n            }\n\n            // Check if a snippet with the exact same text and URL already exists (optional, prevents duplicates)\n            const checkResult = await client.query(\n                `SELECT id FROM snippets WHERE text = $1 AND evaluation_url = $2 LIMIT 1`,\n                [snippet.text, snippet.original_url]\n            );\n\n            if (checkResult.rowCount > 0) {\n                // console.log(`Skipping duplicate snippet (text/url match): \\\"${snippet.text.substring(0, 50)}...\\\"\`);\n                skippedCount++;\n                continue;\n            }\n\n            const query = `\n                INSERT INTO snippets (\n                    text,\n                    source,\n                    category,\n                    difficulty,\n                    word_count,\n                    character_count,\n                    is_princeton_themed,\n                    evaluation_url,\n                    source_course_id,\n                    source_term_id\n                    -- created_at is defaulted by DB\n                )\n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\n                RETURNING id;\n            `;\n\n            const values = [\n                snippet.text,\n                snippet.source || \'Princeton Course Reviews\', // Default source if missing\n                snippet.category || \'course-reviews\', // Default category if missing\n                snippet.difficulty, // Assumed to be present and validated earlier\n                snippet.word_count || 0,\n                snippet.character_count || 0,\n                snippet.is_princeton_themed === true, // Ensure boolean\n                snippet.original_url,\n                snippet.original_course_id, // Can be null if missing\n                snippet.original_term_id // Can be null if missing\n            ];\n\n            try {\n                await client.query(query, values);\n                insertedCount++;\n                if (insertedCount % 50 === 0) { // Log progress periodically\n                    console.log(`Inserted ${insertedCount} snippets...`);\n                }\n            } catch (insertErr) {\n                console.error(\'Error inserting snippet:\', snippet);\n                console.error(\'SQL Error:\', insertErr.message);\n                // Decide if you want to rollback or continue on error\n                await client.query(\'ROLLBACK\'); // Rollback transaction on error\n                throw insertErr; // Re-throw error to stop the script\n            }\n        }\n\n        await client.query(\'COMMIT\'); // Commit transaction\n\n        console.log(\'\\n--- Seeding Complete ---\');\n        console.log(`Successfully inserted: ${insertedCount} snippets`);\n        console.log(`Skipped (missing data or duplicate): ${skippedCount} snippets`);\n\n    } catch (error) {\n        console.error(\'\\n--- Seeding Failed ---\');\n        console.error(\'An error occurred during the seeding process:\', error);\n        if (client) {\n            try {\n                await client.query(\'ROLLBACK\');\n            } catch (rbError) {\n                console.error(\'Error rolling back transaction:\', rbError);\n            }\n        }\n    } finally {\n        // --- 4. Close Connection ---\n        if (client) {\n            client.release();\n            console.log(\'Database connection released.\');\n        }\n    }\n}\n\n// Execute the seeding function\nseedSnippets().catch(err => {\n    console.error(\"Unhandled error running seed script:\", err);\n    process.exit(1);\n}); 
+// Seeds the snippets table with data from processed_snippets.json
+
+const fs = require('fs');
+const path = require('path');
+const { pool } = require('../../config/database'); // Adjust path if your db config is elsewhere
+
+const SNIPPETS_FILE_PATH = path.join(
+  __dirname,
+  '..',
+  '..',
+  'scraping',
+  'processed_snippets.json'
+);
+
+async function seedSnippets() {
+  let client;
+  try {
+    // --- 1. Read the JSON file ---
+    console.log(`Reading snippets from: ${SNIPPETS_FILE_PATH}`);
+    if (!fs.existsSync(SNIPPETS_FILE_PATH)) {
+      console.error(`Error: Snippets file not found at ${SNIPPETS_FILE_PATH}`);
+      console.error('Please run the scraping and processing scripts first.');
+      return;
+    }
+    const snippetsData = JSON.parse(
+      fs.readFileSync(SNIPPETS_FILE_PATH, 'utf-8')
+    );
+
+    if (!Array.isArray(snippetsData) || snippetsData.length === 0) {
+      console.log('No snippets found in the JSON file. Nothing to seed.');
+      return;
+    }
+    console.log(`Found ${snippetsData.length} snippets to potentially seed.`);
+
+    // --- 2. Connect to Database ---
+    client = await pool.connect();
+    console.log('Connected to database.');
+
+    // --- 3. Insert Snippets ---
+    let insertedCount = 0;
+    let skippedCount = 0;
+
+    // Optional: Clear existing course review snippets first?
+    // Consider if you want to delete old snippets from this source before inserting new ones.
+    // await client.query("DELETE FROM snippets WHERE source = 'Princeton Course Reviews'");
+    // console.log('Cleared existing course review snippets.');
+
+    await client.query('BEGIN'); // Start transaction
+
+    for (const snippet of snippetsData) {
+      // Basic validation
+      const rawText = snippet?.text;
+      const text = typeof rawText === 'string' ? rawText.trim() : '';
+      const diff = Number(snippet?.difficulty);
+      const invalidText = !text || text === '[]';
+
+      if (
+        invalidText ||
+        !Number.isInteger(diff) ||
+        diff < 1 ||
+        diff > 3 ||
+        !snippet?.original_url
+      ) {
+        console.warn('Skipping snippet due to invalid/missing data:', {
+          textPreview: typeof text === 'string' ? text.slice(0, 60) : text,
+          difficulty: snippet?.difficulty,
+          original_url: snippet?.original_url,
+        });
+        skippedCount++;
+        continue;
+      }
+
+      // Check if a snippet with the exact same text and URL already exists (optional, prevents duplicates)
+      const checkResult = await client.query(
+        `SELECT id FROM snippets WHERE text = $1 AND evaluation_url = $2 LIMIT 1`,
+        [text, snippet.original_url]
+      );
+
+      if (checkResult.rowCount > 0) {
+        // Duplicate detected, skip
+        skippedCount++;
+        continue;
+      }
+
+      const query = `
+                INSERT INTO snippets (
+                    text,
+                    source,
+                    category,
+                    difficulty,
+                    word_count,
+                    character_count,
+                    is_princeton_themed,
+                    evaluation_url,
+                    source_course_id,
+                    source_term_id
+                    -- created_at is defaulted by DB
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                RETURNING id;
+            `;
+
+      const values = [
+        text,
+        snippet.source || 'Princeton Course Reviews', // Default source if missing
+        snippet.category || 'course-reviews', // Default category if missing
+        diff, // validated difficulty
+        Number.isInteger(snippet.word_count)
+          ? snippet.word_count
+          : text.split(/\s+/).filter(Boolean).length,
+        Number.isInteger(snippet.character_count)
+          ? snippet.character_count
+          : text.length,
+        snippet.is_princeton_themed === true, // Ensure boolean
+        snippet.original_url,
+        snippet.original_course_id, // Can be null if missing
+        snippet.original_term_id, // Can be null if missing
+      ];
+
+      try {
+        await client.query(query, values);
+        insertedCount++;
+        if (insertedCount % 50 === 0) {
+          // Log progress periodically
+          console.log(`Inserted ${insertedCount} snippets...`);
+        }
+      } catch (insertErr) {
+        console.error('Error inserting snippet:', { textPreview: text.slice(0, 60) });
+        console.error('SQL Error:', insertErr.message);
+        // Decide if you want to rollback or continue on error
+        await client.query('ROLLBACK'); // Rollback transaction on error
+        throw insertErr; // Re-throw error to stop the script
+      }
+    }
+
+    await client.query('COMMIT'); // Commit transaction
+
+    console.log('\n--- Seeding Complete ---');
+    console.log(`Successfully inserted: ${insertedCount} snippets`);
+    console.log(`Skipped (missing data or duplicate): ${skippedCount} snippets`);
+  } catch (error) {
+    console.error('\n--- Seeding Failed ---');
+    console.error('An error occurred during the seeding process:', error);
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rbError) {
+        console.error('Error rolling back transaction:', rbError);
+      }
+    }
+  } finally {
+    // --- 4. Close Connection ---
+    if (client) {
+      client.release();
+      console.log('Database connection released.');
+    }
+  }
+}
+
+// Execute the seeding function
+seedSnippets().catch((err) => {
+  console.error('Unhandled error running seed script:', err);
+  process.exit(1);
+});
+
