@@ -90,6 +90,78 @@ def strip_trailing_empty_line(text: str) -> str:
     """
     return re.sub(r'(?:\r?\n)+\s*$', '', text or '')
 
+def normalize_punctuation(text: str) -> str:
+    """
+    Normalize Unicode punctuation to ASCII-friendly equivalents suitable for typing races.
+    - Map various dashes (em/en/minus/non-breaking) to '-'
+    - Convert curly/smart quotes to straight quotes
+    - Convert ellipsis to '...'
+    - Replace exotic spaces with normal spaces; drop zero-width
+    - Convert common bullets/middle dot to '-'
+    """
+    if not text:
+        return text
+    # character mapping
+    mapping = {
+        # dashes and minus variants → '-'
+        ord('\u2010'): '-',  # hyphen
+        ord('\u2011'): '-',  # non-breaking hyphen
+        ord('\u2012'): '-',  # figure dash
+        ord('\u2013'): '-',  # en dash
+        ord('\u2014'): '-',  # em dash
+        ord('\u2015'): '-',  # horizontal bar
+        ord('\u2212'): '-',  # minus sign
+        ord('\uFE58'): '-',  # small em dash
+        ord('\uFE63'): '-',  # small hyphen-minus
+        ord('\uFF0D'): '-',  # fullwidth hyphen-minus
+
+        # quotes → straight
+        ord('\u2018'): "'",  # left single
+        ord('\u2019'): "'",  # right single / apostrophe
+        ord('\u201A'): "'",  # single low-9
+        ord('\u201B'): "'",  # single high-reversed-9
+        ord('\u2032'): "'",  # prime
+
+        ord('\u201C'): '"',  # left double
+        ord('\u201D'): '"',  # right double
+        ord('\u201E'): '"',  # double low-9
+        ord('\u201F'): '"',  # double high-reversed-9
+        ord('\u00AB'): '"',  # «
+        ord('\u00BB'): '"',  # »
+        ord('\u2033'): '"',  # double prime
+
+        # bullets / middle dot
+        ord('\u2022'): '-',  # •
+        ord('\u00B7'): '-',  # ·
+
+        # ellipsis
+        ord('\u2026'): '...',
+
+        # spaces → normal space; zero-width removed
+        ord('\u00A0'): ' ',  # NBSP
+        ord('\u2000'): ' ',  # en quad
+        ord('\u2001'): ' ',  # em quad
+        ord('\u2002'): ' ',  # en space
+        ord('\u2003'): ' ',  # em space
+        ord('\u2004'): ' ',  # three-per-em space
+        ord('\u2005'): ' ',  # four-per-em space
+        ord('\u2006'): ' ',  # six-per-em space
+        ord('\u2007'): ' ',  # figure space
+        ord('\u2008'): ' ',  # punctuation space
+        ord('\u2009'): ' ',  # thin space
+        ord('\u200A'): ' ',  # hair space
+        ord('\u202F'): ' ',  # narrow no-break space
+        ord('\u205F'): ' ',  # medium mathematical space
+        ord('\u3000'): ' ',  # ideographic space
+        ord('\u200B'): None, # zero width space → remove
+        ord('\u200C'): None, # zero width non-joiner → remove
+        ord('\u200D'): None, # zero width joiner → remove
+    }
+    out = text.translate(mapping)
+    # collapse multiple spaces introduced by replacements
+    out = re.sub(r"\s+", " ", out)
+    return out.strip()
+
 # ── load snippets ─────────────────────────────────────────────────────────────
 DATA_DIR = SCRIPT_DIR / "data"
 file_path = DATA_DIR / PROCESSED_FILE
@@ -114,6 +186,7 @@ for s in snippets:
         skipped += 1
         continue
     text_clean = strip_trailing_empty_line(text).strip()
+    text_clean = normalize_punctuation(text_clean)
     if not text_clean or text_clean == "[]":
         skipped += 1
         continue

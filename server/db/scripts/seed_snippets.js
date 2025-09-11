@@ -47,10 +47,38 @@ async function seedSnippets() {
 
     await client.query('BEGIN'); // Start transaction
 
+    const normalizePunctuation = (s) => {
+      if (typeof s !== 'string') return s;
+      const map = new Map([
+        // dashes & minus
+        ['\u2010', '-'], ['\u2011', '-'], ['\u2012', '-'], ['\u2013', '-'], ['\u2014', '-'], ['\u2015', '-'], ['\u2212', '-'], ['\uFE58', '-'], ['\uFE63', '-'], ['\uFF0D', '-'],
+        // quotes
+        ['\u2018', "'"], ['\u2019', "'"], ['\u201A', "'"], ['\u201B', "'"], ['\u2032', "'"],
+        ['\u201C', '"'], ['\u201D', '"'], ['\u201E', '"'], ['\u201F', '"'], ['\u00AB', '"'], ['\u00BB', '"'], ['\u2033', '"'],
+        // bullets/middle dot
+        ['\u2022', '-'], ['\u00B7', '-'],
+        // ellipsis
+        ['\u2026', '...'],
+      ]);
+      let out = '';
+      for (const ch of s) {
+        const code = ch.codePointAt(0);
+        const key = `\\u${code.toString(16).toUpperCase().padStart(4, '0')}`;
+        out += map.has(key) ? map.get(key) : ch;
+      }
+      // spaces & zero-widths
+      out = out
+        .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+        .replace(/[\u200B\u200C\u200D]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return out;
+    };
+
     for (const snippet of snippetsData) {
       // Basic validation
       const rawText = snippet?.text;
-      const text = typeof rawText === 'string' ? rawText.trim() : '';
+      const text = typeof rawText === 'string' ? normalizePunctuation(rawText.trim()) : '';
       const invalidText = !text || text === '[]';
 
       if (invalidText || !snippet?.original_url) {
