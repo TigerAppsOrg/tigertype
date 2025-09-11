@@ -1,0 +1,129 @@
+name: TigerType | Snippets Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      import_to_db:
+        description: "Import processed snippets into DB after scrape+process"
+        required: false
+        type: boolean
+        default: false
+      term:
+        description: "Registrar term code (4 digits, e.g. 1252)"
+        required: true
+        type: string
+      subject:
+        description: "3-letter subject (e.g. COS). Leave blank for all"
+        required: false
+        type: string
+        default: ""
+      course:
+        description: "Optional course selector: 10-digit combined <term><course> (e.g. 1262002051) OR 5–6 digit course id (pads to 6 when term is provided)"
+        required: false
+        type: string
+        default: ""
+      phpsessid:
+        description: "PHPSESSID cookie value from registrar (required for scraping)"
+        required: true
+        type: string
+      oit_api_key:
+        description: "Optional OIT Student-App bearer token (overrides secret if provided)"
+        required: false
+        type: string
+        default: ""
+      # DATABASE_URL is taken from repository secret, not an input
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TigerApps/tigertype
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.11.1'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Mask sensitive inputs
+        run: |
+          echo "::add-mask::${{ github.event.inputs.phpsessid }}"
+          echo "::add-mask::${{ github.event.inputs.oit_api_key }}"
+
+      - name: Prepare scraper environment
+        run: |
+          # Prefer dispatch input for API key if provided; otherwise use secret
+          if [ -n "${{ github.event.inputs.oit_api_key }}" ]; then
+            echo "PRINCETON_API_KEY=${{ github.event.inputs.oit_api_key }}" >> "$GITHUB_ENV"
+          else
+            echo "PRINCETON_API_KEY=${{ secrets.PRINCETON_API_KEY }}" >> "$GITHUB_ENV"
+          fi
+          # Required PHPSESSID for scraping
+          echo "PHPSESSID=${{ github.event.inputs.phpsessid }}" >> "$GITHUB_ENV"
+          # Pass term/subject/course via env for non-interactive execution
+          echo "TERM=${{ github.event.inputs.term }}" >> "$GITHUB_ENV"
+          echo "SUBJECT=${{ github.event.inputs.subject }}" >> "$GITHUB_ENV"
+          echo "COURSE=${{ github.event.inputs.course }}" >> "$GITHUB_ENV"
+
+      - name: Scrape evaluations (raw_evaluations.json)
+        run: |
+          node server/scraping/scrape_evals.js
+          ls -lh server/scraping/data/raw_evaluations.json
+
+      - name: Upload raw evaluations (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw_evaluations
+          path: TigerApps/tigertype/server/scraping/data/raw_evaluations.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install openai python-dotenv psycopg2-binary
+
+      - name: Process raw evaluations -> processed_snippets.json
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python server/scraping/process_evals.py
+          ls -lh server/scraping/data/processed_snippets.json
+
+      - name: Upload processed snippets (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed_snippets
+          path: TigerApps/tigertype/server/scraping/data/processed_snippets.json
+
+      - name: Import processed snippets into DB
+        if: ${{ github.event.inputs.import_to_db == 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python server/scraping/import_snippets.py --production
+
+      - name: Post-import newline fix (safety net)
+        if: ${{ github.event.inputs.import_to_db == 'true' }}
+        env:
+          NODE_ENV: production
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          node server/scripts/fix_snippet_trailing_newlines.js --apply
+
+      - name: Verify duplicates prevented
+        if: ${{ github.event.inputs.import_to_db == 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          node server/scripts/verify_snippet_duplicates.js
