@@ -1,4 +1,4 @@
-name: TigerType | Snippets Pipeline
+name: Scrape & Import Snippets
 
 on:
   workflow_dispatch:
