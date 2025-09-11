@@ -57,6 +57,11 @@ const loadRaceState = () => {
 export const RaceProvider = ({ children }) => {
   const { socket, connected } = useSocket();
   const { user } = useAuth();
+  // Normalize snippet text so trailing CR/LF doesn’t block completion on single-line input
+  const sanitizeSnippetText = (text) => {
+    if (typeof text !== 'string') return text || '';
+    return text.replace(/(?:\r?\n)+\s*$/u, '');
+  };
   
   // Load saved race state from session storage
   const savedRaceState = loadRaceState();
@@ -229,7 +234,7 @@ export const RaceProvider = ({ children }) => {
         type: data.type,
         lobbyId: data.lobbyId,
         hostNetId: data.hostNetId || null, // Explicitly store hostNetId
-        snippet: data.snippet,
+        snippet: data.snippet ? { ...data.snippet, text: sanitizeSnippetText(data.snippet.text) } : null,
         settings: data.settings || prev.settings, // Store settings from server
         players: data.players || []
       }));
@@ -384,7 +389,7 @@ export const RaceProvider = ({ children }) => {
       setRaceState(prev => ({
         ...prev,
         settings: { ...prev.settings, ...data.settings },
-        snippet: data.snippet // Update snippet as it might change with settings
+        snippet: data.snippet ? { ...data.snippet, text: sanitizeSnippetText(data.snippet.text) } : prev.snippet // Update snippet with sanitized text
       }));
       // Reset typing state if snippet changed
       if (data.snippet?.id !== raceState.snippet?.id) {

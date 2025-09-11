@@ -84,6 +84,12 @@ def princeton_courses_url(term: str, course_id: str):
         return f"https://www.princetoncourses.com/course/{term}{course_id}"
     return None
 
+def strip_trailing_empty_line(text: str) -> str:
+    """Remove one or more trailing newlines (CR/LF) and whitespace-only tail afterwards.
+    Does not modify internal content or spaces on the last non-empty line.
+    """
+    return re.sub(r'(?:\r?\n)+\s*$', '', text or '')
+
 # ── load snippets ─────────────────────────────────────────────────────────────
 file_path = SCRIPT_DIR / PROCESSED_FILE
 try:
@@ -101,7 +107,7 @@ for s in snippets:
     term, cid = term_and_course_from_url(s.get("original_url"))
     pc_url    = princeton_courses_url(term, cid)
     rows.append((
-        s["text"],
+        strip_trailing_empty_line(s["text"]),
         s["source"],
         s["category"],
         s["difficulty"],

@@ -36,6 +36,12 @@ const hostDisconnectTimers = new Map(); // lobbyCode -> { timer: NodeJS.Timeout,
 const countdownTimers = new Map(); // lobbyCode -> NodeJS.Timeout
 
 // Helper functions
+// Sanitize snippet text to avoid trailing empty lines that block completion
+const sanitizeSnippetText = (text) => {
+  if (typeof text !== 'string') return text;
+  return text.replace(/(?:\r?\n)+\s*$/u, '');
+};
+
 // Get player data for client, including avatar URL and basic stats
 const getPlayerClientData = async (player) => { // Make async
   // Use cached avatar if available, otherwise use null
@@ -412,7 +418,7 @@ const initialize = (io) => {
           code: practiceCode, 
           snippet: {
             id: snippetId, // Use DB ID or special timed ID
-            text: snippet.text,
+            text: sanitizeSnippetText(snippet.text),
             is_timed_test: isTimedTest,
             duration: duration,
             princeton_course_url: snippet.princeton_course_url || null,
@@ -514,7 +520,7 @@ const initialize = (io) => {
             code: lobby.code,
             snippet: {
               id: snippet.id,
-              text: snippet.text,
+              text: sanitizeSnippetText(snippet.text),
               princeton_course_url: snippet.princeton_course_url || null,
               course_name: snippet.course_name || null
             },
@@ -546,7 +552,7 @@ const initialize = (io) => {
               snippet: {
                 // Use fetched snippet data
                 id: fullSnippet.id, // Use fetched snippet ID
-                text: fullSnippet.text, // Use fetched text
+                text: sanitizeSnippetText(fullSnippet.text), // Use fetched text
                 princeton_course_url: fullSnippet.princeton_course_url || null, // Use fetched URL
                 course_name: fullSnippet.course_name || null // Use fetched name
               },
@@ -601,7 +607,7 @@ const initialize = (io) => {
           lobbyId: lobby.id,
           snippet: {
             id: race.snippet.id,
-            text: race.snippet.text,
+            text: sanitizeSnippetText(race.snippet.text),
             princeton_course_url: race.snippet.princeton_course_url || null,
             course_name: race.snippet.course_name || null
           },
@@ -729,7 +735,7 @@ const initialize = (io) => {
           code: lobby.code,
           snippet: { // Store full snippet info
             id: snippet?.id, // Use optional chaining as timed snippet has no DB id
-            text: snippet.text,
+            text: sanitizeSnippetText(snippet.text),
             is_timed_test: snippet.is_timed_test || false,
             duration: snippet.duration || null,
             princeton_course_url: snippet.princeton_course_url || null,
@@ -911,7 +917,7 @@ const initialize = (io) => {
              code: fullLobby.code,
              snippet: {
                id: fullLobby.snippet_id,
-               text: fullLobby.snippet_text,
+               text: sanitizeSnippetText(fullLobby.snippet_text),
                // Assuming private lobbies don't start with timed tests unless explicitly set later
                is_timed_test: false,
                duration: null,

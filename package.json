@@ -18,7 +18,9 @@
     "test:client": "cd client && npm test",
     "test:client:progress": "cd client && npm run test:progress",
     "test:all": "npm run test:server && npm run test:client",
-    "test:all:pretty": "npm run test:server && npm run test:client:progress"
+    "test:all:pretty": "npm run test:server && npm run test:client:progress",
+    "fix:snippets:dry": "node server/scripts/fix_snippet_trailing_newlines.js",
+    "fix:snippets:apply": "node server/scripts/fix_snippet_trailing_newlines.js --apply"
   },
   "dependencies": {
     "@jridgewell/gen-mapping": "^0.3.8",

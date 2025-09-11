@@ -1,5 +1,13 @@
 const db = require('../config/database');
 
+// ensure snippet text is safe to type in a single-line input
+// removes any trailing CR/LF characters and whitespace-only tail after them
+const sanitizeSnippetText = (text) => {
+  if (typeof text !== 'string') return text;
+  // remove one or more trailing newlines (\n or \r\n) and any spaces after them
+  return text.replace(/(?:\r?\n)+\s*$/u, '');
+};
+
 // Snippet model for managing text snippets
 const Snippet = {
   // Get a random snippet based on optional filters
@@ -43,7 +51,12 @@ const Snippet = {
         // return fallbackResult.rows[0];
         return null; // Or return null if no match
       }
-      return result.rows[0];
+      // Sanitize text before returning to callers
+      const row = result.rows[0];
+      if (row && typeof row.text === 'string') {
+        row.text = sanitizeSnippetText(row.text);
+      }
+      return row;
     } catch (err) {
       console.error('Error getting random snippet with filters:', filters, err);
       throw err;
@@ -57,7 +70,11 @@ const Snippet = {
         'SELECT * FROM snippets WHERE id = $1',
         [id]
       );
-      return result.rows[0];
+      const row = result.rows[0];
+      if (row && typeof row.text === 'string') {
+        row.text = sanitizeSnippetText(row.text);
+      }
+      return row;
     } catch (err) {
       console.error('Error getting snippet by ID:', err);
       throw err;
