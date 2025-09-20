@@ -34,10 +34,10 @@ on:
       environment:
         description: "Target environment for secrets"
         required: false
-        default: production
+        default: tigertype
         type: choice
         options:
-          - production
+          - tigertype
           - staging
 
 jobs:

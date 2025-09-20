@@ -10,10 +10,10 @@ on:
       environment:
         description: "Target environment (uses environment-level secrets if configured)"
         required: false
-        default: production
+        default: tigertype
         type: choice
         options:
-          - production
+          - tigertype
           - staging
 
 jobs:
