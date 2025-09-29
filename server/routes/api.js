@@ -8,6 +8,8 @@ const { isAuthenticated } = require('../utils/auth');
 const UserModel = require('../models/user');
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
+const FeedbackModel = require('../models/feedback');
+const { sendFeedbackNotification } = require('../utils/email');
 const profileRoutes = require('./profileRoutes'); // Import profile routes
 const { pool } = require('../config/database');
 
@@ -116,6 +118,71 @@ router.use('/profile', requireAuth, profileRoutes);
 router.use('/profile', requireAuth, profileRoutes); 
 
 // --- Existing API Routes ---
+
+router.post('/feedback', async (req, res) => {
+  try {
+    const { category = 'feedback', message, contactInfo, pagePath } = req.body || {};
+
+    if (!message || typeof message !== 'string' || message.trim().length < 10) {
+      return res.status(400).json({ error: 'Please include a short description so we can help (10+ characters).' });
+    }
+
+    const sanitizedMessage = message.trim().slice(0, 4000);
+    const sanitizedContact = typeof contactInfo === 'string' ? contactInfo.trim().slice(0, 255) : null;
+    const sanitizedPagePath = typeof pagePath === 'string' ? pagePath.trim().slice(0, 255) : null;
+
+    let userId = null;
+    let netid = null;
+    if (isAuthenticated(req)) {
+      if (!req.user && req.session?.userInfo) {
+        req.user = {
+          id: req.session.userInfo.userId,
+          netid: req.session.userInfo.user
+        };
+      }
+      userId = req.user?.id || null;
+      netid = req.user?.netid || req.session?.userInfo?.user || null;
+    }
+
+    const userAgent = req.get('user-agent')?.slice(0, 500) || null;
+
+    const record = await FeedbackModel.create({
+      userId,
+      netid,
+      category,
+      message: sanitizedMessage,
+      contactInfo: sanitizedContact,
+      pagePath: sanitizedPagePath,
+      userAgent
+    });
+
+    const feedbackFrom = process.env.FEEDBACK_EMAIL_FROM || process.env.FEEDBACK_SMTP_USER || null;
+    const feedbackTo = process.env.FEEDBACK_EMAIL_TO || feedbackFrom;
+
+    if (feedbackFrom && feedbackTo) {
+      try {
+        await sendFeedbackNotification({
+          category,
+          message: sanitizedMessage,
+          contactInfo: sanitizedContact,
+          netid,
+          userAgent,
+          pagePath: sanitizedPagePath,
+          createdAt: record?.created_at ? new Date(record.created_at) : new Date(),
+          to: feedbackTo,
+          from: feedbackFrom
+        });
+      } catch (emailError) {
+        console.error('Failed to send feedback notification email:', emailError);
+      }
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error submitting feedback:', err);
+    return res.status(500).json({ error: 'Unable to submit feedback right now. Please try again later.' });
+  }
+});
 
 /**
  * Mark tutorial as completed for the current user

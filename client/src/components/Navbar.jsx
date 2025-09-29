@@ -9,21 +9,18 @@ import PropTypes from 'prop-types'; // Import PropTypes
 import navbarLogo from '../assets/logos/navbar-logo.png';
 import TutorialGuide from './TutorialGuide'; // Import TutorialGuide
 import { useTutorial } from '../context/TutorialContext';
+import FeedbackModal from './FeedbackModal';
 
 function Navbar({ onOpenLeaderboard, onLoginClick }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { authenticated, user, logout, markTutorialComplete } = useAuth();
   const { isTutorialRunning, startTutorial, endTutorial } = useTutorial();
   const navigate = useNavigate();
-  const {
-    raceState,
-    typingState,
-    setPlayerReady,
-    resetRace
-  } = useRace();
+  const { raceState, typingState, setPlayerReady, resetRace } = useRace();
 
   // State to track hover state of each link
   const [hoveredLink, setHoveredLink] = useState(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const handleLogo = () => {
     resetRace();
@@ -80,6 +77,15 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
               </button>
             </>
           )}
+          <button
+            type="button"
+            className="navbar-feedback-icon"
+            onClick={() => setIsFeedbackOpen(true)}
+            title="Send feedback or report a bug"
+            aria-label="Send feedback or report a bug"
+          >
+            <span className="material-icons" aria-hidden="true">bug_report</span>
+          </button>
           {/* GitHub link (always visible) */}
           <a
             className="navbar-github-icon"
@@ -164,6 +170,10 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
       <Settings 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)}
+      />
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
       />
     </header>
   );

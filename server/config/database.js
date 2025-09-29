@@ -3,6 +3,7 @@ const { Pool } = require('pg');
 // Check for database URL (used in production)
 const isProduction = process.env.NODE_ENV === 'production';
 const connectionString = process.env.DATABASE_URL;
+const defaultHost = process.env.DB_HOST || '127.0.0.1';
 
 // Log database connection details
 console.log('Connecting to database in', isProduction ? 'PRODUCTION' : 'DEVELOPMENT', 'mode');
@@ -11,7 +12,7 @@ if (isProduction && connectionString) {
   console.log('Using database connection string from DATABASE_URL');
 } else {
   console.log(`  User: ${process.env.DB_USER || process.env.USER}`);
-  console.log(`  Host: ${process.env.DB_HOST || 'localhost'}`);
+  console.log(`  Host: ${defaultHost}`);
   console.log(`  Database: ${process.env.DB_NAME || 'tigertype'}`);
   console.log(`  Port: ${process.env.DB_PORT || 5432}`);
 }
@@ -42,7 +43,7 @@ if (isProduction && connectionString) {
   // Development configuration using individual parameters
   poolConfig = {
     user: process.env.DB_USER || process.env.USER,
-    host: process.env.DB_HOST || 'localhost',
+    host: defaultHost,
     database: process.env.DB_NAME || 'tigertype',
     password: process.env.DB_PASSWORD || '',
     port: process.env.DB_PORT || 5432,
@@ -131,3 +132,4 @@ module.exports = {
   getClient,
   pool
 };
+

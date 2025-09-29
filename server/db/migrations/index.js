@@ -622,6 +622,33 @@ const MIGRATIONS = [
       console.log('Revert Migration 18 complete.');
     }
   },
+  {
+    version: 19,
+    description: 'Add feedback_entries table for in-app feedback capture',
+    up: async (client) => {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS feedback_entries (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          netid VARCHAR(50),
+          category VARCHAR(20) NOT NULL DEFAULT 'feedback',
+          message TEXT NOT NULL,
+          contact_info TEXT,
+          page_path TEXT,
+          user_agent TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_feedback_entries_user_id ON feedback_entries(user_id);
+        CREATE INDEX IF NOT EXISTS idx_feedback_entries_created_at ON feedback_entries(created_at);
+      `);
+      console.log('Migration 19 complete: feedback_entries table created.');
+    },
+    down: async (client) => {
+      await client.query('DROP TABLE IF EXISTS feedback_entries;');
+      console.log('Migration 19 reverted: feedback_entries table dropped.');
+    }
+  },
 ];
 
 // Create migrations table if it doesn't exist

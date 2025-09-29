@@ -269,3 +269,20 @@ CREATE TABLE IF NOT EXISTS partial_sessions (
 
 -- Index for partial_sessions performance
 CREATE INDEX IF NOT EXISTS idx_partial_sessions_user_id ON partial_sessions(user_id);
+
+-- Feedback entries table for capturing in-app feedback/bug reports
+CREATE TABLE IF NOT EXISTS feedback_entries (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE SET NULL,
+  netid VARCHAR(50),
+  category VARCHAR(20) NOT NULL DEFAULT 'feedback',
+  message TEXT NOT NULL,
+  contact_info TEXT,
+  page_path TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_entries_user_id ON feedback_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_entries_created_at ON feedback_entries(created_at);
+
