@@ -198,6 +198,7 @@ const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) =>
       SELECT
         tl.user_id,
         u.netid,
+        u.avatar_url,
         tl.wpm,
         tl.accuracy,
         (tl.wpm * tl.accuracy / 100.0) AS adjusted_wpm, -- Calculate adjusted WPM
@@ -210,6 +211,7 @@ const getTimedLeaderboard = async (duration, period = 'alltime', limit = 100) =>
     SELECT
       user_id,
       netid,
+      avatar_url,
       wpm,
       accuracy,
       adjusted_wpm, -- Select the calculated adjusted WPM
