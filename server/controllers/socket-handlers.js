@@ -1513,13 +1513,10 @@ const initialize = (io) => {
         const leaderboardData = await getTimedLeaderboard(duration, period);
 
         // Use UserModel correctly to fetch avatars
-        const leaderboardWithAvatars = await Promise.all(leaderboardData.map(async (entry) => {
-          const user = await UserModel.findById(entry.user_id);
-          return {
-            ...entry,
-            created_at: new Date(entry.created_at).toISOString(),
-            avatar_url: user?.avatar_url || null
-          };
+        const leaderboardWithAvatars = leaderboardData.map((entry) => ({
+          ...entry,
+          created_at: new Date(entry.created_at).toISOString(),
+          avatar_url: entry.avatar_url || null
         }));
 
         callback({ leaderboard: leaderboardWithAvatars });
