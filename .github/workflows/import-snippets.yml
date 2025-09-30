@@ -40,6 +40,8 @@ on:
           - tigertype
           - staging
 
+run-name: "Import ${{ inputs.subject || 'ALL' }} snippets for ${{ inputs.term }}"
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -86,11 +88,57 @@ jobs:
           echo "TERM=${{ github.event.inputs.term }}" >> "$GITHUB_ENV"
           echo "SUBJECT=${{ github.event.inputs.subject }}" >> "$GITHUB_ENV"
           echo "COURSE=${{ github.event.inputs.course }}" >> "$GITHUB_ENV"
+          
+      - name: Parse term code to semester
+        id: parse_term
+        run: |
+          TERM="${{ github.event.inputs.term }}"
+          # extract year and semester from term code (e.g., 1252)
+          # format: 12YS where Y is year offset from 2020, S is semester (2=Fall, 4=Spring)
+          YEAR_DIGIT="${TERM:2:1}"
+          SEM_DIGIT="${TERM:3:1}"
+          
+          # calculate year
+          YEAR=$((2020 + YEAR_DIGIT))
+          
+          # determine semester
+          case "$SEM_DIGIT" in
+            2) SEMESTER="Fall"; DISPLAY_YEAR=$YEAR ;;
+            4) SEMESTER="Spring"; DISPLAY_YEAR=$((YEAR + 1)) ;;
+            *) SEMESTER="Unknown"; DISPLAY_YEAR=$YEAR ;;
+          esac
+          
+          SEMESTER_DISPLAY="${SEMESTER} ${DISPLAY_YEAR}"
+          echo "semester=$SEMESTER_DISPLAY" >> "$GITHUB_OUTPUT"
+          echo "year=$DISPLAY_YEAR" >> "$GITHUB_OUTPUT"
+          echo "semester_name=$SEMESTER" >> "$GITHUB_OUTPUT"
+          
+          # set subject display
+          SUBJECT="${{ github.event.inputs.subject }}"
+          if [ -z "$SUBJECT" ]; then
+            echo "subject_display=ALL subjects" >> "$GITHUB_OUTPUT"
+          else
+            echo "subject_display=$SUBJECT" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Scrape evaluations (raw_evaluations.json)
+        id: scrape
         run: |
           node server/scraping/scrape_evals.js
           ls -lh server/scraping/data/raw_evaluations.json
+          
+          # count courses and snippets scraped
+          if [ -f server/scraping/data/raw_evaluations.json ]; then
+            COURSES_COUNT=$(jq 'length' server/scraping/data/raw_evaluations.json)
+            SNIPPETS_COUNT=$(jq '[.[] | .questions // []] | add | length' server/scraping/data/raw_evaluations.json)
+            echo "courses_count=$COURSES_COUNT" >> "$GITHUB_OUTPUT"
+            echo "snippets_count=$SNIPPETS_COUNT" >> "$GITHUB_OUTPUT"
+            
+            echo "### 📥 Scraping Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Courses found:** $COURSES_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "- **Raw snippets extracted:** $SNIPPETS_COUNT" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload raw evaluations (artifact)
         uses: actions/upload-artifact@v4
@@ -109,11 +157,24 @@ jobs:
           pip install openai python-dotenv psycopg2-binary
 
       - name: Process raw evaluations -> processed_snippets.json
+        id: process
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python server/scraping/process_evals.py
           ls -lh server/scraping/data/processed_snippets.json
+          
+          # count processed snippets
+          if [ -f server/scraping/data/processed_snippets.json ]; then
+            PROCESSED_COUNT=$(jq 'length' server/scraping/data/processed_snippets.json)
+            echo "processed_count=$PROCESSED_COUNT" >> "$GITHUB_OUTPUT"
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🤖 AI Processing Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Snippets selected by AI:** $PROCESSED_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "- **Selection rate:** $(echo "scale=1; $PROCESSED_COUNT * 100 / ${{ steps.scrape.outputs.snippets_count }}" | bc)%" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload processed snippets (artifact)
         uses: actions/upload-artifact@v4
@@ -122,11 +183,24 @@ jobs:
           path: server/scraping/data/processed_snippets.json
 
       - name: Import processed snippets into DB
+        id: import
         if: ${{ github.event.inputs.import_to_db == 'true' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          python server/scraping/import_snippets.py --production
+          python server/scraping/import_snippets.py --production | tee import_output.log
+          
+          # try to extract import count from output
+          IMPORTED=$(grep -oP 'imported \K\d+' import_output.log | tail -1 || echo "unknown")
+          echo "imported_count=$IMPORTED" >> "$GITHUB_OUTPUT"
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 💾 Database Import" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ✅ Import completed" >> $GITHUB_STEP_SUMMARY
+          if [ "$IMPORTED" != "unknown" ]; then
+            echo "- **Snippets imported:** $IMPORTED" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Post-import newline fix (safety net)
         if: ${{ github.event.inputs.import_to_db == 'true' }}
@@ -142,3 +216,33 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           node server/scripts/verify_snippet_duplicates.js
+          
+      - name: Generate final summary
+        if: always()
+        run: |
+          echo "# 📊 Snippet Import Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Semester:** ${{ steps.parse_term.outputs.semester }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Term Code:** \`${{ github.event.inputs.term }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Subject(s):** ${{ steps.parse_term.outputs.subject_display }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ github.event.inputs.course }}" ]; then
+            echo "- **Course Filter:** \`${{ github.event.inputs.course }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- **Import to DB:** ${{ github.event.inputs.import_to_db }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Courses found | ${{ steps.scrape.outputs.courses_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Raw snippets extracted | ${{ steps.scrape.outputs.snippets_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Snippets selected by AI | ${{ steps.process.outputs.processed_count }} |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event.inputs.import_to_db }}" == "true" ] && [ -n "${{ steps.import.outputs.imported_count }}" ]; then
+            echo "| Snippets imported to DB | ${{ steps.import.outputs.imported_count }} |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- \`raw_evaluations.json\` - Raw scraped course evaluations" >> $GITHUB_STEP_SUMMARY
+          echo "- \`processed_snippets.json\` - AI-filtered and processed snippets" >> $GITHUB_STEP_SUMMARY
