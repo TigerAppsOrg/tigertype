@@ -83,7 +83,7 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
           {/* GitHub link (always visible) */}
           <a
             className="navbar-github-icon"
-            href="https://github.com/ammaar-alam/tigertype"
+            href="https://github.com/TigerAppsOrg/tigertype"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Open project on GitHub"
