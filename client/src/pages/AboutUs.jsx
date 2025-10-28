@@ -115,7 +115,7 @@ function AboutUs() {
           </p>
           <ul>
             <li><strong>Real-time Feedback:</strong> Immediate visual cues highlight correct and incorrect keystrokes</li>
-            <li><strong>Error Handling:</strong> Option to require error correction or continue typing despite mistakes</li>
+            <li><strong>Error Handling:</strong> In <em>Timed</em> mode you do not need to go back and fix mistakes — you can keep typing; mistakes still reduce accuracy and adjusted WPM. In <em>Snippet</em> mode you must correct errors to continue progressing through the text.</li>
             <li><strong>Audio Feedback:</strong> Customizable keyboard sounds enhance the typing experience</li>
             <li><strong>Visible Progress:</strong> Clear indication of your position within the current text</li>
           </ul>
@@ -137,6 +137,7 @@ function AboutUs() {
             <li><strong>Inactivity Warning:</strong> If you are the only player who has not clicked "Ready" for 60 seconds, you will receive an inactivity warning.</li>
             <li><strong>Inactivity Kick:</strong> If you remain inactive for an additional 15 seconds after the warning, you will be automatically removed from the lobby to prevent holding up other players.</li>
             <li><strong>Anti-Cheat Measures:</strong> Pasting text is disabled during races to maintain fair competition.</li>
+            <li><strong>Public Lobby Capacity:</strong> Public lobbies have no player cap. Private lobbies are limited to 10 players.</li>
           </ul>
 
           <h4>Stats Calculation</h4>
@@ -190,7 +191,6 @@ function AboutUs() {
             <li><strong>Difficulty Levels:</strong> Content is categorized by complexity and length, allowing progressive skill development</li>
           </ul>
         </CollapsibleSection>
-        
         <CollapsibleSection title="Understanding Statistics">
           <h4>Platform Statistics</h4>
           <p>
@@ -262,6 +262,13 @@ function AboutUs() {
             </li>
           </ul>
         </CollapsibleSection>
+        {/* Feedback note positioned at the very bottom of Learn More */}
+        <p className="feedback-note">
+          Have suggestions or found an issue? Email us at
+          {' '}<a href="mailto:it.admin@tigerapps.org">it.admin@tigerapps.org</a>
+          {' '}or open an issue on
+          {' '}<a href="https://github.com/TigerAppsOrg/tigertype/issues" target="_blank" rel="noopener noreferrer">GitHub</a>.
+        </p>
       </section>
     </div>
   );

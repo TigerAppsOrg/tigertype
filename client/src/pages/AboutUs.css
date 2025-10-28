@@ -221,6 +221,23 @@
   margin-top: 2rem;
 }
 
+/* Subtle feedback note under Learn More */
+.feedback-note {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-color-tertiary);
+  text-align: center;
+}
+
+.feedback-note a {
+  color: var(--developer-link-color);
+  text-decoration: none;
+}
+
+.feedback-note a:hover {
+  text-decoration: underline;
+}
+
 .collapsible-section {
   background-color: var(--background-color);
   border-radius: 10px;
