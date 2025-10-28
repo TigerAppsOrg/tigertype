@@ -272,6 +272,8 @@ function Lobby() {
                     setRaceState={setRaceState}
                     loadNewSnippet={loadNewSnippet}
                     snippetError={snippetError}
+                    isLobby
+                    allowTimed={false}
                     onShowLeaderboard={() => {}} // Disable leaderboard button in lobby
                   />
                 ) : (

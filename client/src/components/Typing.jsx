@@ -608,10 +608,11 @@ function Typing({
     };
   }, [raceState.inProgress, raceState.startTime, raceState.completed, typingState.correctChars]); // Include typingState.correctChars
 
-  // Handle typing input with word locking
+  // Handle typing input with word locking (snippet) or free-typing (timed)
   const handleComponentInput = (e) => {
     const newInput = e.target.value;
     const text = raceState.snippet?.text || '';
+    const isTimedMode = !!(raceState.snippet?.is_timed_test);
 
     // Check if new character is correct
     const isMovingForward = newInput.length > input.length;
@@ -660,9 +661,11 @@ function Typing({
           wordCount: 15 // Request 1 more words
         });
       }
-      // Prevent typing past the end of the snippet
-      if (newInput.length >= text.length + 1) {
-        return;
+      // In snippet mode, prevent typing past the end of the text. In timed mode,
+      // the server will append more words, so allow typing up to one char beyond
+      // (we early-request extra words above).
+      if (!isTimedMode) {
+        if (newInput.length >= text.length + 1) return;
       }
       
       // Check if there's a typing error (improved to check all characters)
@@ -677,7 +680,7 @@ function Typing({
       }
       
       // Only trigger shake and error message on a new error
-      if (hasError && !isShaking) {
+      if (!isTimedMode && hasError && !isShaking) {
         setIsShaking(true);
         setShowErrorMessage(true);
         
@@ -725,6 +728,7 @@ function Typing({
     if (!raceState.snippet) return null;
     
     const text = raceState.snippet.text;
+    const isTimedMode = !!(raceState.snippet?.is_timed_test);
     
     // Split text by words, maintaining spaces between them
     const renderNonBreakingText = () => {
@@ -740,11 +744,17 @@ function Typing({
           const charPos = charIndex + i;
           
           if (charPos < input.length) {
-            if (input[charPos] === text[charPos] && !hasEncounteredError) {
-              wordChars.push(<span key={`${wordIndex}-${i}`} className="correct">{word[i]}</span>);
+            if (isTimedMode) {
+              // Timed mode: per-character correctness, no cascade after first error
+              const cls = input[charPos] === text[charPos] ? 'correct' : 'incorrect';
+              wordChars.push(<span key={`${wordIndex}-${i}`} className={cls}>{word[i]}</span>);
             } else {
-              hasEncounteredError = true;
-              wordChars.push(<span key={`${wordIndex}-${i}`} className="incorrect">{word[i]}</span>);
+              if (input[charPos] === text[charPos] && !hasEncounteredError) {
+                wordChars.push(<span key={`${wordIndex}-${i}`} className="correct">{word[i]}</span>);
+              } else {
+                hasEncounteredError = true;
+                wordChars.push(<span key={`${wordIndex}-${i}`} className="incorrect">{word[i]}</span>);
+              }
             }
           } else if (charPos === input.length) {
             wordChars.push(<span ref={currentCharRef} key={`${wordIndex}-${i}`} className="current">{word[i]}</span>);
@@ -765,11 +775,16 @@ function Typing({
           const spacePos = charIndex + word.length;
           
           if (spacePos < input.length) {
-            if (input[spacePos] === ' ' && !hasEncounteredError) {
-              components.push(<span key={`space-${wordIndex}`} className="correct"> </span>);
+            if (isTimedMode) {
+              const cls = input[spacePos] === ' ' ? 'correct' : 'incorrect';
+              components.push(<span key={`space-${wordIndex}`} className={cls}> </span>);
             } else {
-              hasEncounteredError = true;
-              components.push(<span key={`space-${wordIndex}`} className="incorrect"> </span>);
+              if (input[spacePos] === ' ' && !hasEncounteredError) {
+                components.push(<span key={`space-${wordIndex}`} className="correct"> </span>);
+              } else {
+                hasEncounteredError = true;
+                components.push(<span key={`space-${wordIndex}`} className="incorrect"> </span>);
+              }
             }
           } else if (spacePos === input.length) {
             components.push(<span ref={currentCharRef} key={`space-${wordIndex}`} className="current"> </span>);

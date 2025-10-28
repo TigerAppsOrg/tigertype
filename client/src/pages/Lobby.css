@@ -129,12 +129,12 @@
 .lobby-left-column {
   flex: 1;
   min-width: 300px;
-  padding: 1.5rem;
+  padding: 1.2rem;
   background-color: var(--type-container-color);
   border-radius: 6px;
   border: 1px solid var(--border-color);
   position: relative;
-  min-height: 23vh;
+  min-height: 0; /* reduce dead space */
 }
 
 .lobby-settings {
@@ -146,11 +146,11 @@
 }
 
 .lobby-settings h2 {
-  margin: 0 0 1.2rem 0;
+  margin: 0 0 0.8rem 0;
   color: var(--mode-text-color);
   font-size: 1.3rem;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
 }
 
 /* --- TestConfigurator overrides for vertical lobby layout --- */
@@ -162,7 +162,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px; /* tighten spacing */
   overflow: visible;
 }
 
@@ -199,7 +199,7 @@
 
 /* Visible state when React adds .visible */
 .lobby-settings .test-configurator .options-wrapper.visible {
-  margin-top: 25px;
+  margin-top: 12px; /* reduce vertical gap */
   max-height: 600px;
   opacity: 1;
   pointer-events: auto;
