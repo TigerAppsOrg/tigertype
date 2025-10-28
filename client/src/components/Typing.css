@@ -229,6 +229,12 @@
   text-decoration: underline wavy rgba(255, 65, 47, 0.55);
 }
 
+/* Caret cursor: prefer subtle inline color only (no red block, no underline) */
+:root[data-cursor='caret'] .snippet-display .incorrect {
+  background-color: transparent !important;
+  text-decoration: none !important;
+}
+
 .shake-animation {
   animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
 }
@@ -415,9 +421,9 @@
   pointer-events: none;
   z-index: 0; /* behind the text */
   transition:
-    transform var(--cursor-glide-duration, 90ms) cubic-bezier(0.24, 0.92, 0.35, 1),
-    width     var(--cursor-glide-duration, 90ms) cubic-bezier(0.24, 0.92, 0.35, 1),
-    height    var(--cursor-glide-duration, 90ms) cubic-bezier(0.24, 0.92, 0.35, 1);
+    transform var(--cursor-glide-duration, 90ms) ease-in-out,
+    width     var(--cursor-glide-duration, 90ms) ease-in-out,
+    height    var(--cursor-glide-duration, 90ms) ease-in-out;
   opacity: calc(var(--glide-cursor-enabled, 0)); /* 0 or 1 set by Settings */
   border-radius: 2px;
   backface-visibility: hidden;
@@ -430,8 +436,7 @@
 
 .cursor-overlay.caret {
   background: transparent;
-  border-left: var(--caret-width, 3px) solid var(--caret-color);
-  box-shadow: 0 0 0.001px var(--caret-color); /* sub-pixel hinting */
+  border-left: var(--caret-width, 2px) solid var(--caret-color);
   z-index: 2; /* above text so thin caret remains visible */
   animation: caretBlink 1.2s ease-in-out infinite;
 }
