@@ -653,13 +653,19 @@ function Typing({
       
       // Continue processing this first character instead of ignoring it
       if (raceState.inProgress) {
-        raceHandleInput(newInput);
+        const processed = raceHandleInput(newInput);
+        setInput(processed ?? newInput);
       } else {
         // Since raceState.inProgress hasn't updated yet in this render cycle,
         // we need to directly set the input so the character appears
         setInput(newInput);
-        // Schedule an update after the state has changed
-        setTimeout(() => raceHandleInput(newInput), 0);
+        // Schedule an update after the state has changed so startTime is initialized
+        setTimeout(() => {
+          const processed = raceHandleInput(newInput);
+          if (typeof processed === 'string') {
+            setInput(processed);
+          }
+        }, 0);
       }
       return;
     }
@@ -712,13 +718,11 @@ function Typing({
         }, 1500);
       }
       
-      // Use the handleInput function from RaceContext
-      raceHandleInput(newInput);
+      // Use the handleInput function from RaceContext and capture sanitized value
+      const processed = raceHandleInput(newInput);
 
-      // Immediately reflect the user's raw input to avoid dropping characters
-      // during rapid multi-key presses; word-locking corrections will be
-      // reconciled on the next tick via typingState.input sync.
-      setInput(newInput);
+      // Immediately reflect the sanitized input to keep locked words intact
+      setInput(processed ?? newInput);
     } else {
       // Prevent typing past the end of the snippet
       if (raceState.snippet && newInput.length > raceState.snippet.text.length) {

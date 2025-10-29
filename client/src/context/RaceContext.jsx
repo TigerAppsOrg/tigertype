@@ -619,10 +619,11 @@ export const RaceProvider = ({ children }) => {
   };
 
   // Handle text input, enforce word locking (snippet mode) or free-flow (timed mode)
-  const handleInput = (newInput) => {
+  const handleInput = (incomingInput) => {
+    let newInput = incomingInput;
     // Disable input handling for non-practice races before countdown begins
     if (raceState.type !== 'practice' && !raceState.inProgress && raceState.countdown === null) {
-      return;
+      return newInput;
     }
     
     // --- Start Practice Race on First Input --- 
@@ -645,7 +646,7 @@ export const RaceProvider = ({ children }) => {
         input: newInput,
         position: newInput.length
       }));
-      return;
+      return newInput;
     }
     
     // If we are in progress (or just started practice), proceed with full update
@@ -654,13 +655,6 @@ export const RaceProvider = ({ children }) => {
     const text = raceState.snippet?.text || '';
     const isTimedMode = !!(raceState.snippet?.is_timed_test || raceState.timedTest?.enabled || raceState.settings?.testMode === 'timed');
 
-    // In timed mode, do not enforce word locking or special backspace preservation –
-    // users can continue typing past mistakes (Monkeytype-style)
-    if (isTimedMode) {
-      updateProgress(newInput);
-      return;
-    }
-    
     // Find the position of the first error in the current input
     let firstErrorPosition = text.length; // Default to end of text (no errors)
     for (let i = 0; i < Math.min(text.length, currentInput.length); i++) {
@@ -669,17 +663,17 @@ export const RaceProvider = ({ children }) => {
         break;
       }
     }
-    
+
     // If trying to delete locked text, only preserve correctly typed text before the first error
     if (newInput.length < currentInput.length && lockedPosition > 0) {
       // Only preserve text up to the last complete word before the first error
       const lastWordBreakBeforeError = currentInput.lastIndexOf(' ', Math.max(0, firstErrorPosition - 1)) + 1;
-      
+
       // Only enforce locking if trying to delete before the locked position
       if (newInput.length < lastWordBreakBeforeError) {
         const preservedPart = currentInput.substring(0, lastWordBreakBeforeError);
         let newPart = '';
-        
+
         // Keep the user's input after the preserved part
         if (newInput.length >= preservedPart.length) {
           newPart = newInput.substring(preservedPart.length);
@@ -687,14 +681,15 @@ export const RaceProvider = ({ children }) => {
           // Deletion is attempting to erase preserved text
           newPart = currentInput.substring(preservedPart.length);
         }
-        
+
         // This enforces that only correctly typed words before any error cannot be deleted
         newInput = preservedPart + newPart;
       }
     }
-    
+
     // Update progress with the potentially modified input
     updateProgress(newInput);
+    return newInput;
   };
 
   const updateProgress = (input) => {
@@ -728,7 +723,8 @@ export const RaceProvider = ({ children }) => {
       }
       currentErrors = input.length - correctChars; // net errors
       hasError = currentErrors > 0;
-      firstErrorPosition = hasError ? input.split('').findIndex((ch, idx) => idx < text.length && ch !== text[idx]) : text.length;
+      const mismatchIndex = input.split('').findIndex((ch, idx) => idx >= text.length || ch !== text[idx]);
+      firstErrorPosition = hasError ? (mismatchIndex === -1 ? Math.min(input.length, text.length) : mismatchIndex) : text.length;
     } else {
       // Snippet mode: contiguous correctness until first error
       if (!hasError) {
@@ -782,7 +778,7 @@ export const RaceProvider = ({ children }) => {
     let newLockedPosition = 0;
     
     // Only process word locking if there are characters
-    if (!isTimedMode && input.length > 0) {
+    if (input.length > 0) {
       let wordStart = 0;
       
       // Only lock text if there are no errors, or only lock up to the last word break before first error
@@ -826,7 +822,7 @@ export const RaceProvider = ({ children }) => {
       completed: isTimedMode ? false : isCompleted, // timed ends by timer
       wpm,
       accuracy,
-      lockedPosition: isTimedMode ? 0 : newLockedPosition
+      lockedPosition: newLockedPosition
     });
     
     // If the race is still in progress, update progress
