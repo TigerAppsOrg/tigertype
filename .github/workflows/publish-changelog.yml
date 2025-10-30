@@ -8,10 +8,15 @@ on:
       - master
       - main
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull request number to publish'
+        required: true
+        type: number
 
 jobs:
   publish:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,15 +30,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Collect PR metadata (pull_request)
+        if: github.event_name == 'pull_request'
+        run: |
+          printf "PR_NUMBER=%s\n" "${{ github.event.pull_request.number }}" >> "$GITHUB_ENV"
+          printf "PR_TITLE=%s\n" "${{ github.event.pull_request.title }}" >> "$GITHUB_ENV"
+          printf "PR_URL=%s\n" "${{ github.event.pull_request.html_url }}" >> "$GITHUB_ENV"
+          printf "PR_MERGED_AT=%s\n" "${{ github.event.pull_request.merged_at }}" >> "$GITHUB_ENV"
+          printf "PR_MERGED_BY=%s\n" "${{ github.event.pull_request.merged_by.login || '' }}" >> "$GITHUB_ENV"
+          printf "PR_LABELS=%s\n" '${{ toJson(github.event.pull_request.labels) }}' >> "$GITHUB_ENV"
+          printf 'PR_BODY<<EOF\n%s\nEOF\n' "${{ github.event.pull_request.body || '' }}" >> "$GITHUB_ENV"
+
+      - name: Collect PR metadata (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="${{ github.event.inputs.pr_number }}"
+          pr_json=$(gh api repos/${{ github.repository }}/pulls/"$pr_number")
+          echo "PR_NUMBER=$pr_number" >> "$GITHUB_ENV"
+          echo "PR_TITLE=$(echo "$pr_json" | jq -r '.title')" >> "$GITHUB_ENV"
+          echo "PR_URL=$(echo "$pr_json" | jq -r '.html_url')" >> "$GITHUB_ENV"
+          echo "PR_MERGED_AT=$(echo "$pr_json" | jq -r '.merged_at // (now | todateiso8601)')" >> "$GITHUB_ENV"
+          echo "PR_MERGED_BY=$(echo "$pr_json" | jq -r '.merged_by.login // ""')" >> "$GITHUB_ENV"
+          echo "PR_LABELS=$(echo "$pr_json" | jq -c '.labels')" >> "$GITHUB_ENV"
+          printf 'PR_BODY<<EOF\n%s\nEOF\n' "$(echo "$pr_json" | jq -r '.body // ""')" >> "$GITHUB_ENV"
+
       - name: Publish changelog entry
         env:
           CHANGELOG_API_BASE: ${{ secrets.CHANGELOG_API_BASE }}
           CHANGELOG_API_TOKEN: ${{ secrets.CHANGELOG_API_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_MERGED_AT: ${{ github.event.pull_request.merged_at }}
-          PR_MERGED_BY: ${{ github.event.pull_request.merged_by.login }}
-          PR_LABELS: ${{ toJson(github.event.pull_request.labels) }}
+          PR_NUMBER: ${{ env.PR_NUMBER }}
+          PR_TITLE: ${{ env.PR_TITLE }}
+          PR_BODY: ${{ env.PR_BODY }}
+          PR_URL: ${{ env.PR_URL }}
+          PR_MERGED_AT: ${{ env.PR_MERGED_AT }}
+          PR_MERGED_BY: ${{ env.PR_MERGED_BY }}
+          PR_LABELS: ${{ env.PR_LABELS }}
         run: npm run changelog:publish
