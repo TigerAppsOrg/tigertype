@@ -109,7 +109,15 @@ h2 {
 
 /* Make more of the entry clickable when authenticated */
 .leaderboard-player.clickable { cursor: pointer; }
-.leaderboard-player.clickable:hover .leaderboard-netid { text-decoration: underline; color: #F58025; }
+.leaderboard-player.clickable:hover .leaderboard-netid { 
+  color: #F58025; 
+  text-shadow: 0 0 8px rgba(245, 128, 37, 0.5);
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+.leaderboard-player.clickable:hover .leaderboard-avatar {
+  transform: scale(1.08);
+  border-color: #F58025;
+}
 .leaderboard-player.disabled { cursor: not-allowed; }
 .leaderboard-player.disabled .leaderboard-avatar { cursor: not-allowed; }
 
@@ -142,6 +150,7 @@ h2 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
 .leaderboard-stats {

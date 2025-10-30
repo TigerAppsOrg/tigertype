@@ -176,7 +176,7 @@
   display: none;
 }
 
-/* NEW RULE: Ensure the container for conditional options behaves correctly in vertical layout */
+/* Ensure the container for conditional options behaves correctly in vertical layout */
 .lobby-settings .test-configurator .conditional-options-container {
   width: 100%;
   height: auto;
@@ -199,14 +199,14 @@
 
 /* Visible state when React adds .visible */
 .lobby-settings .test-configurator .options-wrapper.visible {
-  margin-top: 12px; /* reduce vertical gap */
+  margin-top: 12px;
   max-height: 600px;
   opacity: 1;
   pointer-events: auto;
   visibility: visible;
 }
 
-/* Inner rows - now stacking vertically */
+/* Inner rows - stacking vertically */
 .lobby-settings .test-configurator .snippet-filters-inner,
 .lobby-settings .test-configurator .duration-selection-inner {
   display: flex;
@@ -230,7 +230,6 @@
   vertical-align: middle;
 }
 
-/* Fine‑tune dropdown pills */
 .lobby-settings .test-configurator .config-select {
   min-width: 0;
   flex-grow: 1;
