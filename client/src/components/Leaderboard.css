@@ -12,7 +12,7 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem; /* Spacing between groups */
+  gap: 1.5rem;
   margin-bottom: 2rem;
   padding: 0.75rem;
   background-color: rgba(20, 20, 20, 0.3); /* Darker background */
@@ -107,7 +107,12 @@ h2 {
   min-width: 150px; /* Ensure player name area has space */
 }
 
-/* Make more of the entry clickable when authenticated */
+.leaderboard-player-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .leaderboard-player.clickable { cursor: pointer; }
 .leaderboard-player.clickable:hover .leaderboard-netid { 
   color: #F58025; 
@@ -153,9 +158,26 @@ h2 {
   transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
+/* Title badges for leaderboard entries */
+.leaderboard-titles {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.leaderboard-title-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #F58025;
+  border-left: 4px solid #F58025;
+  padding-left: 6px;
+  background-color: rgba(245, 128, 37, 0.1);
+  border-radius: 4px;
+}
+
 .leaderboard-stats {
   display: flex;
-  gap: 1.5rem; /* Increased gap */
+  gap: 1.5rem;
   margin-left: auto;
   align-items: baseline;
   flex-shrink: 0; /* Prevent stats from shrinking too much */
@@ -201,7 +223,7 @@ h2 {
 }
 
 .spinner-border.text-orange {
-  color: #F58025 !important; /* Ensure orange color */
+  color: #F58025 !important;
   width: 3rem;
   height: 3rem;
 }
