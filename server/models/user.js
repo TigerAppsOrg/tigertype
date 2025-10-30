@@ -9,7 +9,7 @@ const User = {
     if (!userId) return null;
     try {
       // Select all relevant fields including the new tutorial flag
-      const result = await pool.query('SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id FROM users WHERE id = $1', [userId]);
+      const result = await pool.query('SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at FROM users WHERE id = $1', [userId]);
       return result.rows[0];
     } catch (err) {
       console.error(`Error finding user by ID ${userId}:`, err);
@@ -23,7 +23,7 @@ const User = {
       // Try to get all fields including fastest_wpm and has_completed_tutorial
       try {
         const result = await db.query(
-          'SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id FROM users WHERE netid = $1',
+          'SELECT id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at FROM users WHERE netid = $1',
           [netid]
         );
         return result.rows[0];
@@ -66,6 +66,8 @@ const User = {
           user.has_completed_tutorial = await fetchField('has_completed_tutorial', 'SELECT has_completed_tutorial FROM users WHERE id = $1') ?? false;
         // Fetch selected title
         user.selected_title_id = await fetchField('selected_title_id', 'SELECT selected_title_id FROM users WHERE id = $1');
+        user.last_seen_changelog_id = await fetchField('last_seen_changelog_id', 'SELECT last_seen_changelog_id FROM users WHERE id = $1');
+        user.last_seen_changelog_at = await fetchField('last_seen_changelog_at', 'SELECT last_seen_changelog_at FROM users WHERE id = $1');
 
           return user;
         }
@@ -83,7 +85,7 @@ const User = {
     try {
       // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
+        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at',
         [netid]
       );
       return result.rows[0];
@@ -98,7 +100,7 @@ const User = {
     try {
       // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
+        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at',
         [userId]
       );
       return result.rows[0];
@@ -130,6 +132,26 @@ const User = {
          }
       }
 
+      if (user && user.last_seen_changelog_id === undefined) {
+         try {
+            const lastSeenResult = await db.query('SELECT last_seen_changelog_id FROM users WHERE id = $1', [user.id]);
+            user.last_seen_changelog_id = lastSeenResult.rows[0]?.last_seen_changelog_id ?? null;
+         } catch (err) {
+            console.warn(`Could not fetch last_seen_changelog_id for user ${user.id} in findOrCreate fallback:`, err.message);
+            user.last_seen_changelog_id = null;
+         }
+      }
+
+      if (user && user.last_seen_changelog_at === undefined) {
+         try {
+            const lastSeenAtResult = await db.query('SELECT last_seen_changelog_at FROM users WHERE id = $1', [user.id]);
+            user.last_seen_changelog_at = lastSeenAtResult.rows[0]?.last_seen_changelog_at ?? null;
+         } catch (err) {
+            console.warn(`Could not fetch last_seen_changelog_at for user ${user.id} in findOrCreate fallback:`, err.message);
+            user.last_seen_changelog_at = null;
+         }
+      }
+
       return user;
     } catch (err) {
       console.error('Error in findOrCreate:', err);
@@ -144,7 +166,7 @@ const User = {
 
       // Update bio and fetch all relevant fields
       const result = await db.query(
-        'UPDATE users SET bio = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
+        'UPDATE users SET bio = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at',
         [bio, userId]
       );
 
@@ -166,7 +188,7 @@ const User = {
 
       // Update avatar URL and fetch all relevant fields
       const result = await db.query(
-        'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id',
+        'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at',
         [avatarUrl, userId]
       );
 
@@ -199,6 +221,26 @@ const User = {
       return result.rows[0]; // Return the updated user id and flag status
     } catch (err) {
       console.error(`Error marking tutorial as completed for user ID ${userId}:`, err);
+      throw err;
+    }
+  },
+
+  async markChangelogAsSeen(userId, changelogId) {
+    if (!userId || !changelogId) {
+      throw new Error('Missing userId or changelogId for markChangelogAsSeen');
+    }
+    try {
+      const result = await db.query(
+        'UPDATE users SET last_seen_changelog_id = $1, last_seen_changelog_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING last_seen_changelog_id, last_seen_changelog_at',
+        [changelogId, userId]
+      );
+      if (result.rowCount === 0) {
+        console.warn(`Attempted to update changelog seen state for non-existent user ID: ${userId}`);
+        return null;
+      }
+      return result.rows[0];
+    } catch (err) {
+      console.error(`Error marking changelog ${changelogId} as seen for user ${userId}:`, err);
       throw err;
     }
   },

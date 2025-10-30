@@ -1,5 +1,18 @@
 -- TigerType Database Schema
 
+-- Changelog table for tracking release notes published from merged pull requests
+CREATE TABLE IF NOT EXISTS changelogs (
+  id SERIAL PRIMARY KEY,
+  pr_number INTEGER UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT,
+  url TEXT,
+  merged_at TIMESTAMPTZ,
+  merged_by TEXT,
+  labels JSONB DEFAULT '[]'::jsonb,
+  published_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Users table for storing Princeton netids and basic account information
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -10,7 +23,9 @@ CREATE TABLE IF NOT EXISTS users (
   avg_accuracy NUMERIC(5,2) DEFAULT 0,
   races_completed INTEGER DEFAULT 0,
   fastest_wpm NUMERIC(5,2) DEFAULT 0,
-  has_completed_tutorial BOOLEAN DEFAULT false
+  has_completed_tutorial BOOLEAN DEFAULT false,
+  last_seen_changelog_id INT REFERENCES changelogs(id) ON DELETE SET NULL,
+  last_seen_changelog_at TIMESTAMPTZ
 );
 
 -- Snippets table for storing text that users will type
@@ -124,6 +139,7 @@ CREATE INDEX IF NOT EXISTS idx_race_results_user_id ON race_results(user_id);
 CREATE INDEX IF NOT EXISTS idx_race_results_lobby_id ON race_results(lobby_id);
 CREATE INDEX IF NOT EXISTS idx_lobby_players_lobby_id ON lobby_players(lobby_id);
 CREATE INDEX IF NOT EXISTS idx_lobby_players_user_id ON lobby_players(user_id);
+CREATE INDEX IF NOT EXISTS idx_changelogs_published_at ON changelogs(published_at DESC);
 
 -- Sample data for testing - Only insert if not already present
 DO $$

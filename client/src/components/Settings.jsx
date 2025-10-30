@@ -1,11 +1,16 @@
 import './Settings.css';
 import { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+import axios from 'axios';
 import { useRace } from '../context/RaceContext';
+import { useAuth } from '../context/AuthContext';
 
-function Settings({ isOpen, onClose }) {
+const SETTINGS_TABS = ['appearance', 'behavior', 'audio', 'changelog'];
 
-  // Use context for word difficulty and reloading practice snippets
+function Settings({ isOpen, onClose, initialTab = 'appearance' }) {
+
   const { wordDifficulty, setWordDifficulty, raceState, loadNewSnippet, testMode, testDuration } = useRace();
+  const { user, setUser, markChangelogSeen } = useAuth();
 
   // Define our font size options as 5 distinct sizes
   const fontSizeOptions = [
@@ -71,10 +76,114 @@ function Settings({ isOpen, onClose }) {
   const typingInputRef = document.querySelector('.typing-input-container input');
 
   // Tabbed layout: show one section at a time
-  const tabs = ['appearance', 'behavior', 'audio'];
-  const [activeTab, setActiveTab] = useState('appearance');
-  const [activeIndex, setActiveIndex] = useState(0);
+  const tabs = SETTINGS_TABS;
+  const initialTabIndex = Math.max(0, tabs.indexOf(initialTab));
+  const [activeTab, setActiveTab] = useState(tabs[initialTabIndex]);
+  const [activeIndex, setActiveIndex] = useState(initialTabIndex);
   const [animDirection, setAnimDirection] = useState(null); // 'up' | 'down' | null
+  const [changelogEntries, setChangelogEntries] = useState([]);
+  const [isChangelogLoading, setIsChangelogLoading] = useState(false);
+  const [changelogError, setChangelogError] = useState(null);
+  const [hasFetchedChangelog, setHasFetchedChangelog] = useState(false);
+  const [hasMarkedChangelog, setHasMarkedChangelog] = useState(false);
+  const wasOpenRef = useRef(false);
+  const prevInitialTabRef = useRef(initialTab);
+
+  useEffect(() => {
+    const targetTab = tabs.includes(initialTab) ? initialTab : 'appearance';
+    const targetIndex = Math.max(0, tabs.indexOf(targetTab));
+    const initialChanged = initialTab !== prevInitialTabRef.current;
+
+    if (isOpen && (!wasOpenRef.current || initialChanged)) {
+      setActiveTab(tabs[targetIndex]);
+      setActiveIndex(targetIndex);
+      setAnimDirection(null);
+    }
+
+    if (!isOpen) {
+      wasOpenRef.current = false;
+    } else {
+      wasOpenRef.current = true;
+    }
+
+    prevInitialTabRef.current = initialTab;
+  }, [isOpen, initialTab, tabs]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasFetchedChangelog(false);
+      setHasMarkedChangelog(false);
+      setChangelogEntries([]);
+      setChangelogError(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'changelog') return;
+    if (hasFetchedChangelog || isChangelogLoading) return;
+
+    let cancelled = false;
+    setIsChangelogLoading(true);
+
+    axios.get('/api/changelog/entries?limit=20')
+      .then(({ data }) => {
+        if (cancelled) return;
+        const entries = Array.isArray(data?.entries) ? data.entries : [];
+        setChangelogEntries(entries);
+        setHasFetchedChangelog(true);
+        setChangelogError(null);
+
+        const latest = entries[0] || null;
+        const latestId = latest?.id ?? null;
+        const lastSeenId = data?.last_seen_id ?? null;
+
+        if (setUser) {
+          setUser({
+            latest_changelog_id: latestId ?? null,
+            latest_changelog_title: latest?.title ?? user?.latest_changelog_title ?? null,
+            latest_changelog_published_at: latest?.published_at ?? latest?.merged_at ?? user?.latest_changelog_published_at ?? null,
+            has_unseen_changelog: latestId ? latestId !== lastSeenId : false,
+            last_seen_changelog_id: lastSeenId ?? null
+          });
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('Error loading changelog entries:', err);
+        setChangelogError('Unable to load recent updates right now.');
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsChangelogLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, activeTab, hasFetchedChangelog, isChangelogLoading, setUser, user]);
+
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'changelog') return;
+    if (!user?.has_unseen_changelog) return;
+    if (!changelogEntries.length) return;
+    if (hasMarkedChangelog) return;
+
+    const latestId = changelogEntries[0]?.id;
+    if (!latestId) return;
+
+    markChangelogSeen(latestId)
+      .then(() => setHasMarkedChangelog(true))
+      .catch((err) => {
+        console.error('Error marking changelog as seen:', err);
+      });
+  }, [isOpen, activeTab, changelogEntries, user?.has_unseen_changelog, hasMarkedChangelog, markChangelogSeen]);
+
+  useEffect(() => {
+    if (user?.has_unseen_changelog) {
+      setHasMarkedChangelog(false);
+    }
+  }, [user?.has_unseen_changelog]);
 
   const handleTabChange = (nextTab) => {
     const nextIndex = tabs.indexOf(nextTab);
@@ -447,6 +556,38 @@ function Settings({ isOpen, onClose }) {
     return fontSizeOptions.findIndex(opt => opt.value === fontSize);
   };
 
+  const formatDate = (value) => {
+    if (!value) return '';
+    try {
+      return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (err) {
+      return '';
+    }
+  };
+
+  const summarizeBody = (body) => {
+    if (!body) return '';
+    const firstLine = body.split('\n').find((line) => line.trim().length) || '';
+    if (firstLine.length > 240) {
+      return `${firstLine.slice(0, 237)}…`;
+    }
+    return firstLine;
+  };
+
+  const parseLabels = (labels) => {
+    if (!labels) return [];
+    if (Array.isArray(labels)) return labels;
+    if (typeof labels === 'string') {
+      try {
+        const parsed = JSON.parse(labels);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        return [];
+      }
+    }
+    return [];
+  };
+
   return (
     <div className="settings-overlay">
       <div className="settings-modal" ref={modalRef}>
@@ -480,6 +621,16 @@ function Settings({ isOpen, onClose }) {
               onClick={() => handleTabChange('audio')}
             >
               Audio
+            </button>
+            <div className="nav-divider" role="separator" aria-hidden="true" />
+            <button
+              type="button"
+              className={`nav-pill ${activeTab === 'changelog' ? 'active' : ''}`}
+              aria-current={activeTab === 'changelog' ? 'page' : undefined}
+              onClick={() => handleTabChange('changelog')}
+            >
+              Changelog
+              {user?.has_unseen_changelog && <span className="nav-pill-badge">New</span>}
             </button>
           </aside>
 
@@ -657,11 +808,75 @@ function Settings({ isOpen, onClose }) {
               </div>
             </section>
             )}
+
+            {activeTab === 'changelog' && (
+            <section id="changelog" className={`settings-card panel-anim ${animDirection === 'down' ? 'from-down' : 'from-up'}`}>
+              <h3 className="settings-card-title">Changelog</h3>
+              <p className="changelog-intro">See what&#39;s new whenever a pull request lands in TigerType.</p>
+
+              {isChangelogLoading && (
+                <div className="changelog-state">Loading latest updates…</div>
+              )}
+
+              {!isChangelogLoading && changelogError && (
+                <div className="changelog-state changelog-error">{changelogError}</div>
+              )}
+
+              {!isChangelogLoading && !changelogError && changelogEntries.length === 0 && (
+                <div className="changelog-state">No changelog entries yet. Merged pull requests will appear here automatically.</div>
+              )}
+
+              {!isChangelogLoading && !changelogError && changelogEntries.length > 0 && (
+                <div className="changelog-list">
+                  {changelogEntries.map((entry) => {
+                    const labels = parseLabels(entry.labels);
+                    const timestamp = entry.published_at || entry.merged_at;
+                    return (
+                      <article key={entry.id} className="changelog-item">
+                        <header className="changelog-item-header">
+                          <h4>{entry.title}</h4>
+                          {timestamp && <time dateTime={timestamp}>{formatDate(timestamp)}</time>}
+                        </header>
+                        {labels.length > 0 && (
+                          <ul className="changelog-labels">
+                            {labels.map((label) => (
+                              <li key={label}>{label}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {entry.body ? (
+                          <p className="changelog-body">{summarizeBody(entry.body)}</p>
+                        ) : (
+                          <p className="changelog-body changelog-body-empty">No description provided.</p>
+                        )}
+                        {entry.url && (
+                          <a
+                            className="changelog-link"
+                            href={entry.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            View pull request
+                          </a>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+Settings.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  initialTab: PropTypes.oneOf(['appearance', 'behavior', 'audio', 'changelog'])
+};
 
 export default Settings;

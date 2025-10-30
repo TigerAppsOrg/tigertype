@@ -8,8 +8,11 @@ const { isAuthenticated } = require('../utils/auth');
 const UserModel = require('../models/user');
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
+const ChangelogModel = require('../models/changelog');
 const profileRoutes = require('./profileRoutes'); // Import profile routes
 const { pool } = require('../config/database');
+
+const { CHANGELOG_PUBLISH_TOKEN } = process.env;
 
 // Middleware to ensure API requests are authenticated
 const requireAuth = (req, res, next) => {
@@ -142,7 +145,6 @@ router.get('/user/profile', requireAuth, async (req, res) => {
   try {
     // User object should already be populated by findOrCreate or findByNetid in auth steps
     // or the lookup in requireAuth middleware
-    const userId = req.user.id; 
     const netid = req.user.netid;
 
     // Fetch the full user details including bio and avatar
@@ -154,7 +156,11 @@ router.get('/user/profile', requireAuth, async (req, res) => {
       // This case should ideally be handled by auth steps
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
+    const latestChangelog = await ChangelogModel.latest();
+    const latestChangelogId = latestChangelog?.id ?? null;
+    const hasUnseen = latestChangelogId && user.last_seen_changelog_id !== latestChangelogId;
+
     res.json({
       netid: user.netid,
       userId: user.id,
@@ -166,10 +172,132 @@ router.get('/user/profile', requireAuth, async (req, res) => {
       avg_wpm: user.avg_wpm,
       avg_accuracy: user.avg_accuracy,
       fastest_wpm: user.fastest_wpm,
-      has_completed_tutorial: user.has_completed_tutorial
+      has_completed_tutorial: user.has_completed_tutorial,
+      last_seen_changelog_id: user.last_seen_changelog_id,
+      last_seen_changelog_at: user.last_seen_changelog_at,
+      latest_changelog_id: latestChangelogId,
+      latest_changelog_title: latestChangelog?.title ?? null,
+      latest_changelog_published_at: latestChangelog?.published_at ?? latestChangelog?.merged_at ?? null,
+      has_unseen_changelog: Boolean(hasUnseen)
     });
   } catch (err) {
     console.error('Error fetching user profile:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/changelog/status', requireAuth, async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.user.id);
+    const latest = await ChangelogModel.latest();
+    const latestId = latest?.id ?? null;
+    const lastSeenId = user?.last_seen_changelog_id ?? null;
+    const hasUnseen = latestId && lastSeenId !== latestId;
+
+    res.json({
+      latest_id: latestId,
+      latest_title: latest?.title ?? null,
+      latest_published_at: latest?.published_at ?? latest?.merged_at ?? null,
+      last_seen_id: lastSeenId,
+      last_seen_at: user?.last_seen_changelog_at ?? null,
+      has_unseen: Boolean(hasUnseen)
+    });
+  } catch (err) {
+    console.error('Error fetching changelog status:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/changelog/entries', requireAuth, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    const entries = await ChangelogModel.list(limit, offset);
+    const user = await UserModel.findById(req.user.id);
+    const lastSeenId = user?.last_seen_changelog_id ?? null;
+
+    res.json({
+      entries,
+      pagination: {
+        limit,
+        offset,
+        count: entries.length
+      },
+      last_seen_id: lastSeenId
+    });
+  } catch (err) {
+    console.error('Error fetching changelog entries:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/changelog/mark-read', requireAuth, async (req, res) => {
+  try {
+    const inputId = req.body?.changelogId;
+    let targetId = Number.isInteger(inputId) ? inputId : parseInt(inputId, 10);
+
+    if (!targetId) {
+      const latest = await ChangelogModel.latest();
+      if (!latest) {
+        return res.status(200).json({ last_seen_changelog_id: null, last_seen_changelog_at: null });
+      }
+      targetId = latest.id;
+    }
+
+    if (!Number.isInteger(targetId) || targetId <= 0) {
+      return res.status(400).json({ error: 'Invalid changelog id' });
+    }
+
+    const updated = await UserModel.markChangelogAsSeen(req.user.id, targetId);
+    if (!updated) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      last_seen_changelog_id: updated.last_seen_changelog_id,
+      last_seen_changelog_at: updated.last_seen_changelog_at
+    });
+  } catch (err) {
+    console.error('Error marking changelog as read:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/changelog/publish', async (req, res) => {
+  try {
+    if (!CHANGELOG_PUBLISH_TOKEN) {
+      console.error('Changelog publish token not configured');
+      return res.status(503).json({ error: 'Changelog publishing not configured' });
+    }
+
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+
+    if (!token || token !== CHANGELOG_PUBLISH_TOKEN) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const payload = req.body || {};
+    const prNumber = parseInt(payload.pr_number, 10);
+
+    if (!Number.isInteger(prNumber) || !payload.title) {
+      return res.status(400).json({ error: 'Missing pull request number or title' });
+    }
+
+    const entry = await ChangelogModel.create({
+      pr_number: prNumber,
+      title: payload.title,
+      body: payload.body || null,
+      url: payload.url || null,
+      merged_at: payload.merged_at || null,
+      merged_by: payload.merged_by || null,
+      labels: payload.labels || [],
+      published_at: payload.published_at || null
+    });
+
+    res.status(201).json({ entry });
+  } catch (err) {
+    console.error('Error publishing changelog entry:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
