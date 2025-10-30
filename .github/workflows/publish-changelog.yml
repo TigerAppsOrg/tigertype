@@ -5,7 +5,9 @@ on:
     types:
       - closed
     branches:
+      - master
       - main
+  workflow_dispatch:
 
 jobs:
   publish:
