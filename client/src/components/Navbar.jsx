@@ -12,6 +12,7 @@ import { useTutorial } from '../context/TutorialContext';
 
 function Navbar({ onOpenLeaderboard, onLoginClick }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsStartTab, setSettingsStartTab] = useState('appearance');
   const { authenticated, user, logout, markTutorialComplete } = useAuth();
   const { isTutorialRunning, startTutorial, endTutorial } = useTutorial();
   const navigate = useNavigate();
@@ -25,9 +26,25 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
   // State to track hover state of each link
   const [hoveredLink, setHoveredLink] = useState(null);
 
+  const settingsButtonLabel = user?.has_unseen_changelog ? 'Open settings (new changelog available)' : 'Open settings';
+
   const handleLogo = () => {
     resetRace();
     navigate('/home');
+  };
+
+  const handleOpenSettings = () => {
+    if (user?.has_unseen_changelog) {
+      setSettingsStartTab('changelog');
+    } else {
+      setSettingsStartTab('appearance');
+    }
+    setIsSettingsOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setIsSettingsOpen(false);
+    setSettingsStartTab('appearance');
   };
 
   // Base style for all navbar links
@@ -61,14 +78,19 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
         <div className="navbar-icons">
           {authenticated && (
             <>
-              <button
-                className="settings-button navbar-settings-icon"
-                onClick={() => setIsSettingsOpen(true)}
-                aria-label="Open settings"
-                tabIndex={0}
-              >
-                <span className="material-icons">settings</span>
-              </button>
+              <div className="settings-button-wrapper">
+                <button
+                  className="settings-button navbar-settings-icon"
+                  onClick={handleOpenSettings}
+                  aria-label={settingsButtonLabel}
+                  tabIndex={0}
+                >
+                  <span className="material-icons">settings</span>
+                </button>
+                {user?.has_unseen_changelog && (
+                  <span className="settings-new-indicator" aria-hidden="true">New</span>
+                )}
+              </div>
               {/* Tutorial Replay Button */}
               <button
                 className="tutorial-replay-button"
@@ -163,7 +185,8 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
 
       <Settings 
         isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={handleCloseSettings}
+        initialTab={settingsStartTab}
       />
     </header>
   );

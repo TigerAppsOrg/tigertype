@@ -622,6 +622,44 @@ const MIGRATIONS = [
       console.log('Revert Migration 18 complete.');
     }
   },
+  {
+    version: 19,
+    description: 'Create changelog table and track last seen changelog per user',
+    up: async (client) => {
+      console.log('Migration 19: creating changelogs table and user tracking columns');
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS changelogs (
+          id SERIAL PRIMARY KEY,
+          pr_number INTEGER UNIQUE NOT NULL,
+          title TEXT NOT NULL,
+          body TEXT,
+          url TEXT,
+          merged_at TIMESTAMPTZ,
+          merged_by TEXT,
+          labels JSONB DEFAULT '[]'::jsonb,
+          published_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_changelogs_published_at ON changelogs(published_at DESC);
+
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS last_seen_changelog_id INT REFERENCES changelogs(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS last_seen_changelog_at TIMESTAMPTZ;
+      `);
+      console.log('Migration 19 complete.');
+    },
+    down: async (client) => {
+      console.log('Reverting migration 19: dropping changelog support');
+      await client.query(`
+        ALTER TABLE users
+        DROP COLUMN IF EXISTS last_seen_changelog_at,
+        DROP COLUMN IF EXISTS last_seen_changelog_id;
+
+        DROP TABLE IF EXISTS changelogs;
+      `);
+      console.log('Revert migration 19 complete.');
+    }
+  },
 ];
 
 // Create migrations table if it doesn't exist

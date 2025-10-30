@@ -16,10 +16,15 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await axios.get('/api/user/profile');
       if (response.data) {
-        // Base user data
         const userData = {
           ...response.data,
           has_completed_tutorial: response.data.has_completed_tutorial ?? false,
+          has_unseen_changelog: response.data.has_unseen_changelog ?? false,
+          last_seen_changelog_id: response.data.last_seen_changelog_id ?? null,
+          last_seen_changelog_at: response.data.last_seen_changelog_at ?? null,
+          latest_changelog_id: response.data.latest_changelog_id ?? null,
+          latest_changelog_title: response.data.latest_changelog_title ?? null,
+          latest_changelog_published_at: response.data.latest_changelog_published_at ?? null,
         };
         // Fetch user titles
         try {
@@ -123,6 +128,26 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const markChangelogSeen = useCallback(async (changelogId) => {
+    try {
+      const payload = changelogId ? { changelogId } : {};
+      const { data } = await axios.post('/api/changelog/mark-read', payload);
+      setUserState(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          has_unseen_changelog: false,
+          last_seen_changelog_id: data.last_seen_changelog_id ?? prev.last_seen_changelog_id,
+          last_seen_changelog_at: data.last_seen_changelog_at ?? prev.last_seen_changelog_at
+        };
+      });
+      return data;
+    } catch (err) {
+      console.error('Error marking changelog as seen:', err);
+      throw err;
+    }
+  }, []);
+
   // Helper function to mark tutorial as complete
   const markTutorialComplete = async () => {
     // If user is already available
@@ -174,6 +199,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       fetchUserProfile,
       setUser: updateUser, // Expose updateUser
+      markChangelogSeen,
       markTutorialComplete // Expose the new function
     }}>
       {children}

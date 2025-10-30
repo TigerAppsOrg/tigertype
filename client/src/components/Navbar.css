@@ -26,6 +26,27 @@
   gap: 0.5rem;
 }
 
+.settings-button-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.settings-new-indicator {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #F58025;
+  color: #121212;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.42rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .navbar-github-icon {
   display: inline-flex;
   align-items: center;
