@@ -27,8 +27,12 @@ jobs:
         with:
           node-version: '20.11.1'
 
-      - name: Install dependencies
+      - name: Install server dependencies
         run: npm ci
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
 
       - name: Collect PR metadata (pull_request)
         if: github.event_name == 'pull_request'
