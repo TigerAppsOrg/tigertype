@@ -226,13 +226,26 @@
 .incorrect {
   color: var(--incorrect-color)!important;
   background-color: var(--incorrect-bg-color)!important;
-  text-decoration: underline wavy rgba(255, 65, 47, 0.55);
+  position: relative;
 }
 
-/* Caret cursor: prefer subtle inline color only (no red block, no underline) */
+/* Visual indicator for incorrectly typed characters - solid underline */
+.snippet-display .incorrect::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2.5px;
+  background-color: var(--incorrect-color);
+  opacity: 0.9;
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* Caret cursor: remove red background, keep solid underline */
 :root[data-cursor='caret'] .snippet-display .incorrect {
   background-color: transparent !important;
-  text-decoration: none !important;
 }
 
 .shake-animation {
