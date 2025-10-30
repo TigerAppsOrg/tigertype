@@ -2,6 +2,8 @@ import './Settings.css';
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useRace } from '../context/RaceContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -565,15 +567,6 @@ function Settings({ isOpen, onClose, initialTab = 'appearance' }) {
     }
   };
 
-  const summarizeBody = (body) => {
-    if (!body) return '';
-    const firstLine = body.split('\n').find((line) => line.trim().length) || '';
-    if (firstLine.length > 240) {
-      return `${firstLine.slice(0, 237)}…`;
-    }
-    return firstLine;
-  };
-
   const parseLabels = (labels) => {
     if (!labels) return [];
     if (Array.isArray(labels)) return labels;
@@ -812,7 +805,6 @@ function Settings({ isOpen, onClose, initialTab = 'appearance' }) {
             {activeTab === 'changelog' && (
             <section id="changelog" className={`settings-card panel-anim ${animDirection === 'down' ? 'from-down' : 'from-up'}`}>
               <h3 className="settings-card-title">Changelog</h3>
-              <p className="changelog-intro">See what&#39;s new whenever a pull request lands in TigerType.</p>
 
               {isChangelogLoading && (
                 <div className="changelog-state">Loading latest updates…</div>
@@ -844,17 +836,32 @@ function Settings({ isOpen, onClose, initialTab = 'appearance' }) {
                             ))}
                           </ul>
                         )}
-                        {entry.body ? (
-                          <p className="changelog-body">{summarizeBody(entry.body)}</p>
-                        ) : (
-                          <p className="changelog-body changelog-body-empty">No description provided.</p>
+                        {entry.body && (
+                          <div className="changelog-body">
+                            <ReactMarkdown
+                              className="changelog-markdown"
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                a: ({ node, ...props }) => (
+                                  <a {...props} target="_blank" rel="noreferrer noopener" />
+                                ),
+                                table: ({ node, ...props }) => (
+                                  <div className="changelog-table-wrapper">
+                                    <table {...props} />
+                                  </div>
+                                )
+                              }}
+                            >
+                              {entry.body}
+                            </ReactMarkdown>
+                          </div>
                         )}
                         {entry.url && (
                           <a
                             className="changelog-link"
                             href={entry.url}
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="noreferrer noopener"
                           >
                             View pull request
                           </a>
