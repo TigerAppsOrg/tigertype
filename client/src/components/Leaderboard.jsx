@@ -205,7 +205,40 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
             {error && <p className="error-message">Error: {error}</p>}
             {(hasLoadedOnce ? !showSpinner : !loading) && !error && (
               <div className="leaderboard-list">
-                {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <span className="leaderboard-netid">{entry.netid}</span> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.adjusted_wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? formatRelativeTime(entry.created_at) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
+                {leaderboard.length > 0 ? (
+                  leaderboard.map((entry, index) => (
+                    <div
+                      key={`${entry.user_id}-${entry.created_at}`}
+                      className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}
+                    >
+                      <span className="leaderboard-rank">{index + 1}</span>
+                      <div
+                        className={`leaderboard-player ${authenticated ? 'clickable' : 'disabled'}`}
+                        onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
+                        title={authenticated ? `View ${entry.netid}'s profile` : 'Log in to view profiles'}
+                        role={authenticated ? 'button' : undefined}
+                        tabIndex={authenticated ? 0 : -1}
+                        onKeyDown={authenticated ? (e => { if (e.key === 'Enter' || e.key === ' ') handleAvatarClick(entry.avatar_url, entry.netid); }) : undefined}
+                      >
+                        <div className="leaderboard-avatar">
+                          <img
+                            src={entry.avatar_url || defaultProfileImage}
+                            alt={`${entry.netid} avatar`}
+                            onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
+                          />
+                        </div>
+                        <span className="leaderboard-netid">{entry.netid}</span>
+                      </div>
+                      <div className="leaderboard-stats">
+                        <span className="leaderboard-wpm">{parseFloat(entry.adjusted_wpm).toFixed(0)} WPM</span>
+                        <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span>
+                        <span className="leaderboard-date">{period === 'daily' ? formatRelativeTime(entry.created_at) : new Date(entry.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-results">No results found for this leaderboard.</p>
+                )}
               </div>
             )}
             <p className="leaderboard-subtitle">Resets daily at 12:00 AM EST</p>
@@ -257,12 +290,15 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                     className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}
                   >
                     <span className="leaderboard-rank">{index + 1}</span>
-                    <div className="leaderboard-player">
-                      <div 
-                        className={`leaderboard-avatar ${!authenticated ? 'disabled' : ''}`}
-                        onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
-                        title={authenticated ? `View ${entry.netid}\'s profile` : 'Log in to view profiles'}
-                      >
+                    <div
+                      className={`leaderboard-player ${authenticated ? 'clickable' : 'disabled'}`}
+                      onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
+                      title={authenticated ? `View ${entry.netid}'s profile` : 'Log in to view profiles'}
+                      role={authenticated ? 'button' : undefined}
+                      tabIndex={authenticated ? 0 : -1}
+                      onKeyDown={authenticated ? (e => { if (e.key === 'Enter' || e.key === ' ') handleAvatarClick(entry.avatar_url, entry.netid); }) : undefined}
+                    >
+                      <div className="leaderboard-avatar">
                         <img 
                           src={entry.avatar_url || defaultProfileImage} 
                           alt={`${entry.netid} avatar`} 

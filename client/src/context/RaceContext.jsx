@@ -618,11 +618,12 @@ export const RaceProvider = ({ children }) => {
     });
   };
 
-  // Handle text input, enforce word locking
-  const handleInput = (newInput) => {
+  // Handle text input, enforce word locking (snippet mode) or free-flow (timed mode)
+  const handleInput = (incomingInput) => {
+    let newInput = incomingInput;
     // Disable input handling for non-practice races before countdown begins
     if (raceState.type !== 'practice' && !raceState.inProgress && raceState.countdown === null) {
-      return;
+      return newInput;
     }
     
     // --- Start Practice Race on First Input --- 
@@ -645,14 +646,15 @@ export const RaceProvider = ({ children }) => {
         input: newInput,
         position: newInput.length
       }));
-      return;
+      return newInput;
     }
     
     // If we are in progress (or just started practice), proceed with full update
     const currentInput = typingState.input;
     const lockedPosition = typingState.lockedPosition;
     const text = raceState.snippet?.text || '';
-    
+    const isTimedMode = !!(raceState.snippet?.is_timed_test || raceState.timedTest?.enabled || raceState.settings?.testMode === 'timed');
+
     // Find the position of the first error in the current input
     let firstErrorPosition = text.length; // Default to end of text (no errors)
     for (let i = 0; i < Math.min(text.length, currentInput.length); i++) {
@@ -661,17 +663,17 @@ export const RaceProvider = ({ children }) => {
         break;
       }
     }
-    
+
     // If trying to delete locked text, only preserve correctly typed text before the first error
     if (newInput.length < currentInput.length && lockedPosition > 0) {
       // Only preserve text up to the last complete word before the first error
       const lastWordBreakBeforeError = currentInput.lastIndexOf(' ', Math.max(0, firstErrorPosition - 1)) + 1;
-      
+
       // Only enforce locking if trying to delete before the locked position
       if (newInput.length < lastWordBreakBeforeError) {
         const preservedPart = currentInput.substring(0, lastWordBreakBeforeError);
         let newPart = '';
-        
+
         // Keep the user's input after the preserved part
         if (newInput.length >= preservedPart.length) {
           newPart = newInput.substring(preservedPart.length);
@@ -679,14 +681,15 @@ export const RaceProvider = ({ children }) => {
           // Deletion is attempting to erase preserved text
           newPart = currentInput.substring(preservedPart.length);
         }
-        
+
         // This enforces that only correctly typed words before any error cannot be deleted
         newInput = preservedPart + newPart;
       }
     }
-    
+
     // Update progress with the potentially modified input
     updateProgress(newInput);
+    return newInput;
   };
 
   const updateProgress = (input) => {
@@ -695,6 +698,7 @@ export const RaceProvider = ({ children }) => {
     
     // Calculate current position in the snippet
     const text = raceState.snippet?.text || '';
+    const isTimedMode = !!(raceState.snippet?.is_timed_test || raceState.timedTest?.enabled || raceState.settings?.testMode === 'timed');
     let correctChars = 0;
     let currentErrors = 0;
     let hasError = false;
@@ -709,56 +713,68 @@ export const RaceProvider = ({ children }) => {
       }
     }
     
-    // Count only the contiguous correct characters from the start of the snippet.
-    // As soon as an error is encountered we stop counting further characters.
-    if (!hasError) {
-      // No error – all typed characters are correct up to input length (bounded by snippet length)
-      correctChars = Math.min(input.length, text.length);
+    if (isTimedMode) {
+      // Timed mode (Monkeytype-style): allow continuing past mistakes.
+      // Count correct characters across the whole typed span, and treat
+      // mismatches as current (net) errors that can be reduced by fixing.
+      const span = Math.min(input.length, text.length);
+      for (let i = 0; i < span; i++) {
+        if (input[i] === text[i]) correctChars++;
+      }
+      currentErrors = input.length - correctChars; // net errors
+      hasError = currentErrors > 0;
+      const mismatchIndex = input.split('').findIndex((ch, idx) => idx >= text.length || ch !== text[idx]);
+      firstErrorPosition = hasError ? (mismatchIndex === -1 ? Math.min(input.length, text.length) : mismatchIndex) : text.length;
     } else {
-      // Error present – only count chars before the first error index
-      correctChars = firstErrorPosition;
-    }
-
-    // Count current error characters (everything typed after first error is considered incorrect)
-    if (hasError) {
-      currentErrors = input.length - firstErrorPosition;
-    }
-    
-    // Get previous total errors (persist even after fixes)
-    let totalErrors = typingState.errors;
-    
-    // If there's a new error (wasn't there in previous input)
-    const previousInput = typingState.input;
-    let isNewError = false;
-    
-    // Check if we have a new error that wasn't in the previous input
-    if (hasError && (previousInput.length <= firstErrorPosition || 
-        (previousInput.length > firstErrorPosition && previousInput[firstErrorPosition] === text[firstErrorPosition]))) {
-      isNewError = true;
+      // Snippet mode: contiguous correctness until first error
+      if (!hasError) {
+        // No error – all typed characters are correct up to input length (bounded by snippet length)
+        correctChars = Math.min(input.length, text.length);
+      } else {
+        // Error present – only count chars before the first error index
+        correctChars = firstErrorPosition;
+      }
+      // Count current error characters (everything typed after first error is considered incorrect)
+      if (hasError) {
+        currentErrors = input.length - firstErrorPosition;
+      }
     }
     
-    // Only increment error count if this is a new error
-    if (isNewError) {
-      totalErrors += 1;
+    // Error model differs by mode
+    let totalErrors;
+    let accuracy;
+    let wpm;
+    if (isTimedMode) {
+      // Net errors at the moment (can decrease if user fixes)
+      totalErrors = currentErrors;
+      const typedChars = input.length;
+      const minutes = elapsedSeconds > 0 ? (elapsedSeconds / 60) : 0;
+      const netChars = Math.max(0, typedChars - totalErrors); // equals correctChars, but keep intent explicit
+      wpm = minutes > 0 ? (netChars / 5) / minutes : 0; // net WPM
+      accuracy = typedChars > 0 ? (correctChars / typedChars) * 100 : 100;
+    } else {
+      // Snippet mode retains cumulative error count
+      totalErrors = typingState.errors;
+      // If there's a new error (wasn't there in previous input)
+      const previousInput = typingState.input;
+      let isNewError = false;
+      if (hasError && (previousInput.length <= firstErrorPosition || 
+          (previousInput.length > firstErrorPosition && previousInput[firstErrorPosition] === text[firstErrorPosition]))) {
+        isNewError = true;
+      }
+      if (isNewError) totalErrors += 1;
+      // Accuracy based on contiguous correctness + cumulative errors
+      const totalCharsForAccuracy = Math.min(firstErrorPosition, input.length) + totalErrors;
+      const accuracyCorrectChars = Math.min(firstErrorPosition, input.length);
+      const words = correctChars / 5; // contiguous
+      wpm = elapsedSeconds > 0 ? (words / elapsedSeconds) * 60 : 0;
+      accuracy = totalCharsForAccuracy > 0 ? (accuracyCorrectChars / totalCharsForAccuracy) * 100 : 100;
     }
-    
-    // For accuracy calculation:
-    // - The denominator is (all correct characters typed + all errors made)
-    // - The numerator is all correct characters typed
-    const totalCharsForAccuracy = Math.min(firstErrorPosition, input.length) + totalErrors;
-    const accuracyCorrectChars = Math.min(firstErrorPosition, input.length);
-    
-    // Calculate WPM using only correctly typed characters (prevents inflation)
-    const words = correctChars / 5; // Standard definition: 1 word = 5 correct chars
-    const wpm = elapsedSeconds > 0 ? (words / elapsedSeconds) * 60 : 0;
-    
-    // Calculate accuracy using only valid characters (before first error) plus cumulative errors
-    const accuracy = totalCharsForAccuracy > 0 ? (accuracyCorrectChars / totalCharsForAccuracy) * 100 : 100;
     
     // Check if all characters are typed correctly for completion
     const isCompleted = input.length === text.length && !hasError;
     
-    // Find the last completely correct word boundary before any error
+    // Find the last completely correct word boundary before any error (snippet mode only)
     let newLockedPosition = 0;
     
     // Only process word locking if there are characters
@@ -803,7 +819,7 @@ export const RaceProvider = ({ children }) => {
       position: input.length, // Use actual input length instead of correct chars
       correctChars,
       errors: totalErrors,
-      completed: isCompleted, // Only completed when all characters match exactly
+      completed: isTimedMode ? false : isCompleted, // timed ends by timer
       wpm,
       accuracy,
       lockedPosition: newLockedPosition

@@ -221,6 +221,56 @@
   margin-top: 2rem;
 }
 
+/* Subtle feedback note under Learn More */
+.feedback-note {
+  margin-top: 1.5rem;
+  padding: 1.2rem 1.5rem;
+  font-size: 0.95rem;
+  color: var(--text-color);
+  text-align: center;
+  background-color: rgba(var(--primary-color-rgb), 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(var(--primary-color-rgb), 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.feedback-note:hover {
+  background-color: rgba(var(--primary-color-rgb), 0.12);
+  border-color: rgba(var(--primary-color-rgb), 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.feedback-note a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  position: relative;
+  transition: color 0.2s ease;
+  padding: 0 2px;
+}
+
+.feedback-note a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -1px;
+  left: 0;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+  border-radius: 1px;
+}
+
+.feedback-note a:hover {
+  color: var(--primary-color-dark);
+}
+
+.feedback-note a:hover::after {
+  width: 100%;
+}
+
 .collapsible-section {
   background-color: var(--background-color);
   border-radius: 10px;

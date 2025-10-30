@@ -35,6 +35,7 @@ function TestConfigurator({
   onShowLeaderboard,
   isLobby = false,
   snippetError = null,
+  allowTimed = true,
 }) {
 
   const [subjects, setSubjects] = React.useState(['all']);
@@ -67,6 +68,21 @@ function TestConfigurator({
     };
     fetchDifficulties();
   }, [snippetCategory, snippetSubject]);
+
+  // If timed mode is disallowed (e.g., private lobbies), coerce to snippet mode
+  React.useEffect(() => {
+    if (!allowTimed && testMode === 'timed') {
+      // Update race state first so the server/client agree on mode
+      setRaceState(prev => ({
+        ...prev,
+        timedTest: { ...prev.timedTest, enabled: false },
+        settings: { ...(prev.settings||{}), testMode: 'snippet' }
+      }));
+      setTestMode('snippet');
+      // Load a snippet immediately to reflect the change
+      setTimeout(() => { loadNewSnippet && loadNewSnippet(); }, 0);
+    }
+  }, [allowTimed, testMode, setRaceState, setTestMode, loadNewSnippet]);
 
   // Fetch subjects on mount
   React.useEffect(() => {
@@ -272,7 +288,7 @@ function TestConfigurator({
         {/* Mode Selection Group */}
         <div className="config-section mode-selection">
           {renderButton('snippet', testMode, setTestMode, 'Snippets', QuoteIcon)}
-          {renderButton('timed', testMode, setTestMode, 'Timed', ClockIcon)}
+          {allowTimed && renderButton('timed', testMode, setTestMode, 'Timed', ClockIcon)}
         </div>
 
         {/* Separator */}
@@ -372,13 +388,15 @@ function TestConfigurator({
           </div>
 
           {/* Timed Mode Duration Wrapper */}
-          <TutorialAnchor anchorId="timed-options">
-            <div className={`options-wrapper timed-options ${testMode === 'timed' ? 'visible' : ''}`}>
-              <div className="config-section duration-selection-inner">
-                {DURATIONS.map(duration => renderButton(duration, testDuration, setTestDuration, `${duration}s`))}
+          {allowTimed && (
+            <TutorialAnchor anchorId="timed-options">
+              <div className={`options-wrapper timed-options ${testMode === 'timed' ? 'visible' : ''}`}>
+                <div className="config-section duration-selection-inner">
+                  {DURATIONS.map(duration => renderButton(duration, testDuration, setTestDuration, `${duration}s`))}
+                </div>
               </div>
-            </div>
-          </TutorialAnchor>
+            </TutorialAnchor>
+          )}
 
         </div> {/* End Conditional Options Container */}
 
@@ -409,6 +427,7 @@ TestConfigurator.propTypes = {
   setRaceState: PropTypes.func.isRequired,
   loadNewSnippet: PropTypes.func,
   onShowLeaderboard: PropTypes.func.isRequired,
+  allowTimed: PropTypes.bool,
 };
 
 export default TestConfigurator;

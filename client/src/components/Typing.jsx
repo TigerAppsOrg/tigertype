@@ -314,7 +314,23 @@ function Typing({
     const updateFromAttr = () => {
       const enabled = root.getAttribute('data-glide') === '1';
       setGlideEnabled(enabled);
-      if (!enabled) initialCursorSetRef.current = false;
+      // Keep CSS variable in sync so the overlay hides/shows immediately
+      try {
+        root.style.setProperty('--glide-cursor-enabled', enabled ? '1' : '0');
+      } catch (_) {}
+      if (!enabled) {
+        initialCursorSetRef.current = false;
+        // Ensure any existing overlay is completely hidden when glide is off
+        const overlay = cursorRef.current;
+        if (overlay) {
+          overlay.classList.remove('typing-active');
+          overlay.classList.remove('caret');
+          // leave 'block' state irrelevant; force hidden
+          overlay.style.opacity = '0';
+          // move out of view to avoid accidental paints if other rules override opacity
+          overlay.style.transform = 'translate3d(-9999px, -9999px, 0)';
+        }
+      }
     };
     updateFromAttr();
     const observer = new MutationObserver(() => updateFromAttr());
@@ -354,9 +370,10 @@ function Typing({
             newValue = currentInput.substring(cursorPosition);
           }
           
-          // Let our existing word locking handle this modified input
-          raceHandleInput(newValue);
-          setInput(typingState.input);
+        // Let our existing word locking handle this modified input
+        raceHandleInput(newValue);
+        // Reflect raw change immediately; locking will reconcile on next state tick
+        setInput(newValue);
         }
       }
     };
@@ -608,10 +625,11 @@ function Typing({
     };
   }, [raceState.inProgress, raceState.startTime, raceState.completed, typingState.correctChars]); // Include typingState.correctChars
 
-  // Handle typing input with word locking
+  // Handle typing input with word locking (snippet) or free-typing (timed)
   const handleComponentInput = (e) => {
     const newInput = e.target.value;
     const text = raceState.snippet?.text || '';
+    const isTimedMode = !!(raceState.snippet?.is_timed_test);
 
     // Check if new character is correct
     const isMovingForward = newInput.length > input.length;
@@ -635,13 +653,19 @@ function Typing({
       
       // Continue processing this first character instead of ignoring it
       if (raceState.inProgress) {
-        raceHandleInput(newInput);
+        const processed = raceHandleInput(newInput);
+        setInput(processed ?? newInput);
       } else {
         // Since raceState.inProgress hasn't updated yet in this render cycle,
         // we need to directly set the input so the character appears
         setInput(newInput);
-        // Schedule an update after the state has changed
-        setTimeout(() => raceHandleInput(newInput), 0);
+        // Schedule an update after the state has changed so startTime is initialized
+        setTimeout(() => {
+          const processed = raceHandleInput(newInput);
+          if (typeof processed === 'string') {
+            setInput(processed);
+          }
+        }, 0);
       }
       return;
     }
@@ -660,9 +684,11 @@ function Typing({
           wordCount: 15 // Request 1 more words
         });
       }
-      // Prevent typing past the end of the snippet
-      if (newInput.length >= text.length + 1) {
-        return;
+      // In snippet mode, prevent typing past the end of the text. In timed mode,
+      // the server will append more words, so allow typing up to one char beyond
+      // (we early-request extra words above).
+      if (!isTimedMode) {
+        if (newInput.length >= text.length + 1) return;
       }
       
       // Check if there's a typing error (improved to check all characters)
@@ -677,7 +703,7 @@ function Typing({
       }
       
       // Only trigger shake and error message on a new error
-      if (hasError && !isShaking) {
+      if (!isTimedMode && hasError && !isShaking) {
         setIsShaking(true);
         setShowErrorMessage(true);
         
@@ -692,12 +718,11 @@ function Typing({
         }, 1500);
       }
       
-      // Use the handleInput function from RaceContext
-      raceHandleInput(newInput);
+      // Use the handleInput function from RaceContext and capture sanitized value
+      const processed = raceHandleInput(newInput);
 
-      // Update local input state to match what's in the typing state
-      // This ensures the displayed input matches the processed input after word locking
-      setInput(typingState.input);
+      // Immediately reflect the sanitized input to keep locked words intact
+      setInput(processed ?? newInput);
     } else {
       // Prevent typing past the end of the snippet
       if (raceState.snippet && newInput.length > raceState.snippet.text.length) {
@@ -707,12 +732,12 @@ function Typing({
     }
   }
   
-  // Sync input with typingState.input to ensure locked words can't be deleted
+  // Sync input with typingState.input to ensure locked words can't be deleted (snippet mode)
   useEffect(() => {
-    if (raceState.inProgress) {
+    if (raceState.inProgress && !raceState.snippet?.is_timed_test) {
       setInput(typingState.input);
     }
-  }, [typingState.input, raceState.inProgress]);
+  }, [typingState.input, raceState.inProgress, raceState.snippet?.is_timed_test]);
   
   // Prevent paste
   const handlePaste = (e) => {
@@ -725,6 +750,7 @@ function Typing({
     if (!raceState.snippet) return null;
     
     const text = raceState.snippet.text;
+    const isTimedMode = !!(raceState.snippet?.is_timed_test);
     
     // Split text by words, maintaining spaces between them
     const renderNonBreakingText = () => {
@@ -740,11 +766,17 @@ function Typing({
           const charPos = charIndex + i;
           
           if (charPos < input.length) {
-            if (input[charPos] === text[charPos] && !hasEncounteredError) {
-              wordChars.push(<span key={`${wordIndex}-${i}`} className="correct">{word[i]}</span>);
+            if (isTimedMode) {
+              // Timed mode: per-character correctness, no cascade after first error
+              const cls = input[charPos] === text[charPos] ? 'correct' : 'incorrect';
+              wordChars.push(<span key={`${wordIndex}-${i}`} className={cls}>{word[i]}</span>);
             } else {
-              hasEncounteredError = true;
-              wordChars.push(<span key={`${wordIndex}-${i}`} className="incorrect">{word[i]}</span>);
+              if (input[charPos] === text[charPos] && !hasEncounteredError) {
+                wordChars.push(<span key={`${wordIndex}-${i}`} className="correct">{word[i]}</span>);
+              } else {
+                hasEncounteredError = true;
+                wordChars.push(<span key={`${wordIndex}-${i}`} className="incorrect">{word[i]}</span>);
+              }
             }
           } else if (charPos === input.length) {
             wordChars.push(<span ref={currentCharRef} key={`${wordIndex}-${i}`} className="current">{word[i]}</span>);
@@ -765,11 +797,16 @@ function Typing({
           const spacePos = charIndex + word.length;
           
           if (spacePos < input.length) {
-            if (input[spacePos] === ' ' && !hasEncounteredError) {
-              components.push(<span key={`space-${wordIndex}`} className="correct"> </span>);
+            if (isTimedMode) {
+              const cls = input[spacePos] === ' ' ? 'correct' : 'incorrect';
+              components.push(<span key={`space-${wordIndex}`} className={cls}> </span>);
             } else {
-              hasEncounteredError = true;
-              components.push(<span key={`space-${wordIndex}`} className="incorrect"> </span>);
+              if (input[spacePos] === ' ' && !hasEncounteredError) {
+                components.push(<span key={`space-${wordIndex}`} className="correct"> </span>);
+              } else {
+                hasEncounteredError = true;
+                components.push(<span key={`space-${wordIndex}`} className="incorrect"> </span>);
+              }
             }
           } else if (spacePos === input.length) {
             components.push(<span ref={currentCharRef} key={`space-${wordIndex}`} className="current"> </span>);
@@ -807,8 +844,9 @@ function Typing({
     const scrollY = container.scrollTop || 0;
 
     // Visible delta within container + scroll offset -> content-relative coords
-    const x = Math.round((rect.left - containerRect.left) + scrollX);
-    const y = Math.round((rect.top - containerRect.top) + scrollY);
+    // Use sub-pixel precision for smoother glide on high‑DPI displays
+    const x = (rect.left - containerRect.left) + scrollX;
+    const y = (rect.top - containerRect.top) + scrollY;
 
     // Determine caret vs block based on Settings-managed CSS var
     const useCaret = (cursorStyleRef.current === 'caret');
@@ -829,8 +867,10 @@ function Typing({
       overlay.classList.remove('typing-active');
     }
 
-    // Cursor-specific duration (caret snappier)
-    overlay.style.setProperty('--cursor-glide-duration', useCaret ? '85ms' : '110ms');
+    // Cursor-specific duration
+    // - Caret: smooth glide
+    // - Block: short glide; snaps only for big jumps to avoid trailing
+    overlay.style.setProperty('--cursor-glide-duration', useCaret ? '90ms' : '65ms');
 
     // First placement should not animate from origin
     if (!initialCursorSetRef.current) {
@@ -842,9 +882,11 @@ function Typing({
       overlay.style.transition = prev || '';
       initialCursorSetRef.current = true;
     } else {
-      // For large vertical jumps (e.g., auto-scroll to next line), place instantly to avoid trailing
+      // For large vertical jumps (e.g., line wrap / scroll), place instantly.
+      // Horizontal moves (including spaces) should always glide when enabled.
       const prevY = overlay.__prevY ?? y;
-      const largeJump = Math.abs(prevY - y) > height * 1.2;
+      const dy = Math.abs(prevY - y);
+      const largeJump = dy > height * 1.2;
       if (largeJump) {
         const prev = overlay.style.transition;
         overlay.style.transition = 'none';

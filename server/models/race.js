@@ -300,11 +300,24 @@ const Race = {
     }
   },
 
-  // Add a player to a lobby, checking capacity
+  // Add a player to a lobby
+  // - Private lobbies: enforce 10-player cap
+  // - Public lobbies: no cap
   async addPlayerToLobby(lobbyId, userId, isReady = false) {
     const client = await db.getClient(); // Use a client for transaction
     try { // Start try block immediately after acquisition
       await client.query('BEGIN');
+
+      // Determine lobby type for capacity rules
+      const lobbyTypeRes = await client.query(
+        `SELECT type FROM lobbies WHERE id = $1`,
+        [lobbyId]
+      );
+      if (lobbyTypeRes.rowCount === 0) {
+        await client.query('ROLLBACK');
+        throw new Error('Lobby not found.');
+      }
+      const lobbyType = lobbyTypeRes.rows[0].type;
 
       // Check current player count
       const countResult = await client.query(
@@ -313,8 +326,8 @@ const Race = {
       );
       const playerCount = parseInt(countResult.rows[0].count, 10);
 
-      // Check if lobby is full (max 10 players)
-      if (playerCount >= 10) {
+      // Enforce capacity only for PRIVATE lobbies (max 10 players)
+      if (lobbyType === 'private' && playerCount >= 10) {
         // Rollback before throwing ensures transaction state is clean
         await client.query('ROLLBACK');
         throw new Error('Lobby is full.'); // Throw specific error
