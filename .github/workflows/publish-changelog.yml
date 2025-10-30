@@ -28,10 +28,20 @@ jobs:
           node-version: '20.11.1'
 
       - name: Install server dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Install client dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
         working-directory: client
 
       - name: Collect PR metadata (pull_request)
