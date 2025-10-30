@@ -912,6 +912,20 @@
   align-items: center;
 }
 
+.no-matches {
+  font-style: italic;
+  color: var(--text-color-secondary);
+  font-size: 1.1rem;
+  padding: 10px 0;
+  width: 100%;
+  text-align: center;
+  margin-left: 0;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .title-display.static-title {
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--hover-color);
