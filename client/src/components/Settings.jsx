@@ -140,8 +140,8 @@ function Settings({ isOpen, onClose, initialTab = 'appearance' }) {
         if (setUser) {
           setUser({
             latest_changelog_id: latestId ?? null,
-            latest_changelog_title: latest?.title ?? user?.latest_changelog_title ?? null,
-            latest_changelog_published_at: latest?.published_at ?? latest?.merged_at ?? user?.latest_changelog_published_at ?? null,
+            latest_changelog_title: latest?.title ?? null,
+            latest_changelog_published_at: latest?.published_at ?? latest?.merged_at ?? null,
             has_unseen_changelog: latestId ? latestId !== lastSeenId : false,
             last_seen_changelog_id: lastSeenId ?? null
           });
@@ -161,7 +161,7 @@ function Settings({ isOpen, onClose, initialTab = 'appearance' }) {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, activeTab, hasFetchedChangelog, isChangelogLoading, setUser, user]);
+  }, [isOpen, activeTab, hasFetchedChangelog, setUser]);
 
   useEffect(() => {
     if (!isOpen || activeTab !== 'changelog') return;
