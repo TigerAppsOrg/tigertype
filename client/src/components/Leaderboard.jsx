@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
+import axios from 'axios';
 import './Leaderboard.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 import ProfileModal from './ProfileModal.jsx';
@@ -29,6 +30,22 @@ const formatRelativeTime = (timestamp) => {
   return createdAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 };
 
+// Shallow comparison for arrays of title objects; assumes stable ordering
+const titlesAreEqual = (a, b) => {
+  if (a === b) return true;
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const left = a[i];
+    const right = b[i];
+    if (!left || !right) return false;
+    if (left.id !== right.id || left.name !== right.name || left.is_equipped !== right.is_equipped) {
+      return false;
+    }
+  }
+  return true;
+};
+
 function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMode = 'modal' }) {
   const { socket } = useSocket();
   // Destructure authenticated flag to check CAS login status
@@ -46,6 +63,10 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
   const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // State for storing fetched titles per leaderboard entry
+  const [leaderboardTitlesMap, setLeaderboardTitlesMap] = useState({});
+  // Ref to track which netids we've initiated fetches for (to avoid duplicate requests)
+  const fetchingRef = useRef(new Set());
 
   // Track viewport to switch to compact controls on small screens
   useEffect(() => {
@@ -138,6 +159,85 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
 
   }, [socket, duration, period]);
 
+  // Fetch titles for each leaderboard entry
+  useEffect(() => {
+    if (!authenticated || leaderboard.length === 0) {
+      // Clear titles map and fetching ref when not authenticated or leaderboard is empty
+      setLeaderboardTitlesMap(prev => {
+        if (Object.keys(prev).length === 0) return prev;
+        return {};
+      });
+      fetchingRef.current.clear();
+      return;
+    }
+
+    // Get current netids in leaderboard
+    const currentNetids = new Set(leaderboard.map(entry => entry.netid));
+    
+    // Clean up titles and fetching ref for users no longer in leaderboard
+    setLeaderboardTitlesMap(prev => {
+      let didRemoveEntry = false;
+      const cleanedEntries = Object.entries(prev).filter(([netid]) => {
+        const shouldKeep = currentNetids.has(netid);
+        if (!shouldKeep) {
+          didRemoveEntry = true;
+        }
+        return shouldKeep;
+      });
+
+      // Clean up fetching ref regardless of whether map entries changed
+      const filteredFetching = new Set();
+      fetchingRef.current.forEach(netid => {
+        if (currentNetids.has(netid)) {
+          filteredFetching.add(netid);
+        }
+      });
+      fetchingRef.current = filteredFetching;
+
+      if (!didRemoveEntry) {
+        return prev;
+      }
+
+      return Object.fromEntries(cleanedEntries);
+    });
+
+    leaderboard.forEach(entry => {
+      const netid = entry.netid;
+      
+      // Sync context titles for current user
+      if (netid === user?.netid && user?.titles) {
+        setLeaderboardTitlesMap(prev => {
+          const existingTitles = prev[netid];
+          if (titlesAreEqual(existingTitles, user.titles)) return prev; // No change needed
+          return { ...prev, [netid]: user.titles };
+        });
+      }
+      // Fetch other users' titles if not already fetched or currently fetching
+      if (netid !== user?.netid && !(netid in leaderboardTitlesMap) && !fetchingRef.current.has(netid)) {
+        fetchingRef.current.add(netid);
+        axios.get(`/api/user/${netid}/titles`)
+          .then(res => {
+            const nextTitles = res.data || [];
+            setLeaderboardTitlesMap(prev => {
+              const existingTitles = prev[netid];
+              if (titlesAreEqual(existingTitles, nextTitles)) return prev;
+              return { ...prev, [netid]: nextTitles };
+            });
+            fetchingRef.current.delete(netid);
+          })
+          .catch(err => {
+            console.error(`Error fetching titles for ${netid}:`, err);
+            setLeaderboardTitlesMap(prev => {
+              const existingTitles = prev[netid];
+              if (Array.isArray(existingTitles) && existingTitles.length === 0) return prev;
+              return { ...prev, [netid]: [] };
+            });
+            fetchingRef.current.delete(netid);
+          });
+      }
+    });
+  }, [leaderboard, user, authenticated, leaderboardTitlesMap]);
+
   const handleAvatarClick = (_avatarUrl, netid) => {
     // Only proceed if user is authenticated via CAS
     if (!authenticated) return;
@@ -205,40 +305,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
             {error && <p className="error-message">Error: {error}</p>}
             {(hasLoadedOnce ? !showSpinner : !loading) && !error && (
               <div className="leaderboard-list">
-                {leaderboard.length > 0 ? (
-                  leaderboard.map((entry, index) => (
-                    <div
-                      key={`${entry.user_id}-${entry.created_at}`}
-                      className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}
-                    >
-                      <span className="leaderboard-rank">{index + 1}</span>
-                      <div
-                        className={`leaderboard-player ${authenticated ? 'clickable' : 'disabled'}`}
-                        onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
-                        title={authenticated ? `View ${entry.netid}'s profile` : 'Log in to view profiles'}
-                        role={authenticated ? 'button' : undefined}
-                        tabIndex={authenticated ? 0 : -1}
-                        onKeyDown={authenticated ? (e => { if (e.key === 'Enter' || e.key === ' ') handleAvatarClick(entry.avatar_url, entry.netid); }) : undefined}
-                      >
-                        <div className="leaderboard-avatar">
-                          <img
-                            src={entry.avatar_url || defaultProfileImage}
-                            alt={`${entry.netid} avatar`}
-                            onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
-                          />
-                        </div>
-                        <span className="leaderboard-netid">{entry.netid}</span>
-                      </div>
-                      <div className="leaderboard-stats">
-                        <span className="leaderboard-wpm">{parseFloat(entry.adjusted_wpm).toFixed(0)} WPM</span>
-                        <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span>
-                        <span className="leaderboard-date">{period === 'daily' ? formatRelativeTime(entry.created_at) : new Date(entry.created_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="no-results">No results found for this leaderboard.</p>
-                )}
+                {leaderboard.length > 0 ? ( leaderboard.map((entry, index) => ( <div key={`${entry.user_id}-${entry.created_at}`} className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}> <span className="leaderboard-rank">{index + 1}</span> <div className="leaderboard-player"> <div className="leaderboard-avatar" onClick={() => handleAvatarClick(entry.avatar_url, entry.netid)} title={`View ${entry.netid}\'s avatar`}> <img src={entry.avatar_url || defaultProfileImage} alt={`${entry.netid} avatar`} onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }} /> </div> <div className="leaderboard-player-text"> <span className="leaderboard-netid">{entry.netid}</span> {authenticated && (() => { const titles = leaderboardTitlesMap[entry.netid]; const titleToShow = titles?.find(t => t.is_equipped); return titleToShow ? ( <div className="leaderboard-titles"> <span className="leaderboard-title-badge">{titleToShow.name}</span> </div> ) : null; })()} </div> </div> <div className="leaderboard-stats"> <span className="leaderboard-wpm">{parseFloat(entry.adjusted_wpm).toFixed(0)} WPM</span> <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span> <span className="leaderboard-date">{period === 'daily' ? formatRelativeTime(entry.created_at) : new Date(entry.created_at).toLocaleDateString()}</span> </div> </div> )) ) : ( <p className="no-results">No results found for this leaderboard.</p> )}
               </div>
             )}
             <p className="leaderboard-subtitle">Resets daily at 12:00 AM EST</p>
@@ -290,22 +357,33 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                     className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}
                   >
                     <span className="leaderboard-rank">{index + 1}</span>
-                    <div
-                      className={`leaderboard-player ${authenticated ? 'clickable' : 'disabled'}`}
-                      onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
-                      title={authenticated ? `View ${entry.netid}'s profile` : 'Log in to view profiles'}
-                      role={authenticated ? 'button' : undefined}
-                      tabIndex={authenticated ? 0 : -1}
-                      onKeyDown={authenticated ? (e => { if (e.key === 'Enter' || e.key === ' ') handleAvatarClick(entry.avatar_url, entry.netid); }) : undefined}
-                    >
-                      <div className="leaderboard-avatar">
+                    <div className="leaderboard-player">
+                      <div 
+                        className={`leaderboard-avatar ${!authenticated ? 'disabled' : ''}`}
+                        onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
+                        title={authenticated ? `View ${entry.netid}\'s profile` : 'Log in to view profiles'}
+                      >
                         <img 
                           src={entry.avatar_url || defaultProfileImage} 
                           alt={`${entry.netid} avatar`} 
                           onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
                         />
                       </div>
-                      <span className="leaderboard-netid">{entry.netid}</span>
+                      <div className="leaderboard-player-text">
+                        <span className="leaderboard-netid">{entry.netid}</span>
+                        {authenticated && (() => {
+                          const titles = leaderboardTitlesMap[entry.netid];
+                          // Only show title if user has one equipped - no fallback to first unlocked title
+                          const titleToShow = titles?.find(t => t.is_equipped);
+                          return titleToShow ? (
+                            <div className="leaderboard-titles">
+                              <span className="leaderboard-title-badge">
+                                {titleToShow.name}
+                              </span>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
                     </div>
                     <div className="leaderboard-stats">
                       <span className="leaderboard-wpm">{parseFloat(entry.adjusted_wpm).toFixed(0)} WPM</span>
