@@ -113,6 +113,7 @@ h2 {
   gap: 0.25rem;
 }
 
+/* Make more of the entry clickable when authenticated */
 .leaderboard-player.clickable { cursor: pointer; }
 .leaderboard-player.clickable:hover .leaderboard-netid { 
   color: #F58025; 

@@ -661,10 +661,10 @@ function Typing({
         setInput(newInput);
         // Schedule an update after the state has changed so startTime is initialized
         setTimeout(() => {
-          const processed = raceHandleInput(newInput);
-          if (typeof processed === 'string') {
-            setInput(processed);
-          }
+          const latestValue = inputRef.current ? inputRef.current.value : newInput;
+          const processed = raceHandleInput(latestValue);
+          const nextValue = typeof processed === 'string' ? processed : latestValue;
+          setInput(nextValue);
         }, 0);
       }
       return;
