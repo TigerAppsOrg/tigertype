@@ -67,6 +67,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
   const [leaderboardTitlesMap, setLeaderboardTitlesMap] = useState({});
   // Ref to track which netids we've initiated fetches for (to avoid duplicate requests)
   const fetchingRef = useRef(new Set());
+  const requestIdRef = useRef(0);
 
   // Track viewport to switch to compact controls on small screens
   useEffect(() => {
@@ -103,50 +104,62 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
   }, [loading]);
 
   useEffect(() => {
-    // Fetch from API directly if socket isn't available (user not logged in)
-    const fetchLeaderboard = async () => {
-      setLoading(true);
-      setError(null);
-      console.log(`Requesting leaderboard: duration=${duration}, period=${period}`);
-      
-      if (socket) {
-        // Use socket if available (user is logged in)
-        socket.emit('leaderboard:timed', { duration, period }, (response) => {
-          setLoading(false);
-          setHasLoadedOnce(true);
-          if (response.error) {
-            console.error('Error fetching leaderboard:', response.error);
-            setError(response.error);
-            setLeaderboard([]);
-          } else {
-            console.log('Leaderboard data received:', response.leaderboard);
-            setLeaderboard(response.leaderboard || []);
-          }
-        });
-      } else {
-        // Direct API fetch for public leaderboard data (no auth required)
-        try {
-          const response = await fetch(`/api/public/leaderboard/timed?duration=${duration}&period=${period}`);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          // console.log('Leaderboard data received via public API:', data.leaderboard);
+    requestIdRef.current += 1;
+    const requestId = requestIdRef.current;
+    setLoading(true);
+    setError(null);
+
+    if (socket) {
+      socket.emit('leaderboard:timed', { duration, period }, (response) => {
+        if (requestId !== requestIdRef.current) return;
+        setHasLoadedOnce(true);
+        setLoading(false);
+        if (response.error) {
+          console.error('Error fetching leaderboard:', response.error);
+          setError(response.error);
+          setLeaderboard([]);
+        } else {
+          setLeaderboard(response.leaderboard || []);
+        }
+      });
+      return () => {};
+    }
+
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const response = await fetch(
+          `/api/public/leaderboard/timed?duration=${duration}&period=${period}`,
+          { signal: controller.signal },
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (requestId === requestIdRef.current) {
           setLeaderboard(data.leaderboard || []);
-        } catch (err) {
-          console.error('Error fetching leaderboard via public API:', err);
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Error fetching leaderboard via public API:', err);
+        if (requestId === requestIdRef.current) {
           setError('Unable to load leaderboard data. Please try again later.');
           setLeaderboard([]);
-        } finally {
+        }
+      } finally {
+        if (!controller.signal.aborted && requestId === requestIdRef.current) {
           setLoading(false);
           setHasLoadedOnce(true);
         }
       }
-    };
+    })();
 
-    fetchLeaderboard();
+    return () => {
+      controller.abort();
+    };
 
     // OPTIONAL FOR LATER: Add listener for real-time updates if implemented on the server
     // const handleLeaderboardUpdate = (data) => { ... };
