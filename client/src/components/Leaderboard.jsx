@@ -414,12 +414,9 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                         <img
                           src={entry.avatar_url || defaultProfileImage}
                           alt={`${entry.netid} avatar`}
-                          onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
+                          onError={(e) => { e.target.onerror = null; e.target.src = defaultProfileImage; }}
                         />
                       </div>
-                      <span className="leaderboard-netid">{entry.netid}</span>
-                    </div>
-                    <div className="leaderboard-player-text">
                       <div className="leaderboard-player-text">
                         <span className="leaderboard-netid">{entry.netid}</span>
                         {authenticated && (() => {
