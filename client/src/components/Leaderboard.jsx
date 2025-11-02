@@ -425,8 +425,21 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                           const titleToShow = titles?.find(t => t.is_equipped);
                           return titleToShow ? (
                             <div className="leaderboard-titles">
-                              <span className="leaderboard-title-badge">
+                              <span 
+                                className="leaderboard-title-badge title-with-tooltip"
+                                onMouseEnter={(e) => {
+                                  const tooltip = e.currentTarget.querySelector('.title-tooltip');
+                                  if (tooltip) {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    tooltip.style.top = `${rect.bottom + 8}px`;
+                                    tooltip.style.left = `${rect.left}px`;
+                                  }
+                                }}
+                              >
                                 {titleToShow.name}
+                                {titleToShow.description && (
+                                  <span className="title-tooltip">{titleToShow.description}</span>
+                                )}
                               </span>
                             </div>
                           ) : null;
