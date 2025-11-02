@@ -42,7 +42,7 @@ function Typing({
   snippetType,
   snippetDepartment
 }) {
-  const { raceState, setRaceState, typingState, setTypingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet } = useRace();
+  const { raceState, setRaceState, typingState, setTypingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet, anticheatState, flagSuspicious, markTrustedInteraction } = useRace();
   const { socket } = useSocket();
   const { user } = useAuth();
   const [input, setInput] = useState('');
@@ -625,8 +625,46 @@ function Typing({
     };
   }, [raceState.inProgress, raceState.startTime, raceState.completed, typingState.correctChars]); // Include typingState.correctChars
 
+  const handleBeforeInputGuard = (e) => {
+    if (anticheatState.locked) {
+      e.preventDefault();
+      return;
+    }
+    if (e.nativeEvent && e.nativeEvent.isTrusted === false) {
+      e.preventDefault();
+      flagSuspicious('synthetic-beforeinput', { inputType: e.nativeEvent.inputType });
+      return;
+    }
+    markTrustedInteraction();
+  };
+
+  const handleKeyDownGuard = (e) => {
+    if (anticheatState.locked) {
+      e.preventDefault();
+      return;
+    }
+    const nativeEvent = e.nativeEvent || e;
+    if (nativeEvent && nativeEvent.isTrusted === false) {
+      e.preventDefault();
+      flagSuspicious('synthetic-keydown', { key: e.key });
+      return;
+    }
+    markTrustedInteraction();
+  };
+
   // Handle typing input with word locking (snippet) or free-typing (timed)
   const handleComponentInput = (e) => {
+    if (anticheatState.locked) {
+      e.preventDefault();
+      return;
+    }
+    const nativeEvent = e.nativeEvent;
+    if (nativeEvent && nativeEvent.isTrusted === false) {
+      e.preventDefault();
+      flagSuspicious('synthetic-input-change', { length: e.target?.value?.length ?? 0 });
+      return;
+    }
+    markTrustedInteraction();
     const newInput = e.target.value;
     const text = raceState.snippet?.text || '';
     const isTimedMode = !!(raceState.snippet?.is_timed_test);
@@ -738,6 +776,12 @@ function Typing({
       setInput(typingState.input);
     }
   }, [typingState.input, raceState.inProgress, raceState.snippet?.is_timed_test]);
+
+  useEffect(() => {
+    if (anticheatState.locked && inputRef.current) {
+      inputRef.current.blur();
+    }
+  }, [anticheatState.locked]);
   
   // Prevent paste
   const handlePaste = (e) => {
@@ -1157,11 +1201,15 @@ function Typing({
                 <input
                   ref={inputRef}
                   value={input}
+                  onBeforeInput={handleBeforeInputGuard}
+                  onKeyDown={handleKeyDownGuard}
                   onChange={handleComponentInput}
                   onPaste={handlePaste}
+                  onFocus={markTrustedInteraction}
                   className={isShaking ? 'shake' : ''}
                   disabled={
                     raceState.completed ||
+                    anticheatState.locked ||
                     (raceState.type !== 'practice' && !raceState.inProgress && raceState.countdown === null)
                   }
                   autoComplete="off"
@@ -1177,6 +1225,13 @@ function Typing({
       {showErrorMessage && (
         <div className="error-message">
           Fix your mistake to continue
+        </div>
+      )}
+
+      {anticheatState.locked && (
+        <div className="anticheat-block" role="alert">
+          <strong>automated input blocked</strong>
+          <span>{anticheatState.message || 'suspicious typing blocked to protect races'}</span>
         </div>
       )}
 

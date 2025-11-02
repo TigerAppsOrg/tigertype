@@ -29,6 +29,13 @@ const inactivityTimers = new Map(); // Store timers for inactivity warnings and 
 // Store user avatar URLs for quicker lookup
 const playerAvatars = new Map(); // socketId -> avatar_url
 
+// Anticheat thresholds and state
+const suspiciousPlayers = new Map(); // socketId -> { reasons: [], locked: boolean }
+const MAX_PROGRESS_STEP = 20; // max characters allowed per progress update
+const MIN_PROGRESS_INTERVAL = 25; // min ms between progress packets
+const MAX_ALLOWED_WPM = 320; // anything above is flagged
+const MIN_COMPLETION_TIME_MS = 2500; // cannot finish faster than this
+
 // Store host disconnect timers for private lobbies
 const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds
 const hostDisconnectTimers = new Map(); // lobbyCode -> { timer: NodeJS.Timeout, userId: number }
@@ -314,6 +321,46 @@ const initialize = (io) => {
     }
 
     console.log(`Socket connected: ${netid} (${socket.id})`);
+
+    const registerSuspicion = (reason, details = {}) => {
+      if (!reason) return;
+      const existing = suspiciousPlayers.get(socket.id) || { reasons: [], locked: false };
+      const already = existing.reasons.some(entry => entry.reason === reason);
+      if (!already) {
+        existing.reasons.push({ reason, details, at: Date.now() });
+      }
+      existing.locked = true;
+      suspiciousPlayers.set(socket.id, existing);
+
+      const progress = playerProgress.get(socket.id) || {};
+      progress.suspicious = true;
+      progress.suspicionReasons = existing.reasons;
+      playerProgress.set(socket.id, progress);
+
+      console.warn(`[ANTICHEAT] Locked socket ${socket.id} (${netid}) for ${reason}`, details);
+      socket.emit('anticheat:lock', {
+        reason,
+        details,
+        message: details?.message || 'Suspicious typing detected. Automation is not allowed.'
+      });
+    };
+
+    const isSocketLocked = () => {
+      const entry = suspiciousPlayers.get(socket.id);
+      return entry?.locked;
+    };
+
+    socket.on('anticheat:flag', (payload = {}) => {
+      try {
+        const { reason, metadata } = payload || {};
+        if (typeof reason !== 'string' || !reason) {
+          return;
+        }
+        registerSuspicion(`client-${reason}`, metadata || {});
+      } catch (err) {
+        console.error('Error processing anticheat flag from client:', err);
+      }
+    });
 
     // Fetch user avatar when connecting
     if (userId) {
@@ -1317,14 +1364,33 @@ const initialize = (io) => {
     });
     
     // Handle progress updates
-    socket.on('race:progress', (data) => {
+    socket.on('race:progress', (data = {}) => {
       try {
-        // Client sends { position, total, isCompleted }
-        const { code, position, isCompleted } = data; 
+        if (isSocketLocked()) {
+          return;
+        }
+
+        const {
+          code,
+          position,
+          isCompleted,
+          accuracy,
+          errors,
+          correctChars,
+          wpm: clientReportedWpm
+        } = data;
+
+        if (typeof code !== 'string') {
+          return;
+        }
+
+        if (!Number.isFinite(position)) {
+          registerSuspicion('invalid-progress-payload', { position });
+          return;
+        }
         
-        // Check if race exists and is active
         const race = activeRaces.get(code);
-        if (!race || race.status !== 'racing') {
+        if (!race || race.status !== 'racing' || !race.snippet || !race.snippet.text) {
           return;
         }
         
@@ -1335,34 +1401,74 @@ const initialize = (io) => {
         }
         
         const playerIndex = players.findIndex(p => p.id === socket.id);
-        
         if (playerIndex === -1) {
           return;
         }
         
-        // Throttle progress updates
         const now = Date.now();
-        const lastUpdate = lastProgressUpdate.get(socket.id) || 0;
-
-        // Allow immediate update if player just completed the race
-        if (now - lastUpdate < PROGRESS_THROTTLE && !isCompleted) {
-          return;
-        }
-        
-        lastProgressUpdate.set(socket.id, now);
-        
-        // Validate the progress (ensure position is not negative or excessively large)
         const snippetLength = race.snippet.text.length;
-        if (position < 0 || position > snippetLength) {
-          console.warn(`Invalid position from ${netid}: ${position}, snippet length: ${snippetLength}`);
+        const prevProgress = playerProgress.get(socket.id) || {};
+        const prevPosition = prevProgress.position || 0;
+        const delta = position - prevPosition;
+
+        if (delta < 0) {
+          registerSuspicion('negative-progress', { prevPosition, position });
           return;
         }
+
+        if (delta > MAX_PROGRESS_STEP && !isCompleted) {
+          registerSuspicion('progress-spike', { prevPosition, position, delta });
+          return;
+        }
+
+        const lastUpdateTs = lastProgressUpdate.get(socket.id) || 0;
+        const interval = now - lastUpdateTs;
+
+        if (interval < MIN_PROGRESS_INTERVAL && !isCompleted) {
+          registerSuspicion('progress-interval', { interval });
+          return;
+        }
+
+        if (interval < PROGRESS_THROTTLE && !isCompleted) {
+          return;
+        }
+
+        lastProgressUpdate.set(socket.id, now);
+
+        const allowableOverflow = Math.max(10, Math.floor(snippetLength * 0.1));
+        if (position < 0 || position > snippetLength + allowableOverflow) {
+          registerSuspicion('progress-out-of-range', { position, snippetLength });
+          return;
+        }
+
+        const raceStart = race.startTime || now;
+        const elapsedMs = now - raceStart;
+        if (elapsedMs > 0) {
+          const elapsedMinutes = elapsedMs / 60000;
+          const computedWpm = elapsedMinutes > 0 ? (position / 5) / elapsedMinutes : 0;
+          if (computedWpm > MAX_ALLOWED_WPM) {
+            registerSuspicion('wpm-threshold', { computedWpm, position, elapsedMs });
+            return;
+          }
+          if (isCompleted && snippetLength > 40 && elapsedMs < MIN_COMPLETION_TIME_MS) {
+            registerSuspicion('completion-too-fast', { elapsedMs, snippetLength });
+            return;
+          }
+        }
+
+        const history = Array.isArray(prevProgress.history) ? prevProgress.history : [];
+        history.push({ position, timestamp: now });
+        const trimmedHistory = history.slice(-180);
         
-        // Store player progress, using the client-provided completion status
         playerProgress.set(socket.id, {
           position,
-          completed: isCompleted, // Use the client-provided completion status
-          timestamp: now
+          completed: isCompleted,
+          timestamp: now,
+          accuracy: Number.isFinite(accuracy) ? accuracy : prevProgress.accuracy,
+          errors: Number.isFinite(errors) ? errors : prevProgress.errors,
+          correctChars: Number.isFinite(correctChars) ? correctChars : prevProgress.correctChars,
+          wpm: Number.isFinite(clientReportedWpm) ? clientReportedWpm : prevProgress.wpm,
+          history: trimmedHistory
         });
         
         // Calculate completion percentage 
@@ -1373,16 +1479,15 @@ const initialize = (io) => {
           netid,
           position,
           percentage,
-          completed: isCompleted // Use the client-provided completion status
+          completed: isCompleted
         });
         
         // Handle race completion for this player if they just completed
         if (isCompleted) {
           console.log(`User ${netid} has completed the race in lobby ${code} based on progress update`);
-          // Ensure finish handler isn't called multiple times if progress updates arrive late
           const progressData = playerProgress.get(socket.id);
           if (progressData && !progressData.finishHandled) {
-             progressData.finishHandled = true; // Mark finish as handled
+             progressData.finishHandled = true;
              playerProgress.set(socket.id, progressData);
              handlePlayerFinish(io, code, socket.id, progressData).catch(err => {
                console.error('Error handling player finish:', err);
@@ -1395,87 +1500,127 @@ const initialize = (io) => {
     });
     
     // Handle race result submission
-    socket.on('race:result', async (data) => {
+    socket.on('race:result', async (data = {}) => {
       try {
         const { code, lobbyId, snippetId, wpm, accuracy, completion_time } = data;
         const { user: netid, userId } = socket.userInfo;
-
-        // --- BEGIN DEBUG LOGGING --- 
-        // console.log(`[DEBUG race:result] Received data:`, JSON.stringify(data));
-        // console.log(`[DEBUG race:result] User info: netid=${netid}, userId=${userId}`);
-        // --- END DEBUG LOGGING ---
 
         if (!userId) {
           console.error(`[ERROR race:result] Cannot record result: No userId for socket ${socket.id} (netid: ${netid})`);
           return;
         }
 
+        if (isSocketLocked()) {
+          console.warn(`[ANTICHEAT] Result rejected for locked socket ${socket.id} (${netid})`);
+          return;
+        }
+
         console.log(`Received result from ${netid}: WPM ${wpm}, Acc ${accuracy}, Time ${completion_time}`);
 
-        // Retrieve race and player info
         const players = racePlayers.get(code);
         const player = players?.find(p => p.id === socket.id);
         const race = activeRaces.get(code);
-        // Skip base stat updates for private lobbies
         const isPrivate = race?.type === 'private';
-        
-        // --- BEGIN DEBUG LOGGING --- 
-        // console.log(`[DEBUG race:result] Found player: ${!!player}, Found race: ${!!race}`);
-        if (race) {
-          // console.log(`[DEBUG race:result] Race snippet info: is_timed=${race.snippet?.is_timed_test}, duration=${race.snippet?.duration}`);
-        }
-        // --- END DEBUG LOGGING ---
 
         if (!player || !race) {
           console.warn(`[WARN race:result] Received result for race ${code}, but player ${netid} or race not found`);
           return;
         }
 
-        // Check if the result is for a timed test
+        const progressRecord = playerProgress.get(socket.id) || {};
+        if (progressRecord.suspicious) {
+          registerSuspicion('suspicious-progress-result', { reasons: progressRecord.suspicionReasons });
+          return;
+        }
+
+        const finishTimestamp = progressRecord.timestamp || Date.now();
+        const raceStart = race.startTime || finishTimestamp;
+
+        let computedWpm = Number.isFinite(progressRecord.wpm) ? progressRecord.wpm : (Number.isFinite(wpm) ? Number(wpm) : 0);
+        let computedAccuracy = Number.isFinite(progressRecord.accuracy) ? progressRecord.accuracy : (Number.isFinite(accuracy) ? Number(accuracy) : 0);
+        let computedCompletion = Number.isFinite(completion_time) ? Number(completion_time) : null;
+
+        if (!race.snippet?.is_timed_test) {
+          const chars = Number.isFinite(progressRecord.position) ? progressRecord.position : 0;
+          const elapsedMinutes = (finishTimestamp - raceStart) / 60000;
+          if (elapsedMinutes > 0 && chars >= 0) {
+            computedWpm = (chars / 5) / elapsedMinutes;
+          }
+          if (!Number.isFinite(computedCompletion)) {
+            computedCompletion = Math.max(0, (finishTimestamp - raceStart) / 1000);
+          }
+        } else {
+          if (!Number.isFinite(computedCompletion) && Number.isFinite(race.snippet?.duration)) {
+            computedCompletion = Number(race.snippet.duration);
+          }
+          if (!Number.isFinite(computedWpm) && Number.isFinite(wpm)) {
+            computedWpm = Number(wpm);
+          }
+          if (!Number.isFinite(computedAccuracy) && Number.isFinite(accuracy)) {
+            computedAccuracy = Number(accuracy);
+          }
+        }
+
+        computedWpm = Number.isFinite(computedWpm) ? Math.max(0, Math.round(computedWpm * 100) / 100) : 0;
+        computedAccuracy = Number.isFinite(computedAccuracy)
+          ? Math.max(0, Math.min(100, Math.round(computedAccuracy * 100) / 100))
+          : 0;
+        if (!Number.isFinite(computedCompletion)) {
+          computedCompletion = Math.max(0, (finishTimestamp - raceStart) / 1000);
+        }
+
+        if (Number.isFinite(wpm) && Math.abs(Number(wpm) - computedWpm) > 25) {
+          registerSuspicion('wpm-mismatch', { reported: wpm, computed: computedWpm });
+          return;
+        }
+
+        if (Number.isFinite(accuracy) && Math.abs(Number(accuracy) - computedAccuracy) > 25) {
+          registerSuspicion('accuracy-mismatch', { reported: accuracy, computed: computedAccuracy });
+          return;
+        }
+
+        if (computedWpm > MAX_ALLOWED_WPM) {
+          registerSuspicion('wpm-threshold', { computedWpm });
+          return;
+        }
+
+        playerProgress.set(socket.id, {
+          ...progressRecord,
+          wpm: computedWpm,
+          accuracy: computedAccuracy,
+          completion_time: computedCompletion
+        });
+
         if (race.snippet?.is_timed_test && race.snippet?.duration) {
           const duration = race.snippet.duration;
-          // --- BEGIN DEBUG LOGGING --- 
-          // console.log(`[DEBUG race:result] Processing as TIMED test. Duration: ${duration}`);
-          // console.log(`[DEBUG race:result] Calling insertTimedResult with: userId=${userId}, duration=${duration}, wpm=${wpm}, accuracy=${accuracy}`);
-          // --- END DEBUG LOGGING ---
           try {
-            await insertTimedResult(userId, duration, wpm, accuracy);
+            await insertTimedResult(userId, duration, computedWpm, computedAccuracy);
             console.log(`[SUCCESS race:result] Saved timed test result for ${netid} (duration: ${duration})`);
           } catch (dbError) {
             console.error(`[ERROR race:result] Failed to insert timed result for user ${userId}:`, dbError);
-            // Optionally emit an error back to client if needed
           }
           
-          // Update base stats only for non-private lobbies
           try {
             if (!isPrivate) {
-              await UserModel.updateStats(userId, wpm, accuracy, true);
-              await UserModel.updateFastestWpm(userId, wpm);
-              // console.log(`[DEBUG race:result] Updated user stats for ${netid}`);
+              await UserModel.updateStats(userId, computedWpm, computedAccuracy, true);
+              await UserModel.updateFastestWpm(userId, computedWpm);
             }
           } catch (statsError) {
             console.error(`[ERROR race:result] Failed to update user stats for ${userId} after timed result:`, statsError);
           }
 
         } else if (snippetId) {
-           // --- BEGIN DEBUG LOGGING --- 
-           // console.log(`[DEBUG race:result] Processing as REGULAR race. Snippet ID: ${snippetId}`);
-           // console.log(`[DEBUG race:result] Calling RaceModel.recordResult with: userId=${userId}, lobbyId=${lobbyId}, snippetId=${snippetId}, wpm=${wpm}, accuracy=${accuracy}, completion_time=${completion_time}`);
-          // --- END DEBUG LOGGING ---
-          // Regular race result, save to race_results table
           try {
-            await RaceModel.recordResult(userId, lobbyId, snippetId, wpm, accuracy, completion_time);
+            await RaceModel.recordResult(userId, lobbyId, snippetId, computedWpm, computedAccuracy, computedCompletion);
             console.log(`[SUCCESS race:result] Saved regular race result for ${netid} (lobby: ${lobbyId}, snippet: ${snippetId})`);
           } catch (dbError) {
              console.error(`[ERROR race:result] Failed to insert regular race result for user ${userId}:`, dbError);
           }
           
-          // Update base stats only for non-private lobbies
           try {
             if (!isPrivate) {
-              await UserModel.updateStats(userId, wpm, accuracy, false);
-              await UserModel.updateFastestWpm(userId, wpm);
-              // console.log(`[DEBUG race:result] Updated user stats for ${netid}`);
+              await UserModel.updateStats(userId, computedWpm, computedAccuracy, false);
+              await UserModel.updateFastestWpm(userId, computedWpm);
             }
           } catch (statsError) {
             console.error(`[ERROR race:result] Failed to update user stats for ${userId} after regular result:`, statsError);
@@ -1484,19 +1629,18 @@ const initialize = (io) => {
           console.warn(`[WARN race:result] Result from ${netid} for race ${code} has no snippetId and is not a timed test.`);
         }
 
-        // Handle player finish logic (updates progress, checks if race ends)
-        // Wrap in try/catch as well
         try {
-          await handlePlayerFinish(io, code, socket.id, { wpm, accuracy, completion_time });
-          // console.log(`[DEBUG race:result] Successfully handled player finish logic for ${netid}`);
+          await handlePlayerFinish(io, code, socket.id, {
+            wpm: computedWpm,
+            accuracy: computedAccuracy,
+            completion_time: computedCompletion
+          });
         } catch (finishError) {
           console.error(`[ERROR race:result] Error in handlePlayerFinish for ${netid}:`, finishError);
         }
 
       } catch (err) {
         console.error('[ERROR race:result] General error in handler:', err);
-        // Avoid emitting generic error to prevent potential info leak
-        // socket.emit('error', { message: 'Failed to save race result' }); 
       }
     });
     
@@ -1723,6 +1867,7 @@ const initialize = (io) => {
       // Clean up any stored progress
       playerProgress.delete(socket.id);
       lastProgressUpdate.delete(socket.id);
+      suspiciousPlayers.delete(socket.id);
       // Clean up stored avatar
       playerAvatars.delete(socket.id);
       // Clean up any inactivity timers associated with this specific socket ID across all lobbies

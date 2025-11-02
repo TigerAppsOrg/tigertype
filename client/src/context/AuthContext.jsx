@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }) => {
   // Monitor socket connection status to update user data on reconnect
   useEffect(() => {
     let isInitialConnection = true;
-    const handleSocketConnect = () => {
+    const handleSocketReconnect = () => {
       if (authenticated && !isInitialConnection) {
         console.log('Socket reconnected, refreshing user profile data');
         fetchUserProfile();
@@ -98,14 +98,9 @@ export const AuthProvider = ({ children }) => {
       isInitialConnection = false;
     };
 
-    if (window.socket) {
-      window.socket.on('connect', handleSocketConnect);
-    }
-
+    window.addEventListener('tigertype:connect', handleSocketReconnect);
     return () => {
-      if (window.socket) {
-        window.socket.off('connect', handleSocketConnect);
-      }
+      window.removeEventListener('tigertype:connect', handleSocketReconnect);
     };
   }, [authenticated, fetchUserProfile]); // Depend on auth status and fetch function
 

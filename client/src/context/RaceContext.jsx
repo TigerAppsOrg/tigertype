@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
 
@@ -53,6 +53,12 @@ const loadRaceState = () => {
     return null;
   }
 };
+
+const INITIAL_ANTICHEAT_STATE = Object.freeze({
+  locked: false,
+  reasons: [],
+  message: null
+});
 
 export const RaceProvider = ({ children }) => {
   const { socket, connected } = useSocket();
@@ -134,6 +140,49 @@ export const RaceProvider = ({ children }) => {
     accuracy: 0,
     lockedPosition: 0 // Pos up to which text is locked
   });
+  const [anticheatState, setAnticheatState] = useState(INITIAL_ANTICHEAT_STATE);
+  const lastTrustedInteractionRef = useRef(Date.now());
+
+  const markTrustedInteraction = useCallback(() => {
+    lastTrustedInteractionRef.current = Date.now();
+  }, []);
+
+  const resetAnticheatState = useCallback(() => {
+    setAnticheatState(() => ({
+      locked: false,
+      reasons: [],
+      message: null
+    }));
+    lastTrustedInteractionRef.current = Date.now();
+  }, []);
+
+  const flagSuspicious = useCallback((reason, metadata = {}) => {
+    if (!reason) return;
+    let shouldNotifyServer = false;
+
+    setAnticheatState(prev => {
+      const alreadyReported = prev.reasons.some(entry => entry.reason === reason);
+      if (!alreadyReported) {
+        shouldNotifyServer = true;
+      }
+      return {
+        locked: true,
+        reasons: alreadyReported
+          ? prev.reasons
+          : [...prev.reasons, { reason, metadata, at: Date.now(), source: 'client' }],
+        message: metadata?.message || prev.message || 'Suspicious automation detected'
+      };
+    });
+
+    if (shouldNotifyServer && socket && connected) {
+      socket.emit('anticheat:flag', {
+        reason,
+        metadata,
+        code: raceState.code,
+        lobbyId: raceState.lobbyId
+      });
+    }
+  }, [socket, connected, raceState.code, raceState.lobbyId]);
 
   // Initialize inactivity state from session storage or default values
   const savedInactivityState = loadInactivityState();
@@ -228,6 +277,7 @@ export const RaceProvider = ({ children }) => {
     // Event handlers
     const handleRaceJoined = (data) => {
       // console.log('Joined race:', data);
+      resetAnticheatState();
       setRaceState(prev => ({
         ...prev,
         code: data.code,
@@ -474,6 +524,24 @@ export const RaceProvider = ({ children }) => {
       });
     };
 
+    const handleAnticheatLock = (payload = {}) => {
+      const { reason = 'server_lock', details = {}, message } = payload;
+      setAnticheatState(prev => {
+        const alreadyLogged = prev.reasons.some(entry => entry.reason === reason && entry.source === 'server');
+        return {
+          locked: true,
+          reasons: alreadyLogged
+            ? prev.reasons
+            : [...prev.reasons, { reason, metadata: details, at: Date.now(), source: 'server' }],
+          message: message || prev.message || 'Suspicious automation detected by server'
+        };
+      });
+    };
+
+    const handleAnticheatReset = () => {
+      resetAnticheatState();
+    };
+
     // Register event listeners
     socket.on('race:joined', handleRaceJoined);
     socket.on('race:playersUpdate', handlePlayersUpdate);
@@ -493,6 +561,8 @@ export const RaceProvider = ({ children }) => {
     socket.on('race:countdown', handleRaceCountdown);
     socket.on('lobby:newHost', handleNewHost);
     socket.on('race:playerLeft', handlePlayerLeft);
+    socket.on('anticheat:lock', handleAnticheatLock);
+    socket.on('anticheat:reset', handleAnticheatReset);
 
     // Clean up on unmount
     return () => {
@@ -514,10 +584,12 @@ export const RaceProvider = ({ children }) => {
       socket.off('race:countdown', handleRaceCountdown);
       socket.off('lobby:newHost', handleNewHost); // Added cleanup
       socket.off('race:playerLeft', handlePlayerLeft);
+      socket.off('anticheat:lock', handleAnticheatLock);
+      socket.off('anticheat:reset', handleAnticheatReset);
       socket.off('snippetNotFound', handleSnippetNotFound); // Cleanup snippet not found listener
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
-  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id]); 
+  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id, resetAnticheatState]);
 
   // Methods for race actions
   const joinPracticeMode = () => {
@@ -620,6 +692,9 @@ export const RaceProvider = ({ children }) => {
 
   // Handle text input, enforce word locking (snippet mode) or free-flow (timed mode)
   const handleInput = (incomingInput) => {
+    if (anticheatState.locked) {
+      return typingState.input;
+    }
     let newInput = incomingInput;
     // Disable input handling for non-practice races before countdown begins
     if (raceState.type !== 'practice' && !raceState.inProgress && raceState.countdown === null) {
@@ -693,6 +768,9 @@ export const RaceProvider = ({ children }) => {
   };
 
   const updateProgress = (input) => {
+    if (anticheatState.locked) {
+      return;
+    }
     const now = Date.now();
     const elapsedSeconds = (now - raceState.startTime) / 1000;
     
@@ -833,7 +911,11 @@ export const RaceProvider = ({ children }) => {
           code: raceState.code,
           position: input.length,
           total: text.length,
-          isCompleted: isCompleted // Send explicit completion status to server
+          isCompleted: isCompleted, // Send explicit completion status to server
+          correctChars,
+          errors: totalErrors,
+          accuracy,
+          wpm
         });
       }
       
@@ -899,6 +981,8 @@ export const RaceProvider = ({ children }) => {
          console.warn('Cannot notify server of leave: No lobby code or ID found.');
       }
     }
+
+    resetAnticheatState();
 
     setRaceState({
       code: null,
@@ -1067,9 +1151,12 @@ export const RaceProvider = ({ children }) => {
       value={{
         raceState,
         typingState,
+        anticheatState,
         inactivityState,
         setRaceState,
         setTypingState,
+        flagSuspicious,
+        markTrustedInteraction,
         setInactivityState,
         joinPracticeMode,
         joinPublicRace,
