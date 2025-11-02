@@ -757,12 +757,52 @@ function ProfileModal({ isOpen, onClose, netid }) {
                     <div className="title-display static-title">
                        {loadingTitles ? (
                          <span>Loading title...</span>
-                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.name ? (
+                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)) ? (
                          // Display the equipped title if available
-                         <span className="displayed-title-name">{userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)).name}</span>
-                       ) : userTitles.find(t => t.is_equipped)?.name ? (
+                         (() => {
+                           const equippedTitle = userTitles.find(t => String(t.id) === String(displayUser.selected_title_id));
+                           return (
+                             <span 
+                               className="displayed-title-name title-with-tooltip"
+                               onMouseEnter={(e) => {
+                                 const tooltip = e.currentTarget.querySelector('.title-tooltip');
+                                 if (tooltip) {
+                                   const rect = e.currentTarget.getBoundingClientRect();
+                                   tooltip.style.top = `${rect.bottom + 8}px`;
+                                   tooltip.style.left = `${rect.left}px`;
+                                 }
+                               }}
+                             >
+                               {equippedTitle.name}
+                               {equippedTitle.description && (
+                                 <span className="title-tooltip">{equippedTitle.description}</span>
+                               )}
+                             </span>
+                           );
+                         })()
+                       ) : userTitles.find(t => t.is_equipped) ? (
                          // Alternatively check for is_equipped flag from the API response
-                         <span className="displayed-title-name">{userTitles.find(t => t.is_equipped).name}</span>
+                         (() => {
+                           const equippedTitle = userTitles.find(t => t.is_equipped);
+                           return (
+                             <span 
+                               className="displayed-title-name title-with-tooltip"
+                               onMouseEnter={(e) => {
+                                 const tooltip = e.currentTarget.querySelector('.title-tooltip');
+                                 if (tooltip) {
+                                   const rect = e.currentTarget.getBoundingClientRect();
+                                   tooltip.style.top = `${rect.bottom + 8}px`;
+                                   tooltip.style.left = `${rect.left}px`;
+                                 }
+                               }}
+                             >
+                               {equippedTitle.name}
+                               {equippedTitle.description && (
+                                 <span className="title-tooltip">{equippedTitle.description}</span>
+                               )}
+                             </span>
+                           );
+                         })()
                        ) : (
                          // Display message if no title is equipped
                          <span className="no-title-display">User has no title selected</span>

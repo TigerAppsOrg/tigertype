@@ -59,6 +59,7 @@ h2 {
   width: 100%;
   flex-grow: 1;
   overflow-y: auto;
+  overflow-x: visible;
   border-radius: 8px;
   background-color: rgba(30, 30, 30, 0.4); /* Slightly darker but still transparent */
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -174,6 +175,39 @@ h2 {
   padding-left: 6px;
   background-color: rgba(245, 128, 37, 0.1);
   border-radius: 4px;
+}
+
+/* Title tooltip styles */
+.title-with-tooltip {
+  position: relative;
+  cursor: help;
+}
+
+.title-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: fixed;
+  background-color: rgba(20, 20, 20, 0.98);
+  color: #fff;
+  padding: 0.6rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  max-width: 280px;
+  text-align: left;
+  z-index: 10000;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(245, 128, 37, 0.4);
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  line-height: 1.4;
+  white-space: normal;
+  word-wrap: break-word;
+  transform: translateY(8px);
+}
+
+.title-with-tooltip:hover .title-tooltip {
+  visibility: visible;
+  opacity: 1;
 }
 
 .leaderboard-stats {
