@@ -423,7 +423,7 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
                         </div>
                         <div className={`leaderboard-stats ${isLandingMobile ? 'compact' : ''}`}>
                           <span className={`leaderboard-wpm ${isLandingMobile ? 'compact' : ''}`}>
-                            {Math.round(parseFloat(entry.adjusted_wpm) || 0)}
+                            {(parseFloat(entry.adjusted_wpm) || 0).toFixed(0)}
                             {isLandingMobile ? <span className="leaderboard-wpm-unit">WPM</span> : ' WPM'}
                           </span>
                           {shouldShowAccuracy && (
