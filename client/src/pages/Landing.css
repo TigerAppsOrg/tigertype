@@ -117,33 +117,37 @@ body {
 
 /* Combined Data Section */
 .landing-data-section {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(520px, 2.15fr);
   width: 100%;
-  max-width: 120vh;
+  max-width: min(1200px, 92vw);
   gap: 1.5rem;
   margin-top: 1rem;
   margin-bottom: 1rem;
+  align-items: stretch;
 }
 
 .landing-leaderboard-container {
-  flex: 6; /* 60% width */
   background-color: var(--secondary-color, #1e1e1e);
   border-radius: 8px;
   border: 1px solid var(--hover-color, #3a3a3a);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  padding: 1rem;
-  padding-bottom: 0rem;
+  padding: 1.1rem;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .landing-container {
   padding-top: 3vh;
   padding-bottom: 2rem;
-  max-height: fit-content; /* Added as suggested to fix extra space */
+  max-height: fit-content;
 }
 
 /* Ensure leaderboard list within this section scrolls if needed */
 .landing-leaderboard-container .leaderboard-list {
-  max-height: 36vh; /* PLEASE FOR THE LOVE OF GOD FIND A WAY TO MAKE THIS REPSONSIVE W/O MOVING THE DIV */
+  height: 100%;
 }
 
 /* Right Column */

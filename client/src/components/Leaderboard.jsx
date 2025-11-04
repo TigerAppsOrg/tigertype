@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import PropTypes from 'prop-types';
@@ -258,101 +258,126 @@ function Leaderboard({ defaultDuration = 15, defaultPeriod = 'alltime', layoutMo
     setShowProfileModal(true);
   };
 
+  const isLandingMobile = layoutMode === 'landing' && isMobile;
+  const shouldShowAccuracy = !(layoutMode === 'landing' && isMobile);
+
+  const formatDisplayDate = useCallback((timestamp) => {
+    if (period === 'daily') return formatRelativeTime(timestamp);
+    const date = new Date(timestamp);
+    return isLandingMobile
+      ? date.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })
+      : date.toLocaleDateString();
+  }, [period, isLandingMobile]);
+
   return (
     <>
       {layoutMode === 'landing' ? (
         <div className="leaderboard-landing-wrapper">
-          {/* Combined Controls Area */}
-          <div className="leaderboard-landing-controls-area">
-             <h2>Leaderboards</h2>
-             {isMobile ? (
-               <div className="leaderboard-mobile-controls">
-                 <label>
-                   Period
-                   <select value={period} onChange={(e) => setPeriod(e.target.value)} aria-label="Select period">
-                     {PERIODS.map(p => (
-                       <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
-                     ))}
-                   </select>
-                 </label>
-                 <label>
-                   Duration
-                   <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} aria-label="Select duration">
-                     {DURATIONS.map(d => (
-                       <option key={d} value={d}>{d}s</option>
-                     ))}
-                   </select>
-                 </label>
-               </div>
-             ) : (
-               <>
-                 {/* Period Controls (Daily/Alltime) - Separate Row */}
-                 <div className="control-group period-controls horizontal">
-                   {PERIODS.map(p => (
-                     <button
-                       key={p}
-                       className={`control-button ${period === p ? 'active' : ''}`}
-                       onClick={() => setPeriod(p)}
-                     >
-                       {p.charAt(0).toUpperCase() + p.slice(1)}
-                     </button>
-                   ))}
-                 </div>
-                 {/* Duration Controls (Times) */}
-                 <div className="control-group duration-controls vertical">
-                   {DURATIONS.map(d => (
-                     <button
-                       key={d}
-                       className={`control-button ${duration === d ? 'active' : ''}`}
-                       onClick={() => setDuration(d)}
-                     >
-                       {d}s
-                     </button>
-                   ))}
-                 </div>
-               </>
-             )}
-          </div>
-          <div className="leaderboard-landing-list-area">
-            {(hasLoadedOnce ? showSpinner : loading) && ( <div className="loading-indicator"><div className="spinner-border text-orange" role="status"><span className="visually-hidden">Loading...</span></div><p>Loading Leaderboard...</p></div> )}
-            {error && <p className="error-message">Error: {error}</p>}
-            {(hasLoadedOnce ? !showSpinner : !loading) && !error && (
-              <div className="leaderboard-list">
-                {leaderboard.length > 0 ? (
-                  leaderboard.map((entry, index) => (
-                    <div
-                      key={`${entry.user_id}-${entry.created_at}`}
-                      className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}
+          <div className="leaderboard-landing-panel">
+            <div className="leaderboard-heading-row">
+              <h2>Leaderboards</h2>
+              {!isMobile && (
+                <div className="control-group period-controls horizontal">
+                  {PERIODS.map(p => (
+                    <button
+                      key={p}
+                      className={`control-button ${period === p ? 'active' : ''}`}
+                      onClick={() => setPeriod(p)}
                     >
-                      <span className="leaderboard-rank">{index + 1}</span>
-                      <div
-                        className={`leaderboard-player ${authenticated ? 'clickable' : 'disabled'}`}
-                        onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
-                        title={authenticated ? `View ${entry.netid}'s profile` : 'Log in to view profiles'}
-                        role={authenticated ? 'button' : undefined}
-                        tabIndex={authenticated ? 0 : -1}
-                        onKeyDown={authenticated ? (e => { if (e.key === 'Enter' || e.key === ' ') handleAvatarClick(entry.avatar_url, entry.netid); }) : undefined}
-                      >
-                        <div className="leaderboard-avatar">
-                          <img
-                            src={entry.avatar_url || defaultProfileImage}
-                            alt={`${entry.netid} avatar`}
-                            onError={(e) => { e.target.onerror = null; e.target.src=defaultProfileImage; }}
-                          />
-                        </div>
-                        <span className="leaderboard-netid">{entry.netid}</span>
-                      </div>
-                      <div className="leaderboard-stats">
-                        <span className="leaderboard-wpm">{parseFloat(entry.adjusted_wpm).toFixed(0)} WPM</span>
-                        <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span>
-                        <span className="leaderboard-date">{period === 'daily' ? formatRelativeTime(entry.created_at) : new Date(entry.created_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="no-results">No results found for this leaderboard.</p>
-                )}              </div>
+                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {isMobile ? (
+              <div className="leaderboard-mobile-controls">
+                <label>
+                  Period
+                  <select value={period} onChange={(e) => setPeriod(e.target.value)} aria-label="Select period">
+                    {PERIODS.map(p => (
+                      <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Duration
+                  <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} aria-label="Select duration">
+                    {DURATIONS.map(d => (
+                      <option key={d} value={d}>{d}s</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : (
+              <div className="control-group duration-controls horizontal">
+                {DURATIONS.map(d => (
+                  <button
+                    key={d}
+                    className={`control-button ${duration === d ? 'active' : ''}`}
+                    onClick={() => setDuration(d)}
+                  >
+                    {d}s
+                  </button>
+                ))}
+              </div>
             )}
+            <div className="leaderboard-landing-content">
+              {(hasLoadedOnce ? showSpinner : loading) && (
+                <div className="loading-indicator">
+                  <div className="spinner-border text-orange" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p>Loading Leaderboard...</p>
+                </div>
+              )}
+              {error && <p className="error-message">Error: {error}</p>}
+              {(hasLoadedOnce ? !showSpinner : !loading) && !error && (
+                <div className="leaderboard-list">
+                  {leaderboard.length > 0 ? (
+                    leaderboard.map((entry, index) => (
+                      <div
+                        key={`${entry.user_id}-${entry.created_at}`}
+                        className={`leaderboard-item ${user && entry.netid === user.netid ? 'current-user' : ''}`}
+                      >
+                        <span className="leaderboard-rank">{index + 1}</span>
+                        <div
+                          className={`leaderboard-player ${authenticated ? 'clickable' : 'disabled'}`}
+                          onClick={authenticated ? () => handleAvatarClick(entry.avatar_url, entry.netid) : undefined}
+                          title={authenticated ? `View ${entry.netid}'s profile` : 'Log in to view profiles'}
+                          role={authenticated ? 'button' : undefined}
+                          tabIndex={authenticated ? 0 : -1}
+                          onKeyDown={authenticated ? (e => { if (e.key === 'Enter' || e.key === ' ') handleAvatarClick(entry.avatar_url, entry.netid); }) : undefined}
+                        >
+                          <div className="leaderboard-avatar">
+                            <img
+                              src={entry.avatar_url || defaultProfileImage}
+                              alt={`${entry.netid} avatar`}
+                              onError={(e) => { e.target.onerror = null; e.target.src = defaultProfileImage; }}
+                            />
+                          </div>
+                          <span className="leaderboard-netid">{entry.netid}</span>
+                        </div>
+                        <div className={`leaderboard-stats ${isLandingMobile ? 'compact' : ''}`}>
+                          <span className={`leaderboard-wpm ${isLandingMobile ? 'compact' : ''}`}>
+                            {Math.round(parseFloat(entry.adjusted_wpm) || 0)}
+                            {isLandingMobile ? <span className="leaderboard-wpm-unit">WPM</span> : ' WPM'}
+                          </span>
+                          {shouldShowAccuracy && (
+                            <span className="leaderboard-accuracy">{parseFloat(entry.accuracy).toFixed(1)}%</span>
+                          )}
+                          <span className={`leaderboard-date ${isLandingMobile ? 'compact' : ''}`}>
+                            {formatDisplayDate(entry.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="no-results">No results found for this leaderboard.</p>
+                  )}
+                </div>
+              )}
+            </div>
             <p className="leaderboard-subtitle">Resets daily at 12:00 AM EST</p>
           </div>
         </div>
