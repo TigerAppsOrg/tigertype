@@ -75,11 +75,6 @@ SegmentedToggle.propTypes = {
   ariaLabel: PropTypes.string,
 };
 
-SegmentedToggle.defaultProps = {
-  className: '',
-  ariaLabel: undefined,
-};
-
 // Helper function to format relative time
 const formatRelativeTime = (timestamp) => {
   const nowUtc = Date.now(); // Current time in UTC milliseconds since epoch
