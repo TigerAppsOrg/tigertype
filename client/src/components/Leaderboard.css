@@ -54,6 +54,88 @@ h2 {
   box-shadow: 0 3px 8px rgba(245, 128, 37, 0.3);
 }
 
+.segmented-toggle {
+  --segments: 1;
+  --active-index: 0;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.2rem;
+  overflow: hidden;
+  gap: 0;
+  min-width: 0;
+}
+
+.segmented-highlight {
+  position: absolute;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  left: 0.2rem;
+  width: calc((100% - 0.4rem) / var(--segments));
+  border-radius: 9px;
+  background: linear-gradient(135deg, #F58025, #ff9b52);
+  box-shadow: 0 12px 28px rgba(245, 128, 37, 0.42);
+  transform: translateX(calc(var(--active-index) * 100%));
+  transition: transform 0.22s ease, width 0.22s ease;
+  z-index: 0;
+}
+
+.segmented-option {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: none;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color 0.24s ease, text-shadow 0.32s ease;
+}
+
+.segmented-option:hover,
+.segmented-option:focus {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.segmented-option .segmented-label {
+  position: relative;
+  display: inline-block;
+  color: inherit;
+  text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transform: translateY(0);
+  transition: color 0.28s ease, text-shadow 0.36s ease, transform 0.36s ease;
+}
+
+.segmented-option.active {
+  color: #161616;
+}
+
+.segmented-option:not(.active):hover .segmented-label,
+.segmented-option:not(.active):focus-visible .segmented-label {
+  color: #ffe0bc;
+  text-shadow: 0 0 6px rgba(255, 168, 92, 0.45), 0 0 14px rgba(255, 168, 92, 0.35);
+  transform: translateY(-1px);
+}
+
+.segmented-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 180, 98, 0.35);
+}
+
+.segmented-option.active:focus-visible,
+.segmented-option.active:hover {
+  color: #161616;
+}
+
 /* List Styling */
 .leaderboard-list {
   width: 100%;
@@ -472,87 +554,29 @@ h2 {
 }
 
 @media (max-width: 600px) {
-  .leaderboard-heading-row .control-group { display: none; }
+  .leaderboard-heading-row .segmented-toggle { display: none; }
 }
 
-.leaderboard-landing-panel .period-controls.horizontal {
-  flex: 0 0 auto;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.35rem;
-  padding: 0.3rem;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+.leaderboard-landing-panel .segmented-toggle.period-toggle {
+  margin-left: auto;
   max-width: 320px;
 }
 
-.leaderboard-landing-panel .period-controls.horizontal .control-button {
-  flex: 1;
-  min-width: 0;
-  padding: 0.5rem 1.15rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.75);
-  transition: all 0.25s ease;
-}
-
-.leaderboard-landing-panel .period-controls.horizontal .control-button:hover,
-.leaderboard-landing-panel .period-controls.horizontal .control-button:focus-visible {
-  color: white;
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-}
-
-.leaderboard-landing-panel .period-controls.horizontal .control-button.active {
-  background: linear-gradient(135deg, #F58025, #ff9b52);
-  color: #161616;
-  box-shadow: 0 10px 22px rgba(245, 128, 37, 0.45);
-}
-
-.leaderboard-landing-panel .duration-controls.horizontal {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+.leaderboard-landing-panel .segmented-toggle.duration-toggle {
   width: 100%;
-  justify-content: flex-start;
+  margin-top: 0.75rem;
 }
 
-.leaderboard-landing-panel .duration-controls.horizontal .control-button {
-  flex: 0 0 auto;
-  padding: 0.45rem 1.1rem;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid transparent;
-  color: rgba(255, 255, 255, 0.78);
-  font-weight: 600;
-  transition: all 0.2s ease;
+.leaderboard-landing-panel .segmented-toggle.duration-toggle .segmented-option {
+  font-size: 0.9rem;
 }
 
-.leaderboard-landing-panel .duration-controls.horizontal .control-button:hover,
-.leaderboard-landing-panel .duration-controls.horizontal .control-button:focus-visible {
-  color: white;
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+.leaderboard-controls .segmented-toggle {
+  min-width: 200px;
 }
 
-.leaderboard-landing-panel .duration-controls.horizontal .control-button.active {
-  background: linear-gradient(135deg, #F58025, #ff9b52);
-  color: #161616;
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 10px 22px rgba(245, 128, 37, 0.45);
-}
-
-.leaderboard-landing-panel .control-button:focus-visible {
-  outline: 2px solid rgba(245, 128, 37, 0.85);
-  outline-offset: 2px;
+.leaderboard-controls .segmented-toggle.duration-toggle {
+  min-width: 260px;
 }
 
 .leaderboard-landing-content {
@@ -671,22 +695,6 @@ h2 {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.6rem;
-  }
-
-  .leaderboard-landing-panel .period-controls.horizontal {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .leaderboard-landing-panel .duration-controls.horizontal {
-    justify-content: space-between;
-    gap: 0.35rem;
-    overflow-x: auto;
-    padding-bottom: 0.1rem;
-  }
-
-  .leaderboard-landing-panel .duration-controls.horizontal::-webkit-scrollbar {
-    display: none;
   }
 
   .leaderboard-landing-content {
