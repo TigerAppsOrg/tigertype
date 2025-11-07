@@ -20,7 +20,8 @@
     "test:all": "npm run test:server && npm run test:client",
     "test:all:pretty": "npm run test:server && npm run test:client:progress",
     "fix:snippets:dry": "node server/scripts/fix_snippet_trailing_newlines.js",
-    "fix:snippets:apply": "node server/scripts/fix_snippet_trailing_newlines.js --apply"
+    "fix:snippets:apply": "node server/scripts/fix_snippet_trailing_newlines.js --apply",
+    "changelog:publish": "node server/scripts/publish-changelog.js"
   },
   "dependencies": {
     "@azure/msal-node": "^3.8.1",
