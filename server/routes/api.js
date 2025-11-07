@@ -8,6 +8,7 @@ const { isAuthenticated } = require('../utils/auth');
 const UserModel = require('../models/user');
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
+const { sendFeedbackEmails } = require('../utils/email');
 const ChangelogModel = require('../models/changelog');
 const profileRoutes = require('./profileRoutes'); // Import profile routes
 const { pool } = require('../config/database');
@@ -113,9 +114,51 @@ router.get('/public/leaderboard/timed', async (req, res) => {
 // --- Authenticated Profile Routes ---
 // All profile routes require authentication + are mounted under /profile
 router.use('/profile', requireAuth, profileRoutes);
-router.use('/profile', requireAuth, profileRoutes); 
 
 // --- Existing API Routes ---
+
+router.post('/feedback', async (req, res) => {
+  try {
+    const { category = 'feedback', message, contactInfo, pagePath } = req.body || {};
+
+    if (!message || typeof message !== 'string' || message.trim().length < 10) {
+      return res.status(400).json({ error: 'Please include a short description so we can help (10+ characters).' });
+    }
+
+    const sanitizedMessage = message.trim().slice(0, 4000);
+    const sanitizedContact = typeof contactInfo === 'string' ? contactInfo.trim().slice(0, 255) : null;
+    const sanitizedPagePath = typeof pagePath === 'string' ? pagePath.trim().slice(0, 255) : null;
+
+    let netid = null;
+    if (isAuthenticated(req)) {
+      if (!req.user && req.session?.userInfo) {
+        req.user = {
+          id: req.session.userInfo.userId,
+          netid: req.session.userInfo.user
+        };
+      }
+      netid = req.user?.netid || req.session?.userInfo?.user || null;
+    }
+
+    const userAgent = req.get('user-agent')?.slice(0, 500) || null;
+
+    // fire and forget to avoid hanging if mail provider is slow
+    sendFeedbackEmails({
+      category,
+      message: sanitizedMessage,
+      contactInfo: sanitizedContact,
+      netid,
+      userAgent,
+      pagePath: sanitizedPagePath,
+      createdAt: new Date()
+    }).catch(err => console.warn('feedback email send failed', err));
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error submitting feedback:', err);
+    return res.status(500).json({ error: 'Unable to submit feedback right now. Please try again later.' });
+  }
+});
 
 /**
  * Mark tutorial as completed for the current user

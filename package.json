@@ -20,10 +20,10 @@
     "test:all": "npm run test:server && npm run test:client",
     "test:all:pretty": "npm run test:server && npm run test:client:progress",
     "fix:snippets:dry": "node server/scripts/fix_snippet_trailing_newlines.js",
-    "fix:snippets:apply": "node server/scripts/fix_snippet_trailing_newlines.js --apply",
-    "changelog:publish": "node server/scripts/publish-changelog.js"
+    "fix:snippets:apply": "node server/scripts/fix_snippet_trailing_newlines.js --apply"
   },
   "dependencies": {
+    "@azure/msal-node": "^3.8.1",
     "@jridgewell/gen-mapping": "^0.3.8",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.6.2",
@@ -34,6 +34,7 @@
     "express": "^4.18.2",
     "express-session": "^1.17.3",
     "multer": ">=2.0.2",
+    "nodemailer": "^7.0.10",
     "pg": "^8.11.3",
     "promptly": "^3.2.0",
     "request": "^2.88.2",

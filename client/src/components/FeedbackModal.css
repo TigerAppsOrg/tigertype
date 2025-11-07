@@ -1,0 +1,118 @@
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.feedback-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--mode-text-color, #f5f5f5);
+}
+
+.feedback-form select,
+.feedback-form textarea,
+.feedback-form input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 128, 37, 0.25);
+  background: var(--input-bg, rgba(18, 18, 18, 0.85));
+  color: var(--mode-text-color, #f5f5f5);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feedback-form select:focus,
+.feedback-form textarea:focus,
+.feedback-form input:focus {
+  outline: none;
+  border-color: #F58025;
+  box-shadow: 0 0 0 2px rgba(245, 128, 37, 0.2);
+}
+
+.feedback-form textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+.feedback-hint {
+  font-size: 0.8rem;
+  color: var(--subtle-text-color, rgba(255, 255, 255, 0.6));
+  align-self: flex-end;
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.feedback-primary-button,
+.feedback-secondary-button {
+  padding: 0.65rem 1.4rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  border: none;
+}
+
+.feedback-primary-button {
+  background-color: #F58025;
+  color: #121212;
+  box-shadow: 0 2px 8px rgba(245, 128, 37, 0.35);
+}
+
+.feedback-primary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(245, 128, 37, 0.4);
+}
+
+.feedback-secondary-button {
+  background: transparent;
+  border: 1px solid rgba(245, 128, 37, 0.5);
+  color: var(--mode-text-color, #f5f5f5);
+}
+
+.feedback-secondary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #F58025;
+}
+
+.feedback-primary-button:disabled,
+.feedback-secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.feedback-error {
+  margin: 0;
+  color: #ff7676;
+  font-size: 0.85rem;
+}
+
+.feedback-success {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-size: 0.95rem;
+  color: var(--mode-text-color, #f5f5f5);
+}
+
+.feedback-success p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .feedback-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
