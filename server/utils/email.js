@@ -11,14 +11,6 @@ const firstEnv = (...keys) => {
   return undefined;
 };
 
-// Validate required email configuration
-if (!process.env.FEEDBACK_EMAIL_FROM) {
-  throw new Error('Missing required env var: FEEDBACK_EMAIL_FROM');
-}
-if (!process.env.FEEDBACK_EMAIL_TO_TEAM) {
-  throw new Error('Missing required env var: FEEDBACK_EMAIL_TO_TEAM');
-}
-
 const smtpUser = firstEnv('SMTP_SENDER', 'GRAPH_SENDER_USER', 'FEEDBACK_EMAIL_FROM');
 const tenantId = firstEnv('AZURE_TENANT_ID', 'TENANT_ID');
 const clientId = firstEnv('AZURE_CLIENT_ID', 'CLIENT_ID');
@@ -75,8 +67,21 @@ async function getSmtpAccessToken() {
 }
 
 const sendMailGeneric = async ({ to, from, subject, text, html, replyTo, cc, attachments }) => {
-  if (!tenantId || !clientId) throw new Error('Missing AZURE_TENANT_ID/AZURE_CLIENT_ID');
-  const accessToken = await getSmtpAccessToken();
+  if (!tenantId || !clientId) {
+    console.warn('feedback email disabled: missing AZURE_TENANT_ID/AZURE_CLIENT_ID (skipping send)');
+    return;
+  }
+  if (!from || !smtpUser) {
+    console.warn('feedback email disabled: missing From or SMTP user (skipping send)');
+    return;
+  }
+  let accessToken;
+  try {
+    accessToken = await getSmtpAccessToken();
+  } catch (e) {
+    console.warn('smtp oauth token unavailable; skipping send. seed with device code script.', e && e.message ? e.message : e);
+    return;
+  }
   const transporter = nodemailer.createTransport({
     host: 'smtp.office365.com',
     port: 587,
@@ -251,7 +256,7 @@ const sendFeedbackEmails = async ({
   ackTo // optional: explicit recipient for acknowledgement (null/undefined to suppress)
 }) => {
   const from = process.env.FEEDBACK_EMAIL_FROM;
-  const teamList = process.env.FEEDBACK_EMAIL_TO_TEAM
+  const teamList = (process.env.FEEDBACK_EMAIL_TO_TEAM || '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
