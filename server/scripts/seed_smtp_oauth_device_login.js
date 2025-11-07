@@ -43,7 +43,7 @@ const pca = new PublicClientApplication({
 });
 
 (async () => {
-  const result = await pca.acquireTokenByDeviceCode({
+  await pca.acquireTokenByDeviceCode({
     scopes: SMTP_SCOPES,
     deviceCodeCallback: (info) => console.log(info.message)
   });
@@ -55,4 +55,3 @@ const pca = new PublicClientApplication({
   console.log('--- END SMTP_OAUTH_CACHE JSON ---');
   console.log('If deploying to Heroku, set config var SMTP_OAUTH_CACHE to the JSON above.');
 })();
-
