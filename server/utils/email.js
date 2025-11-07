@@ -43,21 +43,40 @@ const tokenCachePlugin = {
   }
 };
 
-const pca = new PublicClientApplication({
-  auth: {
-    clientId,
-    authority: `https://login.microsoftonline.com/${tenantId}`
-  },
-  cache: { cachePlugin: tokenCachePlugin }
-});
+// Lazily create MSAL PCA only if SMTP OAuth is configured
+let pca = null;
+function getPcaInstance() {
+  if (!tenantId || !clientId) return null;
+  if (!pca) {
+    try {
+      pca = new PublicClientApplication({
+        auth: {
+          clientId,
+          authority: `https://login.microsoftonline.com/${tenantId}`
+        },
+        cache: { cachePlugin: tokenCachePlugin }
+      });
+    } catch (e) {
+      // If MSAL fails to construct (e.g., bad/missing config), treat as unconfigured
+      console.warn('msal init failed; feedback email disabled until configured:', e && e.message ? e.message : e);
+      pca = null;
+      return null;
+    }
+  }
+  return pca;
+}
 
 const SMTP_SCOPES = ['https://outlook.office365.com/SMTP.Send', 'offline_access', 'openid', 'email'];
 
 async function getSmtpAccessToken() {
-  const accounts = await pca.getTokenCache().getAllAccounts();
+  const app = getPcaInstance();
+  if (!app) {
+    throw new Error('SMTP OAuth not configured');
+  }
+  const accounts = await app.getTokenCache().getAllAccounts();
   if (accounts && accounts.length > 0) {
     try {
-      const result = await pca.acquireTokenSilent({ scopes: SMTP_SCOPES, account: accounts[0] });
+      const result = await app.acquireTokenSilent({ scopes: SMTP_SCOPES, account: accounts[0] });
       return result.accessToken;
     } catch (_) {
       // fall through to device code seed requirement

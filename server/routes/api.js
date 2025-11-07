@@ -117,16 +117,16 @@ router.use('/profile', requireAuth, profileRoutes);
 
 // --- Existing API Routes ---
 
-// simple in-memory rate limiting for feedback (per IP)
-const FEEDBACK_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-const FEEDBACK_LIMIT_COUNT = 5; // max 5 submissions per window
-const feedbackRate = new Map(); // ip -> { windowStart, count }
+// simple in-memory rate limiting for feedback (per caller key)
+const FEEDBACK_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const FEEDBACK_LIMIT_COUNT = 10; // max 10 submissions per window
+const feedbackRate = new Map(); // key -> { windowStart, count }
 
-function isRateLimited(ip) {
+function isRateLimited(key) {
   const now = Date.now();
-  const entry = feedbackRate.get(ip);
+  const entry = feedbackRate.get(key);
   if (!entry || (now - entry.windowStart) > FEEDBACK_LIMIT_WINDOW_MS) {
-    feedbackRate.set(ip, { windowStart: now, count: 1 });
+    feedbackRate.set(key, { windowStart: now, count: 1 });
     return false;
   }
   entry.count += 1;
@@ -136,8 +136,12 @@ function isRateLimited(ip) {
 
 router.post('/feedback', async (req, res) => {
   try {
-    const ip = (req.headers['x-forwarded-for'] || req.ip || req.connection?.remoteAddress || '').toString();
-    if (isRateLimited(ip)) {
+    // Use req.ip which honors Express trust proxy; doesn't trust raw X-Forwarded-For header
+    const clientIp = (req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '').toString();
+    const key = (isAuthenticated(req) && req.session?.userInfo?.user)
+      ? `uid:${req.session.userInfo.user}|ip:${clientIp}`
+      : `ip:${clientIp}`;
+    if (isRateLimited(key)) {
       return res.status(429).json({ error: 'Too many feedback submissions. Please try again later.' });
     }
     const { category = 'feedback', message, contactInfo, pagePath } = req.body || {};
