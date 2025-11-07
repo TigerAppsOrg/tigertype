@@ -99,15 +99,6 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
               </button>
             </>
           )}
-          <button
-            type="button"
-            className="navbar-feedback-icon"
-            onClick={() => setIsFeedbackOpen(true)}
-            title="Send feedback or report a bug"
-            aria-label="Send feedback or report a bug"
-          >
-            <span className="material-icons" aria-hidden="true">bug_report</span>
-          </button>
           {/* GitHub link (always visible) */}
           <a
             className="navbar-github-icon"
@@ -132,6 +123,15 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
               />
             </svg>
           </a>
+          <button
+            type="button"
+            className="navbar-feedback-icon"
+            onClick={() => setIsFeedbackOpen(true)}
+            title="Send feedback or report a bug"
+            aria-label="Send feedback or report a bug"
+          >
+            <span className="material-icons" aria-hidden="true">bug_report</span>
+          </button>
         </div>
       </div>
       <nav className="navbar-links">
