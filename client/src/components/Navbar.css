@@ -26,6 +26,26 @@
   gap: 0.5rem;
 }
 
+.navbar-feedback-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--mode-text-color);
+  border-radius: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.navbar-feedback-icon:hover {
+  background-color: rgba(245, 128, 37, 0.1);
+  color: #F58025;
+  transform: translateY(-1px);
+}
+
 .settings-button-wrapper {
   position: relative;
   display: inline-flex;
@@ -104,6 +124,7 @@
   transform: rotate(90deg);
 }
 .navbar-icons button:focus-visible,
+.navbar-feedback-icon:focus-visible,
 .navbar-github-icon:focus-visible,
 .navbar-logo button:focus-visible {
   outline: 2px solid #F58025;

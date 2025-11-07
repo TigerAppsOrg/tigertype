@@ -14,6 +14,7 @@ AGENTS.*
 # Environment and Configuration
 .env
 .venv
+server/.smtp_oauth_cache.json
 
 # Dependencies
 node_modules

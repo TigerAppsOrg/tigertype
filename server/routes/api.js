@@ -8,6 +8,7 @@ const { isAuthenticated } = require('../utils/auth');
 const UserModel = require('../models/user');
 const SnippetModel = require('../models/snippet');
 const RaceModel = require('../models/race');
+const { sendFeedbackEmails } = require('../utils/email');
 const ChangelogModel = require('../models/changelog');
 const profileRoutes = require('./profileRoutes'); // Import profile routes
 const { pool } = require('../config/database');
@@ -113,9 +114,80 @@ router.get('/public/leaderboard/timed', async (req, res) => {
 // --- Authenticated Profile Routes ---
 // All profile routes require authentication + are mounted under /profile
 router.use('/profile', requireAuth, profileRoutes);
-router.use('/profile', requireAuth, profileRoutes); 
 
 // --- Existing API Routes ---
+
+// simple in-memory rate limiting for feedback (per caller key)
+const FEEDBACK_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const FEEDBACK_LIMIT_COUNT = 10; // max 10 submissions per window
+const feedbackRate = new Map(); // key -> { windowStart, count }
+
+function isRateLimited(key) {
+  const now = Date.now();
+  const entry = feedbackRate.get(key);
+  if (!entry || (now - entry.windowStart) > FEEDBACK_LIMIT_WINDOW_MS) {
+    feedbackRate.set(key, { windowStart: now, count: 1 });
+    return false;
+  }
+  entry.count += 1;
+  if (entry.count > FEEDBACK_LIMIT_COUNT) return true;
+  return false;
+}
+
+router.post('/feedback', async (req, res) => {
+  try {
+    // Use req.ip which honors Express trust proxy; doesn't trust raw X-Forwarded-For header
+    const clientIp = (req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '').toString();
+    const key = (isAuthenticated(req) && req.session?.userInfo?.user)
+      ? `uid:${req.session.userInfo.user}|ip:${clientIp}`
+      : `ip:${clientIp}`;
+    if (isRateLimited(key)) {
+      return res.status(429).json({ error: 'Too many feedback submissions. Please try again later.' });
+    }
+    const { category = 'feedback', message, contactInfo, pagePath } = req.body || {};
+
+    if (!message || typeof message !== 'string' || message.trim().length < 10) {
+      return res.status(400).json({ error: 'Please include a description with at least 10 characters so we can help.' });
+    }
+
+    const sanitizedMessage = message.trim().slice(0, 4000);
+    const sanitizedContact = typeof contactInfo === 'string' ? contactInfo.trim().slice(0, 255) : null;
+    const sanitizedPagePath = typeof pagePath === 'string' ? pagePath.trim().slice(0, 255) : null;
+
+    let netid = null;
+    if (isAuthenticated(req)) {
+      if (!req.user && req.session?.userInfo) {
+        req.user = {
+          id: req.session.userInfo.userId,
+          netid: req.session.userInfo.user
+        };
+      }
+      netid = req.user?.netid || req.session?.userInfo?.user || null;
+    }
+
+    const userAgent = req.get('user-agent')?.slice(0, 500) || null;
+
+    // acknowledgement policy: only ack authenticated users at their Princeton address
+    const ackTo = (isAuthenticated(req) && netid) ? `${netid}@princeton.edu` : null;
+
+    // fire and forget to avoid hanging if mail provider is slow
+    sendFeedbackEmails({
+      category,
+      message: sanitizedMessage,
+      contactInfo: sanitizedContact,
+      netid,
+      userAgent,
+      pagePath: sanitizedPagePath,
+      createdAt: new Date(),
+      ackTo
+    }).catch(err => console.warn('feedback email send failed', err));
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error submitting feedback:', err);
+    return res.status(500).json({ error: 'Unable to submit feedback right now. Please try again later.' });
+  }
+});
 
 /**
  * Mark tutorial as completed for the current user
