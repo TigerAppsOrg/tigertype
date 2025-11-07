@@ -100,14 +100,20 @@
 .feedback-success {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   font-size: 0.95rem;
   color: var(--mode-text-color, #f5f5f5);
+  align-items: center;
+  text-align: center;
 }
 
 .feedback-success p {
   margin: 0;
   line-height: 1.5;
+}
+
+.feedback-success .feedback-primary-button {
+  min-width: 220px;
 }
 
 @media (max-width: 600px) {

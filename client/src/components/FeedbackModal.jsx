@@ -85,7 +85,7 @@ function FeedbackModal({ isOpen, onClose }) {
       onClose={closeIfAllowed}
       title={submitted ? 'Thanks for your feedback!' : 'Send Feedback'}
       showCloseButton
-      isLarge
+      isLarge={!submitted}
     >
       {submitted ? (
         <div className="feedback-success">

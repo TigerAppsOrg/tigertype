@@ -17,7 +17,7 @@ function Navbar({ onOpenLeaderboard, onLoginClick }) {
   const { authenticated, user, logout, markTutorialComplete } = useAuth();
   const { isTutorialRunning, startTutorial, endTutorial } = useTutorial();
   const navigate = useNavigate();
-  const { raceState, typingState, setPlayerReady, resetRace } = useRace();
+  const { resetRace } = useRace();
 
   // State to track hover state of each link
   const [hoveredLink, setHoveredLink] = useState(null);

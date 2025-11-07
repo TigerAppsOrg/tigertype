@@ -117,12 +117,33 @@ router.use('/profile', requireAuth, profileRoutes);
 
 // --- Existing API Routes ---
 
+// simple in-memory rate limiting for feedback (per IP)
+const FEEDBACK_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const FEEDBACK_LIMIT_COUNT = 5; // max 5 submissions per window
+const feedbackRate = new Map(); // ip -> { windowStart, count }
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = feedbackRate.get(ip);
+  if (!entry || (now - entry.windowStart) > FEEDBACK_LIMIT_WINDOW_MS) {
+    feedbackRate.set(ip, { windowStart: now, count: 1 });
+    return false;
+  }
+  entry.count += 1;
+  if (entry.count > FEEDBACK_LIMIT_COUNT) return true;
+  return false;
+}
+
 router.post('/feedback', async (req, res) => {
   try {
+    const ip = (req.headers['x-forwarded-for'] || req.ip || req.connection?.remoteAddress || '').toString();
+    if (isRateLimited(ip)) {
+      return res.status(429).json({ error: 'Too many feedback submissions. Please try again later.' });
+    }
     const { category = 'feedback', message, contactInfo, pagePath } = req.body || {};
 
     if (!message || typeof message !== 'string' || message.trim().length < 10) {
-      return res.status(400).json({ error: 'Please include a short description so we can help (10+ characters).' });
+      return res.status(400).json({ error: 'Please include a description with at least 10 characters so we can help.' });
     }
 
     const sanitizedMessage = message.trim().slice(0, 4000);
@@ -142,6 +163,9 @@ router.post('/feedback', async (req, res) => {
 
     const userAgent = req.get('user-agent')?.slice(0, 500) || null;
 
+    // acknowledgement policy: only ack authenticated users at their Princeton address
+    const ackTo = (isAuthenticated(req) && netid) ? `${netid}@princeton.edu` : null;
+
     // fire and forget to avoid hanging if mail provider is slow
     sendFeedbackEmails({
       category,
@@ -150,7 +174,8 @@ router.post('/feedback', async (req, res) => {
       netid,
       userAgent,
       pagePath: sanitizedPagePath,
-      createdAt: new Date()
+      createdAt: new Date(),
+      ackTo
     }).catch(err => console.warn('feedback email send failed', err));
 
     return res.json({ success: true });
