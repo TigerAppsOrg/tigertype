@@ -77,6 +77,19 @@ function Results({ onShowLeaderboard }) {
     // Force a new public race queue, ignoring previous lobby code
     joinPublicRace(true);
   };
+
+  // helper to compute a course review URL when DB field is missing
+  const getCourseUrl = (snippet) => {
+    if (!snippet) return null;
+    if (snippet.princeton_course_url) return snippet.princeton_course_url;
+    const title = snippet.course_name || '';
+    const m = title.match(/^([A-Z&]+)\s+(\d+[A-Z]?)/);
+    if (m) {
+      const query = encodeURIComponent(`${m[1]} ${m[2]}`);
+      return `https://registrar.princeton.edu/course-offerings?search=${query}`;
+    }
+    return null;
+  };
   
   // Render practice mode results
   const renderPracticeResults = () => {
@@ -153,15 +166,15 @@ function Results({ onShowLeaderboard }) {
         {statsContent}
         {/* Snippet Source Info */}
         {raceState.type !== 'timed' && raceState.snippet && raceState.snippet.course_name && (
-          <div className="snippet-info">
-            Where is this excerpt from?{' '}
-            <strong>{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</strong>
+          <div className="snippet-info" role="note" aria-label="Snippet source">
+            <div className="snippet-label"><i className="bi bi-book"></i> Where is this excerpt from?</div>
+            <div className="snippet-title">{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</div>
           </div>
         )}
         {/* Course Review Button */}
-        {raceState.type !== 'timed' && raceState.snippet?.course_name && raceState.snippet?.princeton_course_url && (
+        {raceState.type !== 'timed' && raceState.snippet?.course_name && getCourseUrl(raceState.snippet) && (
           <a
-            href={raceState.snippet.princeton_course_url}
+            href={getCourseUrl(raceState.snippet)}
             className="course-review-btn"
             target="_blank"
             rel="noopener noreferrer"
@@ -298,15 +311,15 @@ function Results({ onShowLeaderboard }) {
         
         {/* Snippet Source Info */}
         {raceState.type !== 'timed' && raceState.snippet && raceState.snippet.course_name && (
-          <div className="snippet-info">
-            Where is this excerpt from?{' '}
-            <strong>{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</strong>
+          <div className="snippet-info" role="note" aria-label="Snippet source">
+            <div className="snippet-label"><i className="bi bi-book"></i> Where is this excerpt from?</div>
+            <div className="snippet-title">{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</div>
           </div>
         )}
         {/* Course Review Button for multiplayer results */}
-        {raceState.type !== 'timed' && raceState.snippet?.course_name && raceState.snippet?.princeton_course_url && (
+        {raceState.type !== 'timed' && raceState.snippet?.course_name && getCourseUrl(raceState.snippet) && (
           <a
-            href={raceState.snippet.princeton_course_url}
+            href={getCourseUrl(raceState.snippet)}
             className="course-review-btn"
             target="_blank"
             rel="noopener noreferrer"

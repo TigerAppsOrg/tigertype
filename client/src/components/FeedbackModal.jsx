@@ -135,7 +135,7 @@ function FeedbackModal({ isOpen, onClose }) {
               value={contactInfo}
               onChange={(event) => setContactInfo(event.target.value)}
               disabled={submitting}
-              placeholder="we'll follow up here if we need more info"
+              placeholder="we'll follow up here if we need more info :)"
             />
           </label>
 
