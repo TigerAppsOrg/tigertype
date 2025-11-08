@@ -142,7 +142,8 @@ const sendFeedbackNotification = async ({
 
   const lines = [
     `Category: ${category}`,
-    `Submitted: ${createdAt.toISOString()}`,
+    // format submitted time in eastern time
+    `Submitted: ${(createdAt instanceof Date ? createdAt : new Date(createdAt)).toLocaleString('en-US', { timeZone: 'America/New_York' })} ET`,
     `NetID: ${netid || 'anonymous'}`,
     `Contact: ${contactInfo || 'not provided'}`,
     `Page: ${pagePath || 'unknown'}`,
@@ -168,7 +169,7 @@ const sendFeedbackNotification = async ({
     </div>
     <h3 style=\"margin:0 0 16px 0;color:#F58025;font-weight:800;font-size:24px;line-height:1.2;\">New ${escapeHtml(category)} submitted</h3>
     <ul style=\"margin:0 0 24px 0;padding:0 0 0 20px;font-size:15px;line-height:1.8;color:#555;\">
-      <li><strong>Submitted:</strong> ${escapeHtml(createdAt.toISOString())}</li>
+      <li><strong>Submitted:</strong> ${escapeHtml((createdAt instanceof Date ? createdAt : new Date(createdAt)).toLocaleString('en-US', { timeZone: 'America/New_York' }))} ET</li>
       <li><strong>NetID:</strong> ${escapeHtml(netid || 'anonymous')}</li>
       <li><strong>Contact:</strong> ${escapeHtml(contactInfo || 'not provided')}</li>
       <li><strong>Page:</strong> ${escapeHtml(pagePath || 'unknown')}</li>
