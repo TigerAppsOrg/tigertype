@@ -97,8 +97,22 @@ function Results({ onShowLeaderboard }) {
     const renderStatsBlock = (wpm, accuracy, time) => {
       const rawWpm = wpm;
       const adjustedWpm = rawWpm * (accuracy / 100);
+
       return (
-        <>
+        <div className="stats-grid">
+          {/* Adjusted WPM - hero card */}
+          <div className="stat-item stat-item-accent stat-item-adjusted">
+            <div className="stat-label">
+              <i className="bi bi-lightning"></i>
+              Adjusted WPM:
+            </div>
+            <div className="stat-value highlight">{adjustedWpm?.toFixed(2)}</div>
+            <div className="stat-meta-row" aria-label="additional result details">
+              <span className="meta-chip"><i className="bi bi-speedometer"></i> Raw {rawWpm?.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Row 2: time and accuracy */}
           <div className="stat-item">
             <div className="stat-label">
               <i className="bi bi-clock"></i>
@@ -113,21 +127,7 @@ function Results({ onShowLeaderboard }) {
             </div>
             <div className="stat-value">{accuracy?.toFixed(2)}%</div>
           </div>
-          <div className="stat-item">
-            <div className="stat-label">
-              <i className="bi bi-speedometer"></i>
-              Raw WPM:
-            </div>
-            <div className="stat-value">{rawWpm?.toFixed(2)}</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-label">
-              <i className="bi bi-lightning"></i>
-              Adjusted WPM:
-            </div>
-            <div className="stat-value highlight">{adjustedWpm?.toFixed(2)}</div>
-          </div>
-        </>
+        </div>
       );
     };
     
@@ -150,11 +150,13 @@ function Results({ onShowLeaderboard }) {
       );
     } else {
       statsContent = (
-        <div className="loading-results">
-          <div className="spinner-border text-orange" role="status">
-            <span className="visually-hidden">Loading...</span>
+        <div className="stats-loading">
+          <div className="loading-results">
+            <div className="spinner-border text-orange" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p>Waiting for results...</p>
           </div>
-          <p>Waiting for results...</p>
         </div>
       );
     }
@@ -162,40 +164,45 @@ function Results({ onShowLeaderboard }) {
     return (
       <TutorialAnchor anchorId="practice-results">
         <div className="practice-results">
-        <h3>Practice Results</h3>
-        {statsContent}
-        {/* Snippet Source Info */}
-        {raceState.type !== 'timed' && raceState.snippet && raceState.snippet.course_name && (
-          <div className="snippet-info" role="note" aria-label="Snippet source">
-            <div className="snippet-label"><i className="bi bi-book"></i> Where is this excerpt from?</div>
-            <div className="snippet-title">{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</div>
+          <h3>Practice Results</h3>
+          <div className="practice-grid">
+            <div className="practice-stats">
+              {statsContent}
+            </div>
+            <div className="practice-meta">
+              {raceState.type !== 'timed' && raceState.snippet && raceState.snippet.course_name && (
+                <div className="snippet-info" role="note" aria-label="Snippet source">
+                  <div className="snippet-label"><i className="bi bi-book"></i> Where is this excerpt from?</div>
+                  <div className="snippet-title">{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</div>
+                </div>
+              )}
+              {raceState.type !== 'timed' && raceState.snippet?.course_name && getCourseUrl(raceState.snippet) && (
+                <a
+                  href={getCourseUrl(raceState.snippet)}
+                  className="course-review-btn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="bi bi-book"></i>
+                  View Course Review
+                </a>
+              )}
+            </div>
           </div>
-        )}
-        {/* Course Review Button */}
-        {raceState.type !== 'timed' && raceState.snippet?.course_name && getCourseUrl(raceState.snippet) && (
-          <a
-            href={getCourseUrl(raceState.snippet)}
-            className="course-review-btn"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <i className="bi bi-book"></i>
-            View Course Review
-          </a>
-        )}
-        <TutorialAnchor anchorId="keyboard-shortcuts">
-          <div className="keyboard-shortcuts">
-            <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
+          <div className="practice-actions">
+            {onShowLeaderboard && (
+              <TutorialAnchor anchorId="finish-practice">
+                <button className="leaderboard-shortcut-btn" onClick={onShowLeaderboard}>
+                  <i className="bi bi-trophy"></i> View Leaderboards
+                </button>
+              </TutorialAnchor>
+            )}
+            <TutorialAnchor anchorId="keyboard-shortcuts">
+              <div className="keyboard-shortcuts">
+                <p>Press <kbd>Tab</kbd> for a new excerpt • <kbd>Esc</kbd> to restart</p>
+              </div>
+            </TutorialAnchor>
           </div>
-        </TutorialAnchor>
-        {/* Conditionally add Leaderboard Button */} 
-        {onShowLeaderboard && (
-          <TutorialAnchor anchorId="finish-practice">
-            <button className="leaderboard-shortcut-btn" onClick={onShowLeaderboard}>
-              <i className="bi bi-trophy"></i> View Leaderboards
-            </button>
-          </TutorialAnchor>
-        )}
         </div>
       </TutorialAnchor>
     );

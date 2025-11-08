@@ -2,13 +2,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
+  padding: 1.5rem;
   background-color: var(--secondary-color);
   border-radius: 8px;
-  min-height: 350px; /* change to be more responsive later */
+  min-height: 0;
   width: 100%;
   position: relative;
-  top: 2vh;
+  top: 1vh;
 }
 /* Title badges for winners and results */
 /* Winner title styling: single selected title */
@@ -48,8 +48,8 @@
 .results-container h2 {
   color: #F58025;
   margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.8rem;
+  margin-bottom: 1.25rem;
+  font-size: 1.75rem;
 }
 
 /* Winner Showcase Styles */
@@ -294,19 +294,19 @@
   color: var(--text-color);
 }
 
-/* Practice results container - simplified */
+/* Practice results container - balanced layout */
 .practice-results {
-  max-width: 500px;
-  display: flex;
-  flex-direction: column;
+  max-width: 920px;
+  width: 100%;
   background-color: var(--background-color);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
   border: 1px solid rgba(245, 128, 37, 0.2);
+  padding: 1.5rem;
   position: relative;
   z-index: 5;
-  align-items: center;
+  overflow: hidden;
+  margin: 0 auto;
 }
 
 /* Hide the Practice Results heading as it's redundant with the main Results heading */
@@ -314,52 +314,179 @@
   display: none;
 }
 
-/* Practice result stat items - now vertical layout */
+.practice-results .practice-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.5rem;
+  width: 100%;
+  align-items: stretch;
+  margin-bottom: 1.25rem;
+}
+
+.practice-results .practice-stats,
+.practice-results .practice-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.practice-results .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
 .practice-results .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1rem 1.25rem;
-  background-color: var(--background-color);
-  border-bottom: 1px solid var(--background-color-secondary);
-  transition: background-color 0.2s ease;
-  box-sizing: border-box;
+  padding: 1.1rem 1.15rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  transition: all 0.2s ease;
   text-align: center;
-  max-width: -webkit-fill-available;
-  width: -webkit-fill-available;
+  min-height: 105px;
 }
 
 .practice-results .stat-item:hover {
-  background-color: var(--background-color-secondary);
-}
-
-.practice-results .stat-item:last-child {
-  border-bottom: none;
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: rgba(245, 128, 37, 0.3);
+  transform: translateY(-1px);
 }
 
 .practice-results .stat-label {
-  font-weight: bold;
-  font-size: 1rem;
-  color: var(--text-color);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.5rem;
-  text-align: center;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .practice-results .stat-label i {
-  margin-right: 8px;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: #F58025;
 }
 
 .practice-results .stat-value {
   color: #F58025;
-  font-weight: bold;
-  font-size: 1.5rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+.practice-results .stat-item-accent {
+  border-color: rgba(245, 128, 37, 0.25);
+  background-color: rgba(245, 128, 37, 0.06);
+}
+
+.practice-results .stat-item-accent:hover {
+  border-color: rgba(245, 128, 37, 0.4);
+  background-color: rgba(245, 128, 37, 0.1);
+}
+
+.practice-results .stats-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  border-radius: 10px;
+  border: 1px dashed rgba(245, 128, 37, 0.25);
+  background-color: rgba(18, 18, 18, 0.5);
+}
+
+.practice-results .practice-meta {
+  align-items: stretch;
+}
+
+.practice-results .practice-meta .snippet-info {
+  margin: 0;
+  padding: 1.1rem 1.2rem;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.practice-results .practice-meta .snippet-label {
+  margin-bottom: 0.45rem;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.practice-results .practice-meta .snippet-title {
+  text-align: center;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.practice-results .practice-meta .course-review-btn {
+  align-self: stretch;
+  margin: 0;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+}
+
+.practice-results .practice-actions {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.practice-results .practice-actions .keyboard-shortcuts {
+  border-top: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.02);
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.practice-results .practice-actions .keyboard-shortcuts p {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.practice-results .practice-actions .keyboard-shortcuts kbd {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.7rem;
+  min-width: 1.6rem;
+}
+
+.practice-results .practice-actions .leaderboard-shortcut-btn {
+  border-radius: 10px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+  margin: 0;
+  border-top: none;
+  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--text-color-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.practice-results .practice-actions .leaderboard-shortcut-btn:hover {
+  background-color: #F58025;
+  color: white;
+  border-color: #F58025;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(245, 128, 37, 0.4);
+}
+
+.practice-results .practice-actions .leaderboard-shortcut-btn:active {
+  transform: translateY(-1px) scale(1);
+  box-shadow: 0 4px 16px rgba(245, 128, 37, 0.35);
 }
 
 .back-btn {
@@ -373,7 +500,7 @@
   font-weight: 600;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(245, 128, 37, 0.3);
-  margin-top: 1rem;
+  margin-top: 0.85rem;
   width: 200px;
 }
 
@@ -390,23 +517,23 @@
 
 /* Override for Back to Menu button */
 .back-btn.back-to-menu-btn {
-  background-color: #444;       /* solid dark gray background */
-  color: #fff;                  /* white text */
-  border: 2px solid #F58025;    /* keep accent-colored border */
-  box-shadow: none;             /* remove extra shadow */
+  background-color: #444;
+  color: #fff;
+  border: 2px solid #F58025;
+  box-shadow: none;
 }
 
 .back-btn.back-to-menu-btn:hover {
-  background-color: #555;       /* slightly lighter on hover */
+  background-color: #555;
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(245, 128, 37, 0.2); /* lighter accent shadow */
+  box-shadow: 0 4px 10px rgba(245, 128, 37, 0.2);
 }
 
-/* Keyboard shortcuts - polished styling */
+/* Keyboard shortcuts */
 .keyboard-shortcuts {
   margin: 0;
   text-align: center;
-  padding: 1rem 1.25rem;
+  padding: 0.7rem 0.9rem;
   background-color: var(--background-color-secondary);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   width: 100%;
@@ -416,13 +543,13 @@
 .keyboard-shortcuts p {
   color: var(--text-color-secondary);
   margin: 0;
-  font-size: 0.875rem;
-  line-height: 1.6;
+  font-size: 0.75rem;
+  line-height: 1.3;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .keyboard-shortcuts kbd {
@@ -431,14 +558,14 @@
   border-bottom-width: 2px;
   border-radius: 5px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  padding: 0.3rem 0.6rem;
+  padding: 0.22rem 0.5rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: var(--primary-color);
   margin: 0;
   display: inline-block;
   font-weight: 600;
-  min-width: 2rem;
+  min-width: 1.7rem;
   text-align: center;
   transition: all 0.15s ease;
 }
@@ -450,22 +577,22 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* Leaderboard button - polished full-width design */
+/* Leaderboard button */
 .leaderboard-shortcut-btn {
   display: flex; 
   align-items: center;
   justify-content: center;
-  gap: 0.6rem; 
+  gap: 0.55rem; 
   width: 100%;
   margin: 0;
-  padding: 1rem 1.25rem;
+  padding: 0.85rem 1rem;
   background-color: rgba(245, 128, 37, 0.15);
   color: var(--primary-color);
   border: none;
   border-top: 1px solid rgba(245, 128, 37, 0.3);
   border-radius: 0;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   transition: all 0.2s ease;
   box-sizing: border-box;
@@ -484,7 +611,7 @@
 }
 
 .leaderboard-shortcut-btn i {
-  font-size: 1.1em;
+  font-size: 1.05em;
 }
 
 /* Highlight highest value */
@@ -622,7 +749,7 @@
 }
 
 /* --------------------------------------- */
-/* Course Review Button – polished style  */
+/* Course Review Button                    */
 /* --------------------------------------- */
 
 .course-review-btn {
@@ -702,4 +829,115 @@
   overflow-wrap: anywhere;
   word-break: break-word;
   text-wrap: pretty;
+}
+
+@media (max-width: 920px) {
+  .practice-results {
+    padding: 1.25rem;
+  }
+
+  .practice-results .practice-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .practice-results .practice-meta {
+    align-items: center;
+  }
+
+  .practice-results .practice-meta .snippet-info {
+    text-align: center;
+  }
+
+  .practice-results .practice-meta .snippet-label {
+    justify-content: center;
+  }
+
+  .practice-results .practice-meta .snippet-title {
+    text-align: center;
+  }
+
+  .practice-results .practice-meta .course-review-btn {
+    align-self: center;
+  }
+
+  .practice-results .practice-actions {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .practice-results {
+    padding: 1rem;
+  }
+
+  .practice-results .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-results .stat-item {
+    min-height: 90px;
+  }
+}
+
+/* Emphasis for adjusted WPM spanning full width at top of stats */
+/* Adjusted WPM hero card - clean tint + centered */
+.practice-results .stat-item-adjusted {
+  align-items: center;
+  text-align: center;
+}
+
+.practice-results .stat-item-accent {
+  grid-column: 1 / -1;
+  min-height: 140px;
+  border-color: rgba(245, 128, 37, 0.35);
+  background-color: rgba(245, 128, 37, 0.08);
+}
+
+.practice-results .stat-item-accent .stat-label {
+  justify-content: center;
+}
+
+.practice-results .stat-item-accent .stat-value {
+  font-size: 2.4rem;
+  color: #ffb648;
+}
+
+.practice-results .stat-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.practice-results .meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-color-secondary);
+  font-size: 0.8rem;
+}
+
+.practice-results .meta-chip i {
+  color: #F58025;
+}
+
+/* Primary CTA style for leaderboard in practice actions */
+.practice-results .practice-actions .leaderboard-shortcut-btn {
+  background-color: #F58025;
+  color: #fff;
+  border-top: none;
+  box-shadow: 0 6px 16px rgba(245, 128, 37, 0.35);
+}
+
+.practice-results .practice-actions .leaderboard-shortcut-btn:hover {
+  background-color: #ff8f3f;
+  box-shadow: 0 8px 18px rgba(245, 128, 37, 0.45);
 }
