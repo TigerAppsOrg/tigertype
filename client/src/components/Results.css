@@ -323,6 +323,10 @@
   margin-bottom: 1.25rem;
 }
 
+.practice-results .practice-grid.single-column {
+  grid-template-columns: 1fr;
+}
+
 .practice-results .practice-stats,
 .practice-results .practice-meta {
   display: flex;

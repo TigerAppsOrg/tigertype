@@ -93,6 +93,7 @@ function Results({ onShowLeaderboard }) {
   
   // Render practice mode results
   const renderPracticeResults = () => {
+    const isTimedMode = Boolean(raceState.snippet?.is_timed_test || raceState.type === 'timed');
     // Function to render the main stats block
     const renderStatsBlock = (wpm, accuracy, time) => {
       const rawWpm = wpm;
@@ -161,33 +162,39 @@ function Results({ onShowLeaderboard }) {
       );
     }
 
+    const showSnippetInfo = !isTimedMode && raceState.snippet && raceState.snippet.course_name;
+    const showCourseReview = !isTimedMode && raceState.snippet?.course_name && getCourseUrl(raceState.snippet);
+    const showMeta = showSnippetInfo || showCourseReview;
+
     return (
       <TutorialAnchor anchorId="practice-results">
         <div className="practice-results">
           <h3>Practice Results</h3>
-          <div className="practice-grid">
+          <div className={`practice-grid${showMeta ? '' : ' single-column'}`}>
             <div className="practice-stats">
               {statsContent}
             </div>
-            <div className="practice-meta">
-              {raceState.type !== 'timed' && raceState.snippet && raceState.snippet.course_name && (
-                <div className="snippet-info" role="note" aria-label="Snippet source">
-                  <div className="snippet-label"><i className="bi bi-book"></i> Where is this excerpt from?</div>
-                  <div className="snippet-title">{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</div>
-                </div>
-              )}
-              {raceState.type !== 'timed' && raceState.snippet?.course_name && getCourseUrl(raceState.snippet) && (
-                <a
-                  href={getCourseUrl(raceState.snippet)}
-                  className="course-review-btn"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <i className="bi bi-book"></i>
-                  View Course Review
-                </a>
-              )}
-            </div>
+            {showMeta && (
+              <div className="practice-meta">
+                {showSnippetInfo && (
+                  <div className="snippet-info" role="note" aria-label="Snippet source">
+                    <div className="snippet-label"><i className="bi bi-book"></i> Where is this excerpt from?</div>
+                    <div className="snippet-title">{raceState.snippet.course_name || raceState.snippet.source || 'Unknown Source'}</div>
+                  </div>
+                )}
+                {showCourseReview && (
+                  <a
+                    href={getCourseUrl(raceState.snippet)}
+                    className="course-review-btn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <i className="bi bi-book"></i>
+                    View Course Review
+                  </a>
+                )}
+              </div>
+            )}
           </div>
           <div className="practice-actions">
             {onShowLeaderboard && (
