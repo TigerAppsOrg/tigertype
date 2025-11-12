@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRace } from '../context/RaceContext';
 import { useTutorial } from '../context/TutorialContext';
@@ -12,6 +12,8 @@ import TestConfigurator from '../components/TestConfigurator';
 import Leaderboard from '../components/Leaderboard';
 import TutorialAnchor from '../components/TutorialAnchor';
 import './Race.css';
+
+const MIN_PLAYERS_FOR_PUBLIC_RACE = 2;
 
 function Race() {
   const navigate = useNavigate();
@@ -43,6 +45,23 @@ function Race() {
   const practiceResultIndex = tutorialSteps.practice.findIndex(s => s.id === 'practice-results-screen');
   
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const players = raceState.players || [];
+  const playersJoined = players.length;
+  const readyCount = players.reduce((count, player) => (player.ready ? count + 1 : count), 0);
+  const playersNeededToStart = Math.max(0, MIN_PLAYERS_FOR_PUBLIC_RACE - playersJoined);
+  const waitingForMinimumPlayers = playersNeededToStart > 0;
+  const countdownActive = raceState.countdown !== null;
+  const shouldShowLobbyStatus = raceState.type === 'public' && !raceState.inProgress && !raceState.completed && !countdownActive;
+  const targetReadyCount = MIN_PLAYERS_FOR_PUBLIC_RACE;
+  const displayedReady = Math.min(readyCount, targetReadyCount);
+  const readinessSummary = shouldShowLobbyStatus
+    ? `Ready ${displayedReady}/${targetReadyCount}`
+    : null;
+  const readinessDetail = shouldShowLobbyStatus
+    ? (waitingForMinimumPlayers
+        ? `Need ${playersNeededToStart} more racer${playersNeededToStart === 1 ? '' : 's'} to launch`
+        : 'Minimum met. Waiting for everyone to ready up.')
+    : null;
 
   // If there is no active race context, redirect to home
   useEffect(() => {
@@ -175,12 +194,16 @@ function Race() {
             
             <div className="player-status-container">
               {/* Player Status Bar (Only relevant for multiplayer and when race is not completed) */}
-              {raceState.players && raceState.players.length > 0 && raceState.type !== 'practice' && !raceState.completed && (
+              {players.length > 0 && raceState.type !== 'practice' && !raceState.completed && (
                 <PlayerStatusBar
-                  players={raceState.players}
+                  players={players}
                   isRaceInProgress={raceState.inProgress}
                   currentUser={window.user}
-                  onReadyClick={setPlayerReady} 
+                  onReadyClick={setPlayerReady}
+                  countdownActive={countdownActive}
+                  waitingForMinimumPlayers={shouldShowLobbyStatus && waitingForMinimumPlayers}
+                  readinessSummary={shouldShowLobbyStatus ? readinessSummary : null}
+                  readinessDetail={shouldShowLobbyStatus ? readinessDetail : null}
                 />
               )}
             </div>

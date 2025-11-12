@@ -1,17 +1,32 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './PlayerStatusBar.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import ProfileModal from './ProfileModal.jsx';
 
-function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick }) {
+function PlayerStatusBar({
+  players,
+  isRaceInProgress,
+  currentUser,
+  onReadyClick,
+  countdownActive = false,
+  waitingForMinimumPlayers = false,
+  readinessSummary = null,
+  readinessDetail = null
+}) {
   const [enlargedAvatar, setEnlargedAvatar] = useState(null);
   const { authenticated, user } = useAuth();
   const [selectedProfileNetid, setSelectedProfileNetid] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   // State for storing fetched titles per player netid
   const [playerTitlesMap, setPlayerTitlesMap] = useState({});
+  const [pillState, setPillState] = useState(null);
+  const [pillVisible, setPillVisible] = useState(false);
+  const pillHideTimeout = useRef(null);
+  const pillEntryTimeout = useRef(null);
+  const pillMountedRef = useRef(false);
+  const showProgressBars = isRaceInProgress;
   
   // For debug
   // console.log("PlayerStatusBar - isRaceInProgress:", isRaceInProgress);
@@ -77,11 +92,118 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
     });
   }, [players, user, playerTitlesMap]);
   
+  useEffect(() => {
+    return () => {
+      if (pillHideTimeout.current) {
+        clearTimeout(pillHideTimeout.current);
+        pillHideTimeout.current = null;
+      }
+      if (pillEntryTimeout.current) {
+        clearTimeout(pillEntryTimeout.current);
+        pillEntryTimeout.current = null;
+      }
+    };
+  }, []);
+  
+  useEffect(() => {
+    const shouldShowPill = !!readinessSummary && !countdownActive;
+
+    if (!shouldShowPill) {
+      if (!pillState) {
+        return;
+      }
+
+      if (pillEntryTimeout.current) {
+        clearTimeout(pillEntryTimeout.current);
+        pillEntryTimeout.current = null;
+      }
+
+      if (pillHideTimeout.current) {
+        clearTimeout(pillHideTimeout.current);
+        pillHideTimeout.current = null;
+      }
+
+      setPillVisible(false);
+      pillHideTimeout.current = setTimeout(() => {
+        setPillState(null);
+        pillMountedRef.current = false;
+        pillHideTimeout.current = null;
+      }, 600);
+      return;
+    }
+
+    const nextState = {
+      summary: readinessSummary,
+      detail: readinessDetail || '',
+      pending: waitingForMinimumPlayers
+    };
+
+    setPillState((prev) => {
+      if (
+        prev &&
+        prev.summary === nextState.summary &&
+        prev.detail === nextState.detail &&
+        prev.pending === nextState.pending
+      ) {
+        return prev;
+      }
+      return nextState;
+    });
+
+    if (pillHideTimeout.current) {
+      clearTimeout(pillHideTimeout.current);
+      pillHideTimeout.current = null;
+    }
+
+    const isFirstMount = !pillMountedRef.current;
+    pillMountedRef.current = true;
+
+    if (pillVisible) {
+      return;
+    }
+
+    if (pillEntryTimeout.current) {
+      clearTimeout(pillEntryTimeout.current);
+      pillEntryTimeout.current = null;
+    }
+
+    pillEntryTimeout.current = setTimeout(() => {
+      setPillVisible(true);
+      pillEntryTimeout.current = null;
+    }, isFirstMount ? 120 : 40);
+  }, [readinessSummary, readinessDetail, waitingForMinimumPlayers, countdownActive]);
+  
   return (
     <>
       <div className="player-status-bar">
+        <div className="player-status-header">
+          <span className="player-status-title">Players</span>
+          <div className="player-status-pill-container">
+            {pillState && (
+              <span
+                className={`player-status-pill ${pillState.pending ? 'pending' : 'ready'} ${pillVisible ? 'pill-visible' : 'pill-hidden'}`}
+                role="status"
+                aria-live="polite"
+                title={pillState.detail}
+              >
+                <span className="material-icons player-status-pill-icon">
+                  {pillState.pending ? 'groups' : 'check_circle'}
+                </span>
+                <span className="player-status-pill-text">
+                  {pillState.summary}
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
         {players.map((player, index) => {
           const isDisconnected = !!player.disconnected;
+          const isCurrentUser = player.netid === currentUser?.netid;
+          const hasMistake = !!player.hasMistake;
+          const primaryLabel = player.ready ? 'Ready' : 'Ready Up';
+          const readyHint = waitingForMinimumPlayers
+            ? 'Need at least two players before the countdown begins'
+            : 'Race starts when everyone readies up';
           return (
             <div
               key={index}
@@ -138,13 +260,15 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
                 
                 {!isRaceInProgress ? (
                   // Lobby mode - show ready status/button
-                  player.netid === currentUser?.netid ? (
+                  isCurrentUser ? (
                     <button
-                      className={`ready-button ${player.ready ? 'ready-active' : ''}`}
+                      className={`ready-button ${player.ready ? 'ready-active' : !player.ready && waitingForMinimumPlayers ? 'ready-standby' : ''}`}
                       onClick={onReadyClick}
                       disabled={player.ready}
+                      title={readyHint}
+                      aria-label={`${primaryLabel}. ${readyHint}`}
                     >
-                      {player.ready ? 'Ready' : 'Ready Up'}
+                      {primaryLabel}
                     </button>
                   ) : (
                     <span className={`ready-status ${player.ready ? 'ready-active' : ''}`}>
@@ -154,14 +278,20 @@ function PlayerStatusBar({ players, isRaceInProgress, currentUser, onReadyClick 
                 ) : null}
               </div>
               
-              {isRaceInProgress && (
-                <div className="progress-container">
+              {showProgressBars && (
+                <div className={`progress-container ${hasMistake ? 'progress-has-error' : ''}`}>
                   <div className="progress-bar">
+                    {hasMistake && (
+                      <div className="progress-error-indicator" role="status" aria-label="Player must fix errors">
+                        <span className="material-icons" aria-hidden="true">error_outline</span>
+                        <span>Fix errors</span>
+                      </div>
+                    )}
                     <div
-                      className={`progress-fill ${isDisconnected ? 'disconnected' : ''}`}
+                      className={`progress-fill ${isDisconnected ? 'disconnected' : ''} ${hasMistake ? 'has-error' : ''}`}
                       style={{ width: `${player.progress || 0}%` }}
                     ></div>
-                    <div className="progress-label">
+                    <div className={`progress-label ${hasMistake ? 'progress-label-error' : ''}`}>
                       {isDisconnected ? 'DC' : `${player.progress || 0}%`}
                     </div>
                   </div>

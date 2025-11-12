@@ -1320,7 +1320,7 @@ const initialize = (io) => {
     socket.on('race:progress', (data) => {
       try {
         // Client sends { position, total, isCompleted }
-        const { code, position, isCompleted } = data; 
+        const { code, position, isCompleted, hasError = false } = data; 
         
         // Check if race exists and is active
         const race = activeRaces.get(code);
@@ -1362,6 +1362,7 @@ const initialize = (io) => {
         playerProgress.set(socket.id, {
           position,
           completed: isCompleted, // Use the client-provided completion status
+          hasError: !!hasError,
           timestamp: now
         });
         
@@ -1373,7 +1374,8 @@ const initialize = (io) => {
           netid,
           position,
           percentage,
-          completed: isCompleted // Use the client-provided completion status
+          completed: isCompleted,
+          hasError: !!hasError
         });
         
         // Handle race completion for this player if they just completed
