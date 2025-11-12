@@ -1152,6 +1152,12 @@ function Typing({
               */}
               {getHighlightedText()}
             </div>
+            {showErrorMessage && (
+              <div className="typing-error-banner" role="alert" aria-live="assertive">
+                <span className="material-icons" aria-hidden="true">error_outline</span>
+                Fix your mistake to continue
+              </div>
+            )}
             <TutorialAnchor anchorId="typing-input">
               <div className="typing-input-container">
                 <input
@@ -1173,13 +1179,6 @@ function Typing({
           </div>
       )}
       
-      {/* Render warnings */}
-      {showErrorMessage && (
-        <div className="error-message">
-          Fix your mistake to continue
-        </div>
-      )}
-
       {renderPracticeTooltip()}
     </>
   );

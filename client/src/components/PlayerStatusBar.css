@@ -9,10 +9,91 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   max-height: 30vh;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #F58025 #1e1e1e;
   border: 1px solid rgba(245, 128, 37, 0.1);
 }
+
+.player-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  position: relative;
+  min-height: 44px;
+}
+
+.player-status-title {
+  color: #aaa;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.player-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.9rem;
+  border-radius: 10px 0 0 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(245, 128, 37, 0.4);
+  background-color: rgba(245, 128, 37, 0.12);
+  color: var(--mode-text-color);
+  overflow: hidden;
+  transition: opacity 0.55s ease, transform 0.55s ease;
+  will-change: transform, opacity;
+  max-width: 250px;
+  opacity: 1;
+  transform: translateX(0);
+  transform-origin: right center;
+  margin-right: -1rem;
+  border-right: none;
+}
+
+.player-status-pill.ready {
+  border-color: rgba(76, 175, 80, 0.4);
+  background-color: rgba(76, 175, 80, 0.12);
+}
+
+.player-status-pill-icon {
+  font-size: 1rem;
+}
+
+.player-status-pill.ready .player-status-pill-icon {
+  color: #4caf50;
+}
+
+.player-status-pill.pending {
+  border-color: rgba(245, 128, 37, 0.4);
+  background-color: rgba(245, 128, 37, 0.12);
+}
+
+.player-status-pill.pending .player-status-pill-icon {
+  color: #F58025;
+}
+
+.player-status-pill.pill-hidden {
+  opacity: 0;
+  transform: translateX(120%) scaleX(0.95);
+  pointer-events: none;
+}
+
+.player-status-pill.pill-visible {
+  opacity: 1;
+  transform: translateX(0) scaleX(1);
+}
+
+.player-status-pill-text {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
 /* Title badges for each player */
 .player-titles {
   display: flex;
@@ -48,16 +129,6 @@
   border-radius: 3px;
 }
 
-.player-status-bar::before {
-  content: "Players";
-  display: block;
-  color: #aaa;
-  font-size: 0.8rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
 .player-card {
   width: 100%;
   display: flex;
@@ -152,11 +223,20 @@
   transition: all 0.2s;
   font-weight: 500;
   font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 110px;
 }
 
 .ready-button:hover {
   background-color: #e67321;
   transform: translateY(-1px);
+}
+
+.ready-button.ready-standby {
+  background-color: #c6691b;
 }
 
 .ready-button.ready-active,
@@ -167,16 +247,21 @@
 }
 
 .ready-status {
-  padding: 0.3rem 0.6rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #aaa;
   background-color: rgba(170, 170, 170, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  font-weight: 500;
 }
 
 .ready-status.ready-active {
   color: #4caf50;
-  font-weight: 600;
+  font-weight: 500;
   background-color: rgba(76, 175, 80, 0.1);
 }
 
@@ -185,13 +270,41 @@
   margin-top: 0.5rem;
 }
 
+.progress-container.progress-has-error .progress-bar {
+  border: 1px solid rgba(255, 99, 132, 0.5);
+  box-shadow: 0 2px 8px rgba(255, 99, 132, 0.25);
+}
+
 .progress-bar {
   height: 20px;
-  background-color: #1e1e1e;
+  background-color: #151515;
   border-radius: 10px;
   overflow: hidden;
   position: relative;
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.progress-error-indicator {
+  position: absolute;
+  top: -1.6rem;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background-color: rgba(255, 99, 132, 0.2);
+  color: #ffb3c2;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  animation: error-pill-in 0.3s ease;
+}
+
+.progress-error-indicator .material-icons {
+  font-size: 1.1rem;
 }
 
 .progress-fill {
@@ -203,6 +316,12 @@
   border-radius: 10px;
   transition: width 0.3s ease-out;
   animation: progress-bar-stripes 1s linear infinite;
+}
+
+.progress-fill.has-error {
+  background-color: #ff5f5f;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.12) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.12) 75%, transparent 75%, transparent);
+  animation: none;
 }
 
 @keyframes progress-bar-stripes {
@@ -223,6 +342,21 @@
   font-weight: bold;
   font-size: 0.8rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.progress-label-error {
+  color: #ffd1d1;
+}
+
+@keyframes error-pill-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Avatar Modal Styles */

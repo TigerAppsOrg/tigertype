@@ -320,7 +320,8 @@ export const RaceProvider = ({ children }) => {
               ...player,
               progress: data.percentage,
               position: data.position,
-              completed: data.completed
+              completed: data.completed,
+              hasMistake: !!data.hasError
             };
           }
           return player;
@@ -773,6 +774,7 @@ export const RaceProvider = ({ children }) => {
     
     // Check if all characters are typed correctly for completion
     const isCompleted = input.length === text.length && !hasError;
+    const progressPosition = Math.min(correctChars, text.length);
     
     // Find the last completely correct word boundary before any error (snippet mode only)
     let newLockedPosition = 0;
@@ -831,9 +833,10 @@ export const RaceProvider = ({ children }) => {
       if (socket && connected) {
         socket.emit('race:progress', {
           code: raceState.code,
-          position: input.length,
+          position: progressPosition,
           total: text.length,
-          isCompleted: isCompleted // Send explicit completion status to server
+          isCompleted,
+          hasError
         });
       }
       
