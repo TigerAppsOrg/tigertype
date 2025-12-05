@@ -1377,6 +1377,7 @@ const initialize = (io) => {
           accuracy,
           errors,
           correctChars,
+          hasError,
           wpm: clientReportedWpm
         } = data;
 
@@ -1409,6 +1410,7 @@ const initialize = (io) => {
         const snippetLength = race.snippet.text.length;
         const prevProgress = playerProgress.get(socket.id) || {};
         const prevPosition = prevProgress.position || 0;
+        const currentHasError = typeof hasError === 'boolean' ? hasError : prevProgress.hasError === true;
         const delta = position - prevPosition;
 
         if (delta < 0) {
@@ -1467,6 +1469,7 @@ const initialize = (io) => {
           accuracy: Number.isFinite(accuracy) ? accuracy : prevProgress.accuracy,
           errors: Number.isFinite(errors) ? errors : prevProgress.errors,
           correctChars: Number.isFinite(correctChars) ? correctChars : prevProgress.correctChars,
+          hasError: currentHasError,
           wpm: Number.isFinite(clientReportedWpm) ? clientReportedWpm : prevProgress.wpm,
           history: trimmedHistory
         });
@@ -1479,7 +1482,8 @@ const initialize = (io) => {
           netid,
           position,
           percentage,
-          completed: isCompleted
+          completed: isCompleted,
+          hasError: currentHasError
         });
         
         // Handle race completion for this player if they just completed
