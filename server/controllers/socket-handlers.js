@@ -1427,7 +1427,7 @@ const initialize = (io) => {
           return;
         }
 
-        if (delta > MAX_PROGRESS_STEP && !isCompleted) {
+        if (delta > MAX_PROGRESS_STEP) {
           registerSuspicion('progress-spike', { prevPosition, position, delta });
           return;
         }
