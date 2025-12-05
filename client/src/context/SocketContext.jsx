@@ -17,6 +17,14 @@ const socketOptions = {
   timeout: 20000
 };
 
+const dispatchSocketEvent = (eventName, detail = {}) => {
+  try {
+    window.dispatchEvent(new CustomEvent(`tigertype:${eventName}`, { detail }));
+  } catch (err) {
+    console.error('Error dispatching socket event', eventName, err);
+  }
+};
+
 export const SocketProvider = ({ children }) => {
   const { user, authenticated } = useAuth();
   const raceContext = useContext(RaceContext); 
@@ -37,14 +45,12 @@ export const SocketProvider = ({ children }) => {
     // Initialize Socket.IO connection
     const socketInstance = io(socketOptions);
     
-    // Make socket accessible globally for components that need it directly
-    window.socket = socketInstance;
-    
     // Set up event listeners
     socketInstance.on('connect', () => {
       // console.log('Socket connected successfully with ID:', socketInstance.id);
       setConnected(true);
       setError(null);
+      dispatchSocketEvent('connect', { id: socketInstance.id });
       
       // Keep window.user up-to-date w/ the latest user data from AuthContext
       if (user) {
@@ -55,6 +61,7 @@ export const SocketProvider = ({ children }) => {
     socketInstance.on('connect_error', (err) => {
       console.error('Socket connection error:', err);
       setConnected(false);
+      dispatchSocketEvent('connect-error', { message: err?.message });
       
       if (err && err.message && err.message.includes('Authentication')) {
         setError('Authentication required');
@@ -66,6 +73,7 @@ export const SocketProvider = ({ children }) => {
     socketInstance.on('disconnect', (reason) => {
       // console.log('Socket disconnected:', reason);
       setConnected(false);
+      dispatchSocketEvent('disconnect', { id: socketInstance.id, reason });
       
       if (reason === 'io server disconnect') {
         // The server has disconnected us, attempt to reconnect
@@ -86,6 +94,7 @@ export const SocketProvider = ({ children }) => {
       alert(reason); // Show alert popup
       setConnected(false);
       setError(reason);
+      dispatchSocketEvent('forced-disconnect', { id: socketInstance.id, reason });
 
       // Reset race state if RaceContext is available
       if (raceContext && raceContext.resetRace) {
@@ -106,10 +115,6 @@ export const SocketProvider = ({ children }) => {
     
     // Clean up on unmount
     return () => {
-      if (window.socket) {
-        window.socket = null;
-      }
-      
       socketInstance.off('connect');
       socketInstance.off('disconnect');
       socketInstance.off('connect_error');
