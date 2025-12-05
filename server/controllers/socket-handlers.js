@@ -1367,6 +1367,15 @@ const initialize = (io) => {
     socket.on('race:progress', (data = {}) => {
       try {
         if (isSocketLocked()) {
+          const entry = suspiciousPlayers.get(socket.id);
+          if (entry && entry.reasons.length > 0) {
+            const lastReason = entry.reasons[entry.reasons.length - 1];
+            socket.emit('anticheat:lock', {
+              reason: lastReason.reason,
+              details: lastReason.details,
+              message: lastReason.details?.message || 'Suspicious typing detected. Automation is not allowed.'
+            });
+          }
           return;
         }
 
