@@ -31,9 +31,9 @@ const playerAvatars = new Map(); // socketId -> avatar_url
 
 // Anticheat thresholds and state
 const suspiciousPlayers = new Map(); // socketId -> { reasons: [], locked: boolean }
-const MAX_PROGRESS_STEP = 20; // max characters allowed per progress update
-const MIN_PROGRESS_INTERVAL = 25; // min ms between progress packets
-const MAX_ALLOWED_WPM = 320; // anything above is flagged
+const MAX_PROGRESS_STEP = 35; // max characters allowed per progress update (increased to handle batched updates)
+const MIN_PROGRESS_INTERVAL = 25; // min ms between progress packets (unused, kept for reference)
+const MAX_ALLOWED_WPM = 350; // anything above is flagged
 const MIN_COMPLETION_TIME_MS = 2500; // cannot finish faster than this
 
 // Store host disconnect timers for private lobbies
@@ -1422,11 +1422,8 @@ const initialize = (io) => {
         const currentHasError = typeof hasError === 'boolean' ? hasError : prevProgress.hasError === true;
         const delta = position - prevPosition;
 
-        if (delta < 0) {
-          registerSuspicion('negative-progress', { prevPosition, position });
-          return;
-        }
-
+        // Allow negative progress - users legitimately delete chars with backspace/CMD+backspace
+        // Only block large forward spikes (paste attacks)
         if (delta > MAX_PROGRESS_STEP) {
           registerSuspicion('progress-spike', { prevPosition, position, delta });
           return;
@@ -1435,11 +1432,8 @@ const initialize = (io) => {
         const lastUpdateTs = lastProgressUpdate.get(socket.id) || 0;
         const interval = now - lastUpdateTs;
 
-        if (interval < MIN_PROGRESS_INTERVAL && !isCompleted) {
-          registerSuspicion('progress-interval', { interval });
-          return;
-        }
-
+        // Throttle updates for performance, but don't flag as suspicious
+        // Script detection is handled client-side via isTrusted ratio checking
         if (interval < PROGRESS_THROTTLE && !isCompleted) {
           return;
         }
@@ -1454,15 +1448,22 @@ const initialize = (io) => {
 
         const raceStart = race.startTime || now;
         const elapsedMs = now - raceStart;
-        if (elapsedMs > 0) {
+
+        // Check for impossibly fast completion
+        // Scale minimum time by snippet length: at least 50ms per character (1200 CPM = 240 WPM max burst)
+        const minTimeForSnippet = Math.max(MIN_COMPLETION_TIME_MS, snippetLength * 50);
+        if (isCompleted && elapsedMs < minTimeForSnippet) {
+          registerSuspicion('completion-too-fast', { elapsedMs, snippetLength, minRequired: minTimeForSnippet });
+          return;
+        }
+
+        // Check WPM after 3 seconds to avoid false positives from early burst typing
+        const MIN_ELAPSED_FOR_WPM_CHECK = 3000;
+        if (elapsedMs > MIN_ELAPSED_FOR_WPM_CHECK) {
           const elapsedMinutes = elapsedMs / 60000;
           const computedWpm = elapsedMinutes > 0 ? (position / 5) / elapsedMinutes : 0;
           if (computedWpm > MAX_ALLOWED_WPM) {
             registerSuspicion('wpm-threshold', { computedWpm, position, elapsedMs });
-            return;
-          }
-          if (isCompleted && snippetLength > 40 && elapsedMs < MIN_COMPLETION_TIME_MS) {
-            registerSuspicion('completion-too-fast', { elapsedMs, snippetLength });
             return;
           }
         }
