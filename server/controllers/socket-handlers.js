@@ -32,9 +32,9 @@ const playerAvatars = new Map(); // socketId -> avatar_url
 // Anticheat thresholds and state
 const suspiciousPlayers = new Map(); // socketId -> { reasons: [], locked: boolean }
 const MAX_PROGRESS_STEP = 20; // max characters allowed per progress update
-const MIN_PROGRESS_INTERVAL = 25; // min ms between progress packets
-const MAX_ALLOWED_WPM = 320; // anything above is flagged
-const MIN_COMPLETION_TIME_MS = 2500; // cannot finish faster than this
+const MIN_PROGRESS_INTERVAL = 5; // min ms between progress packets
+const MAX_ALLOWED_WPM = 350; // anything above is flagged
+const MIN_COMPLETION_TIME_MS = 500; // cannot finish faster than this
 
 // Store host disconnect timers for private lobbies
 const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds

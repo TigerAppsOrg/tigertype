@@ -1,12 +1,38 @@
+/* ============================================
+   Home Page - Enhanced Styling
+   ============================================ */
+
 .home-page {
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+}
+
+/* Subtle background particles - orange tones only */
+.home-page::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(245, 128, 37, 0.025) 0%, transparent 25%),
+    radial-gradient(circle at 75% 35%, rgba(232, 168, 73, 0.02) 0%, transparent 20%),
+    radial-gradient(circle at 50% 75%, rgba(212, 105, 42, 0.018) 0%, transparent 25%),
+    radial-gradient(circle at 15% 65%, rgba(224, 123, 76, 0.015) 0%, transparent 22%);
+  animation: gradient-shift 25s ease infinite;
+  background-size: 200% 200%;
 }
 
 .home-container {
   display: flex;
   flex-direction: column;
-  margin-top: 5%;
+  margin-top: 3%;
+  position: relative;
+  z-index: 1;
 }
 
 /* header stacks title + tagline centrally */
@@ -14,38 +40,45 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(245, 128, 37, 0.3);
+  gap: 0.6rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(245, 128, 37, 0.2);
+  animation: fade-up 0.5s ease-out;
 }
 
 .home-header h1 {
-  color: #F58025;
-  font-size: 2.5rem;
+  font-size: 2.25rem;
+  font-weight: 700;
   margin: 0;
+  background: linear-gradient(135deg, #F58025 0%, #ff9b52 50%, #FFD700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
 }
 
 .home-header .home-tagline {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   color: var(--text-color-secondary);
+  opacity: 0.9;
 }
 
 .modes-section {
-  margin: 2rem 0;
+  margin: 1.5rem 0;
 }
 
 .modes-layout-section {
   display: flex;
   align-items: stretch;
   max-width: 1000px;
-  margin: 2rem auto;
-  gap: 2rem;
+  margin: 1.75rem auto;
+  gap: 1.75rem;
 }
 
 .standard-modes-container {
   flex: 2; /* Takes up 2/3 of the space */
   display: flex;
-  gap: 2rem;
+  gap: 1.75rem;
 }
 
 .standard-modes-container > * { 
@@ -59,14 +92,14 @@
 .private-modes-stack {
   flex: 1; /* Takes up 1/3 of the space */
   display: flex;
-  gap: 2rem; 
+  gap: 1.75rem;
 }
 
 .private-modes-stack .modes-container {
   display: flex;
   flex-direction: column;
-  height: 100%; 
-  gap: 2rem; 
+  height: 100%;
+  gap: 1.75rem;
 }
 
 .private-modes-stack .modes-container .mode-box {

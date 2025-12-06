@@ -42,7 +42,7 @@ function Typing({
   snippetType,
   snippetDepartment
 }) {
-  const { raceState, setRaceState, typingState, setTypingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet, anticheatState, flagSuspicious, markTrustedInteraction } = useRace();
+  const { raceState, setRaceState, typingState, setTypingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet, anticheatState, markTrustedInteraction } = useRace();
   const { socket } = useSocket();
   const { user } = useAuth();
   const [input, setInput] = useState('');
@@ -630,23 +630,12 @@ function Typing({
       e.preventDefault();
       return;
     }
-    if (e.nativeEvent && e.nativeEvent.isTrusted === false) {
-      e.preventDefault();
-      flagSuspicious('synthetic-beforeinput', { inputType: e.nativeEvent.inputType });
-      return;
-    }
     markTrustedInteraction();
   };
 
   const handleKeyDownGuard = (e) => {
     if (anticheatState.locked) {
       e.preventDefault();
-      return;
-    }
-    const nativeEvent = e.nativeEvent || e;
-    if (nativeEvent && nativeEvent.isTrusted === false) {
-      e.preventDefault();
-      flagSuspicious('synthetic-keydown', { key: e.key });
       return;
     }
     markTrustedInteraction();
@@ -656,12 +645,6 @@ function Typing({
   const handleComponentInput = (e) => {
     if (anticheatState.locked) {
       e.preventDefault();
-      return;
-    }
-    const nativeEvent = e.nativeEvent;
-    if (nativeEvent && nativeEvent.isTrusted === false) {
-      e.preventDefault();
-      flagSuspicious('synthetic-input-change', { length: e.target?.value?.length ?? 0 });
       return;
     }
     markTrustedInteraction();
