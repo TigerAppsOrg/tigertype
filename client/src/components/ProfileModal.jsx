@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './ProfileModal.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
-import { createPortal } from 'react-dom';
 
 function ProfileModal({ isOpen, onClose, netid }) {
   const { user, loading, setUser, fetchUserProfile } = useAuth();
@@ -19,7 +18,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
   const fileInputRef = useRef(null);
   const [detailedStats, setDetailedStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [selectedTitle, setSelectedTitle] =useState('');
+  const [selectedTitle, setSelectedTitle] = useState('');
   const [matchHistory, setMatchHistory] = useState([]);
   const [loadingMatchHistory, setLoadingMatchHistory] = useState(true);
   const [userBadges, setUserBadges] = useState([]);
@@ -32,9 +31,20 @@ function ProfileModal({ isOpen, onClose, netid }) {
   const [maxBadges] = useState(5); // Maximum number of badges that can be displayed
   const [allTitles, setAllTitles] = useState([]);
   const [loadingAllTitles, setLoadingAllTitles] = useState(false);
-  
+  const [activeStatsTab, setActiveStatsTab] = useState('overview'); // New state for stats tabs
+
   const modalRef = useRef();
   const typingInputRef = document.querySelector('.typing-input-container input');
+
+  // Determine user's rank tier based on average WPM - used for visual styling
+  const getRankTier = (avgWpm) => {
+    if (avgWpm >= 150) return { tier: 'legendary', label: 'Legendary', color: '#FFD700' };
+    if (avgWpm >= 125) return { tier: 'master', label: 'Master', color: '#9B59B6' };
+    if (avgWpm >= 100) return { tier: 'expert', label: 'Expert', color: '#3498DB' };
+    if (avgWpm >= 75) return { tier: 'advanced', label: 'Advanced', color: '#2ECC71' };
+    if (avgWpm >= 50) return { tier: 'intermediate', label: 'Intermediate', color: '#F58025' };
+    return { tier: 'beginner', label: 'Beginner', color: '#95A5A6' };
+  };
 
   const getBadgeEmoji = (key) => {
     switch (key) {
@@ -119,11 +129,11 @@ function ProfileModal({ isOpen, onClose, netid }) {
       } finally {
         // If viewing self, loading depends on AuthContext, not this fetch
         if (netid) {
-           setLoadingProfile(false);
+          setLoadingProfile(false);
         } else {
-           // For self view, loading is finished when AuthContext `loading` is false
-           // We set it true initially and rely on AuthContext state
-           setLoadingProfile(loading); // Link to auth loading state
+          // For self view, loading is finished when AuthContext `loading` is false
+          // We set it true initially and rely on AuthContext state
+          setLoadingProfile(loading); // Link to auth loading state
         }
       }
     };
@@ -210,7 +220,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
           }
           else if (temp1 === '3') {
             temp1 += 'rd';
-          } else if (typeof temp1 === 'string'){
+          } else if (typeof temp1 === 'string') {
             temp1 += 'th';
           }
           i['position'] = temp1; // Add suffix to position
@@ -265,7 +275,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
   const toggleBadgeSelection = (badge) => {
     const isCurrentlySelected = displayedBadges.some(b => b.id === badge.id);
-    
+
     if (isCurrentlySelected) {
       // Remove badge from selection
       setDisplayedBadges(displayedBadges.filter(b => b.id !== badge.id));
@@ -278,32 +288,32 @@ function ProfileModal({ isOpen, onClose, netid }) {
   useEffect(() => {
     if (isOpen && userBadges?.length > 0) {
       const savedBadgeIds = JSON.parse(localStorage.getItem('displayedBadgeIds') || '[]');
-    const badgeDisplayOrder = JSON.parse(localStorage.getItem('badgeDisplayOrder') || '[]');
-    
-    if (badgeDisplayOrder.length > 0) {
-      // Use the stored order to display badges
-      const orderedBadges = [];
-      
-      // First add badges in their saved order
-      badgeDisplayOrder.forEach(item => {
-        const badge = userBadges.find(b => b.id.toString() === item.id);
-        if (badge) {
-          orderedBadges.push(badge);
-        }
-      });
-      
-      // Set the ordered badges
-      setDisplayedBadges(orderedBadges.slice(0, maxBadges));
-    } else {
-      // Fall back to the old method if no order is saved
-      const badgesToDisplay = userBadges.filter(badge => 
-        savedBadgeIds.includes(badge.id.toString())
-      );
-      
-      setDisplayedBadges(badgesToDisplay.slice(0, maxBadges));
+      const badgeDisplayOrder = JSON.parse(localStorage.getItem('badgeDisplayOrder') || '[]');
+
+      if (badgeDisplayOrder.length > 0) {
+        // Use the stored order to display badges
+        const orderedBadges = [];
+
+        // First add badges in their saved order
+        badgeDisplayOrder.forEach(item => {
+          const badge = userBadges.find(b => b.id.toString() === item.id);
+          if (badge) {
+            orderedBadges.push(badge);
+          }
+        });
+
+        // Set the ordered badges
+        setDisplayedBadges(orderedBadges.slice(0, maxBadges));
+      } else {
+        // Fall back to the old method if no order is saved
+        const badgesToDisplay = userBadges.filter(badge =>
+          savedBadgeIds.includes(badge.id.toString())
+        );
+
+        setDisplayedBadges(badgesToDisplay.slice(0, maxBadges));
+      }
     }
-  }
-}, [isOpen, userBadges, maxBadges]);
+  }, [isOpen, userBadges, maxBadges]);
 
   const saveBadgeSelections = () => {
     const badgeIds = displayedBadges.map(badge => badge.id.toString());
@@ -324,7 +334,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
     }).catch(err => console.error('Error saving badge selections:', err));
     setShowBadgeSelector(false);
   };
-  
+
   const handleTitleClick = () => {
     setShowTitleDropdown(!showTitleDropdown);
   };
@@ -334,15 +344,15 @@ function ProfileModal({ isOpen, onClose, netid }) {
     try {
       // Update the local state immediately for a smooth transition
       setSelectedTitle(titleId);
-      
+
       // Update the userTitles array to reflect the new equipped status
-      setUserTitles(prevTitles => 
+      setUserTitles(prevTitles =>
         prevTitles.map(title => ({
           ...title,
           is_equipped: String(title.id) === String(titleId)
         }))
       );
-      
+
       // Send the API request after updating local state
       const response = await fetch('/api/profile/title', {
         method: 'PUT',
@@ -350,7 +360,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ titleId }),
       });
-      
+
       if (response.ok) {
         // Update the user context in the background without forcing a refresh
         const userData = await fetchUserProfile();
@@ -470,9 +480,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
   const handleAvatarClick = () => {
     if (fileInputRef.current) {
-        fileInputRef.current.click();
+      fileInputRef.current.click();
     } else {
-        console.error('[handleAvatarClick] fileInputRef.current is null or undefined!');
+      console.error('[handleAvatarClick] fileInputRef.current is null or undefined!');
     }
   };
 
@@ -506,7 +516,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
 
     const file = e.target.files[0];
     if (!file) {
-        return;
+      return;
     }
 
     // Validate file type
@@ -544,16 +554,16 @@ function ProfileModal({ isOpen, onClose, netid }) {
       const data = await response.json();
 
       if (!data.user || !data.user.avatar_url) {
-          console.error('[handleFileChange] Server response missing user or avatar_url:', data);
-          throw new Error('Invalid response data from server.');
+        console.error('[handleFileChange] Server response missing user or avatar_url:', data);
+        throw new Error('Invalid response data from server.');
       }
 
       const newAvatarUrl = data.user.avatar_url;
 
       // Update user state with new avatar URL from server
       setUser(prevUser => {
-          const updatedUser = { ...prevUser, avatar_url: newAvatarUrl };
-          return updatedUser;
+        const updatedUser = { ...prevUser, avatar_url: newAvatarUrl };
+        return updatedUser;
       });
 
       // Make sure window.user is updated
@@ -578,7 +588,7 @@ function ProfileModal({ isOpen, onClose, netid }) {
     } catch (error) {
       console.error('[handleFileChange] ERROR caught during avatar upload:', error);
       if (user && user.avatar_url !== localImageUrl) {
-         setUser(prevUser => ({ ...prevUser, avatar_url: user.avatar_url }));
+        setUser(prevUser => ({ ...prevUser, avatar_url: user.avatar_url }));
       }
 
       // Revoke the temp URL
@@ -619,15 +629,29 @@ function ProfileModal({ isOpen, onClose, netid }) {
     fetchAllTitles();
   }, [isOpen]);
 
+  // Get user rank info for visual styling
+  const userRank = getRankTier(parseNumericValue(displayUser?.avg_wpm));
+
+  // Calculate completion rate
+  const completionRate = detailedStats && detailedStats.sessions_started > 0
+    ? (detailedStats.sessions_completed / detailedStats.sessions_started * 100).toFixed(1)
+    : 0;
+
+  // Get equipped title for display
+  const equippedTitle = userTitles.find(t => String(t.id) === String(selectedTitle));
+
   // Loading state check (consider both auth loading and profile loading)
   if ((isOwnProfile && loading) || (!isOwnProfile && loadingProfile)) {
-     return (
-        <div className="profile-overlay">
-           <div className="profile-container loading-container">
-              Loading profile...
-           </div>
+    return (
+      <div className="profile-overlay">
+        <div className="profile-container profile-loading">
+          <div className="profile-loader">
+            <div className="loader-ring"></div>
+            <span>Loading profile...</span>
+          </div>
         </div>
-     );
+      </div>
+    );
   }
 
   // If modal is closed, render nothing (after all hooks)
@@ -638,21 +662,24 @@ function ProfileModal({ isOpen, onClose, netid }) {
   return (
     <div className="profile-overlay">
       <div className="profile-container" ref={modalRef}>
+        {/* Close Button */}
+        <button className="profile-close-btn" onClick={onClose} aria-label="Close profile">
+          <span className="material-icons">close</span>
+        </button>
 
-        <div className="back-button-container">
-          <button className="back-button-profile" onClick={onClose}>
-          <span className="material-icons">arrow_back</span> Back
-          </button>
-          <div className='profile-title'>
-            <h2>Profile</h2>
+        {/* ==================== HERO SECTION ==================== */}
+        <div className={`profile-hero ${userRank.tier}`}>
+          <div className="hero-background">
+            <div className="hero-glow"></div>
+            <div className="hero-particles"></div>
           </div>
-        </div>
 
-        <div className="profile-header">
-          <div className='profile-components'>
-            <div className="profile-header-info">
-              <div className="profile-page-info">
-                <div className="profile-page-image">
+          <div className="hero-content">
+            {/* Avatar Section */}
+            <div className="profile-avatar-section">
+              <div className={`avatar-container ${userRank.tier}`}>
+                <div className="avatar-ring"></div>
+                <div className="avatar-wrapper">
                   {isOwnProfile ? (
                     <>
                       <input
@@ -662,380 +689,541 @@ function ProfileModal({ isOpen, onClose, netid }) {
                         aria-label="Upload profile picture"
                         title="Upload profile picture"
                         onClick={imageError && displayUser?.avatar_url ? openImageInNewTab : handleAvatarClick}
-                        className={isUploading ? "uploading" : ""}
+                        className={`avatar-image ${isUploading ? "uploading" : ""}`}
                         onError={handleImageError}
                       />
                       {/* Hover hint overlay for discoverability */}
-                      <div className="avatar-hover-hint" aria-hidden="true">Upload Profile Picture</div>
+                      <div className="avatar-edit-overlay" aria-hidden="true">
+                        <span className="material-icons">photo_camera</span>
+                        <span>Change Photo</span>
+                      </div>
                       <input
                         type="file"
                         ref={fileInputRef}
                         onChange={(e) => {
-                            const target = e.target;
-                            if (isOwnProfile) {
-                                handleFileChange(e); // Call original handler
-                            }
-                            target.value = null;
+                          const target = e.target;
+                          if (isOwnProfile) {
+                            handleFileChange(e); // Call original handler
+                          }
+                          target.value = null;
                         }}
                         style={{ display: 'none' }}
                         accept="image/jpeg, image/png, image/gif, image/webp"
                       />
-                      {isUploading && <div className="upload-overlay">Uploading...</div>}
-                      {uploadError && <div className="profile-error-message">{uploadError}</div>}
-                      {uploadSuccess && <div className="success-message">{uploadSuccess}</div>}
+                      {isUploading && (
+                        <div className="avatar-upload-progress">
+                          <div className="upload-spinner"></div>
+                        </div>
+                      )}
                     </>
                   ) : (
                     // Read-only image for other users
                     <img
                       src={!imageError ? avatarUrl : defaultProfileImage}
                       alt={`${displayUser?.netid || 'User'}'s Profile`}
-                      className="static-avatar" // Add different class if needed
+                      className="avatar-image"
                       onClick={imageError && displayUser?.avatar_url ? openImageInNewTab : undefined}
                       onError={handleImageError}
                     />
                   )}
                 </div>
-
-                <div className="selectable-info">
-                  <div className="username-info">
-                    <h2>{displayUser?.netid || 'Guest'}</h2>
-                  </div>
-
-                  {/* Title Section - Conditional */} 
-                  {isOwnProfile ? (
-                    <div className="title-select">
-                      <div
-                        className="selected-title"
-                        onClick={handleTitleClick}
-                      >
-                        {selectedTitle ?
-                          userTitles.find(t => String(t.id) === String(selectedTitle))?.name || 'Select a title...'
-                          : 'Select a title...'}
-                        <span className="dropdown-arrow">▼</span>
-                      </div>
-                      {showTitleDropdown && (
-                        <div className="title-dropdown">
-                          {/* Add Deselect Option */}
-                          <div
-                            className="dropdown-option deselect-option"
-                            onClick={() => selectTitle(null)}
-                          >
-                            Deselect Title
-                          </div>
-                          {loadingAllTitles ? (
-                            <div className="dropdown-option loading">Loading titles...</div>
-                          ) : allTitles && allTitles.length > 0 ? (
-                            allTitles.map(title => {
-                              const isUnlocked = userTitles.some(t => t.id === title.id);
-                              return (
-                                <div
-                                  key={title.id}
-                                  className={`dropdown-option ${isUnlocked ? '' : 'locked'}`}
-                                  onClick={() => isUnlocked && selectTitle(title.id)}
-                                >
-                                  {title.name}
-                                  <div className='title-description'>
-                                    - {title.description || 'No description available'}
-                                  </div>
-                                  {!isUnlocked && (
-                                    <div className='title-locked-indicator'>
-                                      <span className="material-icons">lock</span>
-                                      Locked
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div className="dropdown-option disabled">No titles available</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    // Read-only title display for others
-                    <div className="title-display static-title">
-                       {loadingTitles ? (
-                         <span>Loading title...</span>
-                       ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)) ? (
-                         // Display the equipped title if available
-                         (() => {
-                           const equippedTitle = userTitles.find(t => String(t.id) === String(displayUser.selected_title_id));
-                           return (
-                             <span 
-                               className="displayed-title-name title-with-tooltip"
-                               onMouseEnter={(e) => {
-                                 const tooltip = e.currentTarget.querySelector('.title-tooltip');
-                                 if (tooltip) {
-                                   const rect = e.currentTarget.getBoundingClientRect();
-                                   tooltip.style.top = `${rect.bottom + 8}px`;
-                                   tooltip.style.left = `${rect.left}px`;
-                                 }
-                               }}
-                             >
-                               {equippedTitle.name}
-                               {equippedTitle.description && (
-                                 <span className="title-tooltip">{equippedTitle.description}</span>
-                               )}
-                             </span>
-                           );
-                         })()
-                       ) : userTitles.find(t => t.is_equipped) ? (
-                         // Alternatively check for is_equipped flag from the API response
-                         (() => {
-                           const equippedTitle = userTitles.find(t => t.is_equipped);
-                           return (
-                             <span 
-                               className="displayed-title-name title-with-tooltip"
-                               onMouseEnter={(e) => {
-                                 const tooltip = e.currentTarget.querySelector('.title-tooltip');
-                                 if (tooltip) {
-                                   const rect = e.currentTarget.getBoundingClientRect();
-                                   tooltip.style.top = `${rect.bottom + 8}px`;
-                                   tooltip.style.left = `${rect.left}px`;
-                                 }
-                               }}
-                             >
-                               {equippedTitle.name}
-                               {equippedTitle.description && (
-                                 <span className="title-tooltip">{equippedTitle.description}</span>
-                               )}
-                             </span>
-                           );
-                         })()
-                       ) : (
-                         // Display message if no title is equipped
-                         <span className="no-title-display">User has no title selected</span>
-                       )}
-                     </div>
-                  )}
-
-                  <div className="user-badges">
-                    <h3>Badges</h3>
-
-                    <div className="badge-display">
-                      {/* Show selected badges for self, all badges for others */} 
-                      {(isOwnProfile ? displayedBadges : userBadges).map((badge, index) => (
-                        <div
-                          key={`selected-${badge.id}`}
-                          className="badge-item selected"
-                          // Only allow opening selector if own profile
-                          onClick={isOwnProfile ? () => setShowBadgeSelector(true) : undefined}
-                          style={!isOwnProfile ? { cursor: 'default' } : {}}
-                        >
-                          {badge.icon_url ? (
-                            <img src={badge.icon_url} alt={badge.name} className="badge-image" />
-                          ) : (
-                            <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
-                          )}
-                          <span className="badge-name">{badge.name}</span>
-                        </div>
-                      ))}
-
-                      {/* Display message if viewing other profile with no badges */}
-                      {!isOwnProfile && userBadges.length === 0 && !loadingBadges && (
-                        <div className="no-badges-display">No badges earned yet.</div>
-                      )}
-
-                      {/* Only show placeholder add badges if own profile */}
-                      {isOwnProfile && Array.from({ length: maxBadges - displayedBadges.length }, (_, i) => (
-                          <div
-                            key={`empty-${i}`}
-                            className="badge-item placeholder"
-                            onClick={() => setShowBadgeSelector(true)}
-                          >
-                            <span className="badge-plus">+</span>
-                          </div>
-                      ))}
-                    </div>
-                  </div>
+                {/* Rank badge positioned below avatar */}
+                <div className="rank-badge" style={{ backgroundColor: userRank.color }}>
+                  {userRank.label}
                 </div>
               </div>
 
-              <div className='biography'>
+              {/* Upload Messages */}
+              {uploadError && <div className="upload-message error">{uploadError}</div>}
+              {uploadSuccess && <div className="upload-message success">{uploadSuccess}</div>}
+            </div>
+
+            {/* User Identity */}
+            <div className="user-identity">
+              <h1 className="username">{displayUser?.netid || 'Guest'}</h1>
+
+              {/* Title Section - Conditional */}
+              {isOwnProfile ? (
+                <div className="title-selector">
+                  <button
+                    className={`title-button ${showTitleDropdown ? 'active' : ''}`}
+                    onClick={handleTitleClick}
+                  >
+                    <span className="title-text">
+                      {equippedTitle?.name || 'Select a title'}
+                    </span>
+                    <span className={`dropdown-chevron ${showTitleDropdown ? 'open' : ''}`}>
+                      <span className="material-icons">expand_more</span>
+                    </span>
+                  </button>
+
+                  {showTitleDropdown && (
+                    <div className="title-dropdown">
+                      <div className="dropdown-header">Choose Your Title</div>
+                      {/* Add Deselect Option */}
+                      <div
+                        className="title-option deselect"
+                        onClick={() => selectTitle(null)}
+                      >
+                        <span className="option-name">No Title</span>
+                      </div>
+                      {loadingAllTitles ? (
+                        <div className="title-option loading">Loading titles...</div>
+                      ) : allTitles && allTitles.length > 0 ? (
+                        allTitles.map(title => {
+                          const isUnlocked = userTitles.some(t => t.id === title.id);
+                          const isSelected = String(title.id) === String(selectedTitle);
+                          return (
+                            <div
+                              key={title.id}
+                              className={`title-option ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`}
+                              onClick={() => isUnlocked && selectTitle(title.id)}
+                            >
+                              <div className="option-content">
+                                <span className="option-name">{title.name}</span>
+                                <span className="option-desc">{title.description || 'No description available'}</span>
+                              </div>
+                              {!isUnlocked && (
+                                <span className="lock-icon material-icons">lock</span>
+                              )}
+                              {isSelected && isUnlocked && (
+                                <span className="check-icon material-icons">check</span>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="title-option disabled">No titles available</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Read-only title display for others
+                <div className="title-display">
+                  {loadingTitles ? (
+                    <span className="title-loading">Loading...</span>
+                  ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)) ? (
+                    // Display the equipped title if available
+                    <span
+                      className="equipped-title"
+                      title={userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.description}
+                    >
+                      {userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.name}
+                    </span>
+                  ) : userTitles.find(t => t.is_equipped) ? (
+                    // Alternatively check for is_equipped flag from the API response
+                    <span
+                      className="equipped-title"
+                      title={userTitles.find(t => t.is_equipped)?.description}
+                    >
+                      {userTitles.find(t => t.is_equipped)?.name}
+                    </span>
+                  ) : (
+                    // Display message if no title is equipped
+                    <span className="no-title">No title equipped</span>
+                  )}
+                </div>
+              )}
+
+              {/* Quick Stats in Hero */}
+              <div className="hero-quick-stats">
+                <div className="quick-stat">
+                  <span className="stat-value">{parseNumericValue(displayUser?.avg_wpm).toFixed(0)}</span>
+                  <span className="stat-label">AVG WPM</span>
+                </div>
+                <div className="quick-stat-divider"></div>
+                <div className="quick-stat">
+                  <span className="stat-value">{parseNumericValue(displayUser?.fastest_wpm).toFixed(0)}</span>
+                  <span className="stat-label">BEST WPM</span>
+                </div>
+                <div className="quick-stat-divider"></div>
+                <div className="quick-stat">
+                  <span className="stat-value">{parseNumericValue(displayUser?.avg_accuracy).toFixed(0)}%</span>
+                  <span className="stat-label">ACCURACY</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ==================== MAIN CONTENT GRID ==================== */}
+        <div className="profile-main">
+          {/* Left Column */}
+          <div className="profile-column left">
+            {/* Bio Section */}
+            <section className="profile-section bio-section">
+              <div className="section-header">
+                <h3><span className="material-icons">edit_note</span> About</h3>
+              </div>
+              <div className="section-content">
                 {isOwnProfile ? (
-                  <>
+                  <div className="bio-editor">
                     <textarea
-                      className="biography-input"
-                      placeholder='Write a little about yourself!'
+                      className="bio-textarea"
+                      placeholder="Tell others about yourself..."
                       value={bio}
-                      onChange={isOwnProfile ? handleBioChange : undefined}
-                      readOnly={!isOwnProfile}
-                    ></textarea>
-                    <div className="bio-controls">
+                      onChange={handleBioChange}
+                      maxLength={500}
+                    />
+                    <div className="bio-footer">
+                      <span className="char-count">{bio.length}/500</span>
                       <button
                         className="save-bio-btn"
                         onClick={saveBio}
                         disabled={isSavingBio}
                       >
-                        {isSavingBio ? 'Saving...' : 'Save Bio'}
+                        {isSavingBio ? (
+                          <>
+                            <span className="btn-spinner"></span>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <span className="material-icons">save</span>
+                            Save
+                          </>
+                        )}
                       </button>
-                      {bioMessage && <span className={bioMessage.includes('Failed') ? 'bio-error' : 'bio-success'}>{bioMessage}</span>}
                     </div>
-                  </>
+                    {bioMessage && (
+                      <div className={`bio-message ${bioMessage.includes('Failed') ? 'error' : 'success'}`}>
+                        {bioMessage}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   // Read-only bio for others
-                  <div className="read-only-bio-container">
-                     <p className="bio-text">{displayUser?.bio || ''}</p>
+                  <div className="bio-display">
+                    <p>{displayUser?.bio || 'This user hasn\'t written a bio yet.'}</p>
                   </div>
                 )}
               </div>
-            </div>
+            </section>
 
-            <div className='match-history'>
-              <h2>Match History</h2>
-              
-              {loadingMatchHistory ? (
-                <div className="loading-message">Loading match history...</div>
-              ) : matchHistory.length === 0 ? (
-                <div className="no-matches">No recent race history available.</div>
-              ) : (
-                <div className="match-history-list">
-                  {matchHistory.map((match, index) => {
-                    // Determine position class
-                    let positionClass = '';
-                    if (match.position === '1st') positionClass = 'first-place';
-                    else if (match.position === '2nd') positionClass = 'second-place';
-                    else if (match.position === '3rd') positionClass = 'third-place';
-
-                    return (
-                      <div key={index} className="match-history-card">
-                        <div className="match-date">
-                          {new Date(match.created_at).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+            {/* Badges Section */}
+            <section className="profile-section badges-section">
+              <div className="section-header">
+                <h3><span className="material-icons">military_tech</span> Badges</h3>
+                {isOwnProfile && (
+                  <button className="edit-badges-btn" onClick={() => setShowBadgeSelector(true)}>
+                    <span className="material-icons">edit</span>
+                  </button>
+                )}
+              </div>
+              <div className="section-content">
+                <div className="badges-showcase">
+                  {/* Show selected badges for self, all badges for others */}
+                  {(isOwnProfile ? displayedBadges : userBadges).length > 0 ? (
+                    (isOwnProfile ? displayedBadges : userBadges).map((badge) => (
+                      <div
+                        key={badge.id}
+                        className="badge-card"
+                        onClick={isOwnProfile ? () => setShowBadgeSelector(true) : undefined}
+                        style={!isOwnProfile ? { cursor: 'default' } : {}}
+                      >
+                        <div className="badge-icon">
+                          {badge.icon_url ? (
+                            <img src={badge.icon_url} alt={badge.name} />
+                          ) : (
+                            <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
+                          )}
                         </div>
-                        <div className="match-details">
-                          {/* Position Column (now first) */}
-                          <div className={`match-position ${positionClass}`}>
-                            <div className="position-number">{match.position || '-'}</div>
-                            <div className="match-position-label">Position</div>
-                          </div>
-
-                          {/* Details Column (Type/Category + Stats) */}
-                          <div className="match-info-details">
-                            <div className="match-type">
-                              <div className='match-lobby-type'>
-                                {match.lobby_type}
-                              </div>
-                              <div className='match-category'>
-                                {match.source || match.category || "Race"}
-                              </div>
-                            </div>
-
-                            <div className="match-stats">
-                              <span><i className="bi bi-speedometer"></i> {parseFloat(match.wpm).toFixed(0)} WPM</span>
-                              <span><i className="bi bi-check-circle"></i> {parseFloat(match.accuracy).toFixed(0)}% Acc</span>
-                            </div>
-                          </div>
+                        <div className="badge-info">
+                          <span className="badge-name">{badge.name}</span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ))
+                  ) : (
+                    <div className="no-badges">
+                      <span className="material-icons">emoji_events</span>
+                      <p>{isOwnProfile ? 'Complete races to earn badges!' : 'No badges earned yet.'}</p>
+                    </div>
+                  )}
 
-            </div>
+                  {/* Only show placeholder add badges if own profile */}
+                  {isOwnProfile && Array.from({ length: Math.max(0, 3 - displayedBadges.length) }, (_, i) => (
+                    <div
+                      key={`empty-${i}`}
+                      className="badge-card empty"
+                      onClick={() => setShowBadgeSelector(true)}
+                    >
+                      <div className="badge-icon">
+                        <span className="material-icons">add</span>
+                      </div>
+                      <div className="badge-info">
+                        <span className="badge-name">Add Badge</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* Detailed Stats Section */}
+            <section className="profile-section stats-section">
+              <div className="section-header">
+                <h3><span className="material-icons">insights</span> Statistics</h3>
+                <div className="stats-tabs">
+                  <button
+                    className={`tab ${activeStatsTab === 'overview' ? 'active' : ''}`}
+                    onClick={() => setActiveStatsTab('overview')}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    className={`tab ${activeStatsTab === 'detailed' ? 'active' : ''}`}
+                    onClick={() => setActiveStatsTab('detailed')}
+                  >
+                    Detailed
+                  </button>
+                </div>
+              </div>
+              <div className="section-content">
+                {activeStatsTab === 'overview' ? (
+                  <div className="stats-grid overview">
+                    <div className="stat-tile primary">
+                      <div className="stat-icon">
+                        <span className="material-icons">speed</span>
+                      </div>
+                      <div className="stat-data">
+                        <span className="stat-number">{parseNumericValue(displayUser?.avg_wpm).toFixed(1)}</span>
+                        <span className="stat-unit">WPM</span>
+                      </div>
+                      <span className="stat-title">Average Speed</span>
+                    </div>
+
+                    <div className="stat-tile accent">
+                      <div className="stat-icon">
+                        <span className="material-icons">bolt</span>
+                      </div>
+                      <div className="stat-data">
+                        <span className="stat-number">{parseNumericValue(displayUser?.fastest_wpm).toFixed(1)}</span>
+                        <span className="stat-unit">WPM</span>
+                      </div>
+                      <span className="stat-title">Top Speed</span>
+                    </div>
+
+                    <div className="stat-tile success">
+                      <div className="stat-icon">
+                        <span className="material-icons">check_circle</span>
+                      </div>
+                      <div className="stat-data">
+                        <span className="stat-number">{parseNumericValue(displayUser?.avg_accuracy).toFixed(1)}</span>
+                        <span className="stat-unit">%</span>
+                      </div>
+                      <span className="stat-title">Accuracy</span>
+                    </div>
+
+                    <div className="stat-tile">
+                      <div className="stat-icon">
+                        <span className="material-icons">flag</span>
+                      </div>
+                      <div className="stat-data">
+                        <span className="stat-number">{formatNumber(parseNumericValue(displayUser?.races_completed) || 0)}</span>
+                      </div>
+                      <span className="stat-title">Races Completed</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="stats-grid detailed">
+                    {loadingStats ? (
+                      <div className="stats-loading">
+                        <div className="loader-ring small"></div>
+                        <span>Loading stats...</span>
+                      </div>
+                    ) : detailedStats ? (
+                      <>
+                        <div className="stat-row">
+                          <span className="row-label">
+                            <span className="material-icons">play_arrow</span>
+                            Tests Started
+                          </span>
+                          <span className="row-value">{formatNumber(detailedStats.sessions_started)}</span>
+                        </div>
+                        <div className="stat-row">
+                          <span className="row-label">
+                            <span className="material-icons">done_all</span>
+                            Tests Completed
+                          </span>
+                          <span className="row-value">{formatNumber(detailedStats.sessions_completed)}</span>
+                        </div>
+                        <div className="stat-row">
+                          <span className="row-label">
+                            <span className="material-icons">keyboard</span>
+                            Words Typed
+                          </span>
+                          <span className="row-value">{formatNumber(detailedStats.words_typed)}</span>
+                        </div>
+                        <div className="stat-row highlight">
+                          <span className="row-label">
+                            <span className="material-icons">pie_chart</span>
+                            Completion Rate
+                          </span>
+                          <span className="row-value">{completionRate}%</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="no-stats">No detailed stats available</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column - Match History */}
+          <div className="profile-column right">
+            <section className="profile-section history-section">
+              <div className="section-header">
+                <h3><span className="material-icons">history</span> Recent Matches</h3>
+              </div>
+              <div className="section-content">
+                {loadingMatchHistory ? (
+                  <div className="history-loading">
+                    <div className="loader-ring small"></div>
+                    <span>Loading history...</span>
+                  </div>
+                ) : matchHistory.length === 0 ? (
+                  <div className="no-history">
+                    <span className="material-icons">sports_esports</span>
+                    <p>No matches yet. Start typing!</p>
+                  </div>
+                ) : (
+                  <div className="match-timeline">
+                    {matchHistory.map((match, index) => {
+                      // Determine position class
+                      let positionClass = '';
+                      if (match.position === '1st') positionClass = 'gold';
+                      else if (match.position === '2nd') positionClass = 'silver';
+                      else if (match.position === '3rd') positionClass = 'bronze';
+
+                      return (
+                        <div key={index} className={`timeline-item ${positionClass}`}>
+                          <div className="timeline-connector">
+                            <div className="connector-dot"></div>
+                            {index < matchHistory.length - 1 && <div className="connector-line"></div>}
+                          </div>
+
+                          <div className="match-card">
+                            <div className="match-header">
+                              <span className="match-type">{match.lobby_type}</span>
+                              <span className="match-date">
+                                {new Date(match.created_at).toLocaleDateString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+
+                            <div className="match-body">
+                              {/* Position Column (now first) */}
+                              <div className={`match-position ${positionClass}`}>
+                                <span className="position-value">{match.position || '-'}</span>
+                              </div>
+
+                              {/* Details Column (Type/Category + Stats) */}
+                              <div className="match-metrics">
+                                <div className="metric">
+                                  <span className="metric-value wpm">{parseFloat(match.wpm).toFixed(0)}</span>
+                                  <span className="metric-label">WPM</span>
+                                </div>
+                                <div className="metric">
+                                  <span className="metric-value accuracy">{parseFloat(match.accuracy).toFixed(0)}%</span>
+                                  <span className="metric-label">ACC</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {(match.source || match.category) && (
+                              <div className="match-footer">
+                                <span className="match-category">{match.source || match.category}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         </div>
 
+        {/* ==================== BADGE SELECTOR MODAL ==================== */}
+        {showBadgeSelector && (
+          <div
+            className="badge-modal-overlay"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="badge-modal">
+              <div className="modal-header">
+                <h3>Select Badges to Display</h3>
+                <button className="modal-close" onClick={() => setShowBadgeSelector(false)}>
+                  <span className="material-icons">close</span>
+                </button>
+              </div>
 
-        {/* We may want to make stats be dynamic (i.e. golden color) if they're exceptional */}
-        <div className="profile-stats">
-          {/* Adjust title based on viewed user */}
-          <h2>{isOwnProfile ? 'Your' : `${displayUser?.netid || 'User'}'s`} Stats</h2>
-          {!displayUser ? (
-            <div className="stats-loading">No stats available</div>
-          ) : (
-            <div className="stats-grid primary-stats">
-              <div className="stat-card">
-                <h3><i className="bi bi-bar-chart-line"></i> Races Completed</h3>
-                <p>{parseNumericValue(displayUser.races_completed) || 0}</p>
-              </div>
-              <div className="stat-card">
-                <h3><i className="bi bi-speedometer"></i> Average WPM</h3>
-                <p>{parseNumericValue(displayUser.avg_wpm).toFixed(2)}</p>
-              </div>
-              <div className="stat-card">
-                <h3><i className="bi bi-check-circle"></i> Average Accuracy</h3>
-                <p>{parseNumericValue(displayUser.avg_accuracy).toFixed(2)}%</p>
-              </div>
-              <div className="stat-card">
-                <h3><i className="bi bi-lightning-fill"></i> Fastest Speed</h3>
-                <p>{parseNumericValue(displayUser.fastest_wpm).toFixed(2)} WPM</p>
-              </div>
-            </div>
-          )}
+              <p className="modal-subtitle">Choose up to {maxBadges} badges to showcase on your profile</p>
 
-          {loadingStats ? (
-            <div className="stats-loading">Loading detailed stats...</div>
-          ) : !detailedStats && (isOwnProfile || profileUser) ? (
-            <div className="stats-loading">No detailed stats available</div>
-          ) : detailedStats ? (
-            <div className="stats-grid">
-              <div className="stat-card">
-                <h3><i className="bi bi-pencil-square"></i> Total Tests Started</h3>
-                <p>{formatNumber(detailedStats.sessions_started)}</p>
-              </div>
-              <div className="stat-card">
-                <h3><i className="bi bi-check2-square"></i> Sessions Completed</h3>
-                <p>{formatNumber(detailedStats.sessions_completed)}</p>
-              </div>
-              <div className="stat-card">
-                <h3><i className="bi bi-keyboard"></i> Total Words Typed</h3>
-                <p>{formatNumber(detailedStats.words_typed)}</p>
-              </div>
-              <div className="stat-card">
-                <h3><i className="bi bi-pie-chart"></i> Completion Rate</h3>
-                <p>{detailedStats.sessions_started > 0
-                  ? (detailedStats.sessions_completed / detailedStats.sessions_started * 100).toFixed(1)
-                  : 0}%</p>
-              </div>
-            </div>
-          ) : null}    
-        </div>
-      </div>
-
-      {showBadgeSelector && (
-                      <div className="badge-selector-overlay"
-                      onClick={(e) => e.stopPropagation()}
-                      onMouseDown={(e) => e.stopPropagation()}
+              <div className="badge-selection-grid">
+                {loadingBadges ? (
+                  <div className="badge-loading">
+                    <div className="loader-ring small"></div>
+                    <span>Loading badges...</span>
+                  </div>
+                ) : userBadges.length > 0 ? (
+                  userBadges.map(badge => {
+                    const isSelected = displayedBadges.some(b => b.id === badge.id);
+                    return (
+                      <div
+                        key={badge.id}
+                        className={`selection-badge ${isSelected ? 'selected' : ''}`}
+                        onClick={() => toggleBadgeSelection(badge)}
                       >
-                        <div className="badge-selector">
-                          <h4>Select Badges to Display</h4>
-                          <div className="badge-grid">
-                            {loadingBadges ? (
-                              <div className="badge-loading">Loading badges...</div>
-                            ) : userBadges.length > 0 ? (
-                              userBadges.map(badge => (
-                                <div
-                                  key={badge.id}
-                                  className={`badge-selection-item ${displayedBadges.some(b => b.id === badge.id) ? 'selected' : ''}`}
-                                  onClick={() => toggleBadgeSelection(badge)}
-                                >
-                                  {badge.icon_url ? (
-                                    <img src={badge.icon_url} alt={badge.name} className="badge-image" />
-                                  ) : (
-                                    <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
-                                  )}
-                                  <div className="badge-details">
-                                    <span className="badge-modal-name">{badge.name}</span>
-                                    <span className="badge-modal-description">{badge.description}</span>
-                                  </div>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="no-badges">No badges earned yet. Complete races to earn badges!</div>
-                            )}
-                          </div>
-                          <div className="badge-selector-actions">
-                            <button className="badge-cancel" onClick={() => setShowBadgeSelector(false)}>Cancel</button>
-                            <button className="badge-save" onClick={saveBadgeSelections}>Save Changes</button>
-                          </div>
+                        <div className="selection-checkbox">
+                          {isSelected && <span className="material-icons">check</span>}
+                        </div>
+                        <div className="selection-icon">
+                          {badge.icon_url ? (
+                            <img src={badge.icon_url} alt={badge.name} />
+                          ) : (
+                            <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
+                          )}
+                        </div>
+                        <div className="selection-info">
+                          <span className="selection-name">{badge.name}</span>
+                          <span className="selection-desc">{badge.description}</span>
                         </div>
                       </div>
-                    )}
+                    );
+                  })
+                ) : (
+                  <div className="no-badges-modal">
+                    <span className="material-icons">emoji_events</span>
+                    <p>No badges earned yet.</p>
+                    <span>Complete races to earn badges!</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-footer">
+                <span className="selection-count">{displayedBadges.length}/{maxBadges} selected</span>
+                <div className="modal-actions">
+                  <button className="btn-cancel" onClick={() => setShowBadgeSelector(false)}>
+                    Cancel
+                  </button>
+                  <button className="btn-save" onClick={saveBadgeSelections}>
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
