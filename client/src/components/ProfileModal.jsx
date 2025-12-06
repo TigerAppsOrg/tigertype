@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './ProfileModal.css';
 import defaultProfileImage from '../assets/icons/default-profile.svg';
+import SegmentedToggle from './SegmentedToggle';
 
 function ProfileModal({ isOpen, onClose, netid }) {
   const { user, loading, setUser, fetchUserProfile } = useAuth();
@@ -21,41 +22,73 @@ function ProfileModal({ isOpen, onClose, netid }) {
   const [selectedTitle, setSelectedTitle] = useState('');
   const [matchHistory, setMatchHistory] = useState([]);
   const [loadingMatchHistory, setLoadingMatchHistory] = useState(true);
-  const [userBadges, setUserBadges] = useState([]);
-  const [loadingBadges, setLoadingBadges] = useState(false);
   const [userTitles, setUserTitles] = useState([]);
   const [loadingTitles, setLoadingTitles] = useState(false);
   const [showTitleDropdown, setShowTitleDropdown] = useState(false);
-  const [displayedBadges, setDisplayedBadges] = useState([]);
-  const [showBadgeSelector, setShowBadgeSelector] = useState(false);
-  const [maxBadges] = useState(5); // Maximum number of badges that can be displayed
   const [allTitles, setAllTitles] = useState([]);
   const [loadingAllTitles, setLoadingAllTitles] = useState(false);
   const [activeStatsTab, setActiveStatsTab] = useState('overview'); // New state for stats tabs
+  const [dropdownStyle, setDropdownStyle] = useState({}); // For fixed positioning of title dropdown
 
   const modalRef = useRef();
+  const titleButtonRef = useRef(null); // Ref for title button positioning
+  const titleDropdownRef = useRef(null); // Ref for title dropdown click-outside detection
   const typingInputRef = document.querySelector('.typing-input-container input');
 
-  // Determine user's rank tier based on average WPM - used for visual styling
-  const getRankTier = (avgWpm) => {
-    if (avgWpm >= 150) return { tier: 'legendary', label: 'Legendary', color: '#FFD700' };
-    if (avgWpm >= 125) return { tier: 'master', label: 'Master', color: '#9B59B6' };
-    if (avgWpm >= 100) return { tier: 'expert', label: 'Expert', color: '#3498DB' };
-    if (avgWpm >= 75) return { tier: 'advanced', label: 'Advanced', color: '#2ECC71' };
-    if (avgWpm >= 50) return { tier: 'intermediate', label: 'Intermediate', color: '#F58025' };
-    return { tier: 'beginner', label: 'Beginner', color: '#95A5A6' };
+  // Rank tiers based on races completed - Princeton-themed names
+  const RANK_TIERS = [
+    { min: 0, max: 10, tier: 'freshman', label: 'Freshman', color: '#95A5A6' },
+    { min: 10, max: 50, tier: 'sophomore', label: 'Sophomore', color: '#3498DB' },
+    { min: 50, max: 100, tier: 'junior', label: 'Junior', color: '#2ECC71' },
+    { min: 100, max: 250, tier: 'senior', label: 'Senior', color: '#F58025' },
+    { min: 250, max: 500, tier: 'gradstudent', label: 'Grad Student', color: '#9B59B6' },
+    { min: 500, max: 1000, tier: 'supersenior', label: 'Super Senior', color: '#E74C3C' },
+    { min: 1000, max: Infinity, tier: 'einstein', label: 'Einstein', color: '#FFD700' },
+  ];
+
+  // Determine user's rank tier based on races completed
+  const getRankTier = (racesCompleted) => {
+    const races = racesCompleted || 0;
+    for (const tier of RANK_TIERS) {
+      if (races >= tier.min && races < tier.max) {
+        return tier;
+      }
+    }
+    return RANK_TIERS[RANK_TIERS.length - 1]; // Return highest tier if somehow exceeded
   };
 
-  const getBadgeEmoji = (key) => {
-    switch (key) {
-      case 'first_race': return '🏁';
-      case 'novice': return '🥉';
-      case 'intermediate': return '🥈';
-      case 'advanced': return '🥇';
-      case 'expert': return '👑';
-      case 'fast': return '⚡';
-      default: return '🏆';
+  // Calculate progress to next rank
+  const getRankProgress = (racesCompleted) => {
+    const races = racesCompleted || 0;
+    const currentTier = getRankTier(races);
+    const currentIndex = RANK_TIERS.findIndex(t => t.tier === currentTier.tier);
+    const nextTier = currentIndex < RANK_TIERS.length - 1 ? RANK_TIERS[currentIndex + 1] : null;
+
+    if (!nextTier) {
+      // At max rank
+      return {
+        currentTier,
+        nextTier: null,
+        progress: 100,
+        racesNeeded: 0,
+        racesInTier: races - currentTier.min,
+        tierRange: 0,
+      };
     }
+
+    const racesInTier = races - currentTier.min;
+    const tierRange = nextTier.min - currentTier.min;
+    const progress = (racesInTier / tierRange) * 100;
+    const racesNeeded = nextTier.min - races;
+
+    return {
+      currentTier,
+      nextTier,
+      progress: Math.min(progress, 100),
+      racesNeeded,
+      racesInTier,
+      tierRange,
+    };
   };
 
   // Function to add cache busting parameter to image URL (this is so scuffed, even if it works pls refine ammaar)
@@ -243,98 +276,6 @@ function ProfileModal({ isOpen, onClose, netid }) {
     fetchMatchHistory();
   }, [isOpen, netid, user, timestamp]);
 
-  // Fetch Badges
-  useEffect(() => {
-    if (!isOpen) return;
-    const targetNetId = netid || user?.netid;
-    if (!targetNetId) return;
-
-    const isOwn = !netid || (user && netid === user.netid);
-
-    const fetchUserBadges = async () => {
-      try {
-        setLoadingBadges(true);
-        const url = isOwn ? '/api/user/badges' : `/api/user/${targetNetId}/badges`;
-        const response = await fetch(url, { credentials: 'include' });
-
-        const data = await response.json();
-        // console.log('User badges:', data);
-        setUserBadges(data || []);
-      }
-      catch (error) {
-        console.error('Error fetching user badges:', error);
-        setUserBadges([]);
-      }
-      finally {
-        setLoadingBadges(false);
-      }
-    }
-
-    fetchUserBadges();
-  }, [isOpen, netid, user]);
-
-  const toggleBadgeSelection = (badge) => {
-    const isCurrentlySelected = displayedBadges.some(b => b.id === badge.id);
-
-    if (isCurrentlySelected) {
-      // Remove badge from selection
-      setDisplayedBadges(displayedBadges.filter(b => b.id !== badge.id));
-    } else if (displayedBadges.length < maxBadges) {
-      // Add badge to selection if under max limit
-      setDisplayedBadges([...displayedBadges, badge]);
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen && userBadges?.length > 0) {
-      const savedBadgeIds = JSON.parse(localStorage.getItem('displayedBadgeIds') || '[]');
-      const badgeDisplayOrder = JSON.parse(localStorage.getItem('badgeDisplayOrder') || '[]');
-
-      if (badgeDisplayOrder.length > 0) {
-        // Use the stored order to display badges
-        const orderedBadges = [];
-
-        // First add badges in their saved order
-        badgeDisplayOrder.forEach(item => {
-          const badge = userBadges.find(b => b.id.toString() === item.id);
-          if (badge) {
-            orderedBadges.push(badge);
-          }
-        });
-
-        // Set the ordered badges
-        setDisplayedBadges(orderedBadges.slice(0, maxBadges));
-      } else {
-        // Fall back to the old method if no order is saved
-        const badgesToDisplay = userBadges.filter(badge =>
-          savedBadgeIds.includes(badge.id.toString())
-        );
-
-        setDisplayedBadges(badgesToDisplay.slice(0, maxBadges));
-      }
-    }
-  }, [isOpen, userBadges, maxBadges]);
-
-  const saveBadgeSelections = () => {
-    const badgeIds = displayedBadges.map(badge => badge.id.toString());
-    const orderedBadges = displayedBadges.map((badge, index) => ({
-      id: badge.id.toString(),
-      order: index
-    }));
-
-    localStorage.setItem('displayedBadgeIds', JSON.stringify(badgeIds));
-    localStorage.setItem('badgeDisplayOrder', JSON.stringify(orderedBadges));
-
-    // Persist selections to server
-    fetch('/api/profile/badges', {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ badgeIds })
-    }).catch(err => console.error('Error saving badge selections:', err));
-    setShowBadgeSelector(false);
-  };
-
   const handleTitleClick = () => {
     setShowTitleDropdown(!showTitleDropdown);
   };
@@ -413,6 +354,45 @@ function ProfileModal({ isOpen, onClose, netid }) {
       setSelectedTitle(equipped ? equipped.id : '');
     }
   }, [isOpen, userTitles]);
+
+  // Calculate dropdown position when it opens (fixes z-index stacking context issue)
+  useEffect(() => {
+    if (showTitleDropdown && titleButtonRef.current) {
+      const rect = titleButtonRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width,
+        minWidth: 280,
+      });
+    }
+  }, [showTitleDropdown]);
+
+  // Close title dropdown when clicking outside
+  useEffect(() => {
+    if (!showTitleDropdown) return;
+
+    const handleClickOutside = (event) => {
+      // Check if click is outside both the button and the dropdown
+      const isOutsideButton = titleButtonRef.current && !titleButtonRef.current.contains(event.target);
+      const isOutsideDropdown = titleDropdownRef.current && !titleDropdownRef.current.contains(event.target);
+
+      if (isOutsideButton && isOutsideDropdown) {
+        setShowTitleDropdown(false);
+      }
+    };
+
+    // Add listener with a small delay to avoid immediate closing
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showTitleDropdown]);
 
   // Parse numeric values to check if ints
   const parseNumericValue = (value) => {
@@ -629,8 +609,9 @@ function ProfileModal({ isOpen, onClose, netid }) {
     fetchAllTitles();
   }, [isOpen]);
 
-  // Get user rank info for visual styling
-  const userRank = getRankTier(parseNumericValue(displayUser?.avg_wpm));
+  // Get user rank info for visual styling (based on races completed)
+  const userRank = getRankTier(parseNumericValue(displayUser?.races_completed));
+  const rankProgress = getRankProgress(parseNumericValue(displayUser?.races_completed));
 
   // Calculate completion rate
   const completionRate = detailedStats && detailedStats.sessions_started > 0
@@ -742,105 +723,142 @@ function ProfileModal({ isOpen, onClose, netid }) {
             <div className="user-identity">
               <h1 className="username">{displayUser?.netid || 'Guest'}</h1>
 
-              {/* Title Section - Conditional */}
-              {isOwnProfile ? (
-                <div className="title-selector">
-                  <button
-                    className={`title-button ${showTitleDropdown ? 'active' : ''}`}
-                    onClick={handleTitleClick}
-                  >
-                    <span className="title-text">
-                      {equippedTitle?.name || 'Select a title'}
-                    </span>
-                    <span className={`dropdown-chevron ${showTitleDropdown ? 'open' : ''}`}>
-                      <span className="material-icons">expand_more</span>
-                    </span>
-                  </button>
+              {/* Title + Quick Stats Row */}
+              <div className="title-stats-row">
+                {/* Title Section - Conditional */}
+                {isOwnProfile ? (
+                  <div className="title-selector">
+                    <button
+                      ref={titleButtonRef}
+                      className={`title-button ${showTitleDropdown ? 'active' : ''}`}
+                      onClick={handleTitleClick}
+                    >
+                      <span className="title-text">
+                        {equippedTitle?.name || 'Select a title'}
+                      </span>
+                      <span className={`dropdown-chevron ${showTitleDropdown ? 'open' : ''}`}>
+                        <span className="material-icons">expand_more</span>
+                      </span>
+                    </button>
 
-                  {showTitleDropdown && (
-                    <div className="title-dropdown">
-                      <div className="dropdown-header">Choose Your Title</div>
-                      {/* Add Deselect Option */}
-                      <div
-                        className="title-option deselect"
-                        onClick={() => selectTitle(null)}
-                      >
-                        <span className="option-name">No Title</span>
-                      </div>
-                      {loadingAllTitles ? (
-                        <div className="title-option loading">Loading titles...</div>
-                      ) : allTitles && allTitles.length > 0 ? (
-                        allTitles.map(title => {
-                          const isUnlocked = userTitles.some(t => t.id === title.id);
-                          const isSelected = String(title.id) === String(selectedTitle);
-                          return (
-                            <div
-                              key={title.id}
-                              className={`title-option ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`}
-                              onClick={() => isUnlocked && selectTitle(title.id)}
-                            >
-                              <div className="option-content">
-                                <span className="option-name">{title.name}</span>
-                                <span className="option-desc">{title.description || 'No description available'}</span>
+                    {showTitleDropdown && (
+                      <div ref={titleDropdownRef} className="title-dropdown" style={dropdownStyle}>
+                        <div className="dropdown-header">Choose Your Title</div>
+                        {/* Add Deselect Option */}
+                        <div
+                          className="title-option deselect"
+                          onClick={() => selectTitle(null)}
+                        >
+                          <span className="option-name">No Title</span>
+                        </div>
+                        {loadingAllTitles ? (
+                          <div className="title-option loading">Loading titles...</div>
+                        ) : allTitles && allTitles.length > 0 ? (
+                          allTitles.map(title => {
+                            const isUnlocked = userTitles.some(t => t.id === title.id);
+                            const isSelected = String(title.id) === String(selectedTitle);
+                            return (
+                              <div
+                                key={title.id}
+                                className={`title-option ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`}
+                                onClick={() => isUnlocked && selectTitle(title.id)}
+                              >
+                                <div className="option-content">
+                                  <span className="option-name">{title.name}</span>
+                                  <span className="option-desc">{title.description || 'No description available'}</span>
+                                </div>
+                                {!isUnlocked && (
+                                  <span className="lock-icon material-icons">lock</span>
+                                )}
+                                {isSelected && isUnlocked && (
+                                  <span className="check-icon material-icons">check</span>
+                                )}
                               </div>
-                              {!isUnlocked && (
-                                <span className="lock-icon material-icons">lock</span>
-                              )}
-                              {isSelected && isUnlocked && (
-                                <span className="check-icon material-icons">check</span>
-                              )}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="title-option disabled">No titles available</div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Read-only title display for others
-                <div className="title-display">
-                  {loadingTitles ? (
-                    <span className="title-loading">Loading...</span>
-                  ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)) ? (
-                    // Display the equipped title if available
-                    <span
-                      className="equipped-title"
-                      title={userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.description}
-                    >
-                      {userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.name}
-                    </span>
-                  ) : userTitles.find(t => t.is_equipped) ? (
-                    // Alternatively check for is_equipped flag from the API response
-                    <span
-                      className="equipped-title"
-                      title={userTitles.find(t => t.is_equipped)?.description}
-                    >
-                      {userTitles.find(t => t.is_equipped)?.name}
-                    </span>
-                  ) : (
-                    // Display message if no title is equipped
-                    <span className="no-title">No title equipped</span>
-                  )}
-                </div>
-              )}
+                            );
+                          })
+                        ) : (
+                          <div className="title-option disabled">No titles available</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Read-only title display for others
+                  <div className="title-display">
+                    {loadingTitles ? (
+                      <span className="title-loading">Loading...</span>
+                    ) : displayUser && displayUser.selected_title_id && userTitles.find(t => String(t.id) === String(displayUser.selected_title_id)) ? (
+                      // Display the equipped title if available
+                      <span
+                        className="equipped-title"
+                        title={userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.description}
+                      >
+                        {userTitles.find(t => String(t.id) === String(displayUser.selected_title_id))?.name}
+                      </span>
+                    ) : userTitles.find(t => t.is_equipped) ? (
+                      // Alternatively check for is_equipped flag from the API response
+                      <span
+                        className="equipped-title"
+                        title={userTitles.find(t => t.is_equipped)?.description}
+                      >
+                        {userTitles.find(t => t.is_equipped)?.name}
+                      </span>
+                    ) : (
+                      // Display message if no title is equipped
+                      <span className="no-title">No title equipped</span>
+                    )}
+                  </div>
+                )}
 
-              {/* Quick Stats in Hero */}
-              <div className="hero-quick-stats">
-                <div className="quick-stat">
-                  <span className="stat-value">{parseNumericValue(displayUser?.avg_wpm).toFixed(0)}</span>
-                  <span className="stat-label">AVG WPM</span>
+                {/* Quick Stats in Hero */}
+                <div className="hero-quick-stats">
+                  <div className="quick-stat">
+                    <span className="stat-value">{parseNumericValue(displayUser?.avg_wpm).toFixed(0)}</span>
+                    <span className="stat-label">AVG WPM</span>
+                  </div>
+                  <div className="quick-stat-divider"></div>
+                  <div className="quick-stat">
+                    <span className="stat-value">{parseNumericValue(displayUser?.fastest_wpm).toFixed(0)}</span>
+                    <span className="stat-label">BEST WPM</span>
+                  </div>
+                  <div className="quick-stat-divider"></div>
+                  <div className="quick-stat">
+                    <span className="stat-value">{parseNumericValue(displayUser?.avg_accuracy).toFixed(0)}%</span>
+                    <span className="stat-label">ACCURACY</span>
+                  </div>
                 </div>
-                <div className="quick-stat-divider"></div>
-                <div className="quick-stat">
-                  <span className="stat-value">{parseNumericValue(displayUser?.fastest_wpm).toFixed(0)}</span>
-                  <span className="stat-label">BEST WPM</span>
+              </div>
+
+              {/* Rank Progress Bar */}
+              <div className="rank-progress-container">
+                <div className="rank-progress-header">
+                  <span className="current-rank" style={{ color: rankProgress.currentTier.color }}>
+                    {rankProgress.currentTier.label}
+                  </span>
+                  {rankProgress.nextTier && (
+                    <>
+                      <span className="rank-arrow">→</span>
+                      <span className="next-rank" style={{ color: rankProgress.nextTier.color }}>
+                        {rankProgress.nextTier.label}
+                      </span>
+                    </>
+                  )}
                 </div>
-                <div className="quick-stat-divider"></div>
-                <div className="quick-stat">
-                  <span className="stat-value">{parseNumericValue(displayUser?.avg_accuracy).toFixed(0)}%</span>
-                  <span className="stat-label">ACCURACY</span>
+                <div className="rank-progress-bar">
+                  <div
+                    className="rank-progress-fill"
+                    style={{
+                      width: `${rankProgress.progress}%`,
+                      background: `linear-gradient(90deg, ${rankProgress.currentTier.color}, ${rankProgress.nextTier?.color || rankProgress.currentTier.color})`,
+                    }}
+                  ></div>
+                </div>
+                <div className="rank-progress-text">
+                  {rankProgress.nextTier ? (
+                    <span>{rankProgress.racesNeeded} races to <strong>{rankProgress.nextTier.label}</strong></span>
+                  ) : (
+                    <span>Max rank achieved!</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -895,68 +913,11 @@ function ProfileModal({ isOpen, onClose, netid }) {
                 ) : (
                   // Read-only bio for others
                   <div className="bio-display">
-                    <p>{displayUser?.bio || 'This user hasn\'t written a bio yet.'}</p>
+                    <p className={!displayUser?.bio ? 'empty-bio' : ''}>
+                      {displayUser?.bio || 'This user hasn\'t written a bio yet.'}
+                    </p>
                   </div>
                 )}
-              </div>
-            </section>
-
-            {/* Badges Section */}
-            <section className="profile-section badges-section">
-              <div className="section-header">
-                <h3><span className="material-icons">military_tech</span> Badges</h3>
-                {isOwnProfile && (
-                  <button className="edit-badges-btn" onClick={() => setShowBadgeSelector(true)}>
-                    <span className="material-icons">edit</span>
-                  </button>
-                )}
-              </div>
-              <div className="section-content">
-                <div className="badges-showcase">
-                  {/* Show selected badges for self, all badges for others */}
-                  {(isOwnProfile ? displayedBadges : userBadges).length > 0 ? (
-                    (isOwnProfile ? displayedBadges : userBadges).map((badge) => (
-                      <div
-                        key={badge.id}
-                        className="badge-card"
-                        onClick={isOwnProfile ? () => setShowBadgeSelector(true) : undefined}
-                        style={!isOwnProfile ? { cursor: 'default' } : {}}
-                      >
-                        <div className="badge-icon">
-                          {badge.icon_url ? (
-                            <img src={badge.icon_url} alt={badge.name} />
-                          ) : (
-                            <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
-                          )}
-                        </div>
-                        <div className="badge-info">
-                          <span className="badge-name">{badge.name}</span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="no-badges">
-                      <span className="material-icons">emoji_events</span>
-                      <p>{isOwnProfile ? 'Complete races to earn badges!' : 'No badges earned yet.'}</p>
-                    </div>
-                  )}
-
-                  {/* Only show placeholder add badges if own profile */}
-                  {isOwnProfile && Array.from({ length: Math.max(0, 3 - displayedBadges.length) }, (_, i) => (
-                    <div
-                      key={`empty-${i}`}
-                      className="badge-card empty"
-                      onClick={() => setShowBadgeSelector(true)}
-                    >
-                      <div className="badge-icon">
-                        <span className="material-icons">add</span>
-                      </div>
-                      <div className="badge-info">
-                        <span className="badge-name">Add Badge</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </section>
 
@@ -964,20 +925,16 @@ function ProfileModal({ isOpen, onClose, netid }) {
             <section className="profile-section stats-section">
               <div className="section-header">
                 <h3><span className="material-icons">insights</span> Statistics</h3>
-                <div className="stats-tabs">
-                  <button
-                    className={`tab ${activeStatsTab === 'overview' ? 'active' : ''}`}
-                    onClick={() => setActiveStatsTab('overview')}
-                  >
-                    Overview
-                  </button>
-                  <button
-                    className={`tab ${activeStatsTab === 'detailed' ? 'active' : ''}`}
-                    onClick={() => setActiveStatsTab('detailed')}
-                  >
-                    Detailed
-                  </button>
-                </div>
+                <SegmentedToggle
+                  options={[
+                    { value: 'overview', label: 'Overview' },
+                    { value: 'detailed', label: 'Detailed' },
+                  ]}
+                  value={activeStatsTab}
+                  onChange={setActiveStatsTab}
+                  className="compact"
+                  ariaLabel="Select stats view"
+                />
               </div>
               <div className="section-content">
                 {activeStatsTab === 'overview' ? (
@@ -1151,78 +1108,6 @@ function ProfileModal({ isOpen, onClose, netid }) {
           </div>
         </div>
 
-        {/* ==================== BADGE SELECTOR MODAL ==================== */}
-        {showBadgeSelector && (
-          <div
-            className="badge-modal-overlay"
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="badge-modal">
-              <div className="modal-header">
-                <h3>Select Badges to Display</h3>
-                <button className="modal-close" onClick={() => setShowBadgeSelector(false)}>
-                  <span className="material-icons">close</span>
-                </button>
-              </div>
-
-              <p className="modal-subtitle">Choose up to {maxBadges} badges to showcase on your profile</p>
-
-              <div className="badge-selection-grid">
-                {loadingBadges ? (
-                  <div className="badge-loading">
-                    <div className="loader-ring small"></div>
-                    <span>Loading badges...</span>
-                  </div>
-                ) : userBadges.length > 0 ? (
-                  userBadges.map(badge => {
-                    const isSelected = displayedBadges.some(b => b.id === badge.id);
-                    return (
-                      <div
-                        key={badge.id}
-                        className={`selection-badge ${isSelected ? 'selected' : ''}`}
-                        onClick={() => toggleBadgeSelection(badge)}
-                      >
-                        <div className="selection-checkbox">
-                          {isSelected && <span className="material-icons">check</span>}
-                        </div>
-                        <div className="selection-icon">
-                          {badge.icon_url ? (
-                            <img src={badge.icon_url} alt={badge.name} />
-                          ) : (
-                            <span className="badge-emoji">{getBadgeEmoji(badge.key)}</span>
-                          )}
-                        </div>
-                        <div className="selection-info">
-                          <span className="selection-name">{badge.name}</span>
-                          <span className="selection-desc">{badge.description}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="no-badges-modal">
-                    <span className="material-icons">emoji_events</span>
-                    <p>No badges earned yet.</p>
-                    <span>Complete races to earn badges!</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-footer">
-                <span className="selection-count">{displayedBadges.length}/{maxBadges} selected</span>
-                <div className="modal-actions">
-                  <button className="btn-cancel" onClick={() => setShowBadgeSelector(false)}>
-                    Cancel
-                  </button>
-                  <button className="btn-save" onClick={saveBadgeSelections}>
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
