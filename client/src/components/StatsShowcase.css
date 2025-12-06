@@ -1,19 +1,29 @@
 .stats-showcase {
   width: 100%;
   padding: 1.2rem;
-  background-color: var(--secondary-color, #1e1e1e);
-  border-radius: 8px;
-  border: 1px solid var(--hover-color, #3a3a3a);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, rgba(30, 30, 30, 0.9) 0%, rgba(26, 26, 26, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(245, 128, 37, 0.15);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   height: 100%;
   display: flex;
   flex-direction: column;
+  animation: fade-up 0.5s ease-out 0.3s both;
 }
 
 .stats-heading {
   text-align: center;
-  color: var(--princeton-orange, #F58025);
-  font-weight: bold;
+  font-weight: 700;
+  font-size: 1.3rem;
+  background: linear-gradient(135deg, #F58025 0%, #ff9b52 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
 }
 
 .stats-container {
@@ -30,35 +40,80 @@
   flex-direction: row;
   align-items: center;
   padding: 0.8rem 1rem;
-  background-color: var(--stat-card-color);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: linear-gradient(135deg, rgba(42, 42, 42, 0.6) 0%, rgba(35, 35, 35, 0.8) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
   gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(245, 128, 37, 0.05) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .stat-card:hover {
-  transform: translateX(5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateX(8px);
+  border-color: rgba(245, 128, 37, 0.25);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 20px rgba(245, 128, 37, 0.1);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
 }
 
 .stat-icon {
-  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(245, 128, 37, 0.15) 0%, rgba(245, 128, 37, 0.08) 100%);
+  border-radius: 8px;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.stat-icon i {
+  font-size: 1.1rem;
+  color: #F58025;
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, rgba(245, 128, 37, 0.25) 0%, rgba(245, 128, 37, 0.12) 100%);
 }
 
 .stat-value {
   font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--princeton-orange, #F58025);
+  font-weight: 700;
+  background: linear-gradient(135deg, #F58025 0%, #ff9b52 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-right: 0.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .stat-label {
   font-size: 0.85rem;
   color: var(--mode-text-color, #e0e0e0);
-  opacity: 0.9;
+  opacity: 0.85;
   margin-left: auto;
+  position: relative;
+  z-index: 1;
 }
 
 /* Loading and Error States */

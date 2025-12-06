@@ -1,64 +1,153 @@
+/* ============================================
+   Mode Selection Cards - Enhanced UI
+   ============================================ */
+
 .modes-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
+  gap: 1.5rem;
   width: 100%;
 }
 
+/* Base Mode Card */
 .mode-box {
-  background-color: var(--secondary-color);
-  border-radius: 8px;
-  padding: 2rem;
+  --mode-color: #F58025;
+  --mode-glow: rgba(245, 128, 37, 0.3);
+
+  background: linear-gradient(145deg, rgba(30, 30, 30, 0.95) 0%, rgba(26, 26, 26, 0.98) 100%);
+  border-radius: 16px;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.35s ease,
+              border-color 0.35s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  min-height: 280px;
+  min-height: 220px;
   justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Gradient overlay that appears on hover */
+.mode-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 0%, var(--mode-glow) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+/* Animated border glow */
+.mode-box::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, var(--mode-color), transparent 50%, var(--mode-color));
+  border-radius: 22px;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.35s ease;
 }
 
 .mode-box:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 40px var(--mode-glow);
+}
+
+.mode-box:hover::before {
+  opacity: 1;
+}
+
+.mode-box:hover::after {
+  opacity: 0.3;
+}
+
+/* Mode-specific theme colors */
+/* Solo Practice & Quick Match - Primary orange */
+.mode-box.mode-1,
+.mode-box.mode-2 {
+  --mode-color: #F58025;
+  --mode-glow: rgba(245, 128, 37, 0.35);
+}
+
+/* Create Private & Join Private - Burnt orange/copper */
+.mode-box.mode-3,
+.mode-box.mode-4 {
+  --mode-color: #C86A3A;
+  --mode-glow: rgba(200, 106, 58, 0.3);
 }
 
 .mode-box h3 {
-  color: var(--mode-title-color);
+  color: var(--mode-color);
   margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
+  margin-bottom: 0.6rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  transition: text-shadow 0.35s ease;
+}
+
+.mode-box:hover h3 {
+  text-shadow: 0 0 20px var(--mode-glow);
 }
 
 .mode-box p {
   color: var(--mode-text-color);
   margin: 0;
+  opacity: 0.85;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
 }
 
+/* Disabled Mode State */
 .mode-disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .mode-disabled:hover {
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.mode-disabled:hover::before,
+.mode-disabled:hover::after {
+  opacity: 0;
 }
 
 .coming-soon-badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: #333;
-  color: white;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, rgba(50, 50, 50, 0.9), rgba(40, 40, 40, 0.95));
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
   font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 2;
 }
 
 .mode-box .join-lobby-panel {
@@ -69,12 +158,54 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+  z-index: 1;
 }
 
 /* Icon Styling */
 .mode-icon {
-  font-size: 3rem; /* Adjust size as needed */
-  color: var(--mode-title-color); /* Match the heading color */
-  margin-bottom: 1.5rem;
+  font-size: 2.75rem;
+  color: var(--mode-color);
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              filter 0.35s ease;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.mode-box:hover .mode-icon {
+  transform: scale(1.15) translateY(-4px);
+  filter: drop-shadow(0 8px 16px var(--mode-glow));
+}
+
+/* Entrance animations */
+.mode-box {
+  animation: fade-up 0.5s ease-out both;
+}
+
+.mode-box:nth-child(1) { animation-delay: 0.1s; }
+.mode-box:nth-child(2) { animation-delay: 0.2s; }
+.mode-box:nth-child(3) { animation-delay: 0.3s; }
+.mode-box:nth-child(4) { animation-delay: 0.4s; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modes-container {
+    gap: 1rem;
+  }
+
+  .mode-box {
+    min-height: 180px;
+    padding: 1.25rem;
+  }
+
+  .mode-icon {
+    font-size: 2.25rem;
+  }
+
+  .mode-box h3 {
+    font-size: 1.2rem;
+  }
 }
 

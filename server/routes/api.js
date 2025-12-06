@@ -618,19 +618,6 @@ router.get('/stats', async (req, res) => {
   }
 })
 
-// Get user badges
-router.get('/user/badges', requireAuth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const badges = await UserModel.getBadges(userId, true);
-    res.json(badges);
-    console.log('User badges fetched successfully');
-  } catch (err) {
-    console.error('Error fetching user badges:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 // Get user titles
 router.get('/user/titles', requireAuth, async (req, res) => {
   try {
@@ -724,22 +711,6 @@ router.get('/user/:netid/results', requireAuth, async (req, res) => {
     res.json(results || []);
   } catch (err) {
     console.error('Error fetching results for user by netid:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Get another user's badges by netid
-router.get('/user/:netid/badges', requireAuth, async (req, res) => {
-  try {
-    const { netid } = req.params;
-    const userToView = await UserModel.findByNetid(netid);
-    if (!userToView) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    const badges = await UserModel.getBadges(userToView.id, false);
-    res.json(badges);
-  } catch (err) {
-    console.error('Error fetching badges for user by netid:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

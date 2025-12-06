@@ -89,3 +89,87 @@
   button:hover {
     background-color: var(--primary-color-dark);
   }
+
+/* ============================================
+   Shared Animation Utilities
+   ============================================ */
+
+/* Animation timing variables */
+:root {
+  --anim-fast: 0.2s;
+  --anim-normal: 0.3s;
+  --anim-slow: 0.5s;
+  --anim-slower: 0.8s;
+
+  /* Glow colors */
+  --glow-orange: rgba(245, 128, 37, 0.5);
+  --glow-orange-strong: rgba(245, 128, 37, 0.7);
+  --glow-blue: rgba(52, 152, 219, 0.5);
+  --glow-purple: rgba(155, 89, 182, 0.5);
+  --glow-green: rgba(46, 204, 113, 0.5);
+  --glow-red: rgba(231, 76, 60, 0.5);
+  --glow-gold: rgba(255, 215, 0, 0.5);
+}
+
+/* Shimmer animation for buttons and highlights - subtle */
+@keyframes shimmer {
+  0% { left: -100%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 200%; opacity: 0; }
+}
+
+/* Pulse glow animation - subtle breathing effect */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(245, 128, 37, 0.25),
+                0 0 30px rgba(245, 128, 37, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(245, 128, 37, 0.35),
+                0 0 40px rgba(245, 128, 37, 0.15);
+  }
+}
+
+/* Subtle float animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Gradient shift animation for backgrounds */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Entrance fade-up animation */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered entrance helper */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
+/* Counter animation */
+@keyframes count-up {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Border glow animation */
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(245, 128, 37, 0.3); }
+  50% { border-color: rgba(245, 128, 37, 0.6); }
+}

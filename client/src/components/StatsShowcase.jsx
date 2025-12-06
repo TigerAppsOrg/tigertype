@@ -10,36 +10,36 @@ function StatsShowcase() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Define the stats structure with icons
+  // Define the stats structure with Bootstrap icons
   const statsConfig = [
     {
       id: 'races',
       label: 'Races Completed',
-      icon: '🏁',
+      iconClass: 'bi bi-flag-fill',
       dataKey: 'total_races'
     },
     {
       id: 'sessions',
       label: 'Tests Started',
-      icon: '🚀',
+      iconClass: 'bi bi-play-circle-fill',
       dataKey: 'total_sessions_started'
     },
     {
       id: 'words',
       label: 'Words Typed',
-      icon: '📝',
+      iconClass: 'bi bi-fonts',
       dataKey: 'total_words_typed'
     },
     {
       id: 'wpm',
       label: 'Avg. WPM',
-      icon: '⚡',
+      iconClass: 'bi bi-lightning-fill',
       dataKey: 'avg_wpm'
     },
     {
       id: 'users',
       label: 'Active Tigers',
-      icon: '🐯',
+      iconClass: 'bi bi-people-fill',
       dataKey: 'active_users'
     }
   ];
@@ -104,7 +104,9 @@ function StatsShowcase() {
         ) : (
           stats.map(stat => (
             <div key={stat.id} className="stat-card">
-              <div className="stat-icon">{stat.icon}</div>
+              <div className="stat-icon">
+                <i className={stat.iconClass}></i>
+              </div>
               <div className="stat-value">{stat.value}</div>
               <div className="stat-label">{stat.label}</div>
             </div>

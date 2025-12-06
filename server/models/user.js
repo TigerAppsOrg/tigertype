@@ -303,53 +303,64 @@ const User = {
     try {
       // Get sessions completed (races)
       const completedQuery = `
-        SELECT 
+        SELECT
           COUNT(*) as races_completed,
           COALESCE(SUM(CASE WHEN s.word_count IS NOT NULL THEN s.word_count ELSE 0 END), 0) as words_completed
         FROM race_results rr
         LEFT JOIN snippets s ON rr.snippet_id = s.id
         WHERE rr.user_id = $1
       `;
-      
+
+      // Get public races completed (for leveling - only counts public lobbies)
+      const publicRacesQuery = `
+        SELECT COUNT(*) as public_races_completed
+        FROM race_results rr
+        JOIN lobbies l ON rr.lobby_id = l.id
+        WHERE rr.user_id = $1 AND l.type = 'public'
+      `;
+
       // Get timed sessions completed
       const timedQuery = `
-        SELECT 
+        SELECT
           COUNT(*) as timed_completed,
           COALESCE(SUM(ROUND(wpm * (duration::decimal / 60))), 0) as timed_words
         FROM timed_leaderboard
         WHERE user_id = $1
       `;
-      
+
       // Get partial sessions
       const partialQuery = `
-        SELECT 
+        SELECT
           COUNT(*) as partial_sessions,
           COALESCE(SUM(words_typed), 0) as partial_words
         FROM partial_sessions
         WHERE user_id = $1
       `;
-      
+
       // Run all queries
-      const [completedResult, timedResult, partialResult] = await Promise.all([
+      const [completedResult, publicRacesResult, timedResult, partialResult] = await Promise.all([
         db.query(completedQuery, [userId]),
+        db.query(publicRacesQuery, [userId]),
         db.query(timedQuery, [userId]),
         db.query(partialQuery, [userId])
       ]);
-      
+
       // Extract data
       const { races_completed, words_completed } = completedResult.rows[0];
+      const { public_races_completed } = publicRacesResult.rows[0];
       const { timed_completed, timed_words } = timedResult.rows[0];
       const { partial_sessions, partial_words } = partialResult.rows[0];
-      
+
       // Calculate totals
       const totalSessionsStarted = parseInt(races_completed) + parseInt(timed_completed) + parseInt(partial_sessions);
       const totalSessionsCompleted = parseInt(races_completed) + parseInt(timed_completed);
       const totalWordsTyped = parseInt(words_completed) + parseInt(timed_words) + parseInt(partial_words);
-      
+
       return {
         sessions_started: totalSessionsStarted,
-        sessions_completed: totalSessionsCompleted, 
+        sessions_completed: totalSessionsCompleted,
         races_completed: parseInt(races_completed),
+        public_races_completed: parseInt(public_races_completed),
         timed_completed: parseInt(timed_completed),
         words_typed: totalWordsTyped,
         partial_sessions: parseInt(partial_sessions)
@@ -361,6 +372,7 @@ const User = {
         sessions_started: 0,
         sessions_completed: 0,
         races_completed: 0,
+        public_races_completed: 0,
         timed_completed: 0,
         words_typed: 0,
         partial_sessions: 0
@@ -484,7 +496,6 @@ const User = {
     } finally {
         // Check titles only if fastest WPM was updated OR if user object exists (in case other checks needed)
         if (updatedFastest && user) {
-            await this.checkAndAwardBadges(userId); // Check badges dependent on fastest_wpm
             await this.checkAndAwardTitles(userId); // Check titles dependent on fastest_wpm
             await this.updateExclusiveTitles(userId); // Re-evaluate exclusive titles
         } else if (user) {
@@ -511,8 +522,7 @@ const User = {
         [newRacesCompleted, userId]
       );
       console.log(`Incremented races_completed for user ${userId} (private lobby) to ${newRacesCompleted}`);
-      // Also check titles/badges after incrementing race count
-      await this.checkAndAwardBadges(userId);
+      // Also check titles after incrementing race count
       await this.checkAndAwardTitles(userId);
       // No need to call updateExclusiveTitles here as avg/fastest WPM didn't change
     } catch (error) {
@@ -520,155 +530,6 @@ const User = {
     }
   },
 
-  // Get a user's badges
-  async getBadges(userId, includeUnselected = true) {
-    if (!userId) return [];
-    try {
-      const result = await pool.query(
-        `SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at, u.is_selected
-        FROM badges b
-        JOIN user_badges u on b.id = u.badge_id
-        WHERE u.user_id = $1 ${includeUnselected ? '' : 'AND u.is_selected = true'}
-        ORDER BY u.awarded_at DESC`,
-        [userId]
-      );
-      console.log(`Got ${result.rows.length} badges for user: ${userId}`);
-      return result.rows;
-    } catch (error) {
-      console.error(`Error getting badges for user ${userId}:`, error);
-      return [];
-    }
-  },
-
-  // used copilot for this - Ryan
-  async awardBadge(userId, badgeKey) {
-    if (!userId) return;
-    if (!badgeKey) return;
-
-    try {
-      // Check if user already has this badge
-      const existingBadge = await pool.query(`
-      SELECT u.badge_id FROM user_badges u JOIN badges b ON u.badge_id = b.id
-      WHERE u.user_id = $1 AND b.key = $2
-      `, [userId, badgeKey]);
-
-      if (existingBadge.rows.length > 0) {
-        return { awarded: false, already_awarded: true };
-      }
-
-      // Get the badge ID
-      const badgeResult = await db.query(`
-      SELECT id FROM badges WHERE key = $1
-      `, [badgeKey]);
-
-      if (badgeResult.rows.length === 0) {
-        throw new Error(`Badge with key ${badgeKey} not found`);
-      }
-
-      const badgeId = badgeResult.rows[0].id;
-
-      // Award the badge, defaulting to not selected for display
-      await db.query(`
-      INSERT INTO user_badges (user_id, badge_id, awarded_at, is_selected)
-      VALUES ($1, $2, CURRENT_TIMESTAMP, FALSE)
-      `, [userId, badgeId]);
-
-      console.log(`Awarded badge ${badgeKey} for user: ${userId}`);
-
-      // Get badge details to return
-      const awardedBadge = await db.query(`
-      SELECT b.id, b.key, b.name, b.description, b.icon_url, u.awarded_at
-      FROM badges b
-      JOIN user_badges u ON b.id = u.badge_id
-      WHERE u.user_id = $1 AND b.id = $2
-      `, [userId, badgeId]);
-
-      return {
-        awarded: true,
-        badge: awardedBadge.rows[0]
-      };
-    } catch (err) {
-      console.error('Error awarding badge:', err);
-      throw err;
-    }
-  },
-
-  // Update which badges are publicly displayed
-  async setSelectedBadges(userId, badgeIds) {
-    if (!userId) return;
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query('UPDATE user_badges SET is_selected = FALSE WHERE user_id = $1', [userId]);
-      if (badgeIds && badgeIds.length > 0) {
-        await client.query(
-          'UPDATE user_badges SET is_selected = TRUE WHERE user_id = $1 AND badge_id = ANY($2::int[])',
-          [userId, badgeIds]
-        );
-      }
-      await client.query('COMMIT');
-    } catch (err) {
-      await client.query('ROLLBACK');
-      console.error('Error updating badge selections:', err);
-      throw err;
-    } finally {
-      client.release();
-    }
-  },
-
-  // used copilot for this - Ryan
-  // Check user stats against badge criteria and award any earned badges
-  async checkAndAwardBadges(userId) {
-    try {
-      // Get user's current stats
-      const user = await this.findById(userId);
-      if (!user) return [];
-
-      // Get all badges that the user doesn't already have
-      const availableBadges = await db.query(`
-      SELECT b.id, b.key, b.name, b.criteria_type, b.criteria_value
-      FROM badges b
-      WHERE NOT EXISTS (
-        SELECT 1 FROM user_badges u
-        WHERE u.badge_id = b.id AND u.user_id = $1
-      )
-      `, [userId]);
-
-      console.log(`Got unachieved badges for user: ${userId}`);
-
-      const newlyAwardedBadges = [];
-
-      // Check each badge criteria
-      for (const badge of availableBadges.rows) {
-        let awardBadge = false;
-
-        switch (badge.criteria_type) {
-          case 'races_completed':
-            awardBadge = user.races_completed >= badge.criteria_value;
-            break;
-          case 'avg_wpm':
-            awardBadge = parseFloat(user.avg_wpm) >= badge.criteria_value;
-            break;
-          case 'fastest_wpm':
-            awardBadge = parseFloat(user.fastest_wpm) >= badge.criteria_value;
-            break;
-        }
-
-        if (awardBadge) {
-          const result = await this.awardBadge(userId, badge.key);
-          if (result.awarded) {
-            newlyAwardedBadges.push(result.badge);
-          }
-        }
-      }
-
-      return newlyAwardedBadges;
-    } catch (err) {
-      console.error('Error checking and awarding badges:', err);
-      return [];
-    }
-  },
-  
   // Get a user's *unlocked* titles, indicating which is equipped
   async getTitles(userId) {
     if (!userId) return [];

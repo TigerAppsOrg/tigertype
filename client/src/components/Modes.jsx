@@ -25,7 +25,7 @@ function Modes({ modes }) {
         const card = (
           <div
             key={mode.id}
-            className={`mode-box ${mode.disabled ? 'mode-disabled' : ''}`}
+            className={`mode-box mode-${mode.id} ${mode.disabled ? 'mode-disabled' : ''}`}
             onClick={(e) => handleCardClick(e, mode)}
           >
             {mode.iconClass && <i className={`mode-icon ${mode.iconClass}`}></i>}

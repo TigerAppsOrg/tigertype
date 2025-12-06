@@ -1,0 +1,102 @@
+/* SegmentedToggle Component Styles */
+.segmented-toggle {
+  --segments: 1;
+  --active-index: 0;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.2rem;
+  overflow: hidden;
+  gap: 0;
+  min-width: 0;
+}
+
+.segmented-highlight {
+  position: absolute;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  left: 0.2rem;
+  width: calc((100% - 0.4rem) / var(--segments));
+  border-radius: 9px;
+  background: linear-gradient(135deg, #F58025, #ff9b52);
+  box-shadow: 0 12px 28px rgba(245, 128, 37, 0.42);
+  transform: translateX(calc(var(--active-index) * 100%));
+  transition: transform 0.22s ease, width 0.22s ease;
+  z-index: 0;
+}
+
+.segmented-option {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: none;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color 0.24s ease, text-shadow 0.32s ease;
+}
+
+.segmented-option:hover,
+.segmented-option:focus {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.segmented-option .segmented-label {
+  position: relative;
+  display: inline-block;
+  color: inherit;
+  text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transform: translateY(0);
+  transition: color 0.28s ease, text-shadow 0.36s ease, transform 0.36s ease;
+}
+
+.segmented-option.active {
+  color: #161616;
+}
+
+.segmented-option:not(.active):hover .segmented-label,
+.segmented-option:not(.active):focus-visible .segmented-label {
+  color: #ffe0bc;
+  text-shadow: 0 0 6px rgba(255, 168, 92, 0.45), 0 0 14px rgba(255, 168, 92, 0.35);
+  transform: translateY(-1px);
+}
+
+.segmented-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 180, 98, 0.35);
+}
+
+.segmented-option.active:focus-visible,
+.segmented-option.active:hover {
+  color: #161616;
+}
+
+/* Compact variant for smaller contexts */
+.segmented-toggle.compact {
+  padding: 0.15rem;
+  border-radius: 8px;
+}
+
+.segmented-toggle.compact .segmented-highlight {
+  top: 0.15rem;
+  bottom: 0.15rem;
+  left: 0.15rem;
+  width: calc((100% - 0.3rem) / var(--segments));
+  border-radius: 6px;
+}
+
+.segmented-toggle.compact .segmented-option {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+}

@@ -15,7 +15,4 @@ router.put('/tutorial-complete', ensureAuthenticated, profileController.markTuto
 // Route to update user's selected title (requires auth)
 router.put('/title', ensureAuthenticated, profileController.updateTitle);
 
-// Route to update which badges are displayed
-router.put('/badges', ensureAuthenticated, profileController.updateBadgeSelections);
-
 module.exports = router;
