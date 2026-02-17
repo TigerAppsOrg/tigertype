@@ -2091,7 +2091,7 @@ const startRace = async (io, code) => {
     }
     
     // Broadcast race start
-    io.to(code).emit('race:start', { startTime: race.startTime });
+    io.to(code).emit('race:start', { code, startTime: race.startTime });
   } catch (err) {
     console.error('Error starting race:', err);
   }
@@ -2154,7 +2154,7 @@ const handlePlayerFinish = async (io, code, playerId, resultData) => {
     .sort((a, b) => a.completion_time - b.completion_time); // Sort by time initially
 
   // Broadcast updated results list
-  io.to(code).emit('race:resultsUpdate', { results: allResults });
+  io.to(code).emit('race:resultsUpdate', { code, results: allResults });
 
   // Check if all players have finished
   if (players.every(p => p.completed)) {
@@ -2197,7 +2197,7 @@ const endRace = async (io, code) => {
     }
     
     // Broadcast race end signal (without results payload)
-    io.to(code).emit('race:end'); 
+    io.to(code).emit('race:end', { code }); 
     console.log(`Broadcasted race end signal for ${code}`);
 
   } catch (err) {

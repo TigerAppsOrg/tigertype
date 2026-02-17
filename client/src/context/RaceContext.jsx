@@ -335,18 +335,29 @@ export const RaceProvider = ({ children }) => {
       });
     };
 
-    const handleRaceStart = (data) => {
-      // Only process the race:start event if:
-      // 1. It's not practice mode, OR
-      // 2. It's practice mode but we haven't manually started it yet
-      if (raceState.type !== 'practice' || !raceState.manuallyStarted) {
-        setRaceState(prev => ({
+    const handleRaceStart = (data = {}) => {
+      let shouldResetTyping = false;
+      setRaceState(prev => {
+        if (data.code && prev.code && data.code !== prev.code) {
+          return prev;
+        }
+        // Only process the race:start event if:
+        // 1. It's not practice mode, OR
+        // 2. It's practice mode but we haven't manually started it yet
+        if (prev.type === 'practice' && prev.manuallyStarted) {
+          return prev;
+        }
+        shouldResetTyping = true;
+        return {
           ...prev,
           startTime: data.startTime,
           inProgress: true,
-          countdown: null
-        }));
-        
+          countdown: null,
+          results: []
+        };
+      });
+      
+      if (shouldResetTyping) {
         // Reset typing state
         setTypingState({
           input: '',
@@ -384,20 +395,33 @@ export const RaceProvider = ({ children }) => {
       });
     };
 
-    const handleResultsUpdate = (data) => {
-      setRaceState(prev => ({
-        ...prev,
-        // Sort results by completion time (ascending)
-        results: data.results.sort((a, b) => a.completion_time - b.completion_time) 
-      }));
+    const handleResultsUpdate = (data = {}) => {
+      setRaceState(prev => {
+        if (data.code && prev.code && data.code !== prev.code) {
+          return prev;
+        }
+        const sortedResults = Array.isArray(data.results)
+          ? [...data.results].sort((a, b) => a.completion_time - b.completion_time)
+          : [];
+        return {
+          ...prev,
+          // Sort results by completion time (ascending)
+          results: sortedResults
+        };
+      });
     };
 
-    const handleRaceEnd = () => {
-      setRaceState(prev => ({
-        ...prev,
-        inProgress: false,
-        completed: true
-      }));
+    const handleRaceEnd = (data = {}) => {
+      setRaceState(prev => {
+        if (data.code && prev.code && data.code !== prev.code) {
+          return prev;
+        }
+        return {
+          ...prev,
+          inProgress: false,
+          completed: true
+        };
+      });
     };
 
     // Inactivity event handlers
@@ -669,7 +693,8 @@ export const RaceProvider = ({ children }) => {
         startTime: null,
         inProgress: false,
         completed: false,
-        manuallyStarted: false
+        manuallyStarted: false,
+        results: []
       };
       
       // Build options with current snippet filters

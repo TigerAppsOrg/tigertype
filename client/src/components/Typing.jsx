@@ -510,7 +510,8 @@ function Typing({
           startTime: null,
           inProgress: false,
           completed: false,
-          manuallyStarted: false
+          manuallyStarted: false,
+          results: []
         }));
         
       }
