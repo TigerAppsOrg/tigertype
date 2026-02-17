@@ -356,7 +356,11 @@ const initialize = (io) => {
         if (typeof reason !== 'string' || !reason) {
           return;
         }
-        registerSuspicion(`client-${reason}`, metadata || {});
+        console.warn(`[ANTICHEAT] Ignoring client anticheat flag from ${socket.id} (${netid})`, {
+          reason,
+          metadata: metadata || {}
+        });
+        socket.emit('anticheat:reset');
       } catch (err) {
         console.error('Error processing anticheat flag from client:', err);
       }

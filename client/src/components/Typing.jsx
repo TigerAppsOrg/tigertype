@@ -42,7 +42,7 @@ function Typing({
   snippetType,
   snippetDepartment
 }) {
-  const { raceState, setRaceState, typingState, setTypingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet, anticheatState, flagSuspicious, markTrustedInteraction } = useRace();
+  const { raceState, setRaceState, typingState, setTypingState, updateProgress, handleInput: raceHandleInput, loadNewSnippet, anticheatState, markTrustedInteraction } = useRace();
   const { socket } = useSocket();
   const { user } = useAuth();
   const [input, setInput] = useState('');
@@ -58,13 +58,6 @@ function Typing({
   const tabActionInProgressRef = useRef(false);
   const [displayedWpm, setDisplayedWpm] = useState(0);
   const [capsLockEnabled, setCapsLockEnabled] = useState(false);
-
-  // Anti-cheat: Track untrusted event ratio for script detection
-  // Catches all synthetic events
-  const untrustedEventCount = useRef(0);
-  const totalEventCount = useRef(0);
-  const UNTRUSTED_THRESHOLD = 0.95; // Only flag if 95%+ events are untrusted
-  const MIN_EVENTS_FOR_CHECK = 15;
 
   // Smooth glide cursor overlay
   const cursorRef = useRef(null);
@@ -251,14 +244,6 @@ function Typing({
     return () => {
     };
   }, []);
-
-  // Reset anti-cheat counters when a new race starts
-  useEffect(() => {
-    if (raceState.inProgress && raceState.startTime) {
-      untrustedEventCount.current = 0;
-      totalEventCount.current = 0;
-    }
-  }, [raceState.inProgress, raceState.startTime]);
 
   // Gets latest typingState.position
   const positionRef = useRef(typingState.position);
@@ -641,28 +626,6 @@ function Typing({
     };
   }, [raceState.inProgress, raceState.startTime, raceState.completed, typingState.correctChars]); // Include typingState.correctChars
 
-  // Helper: Track untrusted events and check ratio for script detection
-  // Only called for forward progress (typing, not deleting) to avoid browser quirks
-  const trackAndCheckTrust = (nativeEvent) => {
-    totalEventCount.current++;
-
-    if (nativeEvent && nativeEvent.isTrusted === false) {
-      untrustedEventCount.current++;
-    }
-
-    // Flag after enough samples if almost all events are untrusted (works in all modes)
-    if (totalEventCount.current >= MIN_EVENTS_FOR_CHECK) {
-      const ratio = untrustedEventCount.current / totalEventCount.current;
-      if (ratio >= UNTRUSTED_THRESHOLD) {
-        flagSuspicious('scripted-input', {
-          ratio: ratio.toFixed(2),
-          untrusted: untrustedEventCount.current,
-          total: totalEventCount.current
-        });
-      }
-    }
-  };
-
   const handleBeforeInputGuard = (e) => {
     if (anticheatState.locked) {
       e.preventDefault();
@@ -695,12 +658,6 @@ function Typing({
     // Check if new character is correct
     const isMovingForward = newInput.length > input.length;
     const isCorrectCharacter = newInput[newInput.length - 1] === text[newInput.length - 1];
-
-    // Track trust status only for forward progress (typing, not backspace)
-    // This avoids browser quirks with deletion events
-    if (isMovingForward) {
-      trackAndCheckTrust(e.nativeEvent);
-    }
 
     // Play sound if typing correctly (moved before practice mode check)
     if (isMovingForward && isCorrectCharacter) {
