@@ -1,313 +1,97 @@
-# TigerType: Comprehensive Project Document
+# TigerType
 
-## 1. Project Concept and Core Features
+<p align="center">
+  <img src="client/src/assets/logos/tigertype-logo.png" alt="TigerType logo" width="220" />
+</p>
 
-### TigerType Core Concept
-TigerType is a Princeton-themed typing platform, inspired by tools like TypeRacer or Monkeytype but tailored for the Princeton community. Users can:
+<p align="center">
+  Princeton-themed typing practice and real-time race competitions.
+</p>
 
-- **Practice alone** to improve typing speed and accuracy on selected or random text snippets.  
-- **Create private lobbies** by generating an invite code to race against friends in real time.  
-- **Join an open queue** to compete with any user currently searching for a public match.
+TigerType is a full-stack typing platform built for Princeton users. It combines solo practice, multiplayer races, private lobbies, and progress tracking with campus authentication and a PostgreSQL-backed backend.
 
-Ultimately, TigerType will provide a fun, campus-themed environment with potential for departmental leaderboards, achievements, and social features.
+## What It Includes
 
-### Major Features
+- Solo practice with real-time WPM and accuracy feedback
+- Quick match queue for live head-to-head races
+- Private race lobbies for invited groups
+- CAS-based authentication and persistent user stats
+- Achievements, badges, and progression systems
 
-1. **User Management & Leaderboards**  
-   - CAS authentication for netid-based sign-up/login.  
-   - Global leaderboards that rank users by WPM, accuracy, or total races.  
-   - (Optional) Departmental or class-year leaderboards using ActiveDirectory or user-provided data.
+## Tech Stack
 
-2. **Typing Mechanics**  
-   - **Practice/Single-Player** mode for personal improvement.  
-   - **Private Lobby** mode: generate an invite code for friends to join; all participants race simultaneously.  
-   - **Global Matchmaking**: random pairing in a public queue.
+- Frontend: React + Vite
+- Backend: Node.js + Express + Socket.IO
+- Database: PostgreSQL
+- Auth: Princeton CAS
+- Testing: Jest + client test suite
 
-3. **Real-Time Racing**  
-   - WebSocket-based communication for broadcasting typed progress live.  
-   - Visual progress bars or snippet highlighting to show each racer's position.
-
-4. **Achievements & Analytics (Optional)**  
-   - Milestone achievements: "100 WPM Club," "Flawless Accuracy," etc.  
-   - Track improvement over time, display graphs of WPM or accuracy progression.
-
-### Far Stretch Goals (Puzzle Mode, Tournaments)
-- **Puzzle Mode**: Users type to unlock clues or partial text reveals tied to Princeton-themed riddles.  
-- **Tournament System**: Bracket-style multi-round competitions.  
-
-These are beyond the primary or mid-range scope and would only be considered after core development is complete.
-
-## 2. Development Environment Setup
+## Quick Start
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm (v6 or higher)
+
+- Node.js `20.11.1`
+- npm
 - PostgreSQL
 
-### Setup Instructions
-
-1. **Clone the Repository**
-   ```bash
-   git clone [repository-url]
-   cd tigertype
-   ```
-
-2. **Environment Configuration**
-   - Copy the example environment file:
-     ```bash
-     cp .env.example .env
-     ```
-   - Edit the `.env` file with your configuration:
-     - Set up your database credentials
-     - Configure CAS authentication settings
-     - Set any other required environment variables
-
-3. **Install Dependencies**
-   ```bash
-   npm run install:all
-   ```
-   This will install both server and client dependencies.
-
-4. **Running the Application**
-   From the root directory, run:
-   ```bash
-   npm run dev
-   ```
-   This single command will start both:
-   - Frontend: http://localhost:5174
-   - Backend: http://localhost:3000
-
-   Note: You only need to run the command from the root directory. Do not run any commands in the client directory separately.
-
-### Development Notes
-- The backend API server runs on port 3000
-- The frontend development server runs on port 5174
-- All API requests from the frontend are automatically proxied to the backend
-- During development, always access the application through http://localhost:5174
-- The backend port (3000) is for API requests only and should not be accessed directly in the browser
-
-### Common Issues
-- If you encounter dependency issues, try deleting `node_modules` and `package-lock.json` in both root and client directories, then run `npm run install:all` again
-- Ensure all environment variables are properly set in your `.env` file
-- If you see port conflicts, make sure you don't have any other development servers running
-- Make sure you're accessing the application through port 5174, not port 3000
-
----
-
-## 2. General Implementation Tips
-
-### Three-Tier Structure
-- **UI Tier**  
-  - Web-based front end (React, Angular, etc.).  
-  - Displays typing interface, race creation/join, leaderboards, user stats.
-
-- **Processing Tier**  
-  - Python (Flask/Django) or Node.js (Express) for business logic.  
-  - CAS authentication handling.  
-  - Race session management (especially real-time WebSockets).  
-  - Leaderboard updates and queries.
-
-- **Data Tier**  
-  - PostgreSQL or MongoDB for persistent storage of user profiles, snippets, race results, achievements.  
-
-### Princeton Data Integration
-- **ActiveDirectory**: for class-year or department info if you implement specialized leaderboards.  
-- **PrincetonInfo** or **Art Museum** data (optional) for theming text snippets.  
-- Must request a **service account** and CAS whitelisting for any non-localhost domain.
-
-### Possible "Hook" for Grading
-- Non-trivial concurrency or real-time features.  
-- Substantial database schema (users, race results, achievements).  
-- Weekly demos showing iterative progress.  
-- Defined MVP so you have a working product early on.
-
----
-
-## 3. Potential Names (Historical Brainstorm)
-
-> **Note:** The project name is ultimately **TigerType**, but the following ideas are retained for completeness.
-
-### Long Thematic Name List (Princeton Puns)
-- Clack & Bicker  
-- Precept Prowl  
-- Dean's Date Dash  
-- Firestone Frenzy  
-- Orange Bubble Bash  
-- Street Speed Showdown  
-- Late Meal Lunge  
-- Cannon Clack  
-- Tiger Transit Typers  
-- Claw to the Top  
-- Wawa Warriors  
-- P-Set Panic  
-- Tap & Toast  
-- Roaring Revision  
-- The Paw-suit of Speed  
-- Keyed Up on The Street  
-- Tiger Taps  
-- Precept Pulse  
-- McCosh Mash  
-- PawBoard Prowess  
-- Late Meal Lightning  
-- Stripes & Hypes  
-- Pounce & Precept  
-- Type & TigerInn  
-- Nassau Knockout  
-
-### Additional Name List (Shorter Concepts)
-- TigerKeys  
-- Roaring Typist  
-- Stripes & Keys  
-- Paws 'n' Claws Typing  
-- Clack & Roar  
-- TigerDash  
-- OrangeLightning  
-- Speedy Stripes  
-- Princetypers  
-- Paw to the Metal  
-- IvyKeys  
-- Clawed to the Top  
-- TigerClack  
-- RapidRoar  
-- Prowl & Type  
-- Quill & Paw  
-- Type 'n' Stripe  
-- TigerHype  
-- PawBoard  
-- FlashFur  
-- KeyGrowl  
-- Type of the Tiger  
-- PawPulse  
-- IvyType  
-
----
-
-## 4. Detailed COS 333 Roadmap
-
-### Project Overview
-
-**Elevator Speech**  
-TigerType is a Princeton-themed typing race application where users can practice alone or create lobbies (with invite codes) to race against friends. They can also queue up for a public match to race against random Princeton netid holders. Potential departmental or class-year leaderboards and achievements enhance friendly competition.
-
-**What the System Will Do**  
-1. **Single-Player Practice** to boost speed/accuracy.  
-2. **Private Lobbies** where a race code is shared with friends for a real-time race.  
-3. **Global Matchmaking** to find open races with random participants.  
-4. **Leaderboards & Stats** showing WPM, accuracy, achievements, and possibly departmental ranking.
-
-**Architecture**  
-- **UI**: A single-page application (React, etc.).  
-- **Server**: Flask or Node.js with real-time (WebSocket) capabilities.  
-
-## Database Schema
-
-- Full, live‑introspected schema with columns, constraints, and ER diagram is available at `docs/DatabaseSchema.md`.
-- To apply pending DB changes (including making snippet deletes safe via `ON DELETE SET NULL` on `lobbies.snippet_id` and `race_results.snippet_id`), run:
+### Setup
 
 ```bash
+cp .env.example .env
+npm run install:all
 npm run migrate
+npm run dev
 ```
 
-- **Database**: PostgreSQL or MongoDB for storing user data, race info, snippet text, etc.
+### Local URLs
 
-### Deliverables Roadmap
+- Client: `http://localhost:5174`
+- Server/API: `http://localhost:3000`
 
-1. **Row in the ProjectFinder**  
-   - Each team member adds a row with project name "TigerType" and a short description.
+## Environment Configuration
 
-2. **Project Approval Meeting**  
-   - Bring this roadmap, possibly a minimal proof-of-concept.
+Start from `.env.example`. The most important values for local setup are:
 
-3. **Version Control Repository**  
-   - Create a private GitHub repo named "TigerType," grant instructors read access.
+- `PORT`
+- `SESSION_SECRET`
+- `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME`
+- `CAS_HOST`, `CAS_PATH`, `SERVICE_URL`
 
-4. **Team Directory**  
-   - A private Google Drive folder named "TigerType" containing docs like ProjectOverview, Timeline, wireframes, etc.
+Optional integrations (email, S3, changelog publishing, APIs) are also documented in `.env.example`.
 
-5. **Project Overview Document**  
-   - ~3–7 pages detailing identification, elevator speech, overview, requirements, functionality, design, milestones, risks.
+## Scripts
 
-6. **Wireframes**  
-   - Sketches for login flow, race UI, scoreboard, etc.
+| Command | Purpose |
+| --- | --- |
+| `npm run install:all` | Install root and client dependencies |
+| `npm run dev` | Run backend and frontend together in development |
+| `npm start` | Start backend in production mode |
+| `npm run server` | Run backend only with nodemon |
+| `npm run client` | Run frontend only |
+| `npm run build` | Build frontend assets |
+| `npm run migrate` | Initialize/migrate database schema |
+| `npm test` | Run server test suite |
+| `npm run test:all` | Run server and client tests |
 
-7. **Prototype**  
-   - Basic end-to-end skeleton with minimal front end, CAS login, and simple race logic (storing user data in DB).
+## Documentation
+- Database design: [`docs/DatabaseSchema.md`](docs/DatabaseSchema.md)
+- Product overview (COS333): [`ProjectOverview.md`](ProjectOverview.md)
+- Full project report (COS333): [`TigerType.pdf`](TigerType.pdf)
+- Legacy roadmap/spec README (COS333): [`project-roadmap.md`](project-roadmap.md)
 
-8. **Alpha Version**  
-   - Real-time racing for at least two users in a private lobby.  
-   - CAS integration and a rudimentary leaderboard.
+## Branding Assets
 
-9. **Beta Version**  
-   - All core features stable: practice mode, private lobbies, global matchmaking, potentially some achievements.
+- Primary logo: [`client/src/assets/logos/tigertype-logo.png`](client/src/assets/logos/tigertype-logo.png)
+- Navbar logo: [`client/src/assets/logos/navbar-logo.png`](client/src/assets/logos/navbar-logo.png)
+- Favicon: [`client/src/assets/logos/favicon.png`](client/src/assets/logos/favicon.png)
 
-10. **Presentation & Slides**  
-    - 20-minute public demonstration during reading period, plus Q&A on architecture and lessons learned.
+## Contributing
 
-11. **Grader's Guide**  
-    - Step-by-step instructions for each use case: logging in, creating/joining a race, viewing leaderboards, etc.
+1. Create a branch from `main`.
+2. Keep changes scoped and include tests for behavior changes.
+3. Run `npm test` (and relevant client tests) before opening a PR.
+4. Open a pull request with clear context and verification steps.
 
-12. **Product Evaluation**  
-    - Testing strategy (white-box, black-box, stress), user feedback, heuristic evaluation, known bugs.
+## License
 
-13. **Project Evaluation**  
-    - Reflection on planning, technical issues, what worked well, acknowledgments.
-
-14. **Source Code**  
-    - Final code snapshot stored in a `src/` directory in the team's Google Drive, ignoring compiled artifacts.
-
-15. **Final Product**  
-    - Deployed "TigerType" site, live for ~two weeks post Dean's Date.
-
-### MVP Breakdown (Lowest-Level Steps)
-
-1. **CAS Login**  
-   - Whitelist the domain and verify netid creation in the DB upon login.
-
-2. **Single Snippet Race (Basic)**  
-   - A single snippet in practice mode.  
-   - Calculate WPM, accuracy, store results in `race_results`.
-
-3. **Result & Leaderboard**  
-   - Show final stats to user.  
-   - Possibly a top-5 WPM listing for MVP.
-
-4. **Database Essentials**  
-   - `users`: netid, creation timestamps.  
-   - `snippets`: text for typing.  
-   - `race_results`: user_id, snippet_id, wpm, accuracy, timestamp.
-
-5. **Deployment & Testing**  
-   - Heroku/Render deployment, confirm CAS flow.  
-   - Simple smoke test (login → type → see results).
-
-
-All members share responsibility for documentation, weekly TA meetings, and consistent commits.
-
----
-
-## 5. Mid-Range Stretch Goals
-
-Below are mid-range goals to enhance TigerType before exploring puzzle modes or tournament brackets:
-
-1. **Snippet Categories & User-Submitted Snippets**  
-   - Store multiple snippet categories (literature, campus-themed, random).  
-   - Potential user submissions (admin-reviewed).
-
-2. **Departmental/Class-Year Leaderboards**  
-   - Use ActiveDirectory or user-submitted profile data to segment boards.  
-   - Let users filter between "Global," "My Department," and "My Class Year."
-
-3. **Async Challenges & Friend Invites**  
-   - "Challenge a friend by netid" to beat your score in a snippet.  
-   - Store "challenge" in the DB; friend sees "Pending Challenge" on next login.
-
-4. **Achievements & Basic Analytics**  
-   - Badges for hitting milestones: "10 Races," "100 WPM," "1,000 typed words."  
-   - Track WPM or accuracy over time in simple data visualizations.
-
-5. **Small Real-Time Quick Race (Lobby)**  
-   - Create a short code or link for up to N participants.  
-   - WebSockets broadcast typed progress.  
-   - Finishing order displayed once everyone completes or times out.
-
-*(Further expansions like puzzle modes or multi-round tournaments can be revisited after these core goals.)*
+TigerType is licensed under the MIT License. See [`LICENSE`](LICENSE).
