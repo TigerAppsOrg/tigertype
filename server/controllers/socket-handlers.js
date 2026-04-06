@@ -1315,6 +1315,157 @@ const initialize = (io) => {
       }
     });
 
+    // Handle "Play Again" for private lobbies (host only)
+    // Creates a new lobby with the same settings and migrates all connected players
+    socket.on('lobby:playAgain', async (data, callback) => {
+      const { user: hostNetid, userId: hostUserId } = socket.userInfo;
+      const { code: oldCode } = data;
+
+      try {
+        console.log(`Host ${hostNetid} requesting play again for lobby ${oldCode}`);
+        const oldRace = activeRaces.get(oldCode);
+        const oldPlayers = racePlayers.get(oldCode);
+
+        if (!oldRace || oldRace.type !== 'private') {
+          throw new Error('Lobby not found or not private.');
+        }
+
+        if (oldRace.hostId !== hostUserId) {
+          throw new Error('Only the host can start a new match.');
+        }
+
+        if (oldRace.status !== 'finished') {
+          throw new Error('Race has not finished yet.');
+        }
+
+        // Use previous lobby settings to generate a new snippet
+        const prevSettings = oldRace.settings || {};
+        let snippetId = null;
+        let snippet = null;
+
+        if (prevSettings.testMode === 'timed' && prevSettings.testDuration) {
+          const duration = parseInt(prevSettings.testDuration) || 30;
+          snippet = createTimedTestSnippet(duration);
+        } else {
+          const { difficulty, type, department } = prevSettings.snippetFilters || {};
+          const difficultyMap = { Easy: 1, Medium: 2, Hard: 3 };
+          const numericDifficulty = difficultyMap[difficulty] || null;
+          const category = type && type !== 'all'
+            ? (type === 'course_reviews' ? 'course-reviews' : type)
+            : null;
+          const subject = category === 'course-reviews' && department && department !== 'all'
+            ? department
+            : null;
+          const combos = [];
+          if (numericDifficulty != null && category && subject) combos.push({ difficulty: numericDifficulty, category, subject });
+          if (numericDifficulty != null && category) combos.push({ difficulty: numericDifficulty, category });
+          if (numericDifficulty != null && subject) combos.push({ difficulty: numericDifficulty, subject });
+          if (numericDifficulty != null) combos.push({ difficulty: numericDifficulty });
+          if (category && subject) combos.push({ category, subject });
+          if (category) combos.push({ category });
+          combos.push({});
+
+          let found = null;
+          for (const f of combos) {
+            const candidate = await SnippetModel.getRandom(f);
+            if (candidate) {
+              found = candidate;
+              break;
+            }
+          }
+          if (!found) throw new Error('Failed to load snippet for new match.');
+          snippet = found;
+          snippetId = snippet.id;
+        }
+
+        // Create a new lobby in the database
+        const newLobby = await RaceModel.create('private', snippetId, hostUserId);
+        console.log(`Created new private lobby ${newLobby.code} (play again from ${oldCode})`);
+
+        // Build new race info in memory
+        const newRaceInfo = {
+          id: newLobby.id,
+          code: newLobby.code,
+          snippet: {
+            id: snippet?.id,
+            text: sanitizeSnippetText(snippet.text),
+            is_timed_test: snippet.is_timed_test || false,
+            duration: snippet.duration || null,
+            princeton_course_url: snippet.princeton_course_url || null,
+            course_name: snippet.course_name || null
+          },
+          status: 'waiting',
+          type: 'private',
+          hostId: hostUserId,
+          hostNetId: hostNetid,
+          startTime: null,
+          settings: { ...prevSettings }
+        };
+        activeRaces.set(newLobby.code, newRaceInfo);
+
+        // Migrate all connected players from the old lobby to the new one
+        const newPlayers = [];
+        const connectedOldPlayers = oldPlayers || [];
+
+        for (const player of connectedOldPlayers) {
+          const playerSocket = io.sockets.sockets.get(player.id);
+          if (!playerSocket) continue; // Skip disconnected players
+
+          // Leave old socket room, join new one
+          playerSocket.leave(oldCode);
+          playerSocket.join(newLobby.code);
+
+          const isHost = player.userId === hostUserId;
+          const newPlayer = {
+            id: player.id,
+            netid: player.netid,
+            userId: player.userId,
+            ready: isHost, // Host is implicitly ready
+            lobbyId: newLobby.id,
+            snippetId: snippetId
+          };
+          newPlayers.push(newPlayer);
+
+          // Add player to the new lobby in DB
+          try {
+            await RaceModel.addPlayerToLobby(newLobby.id, player.userId, isHost);
+          } catch (dbErr) {
+            console.error(`Error adding player ${player.netid} to new lobby:`, dbErr);
+          }
+        }
+
+        racePlayers.set(newLobby.code, newPlayers);
+
+        // Build client data for all players
+        const playersClientData = await Promise.all(newPlayers.map(p => getPlayerClientData(p)));
+
+        const joinedData = {
+          code: newLobby.code,
+          type: 'private',
+          lobbyId: newLobby.id,
+          hostNetId: hostNetid,
+          snippet: newRaceInfo.snippet,
+          settings: newRaceInfo.settings,
+          players: playersClientData
+        };
+
+        // Notify all players in the new room about the new lobby
+        io.to(newLobby.code).emit('lobby:playAgain', joinedData);
+
+        // Clean up old lobby from memory
+        activeRaces.delete(oldCode);
+        racePlayers.delete(oldCode);
+
+        console.log(`Play again: migrated ${newPlayers.length} players from ${oldCode} to ${newLobby.code}`);
+        if (callback) callback({ success: true, lobby: joinedData });
+
+      } catch (err) {
+        console.error(`Error in play again for lobby ${oldCode}:`, err);
+        socket.emit('error', { message: err.message || 'Failed to start new match' });
+        if (callback) callback({ success: false, error: err.message || 'Failed to start new match' });
+      }
+    });
+
     // --- End Private Lobby Handlers ---
     
     // Handle player ready status

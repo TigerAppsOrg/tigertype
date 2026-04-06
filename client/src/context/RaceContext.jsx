@@ -567,6 +567,36 @@ export const RaceProvider = ({ children }) => {
       resetAnticheatState();
     };
 
+    // Handle play again – host created a new lobby and all players are migrated
+    const handleLobbyPlayAgain = (data) => {
+      console.log('Play again – joining new lobby:', data.code);
+      resetAnticheatState();
+      setTypingState({
+        input: '', position: 0, correctChars: 0, errors: 0,
+        completed: false, wpm: 0, accuracy: 0, lockedPosition: 0
+      });
+      setRaceState({
+        code: data.code,
+        type: data.type || 'private',
+        lobbyId: data.lobbyId,
+        hostNetId: data.hostNetId,
+        snippet: data.snippet ? { ...data.snippet, text: sanitizeSnippetText(data.snippet.text) } : null,
+        players: data.players || [],
+        startTime: null,
+        inProgress: false,
+        completed: false,
+        results: [],
+        manuallyStarted: false,
+        timedTest: {
+          enabled: data.settings?.testMode === 'timed',
+          duration: data.settings?.testDuration || 15
+        },
+        snippetFilters: data.settings?.snippetFilters || { difficulty: 'all', type: 'all', department: 'all' },
+        settings: data.settings || { testMode: 'snippet', testDuration: 15 },
+        countdown: null
+      });
+    };
+
     // Register event listeners
     socket.on('race:joined', handleRaceJoined);
     socket.on('race:playersUpdate', handlePlayersUpdate);
@@ -588,6 +618,7 @@ export const RaceProvider = ({ children }) => {
     socket.on('race:playerLeft', handlePlayerLeft);
     socket.on('anticheat:lock', handleAnticheatLock);
     socket.on('anticheat:reset', handleAnticheatReset);
+    socket.on('lobby:playAgain', handleLobbyPlayAgain);
 
     // Clean up on unmount
     return () => {
@@ -611,6 +642,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('race:playerLeft', handlePlayerLeft);
       socket.off('anticheat:lock', handleAnticheatLock);
       socket.off('anticheat:reset', handleAnticheatReset);
+      socket.off('lobby:playAgain', handleLobbyPlayAgain);
       socket.off('snippetNotFound', handleSnippetNotFound); // Cleanup snippet not found listener
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
@@ -1080,6 +1112,16 @@ export const RaceProvider = ({ children }) => {
     });
   };
 
+  const playAgain = () => {
+    if (!socket || !connected || !raceState.code || raceState.type !== 'private') return;
+    socket.emit('lobby:playAgain', { code: raceState.code }, (response) => {
+      if (!response.success) {
+        console.error('Failed to play again:', response.error);
+      }
+      // State update handled by lobby:playAgain listener
+    });
+  };
+
   // joinPrivateLobby is declared earlier with useCallback to avoid TDZ
 
   const kickPlayer = (targetNetId) => {
@@ -1192,6 +1234,7 @@ export const RaceProvider = ({ children }) => {
         kickPlayer,
         updateLobbySettings,
         startPrivateRace,
+        playAgain,
         setPlayerReady,
         handleInput,
         updateProgress,
