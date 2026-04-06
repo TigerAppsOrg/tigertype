@@ -293,6 +293,18 @@ export const RaceProvider = ({ children }) => {
     };
 
     const handlePlayersUpdate = (data) => {
+      const currentUserReady = Boolean(
+        user?.netid && data.players?.some(player => player.netid === user.netid && player.ready)
+      );
+
+      if (currentUserReady) {
+        setInactivityState(prev => (
+          prev.warning
+            ? { ...prev, warning: false, warningMessage: '' }
+            : prev
+        ));
+      }
+
       setRaceState(prev => {
         // For quick-match public races, if the race is already in progress, we want to keep
         // any players previously marked as disconnected even if they are no longer in the
@@ -360,6 +372,12 @@ export const RaceProvider = ({ children }) => {
       });
       
       if (shouldResetTyping) {
+        setInactivityState(prev => (
+          prev.warning
+            ? { ...prev, warning: false, warningMessage: '' }
+            : prev
+        ));
+
         // Reset typing state
         setTypingState({
           input: '',
@@ -657,7 +675,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('snippetNotFound', handleSnippetNotFound); // Cleanup snippet not found listener
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
-  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id, resetAnticheatState]);
+  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id, resetAnticheatState, user?.netid]);
 
   // Methods for race actions
   const joinPracticeMode = () => {
@@ -700,6 +718,11 @@ export const RaceProvider = ({ children }) => {
 
   const setPlayerReady = () => {
     if (!socket || !connected) return;
+    setInactivityState(prev => (
+      prev.warning
+        ? { ...prev, warning: false, warningMessage: '' }
+        : prev
+    ));
     // console.log('Setting player ready...');
     socket.emit('player:ready');
   };
