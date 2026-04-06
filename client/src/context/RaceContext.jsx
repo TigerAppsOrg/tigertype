@@ -99,7 +99,8 @@ export const RaceProvider = ({ children }) => {
       testDuration: 15,
       // Add other potential settings here
     },
-    countdown: null // Track countdown seconds
+    countdown: null, // Track countdown seconds
+    sessionWins: {} // Win tally per player across play-again sessions { netid: count }
   });
 
   // Explicit state for TestConfigurator to avoid passing setRaceState
@@ -286,7 +287,8 @@ export const RaceProvider = ({ children }) => {
         hostNetId: data.hostNetId || null, // Explicitly store hostNetId
         snippet: data.snippet ? { ...data.snippet, text: sanitizeSnippetText(data.snippet.text) } : null,
         settings: data.settings || prev.settings, // Store settings from server
-        players: data.players || []
+        players: data.players || [],
+        sessionWins: data.sessionWins || prev.sessionWins || {}
       }));
     };
 
@@ -419,7 +421,8 @@ export const RaceProvider = ({ children }) => {
         return {
           ...prev,
           inProgress: false,
-          completed: true
+          completed: true,
+          sessionWins: data.sessionWins || prev.sessionWins || {}
         };
       });
     };
@@ -600,7 +603,8 @@ export const RaceProvider = ({ children }) => {
         },
         snippetFilters: data.settings?.snippetFilters || { difficulty: 'all', type: 'all', department: 'all' },
         settings: data.settings || { testMode: 'snippet', testDuration: 15 },
-        countdown: null
+        countdown: null,
+        sessionWins: data.sessionWins || {}
       });
     };
 
@@ -1075,7 +1079,8 @@ export const RaceProvider = ({ children }) => {
         testMode: 'snippet',
         testDuration: 15,
       },
-      countdown: null
+      countdown: null,
+      sessionWins: {}
     });
 
     setTypingState({
@@ -1088,7 +1093,7 @@ export const RaceProvider = ({ children }) => {
       accuracy: 0,
       lockedPosition: 0
     });
-    
+
     // Clear race state from session storage
     sessionStorage.removeItem('raceState');
   };

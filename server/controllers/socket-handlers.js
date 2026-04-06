@@ -37,6 +37,10 @@ const MAX_ALLOWED_WPM = 350; // anything above is flagged
 const MIN_COMPLETION_TIME_MS = 2500; // cannot finish faster than this
 const playAgainTransitions = new Set(); // lobbyCode -> transition in progress
 
+// Store session win tallies for private lobbies across play-again cycles
+// lobbyCode -> { netid: winCount }
+const sessionWins = new Map();
+
 // Store host disconnect timers for private lobbies
 const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds
 const hostDisconnectTimers = new Map(); // lobbyCode -> { timer: NodeJS.Timeout, userId: number }
@@ -237,6 +241,7 @@ const forceDisconnectExistingSessions = async (io, newSocket, userIdToDisconnect
           console.log(`Lobby ${code} empty after forced disconnect. Cleaning up.`);
           racePlayers.delete(code);
           activeRaces.delete(code);
+          sessionWins.delete(code);
           // Attempt to terminate private lobbies in DB
           if (race && race.type === 'private') {
              try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
@@ -333,6 +338,7 @@ const leaveCurrentRace = async (io, socket, netid) => {
       if (players.length === 0) {
         racePlayers.delete(code);
         activeRaces.delete(code);
+        sessionWins.delete(code);
         console.log(`Cleaned up empty race ${code}`);
       } else {
         racePlayers.set(code, players);
@@ -871,6 +877,9 @@ const initialize = (io) => {
           }
         });
 
+        // Initialize session win tally for new private lobby
+        sessionWins.set(lobby.code, {});
+
         // Fetch avatar for the host
         await fetchUserAvatar(userId, socket.id);
 
@@ -883,7 +892,8 @@ const initialize = (io) => {
           hostNetId: netid, // Include host netid
           snippet: activeRaces.get(lobby.code).snippet,
           settings: activeRaces.get(lobby.code).settings,
-          players: [hostClientDataCreate] // Use renamed variable
+          players: [hostClientDataCreate], // Use renamed variable
+          sessionWins: {}
         };
         socket.emit('race:joined', joinedDataCreate); // Use renamed variable
 
@@ -1061,7 +1071,8 @@ const initialize = (io) => {
           hostNetId: raceInfo.hostNetId,
           snippet: raceInfo.snippet,
           settings: raceInfo.settings,
-          players: currentPlayersClientDataJoin // Use resolved data
+          players: currentPlayersClientDataJoin, // Use resolved data
+          sessionWins: sessionWins.get(lobby.code) || {}
         };
         socket.emit('race:joined', joinedDataJoin); // Use renamed variable
 
@@ -1518,6 +1529,10 @@ const initialize = (io) => {
         // Build client data for all players
         const playersClientData = await Promise.all(newPlayers.map(p => getPlayerClientData(p)));
 
+        // Carry session wins forward to the new lobby
+        const prevWins = sessionWins.get(oldCode) || {};
+        sessionWins.set(newLobby.code, { ...prevWins });
+
         const joinedData = {
           code: newLobby.code,
           type: 'private',
@@ -1525,7 +1540,8 @@ const initialize = (io) => {
           hostNetId: hostNetid,
           snippet: newRaceInfo.snippet,
           settings: newRaceInfo.settings,
-          players: playersClientData
+          players: playersClientData,
+          sessionWins: { ...prevWins }
         };
 
         // Notify migrated players directly so the room join can't race the event
@@ -1537,6 +1553,7 @@ const initialize = (io) => {
         clearLobbyTransientState(oldCode);
         activeRaces.delete(oldCode);
         racePlayers.delete(oldCode);
+        sessionWins.delete(oldCode);
 
         console.log(`Play again: migrated ${newPlayers.length} players from ${oldCode} to ${newLobby.code}`);
         if (callback) callback({ success: true, lobby: joinedData });
@@ -2022,6 +2039,7 @@ const initialize = (io) => {
                   activeRaces.delete(code);
                 }
                 racePlayers.delete(code); // Ensure players map is cleared
+                sessionWins.delete(code);
                 return; // Exit timer callback
               }
 
@@ -2105,6 +2123,7 @@ const initialize = (io) => {
               console.log(`No players left in race ${code}, cleaning up`);
               racePlayers.delete(code);
               activeRaces.delete(code);
+              sessionWins.delete(code);
               if (race && race.type === 'private') {
                  try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
               }
@@ -2461,8 +2480,25 @@ const endRace = async (io, code) => {
       console.error(`Error getting final results for race ${code}:`, dbErr);
     }
     
-    // Broadcast race end signal (without results payload)
-    io.to(code).emit('race:end', { code }); 
+    // Update session win tally for private lobbies
+    if (race.type === 'private') {
+      const players = racePlayers.get(code) || [];
+      // Find the winner: completed player with fastest completion time
+      const completedPlayers = players
+        .filter(p => p.completed && playerProgress.has(p.id))
+        .map(p => ({ netid: p.netid, completion_time: playerProgress.get(p.id).completion_time }))
+        .sort((a, b) => a.completion_time - b.completion_time);
+      if (completedPlayers.length > 0) {
+        const winnerNetid = completedPlayers[0].netid;
+        const wins = sessionWins.get(code) || {};
+        wins[winnerNetid] = (wins[winnerNetid] || 0) + 1;
+        sessionWins.set(code, wins);
+        console.log(`Session wins for ${code}:`, wins);
+      }
+    }
+
+    // Broadcast race end signal with session wins
+    io.to(code).emit('race:end', { code, sessionWins: sessionWins.get(code) || {} });
     console.log(`Broadcasted race end signal for ${code}`);
 
   } catch (err) {

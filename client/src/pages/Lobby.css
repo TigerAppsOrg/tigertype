@@ -443,6 +443,19 @@
   gap: 1rem;
 }
 
+.lobby-wins {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #FFD700;
+  background: rgba(245, 128, 37, 0.15);
+  border: 1px solid rgba(245, 128, 37, 0.3);
+  border-radius: 10px;
+  padding: 0.1rem 0.5rem;
+  margin: 0.4rem auto 0;
+  white-space: nowrap;
+}
+
 .lobby-page .player-card {
   background: linear-gradient(135deg, var(--container-color) 0%, rgba(245, 128, 37, 0.05) 100%);
   border-radius: 10px;

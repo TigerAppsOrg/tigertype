@@ -310,6 +310,11 @@ function Lobby() {
                 <div className="player-grid">
                   {raceState.players?.map(player => (
                     <div key={player.netid} className="player-card">
+                      {raceState.sessionWins?.[player.netid] > 0 && (
+                        <span className="session-wins-badge lobby-wins">
+                          {raceState.sessionWins[player.netid]} {raceState.sessionWins[player.netid] === 1 ? 'win' : 'wins'}
+                        </span>
+                      )}
                       <ProfileWidget
                         // Pass user object including avg_wpm fetched from server
                         user={{ netid: player.netid, avatar_url: player.avatar_url, avg_wpm: player.avg_wpm }}
