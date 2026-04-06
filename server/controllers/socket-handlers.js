@@ -35,6 +35,7 @@ const MAX_PROGRESS_STEP = 35; // max characters allowed per progress update (inc
 const MIN_PROGRESS_INTERVAL = 25; // min ms between progress packets (unused, kept for reference)
 const MAX_ALLOWED_WPM = 350; // anything above is flagged
 const MIN_COMPLETION_TIME_MS = 2500; // cannot finish faster than this
+const playAgainTransitions = new Set(); // lobbyCode -> transition in progress
 
 // Store host disconnect timers for private lobbies
 const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds
@@ -47,6 +48,72 @@ const countdownTimers = new Map(); // lobbyCode -> NodeJS.Timeout
 const sanitizeSnippetText = (text) => {
   if (typeof text !== 'string') return text;
   return text.replace(/(?:\r?\n)+\s*$/u, '');
+};
+
+const normalizeLobbyCode = (payload = {}) => {
+  const normalized = typeof payload?.code === 'string'
+    ? payload.code.trim().toUpperCase()
+    : payload?.code;
+
+  if (!normalized) {
+    throw new Error('Lobby code is required.');
+  }
+
+  return normalized;
+};
+
+const acquirePlayAgainLock = (code, locks = playAgainTransitions) => {
+  if (locks.has(code)) {
+    throw new Error('A new match is already being created.');
+  }
+
+  locks.add(code);
+};
+
+const releasePlayAgainLock = (code, locks = playAgainTransitions) => {
+  if (!code) return;
+  locks.delete(code);
+};
+
+const clearLobbyTransientState = (
+  code,
+  stores = {
+    inactivityTimers,
+    hostDisconnectTimers,
+    countdownTimers
+  }
+) => {
+  const hostTimerInfo = stores.hostDisconnectTimers.get(code);
+  if (hostTimerInfo) {
+    clearTimeout(hostTimerInfo.timer);
+    stores.hostDisconnectTimers.delete(code);
+  }
+
+  const countdownTimer = stores.countdownTimers.get(code);
+  if (countdownTimer) {
+    clearTimeout(countdownTimer);
+    stores.countdownTimers.delete(code);
+  }
+
+  for (const [key, timerInfo] of stores.inactivityTimers.entries()) {
+    if (!key.startsWith(`${code}-`)) continue;
+    clearTimeout(timerInfo.warningTimer);
+    clearTimeout(timerInfo.kickTimer);
+    stores.inactivityTimers.delete(key);
+  }
+};
+
+const resetSocketRaceState = (
+  socketId,
+  stores = {
+    playerProgress,
+    lastProgressUpdate,
+    suspiciousPlayers
+  }
+) => {
+  stores.playerProgress.delete(socketId);
+  stores.lastProgressUpdate.delete(socketId);
+  stores.suspiciousPlayers.delete(socketId);
 };
 
 // Get player data for client, including avatar URL and basic stats
@@ -1315,6 +1382,204 @@ const initialize = (io) => {
       }
     });
 
+    // Handle "Play Again" for private lobbies (host only)
+    // Creates a new lobby with the same settings and migrates all connected players
+    socket.on('lobby:playAgain', async (data = {}, callback) => {
+      const { user: hostNetid, userId: hostUserId } = socket.userInfo;
+      let oldCode = null;
+      let newLobby = null;
+      let playAgainLocked = false;
+      const addedPlayerIds = [];
+      const migratedPlayers = [];
+
+      try {
+        oldCode = normalizeLobbyCode(data);
+        acquirePlayAgainLock(oldCode);
+        playAgainLocked = true;
+
+        console.log(`Host ${hostNetid} requesting play again for lobby ${oldCode}`);
+        const oldRace = activeRaces.get(oldCode);
+        const oldPlayers = racePlayers.get(oldCode);
+
+        if (!oldRace || oldRace.type !== 'private') {
+          throw new Error('Lobby not found or not private.');
+        }
+
+        if (oldRace.hostId !== hostUserId) {
+          throw new Error('Only the host can start a new match.');
+        }
+
+        if (oldRace.status !== 'finished') {
+          throw new Error('Race has not finished yet.');
+        }
+
+        // Use previous lobby settings to generate a new snippet
+        const prevSettings = oldRace.settings || {};
+        let snippetId = null;
+        let snippet = null;
+
+        if (prevSettings.testMode === 'timed' && prevSettings.testDuration) {
+          const duration = parseInt(prevSettings.testDuration) || 30;
+          snippet = createTimedTestSnippet(duration);
+        } else {
+          const { difficulty, type, department } = prevSettings.snippetFilters || {};
+          const difficultyMap = { Easy: 1, Medium: 2, Hard: 3 };
+          const numericDifficulty = difficultyMap[difficulty] || null;
+          const category = type && type !== 'all'
+            ? (type === 'course_reviews' ? 'course-reviews' : type)
+            : null;
+          const subject = category === 'course-reviews' && department && department !== 'all'
+            ? department
+            : null;
+          const combos = [];
+          if (numericDifficulty != null && category && subject) combos.push({ difficulty: numericDifficulty, category, subject });
+          if (numericDifficulty != null && category) combos.push({ difficulty: numericDifficulty, category });
+          if (numericDifficulty != null && subject) combos.push({ difficulty: numericDifficulty, subject });
+          if (numericDifficulty != null) combos.push({ difficulty: numericDifficulty });
+          if (category && subject) combos.push({ category, subject });
+          if (category) combos.push({ category });
+          combos.push({});
+
+          let found = null;
+          for (const f of combos) {
+            const candidate = await SnippetModel.getRandom(f);
+            if (candidate) {
+              found = candidate;
+              break;
+            }
+          }
+          if (!found) throw new Error('Failed to load snippet for new match.');
+          snippet = found;
+          snippetId = snippet.id;
+        }
+
+        // Create a new lobby in the database
+        newLobby = await RaceModel.create('private', snippetId, hostUserId);
+        console.log(`Created new private lobby ${newLobby.code} (play again from ${oldCode})`);
+
+        // Build new race info in memory
+        const newRaceInfo = {
+          id: newLobby.id,
+          code: newLobby.code,
+          snippet: {
+            id: snippet?.id,
+            text: sanitizeSnippetText(snippet.text),
+            is_timed_test: snippet.is_timed_test || false,
+            duration: snippet.duration || null,
+            princeton_course_url: snippet.princeton_course_url || null,
+            course_name: snippet.course_name || null
+          },
+          status: 'waiting',
+          type: 'private',
+          hostId: hostUserId,
+          hostNetId: hostNetid,
+          startTime: null,
+          settings: { ...prevSettings }
+        };
+        activeRaces.set(newLobby.code, newRaceInfo);
+
+        // Migrate all connected players from the old lobby to the new one
+        const connectedPlayers = [];
+        for (const player of oldPlayers || []) {
+          const playerSocket = io.sockets.sockets.get(player.id);
+          if (!playerSocket) continue; // Skip disconnected players
+          connectedPlayers.push({
+            player,
+            playerSocket,
+            isHost: player.userId === hostUserId
+          });
+        }
+
+        for (const { player, isHost } of connectedPlayers) {
+          await RaceModel.addPlayerToLobby(newLobby.id, player.userId, isHost);
+          addedPlayerIds.push(player.userId);
+        }
+
+        const newPlayers = [];
+        for (const { player, playerSocket, isHost } of connectedPlayers) {
+          await playerSocket.join(newLobby.code);
+          await playerSocket.leave(oldCode);
+          resetSocketRaceState(player.id);
+
+          const newPlayer = {
+            id: player.id,
+            netid: player.netid,
+            userId: player.userId,
+            ready: isHost, // Host is implicitly ready
+            lobbyId: newLobby.id,
+            snippetId: snippetId
+          };
+          migratedPlayers.push({ socket: playerSocket, playerId: player.id });
+          newPlayers.push(newPlayer);
+        }
+
+        racePlayers.set(newLobby.code, newPlayers);
+
+        // Build client data for all players
+        const playersClientData = await Promise.all(newPlayers.map(p => getPlayerClientData(p)));
+
+        const joinedData = {
+          code: newLobby.code,
+          type: 'private',
+          lobbyId: newLobby.id,
+          hostNetId: hostNetid,
+          snippet: newRaceInfo.snippet,
+          settings: newRaceInfo.settings,
+          players: playersClientData
+        };
+
+        // Notify migrated players directly so the room join can't race the event
+        for (const { socket: migratedSocket } of migratedPlayers) {
+          migratedSocket.emit('lobby:playAgain', joinedData);
+        }
+
+        // Clean up old lobby from memory
+        clearLobbyTransientState(oldCode);
+        activeRaces.delete(oldCode);
+        racePlayers.delete(oldCode);
+
+        console.log(`Play again: migrated ${newPlayers.length} players from ${oldCode} to ${newLobby.code}`);
+        if (callback) callback({ success: true, lobby: joinedData });
+
+      } catch (err) {
+        if (newLobby?.code) {
+          activeRaces.delete(newLobby.code);
+          racePlayers.delete(newLobby.code);
+
+          for (const { socket: migratedSocket } of migratedPlayers) {
+            try {
+              await migratedSocket.join(oldCode);
+              await migratedSocket.leave(newLobby.code);
+            } catch (rollbackErr) {
+              console.error(`Error rolling back socket room move for ${oldCode}:`, rollbackErr);
+            }
+          }
+
+          for (const userId of addedPlayerIds) {
+            try {
+              await RaceModel.removePlayerFromLobby(newLobby.id, userId);
+            } catch (rollbackErr) {
+              console.error(`Error rolling back lobby player for ${newLobby.code}:`, rollbackErr);
+            }
+          }
+
+          try {
+            await RaceModel.softTerminate(newLobby.id);
+          } catch (rollbackErr) {
+            console.error(`Error terminating failed replacement lobby ${newLobby.code}:`, rollbackErr);
+          }
+        }
+
+        console.error(`Error in play again for lobby ${oldCode}:`, err);
+        socket.emit('error', { message: err.message || 'Failed to start new match' });
+        if (callback) callback({ success: false, error: err.message || 'Failed to start new match' });
+      } finally {
+        if (playAgainLocked) {
+          releasePlayAgainLock(oldCode);
+        }
+      }
+    });
+
     // --- End Private Lobby Handlers ---
     
     // Handle player ready status
@@ -2298,5 +2563,12 @@ const clearInactivityTimers = (code, playerId) => {
 };
 
 module.exports = {
-  initialize
+  initialize,
+  __testables: {
+    normalizeLobbyCode,
+    acquirePlayAgainLock,
+    releasePlayAgainLock,
+    clearLobbyTransientState,
+    resetSocketRaceState
+  }
 };
