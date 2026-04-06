@@ -120,6 +120,84 @@ const resetSocketRaceState = (
   stores.suspiciousPlayers.delete(socketId);
 };
 
+const buildCompletedPlayerPlacement = (
+  player,
+  race,
+  stores = {
+    playerProgress,
+    playerAvatars
+  }
+) => {
+  const progress = stores.playerProgress.get(player.id) || {};
+  const finishTimestampMs = Number.isFinite(progress.timestamp) && Number.isFinite(race?.startTime)
+    ? Math.max(0, progress.timestamp - race.startTime)
+    : null;
+
+  const completionTime = Number.isFinite(progress.completion_time)
+    ? progress.completion_time
+    : (Number.isFinite(finishTimestampMs) ? finishTimestampMs / 1000 : null);
+
+  return {
+    netid: player.netid,
+    wpm: Number.isFinite(progress.wpm) ? progress.wpm : null,
+    accuracy: Number.isFinite(progress.accuracy) ? progress.accuracy : null,
+    completion_time: Number.isFinite(completionTime) ? completionTime : null,
+    finishTimestampMs: Number.isFinite(finishTimestampMs) ? finishTimestampMs : null,
+    avatar_url: stores.playerAvatars.get(player.id) || null
+  };
+};
+
+const compareCompletedPlayerPlacements = (a, b, isTimedTest = false) => {
+  if (isTimedTest) {
+    const aWpm = Number.isFinite(a.wpm) ? a.wpm : Number.NEGATIVE_INFINITY;
+    const bWpm = Number.isFinite(b.wpm) ? b.wpm : Number.NEGATIVE_INFINITY;
+    if (aWpm !== bWpm) {
+      return bWpm - aWpm;
+    }
+
+    const aAccuracy = Number.isFinite(a.accuracy) ? a.accuracy : Number.NEGATIVE_INFINITY;
+    const bAccuracy = Number.isFinite(b.accuracy) ? b.accuracy : Number.NEGATIVE_INFINITY;
+    if (aAccuracy !== bAccuracy) {
+      return bAccuracy - aAccuracy;
+    }
+  }
+
+  const aTime = Number.isFinite(a.completion_time) ? a.completion_time : Number.POSITIVE_INFINITY;
+  const bTime = Number.isFinite(b.completion_time) ? b.completion_time : Number.POSITIVE_INFINITY;
+  if (aTime !== bTime) {
+    return aTime - bTime;
+  }
+
+  const aFinishTimestamp = Number.isFinite(a.finishTimestampMs) ? a.finishTimestampMs : Number.POSITIVE_INFINITY;
+  const bFinishTimestamp = Number.isFinite(b.finishTimestampMs) ? b.finishTimestampMs : Number.POSITIVE_INFINITY;
+  if (aFinishTimestamp !== bFinishTimestamp) {
+    return aFinishTimestamp - bFinishTimestamp;
+  }
+
+  return a.netid.localeCompare(b.netid);
+};
+
+const getRankedCompletedPlayers = (
+  players,
+  race,
+  stores = {
+    playerProgress,
+    playerAvatars
+  }
+) => {
+  const isTimedTest = Boolean(race?.snippet?.is_timed_test);
+
+  return (players || [])
+    .filter(player => player.completed && stores.playerProgress.has(player.id))
+    .map(player => buildCompletedPlayerPlacement(player, race, stores))
+    .filter(result => (
+      Number.isFinite(result.completion_time) ||
+      Number.isFinite(result.finishTimestampMs) ||
+      Number.isFinite(result.wpm)
+    ))
+    .sort((a, b) => compareCompletedPlayerPlacements(a, b, isTimedTest));
+};
+
 // Get player data for client, including avatar URL and basic stats
 const getPlayerClientData = async (player) => { // Make async
   // Use cached avatar if available, otherwise use null
@@ -1562,6 +1640,7 @@ const initialize = (io) => {
         if (newLobby?.code) {
           activeRaces.delete(newLobby.code);
           racePlayers.delete(newLobby.code);
+          sessionWins.delete(newLobby.code);
 
           for (const { socket: migratedSocket } of migratedPlayers) {
             try {
@@ -2415,27 +2494,17 @@ const handlePlayerFinish = async (io, code, playerId, resultData) => {
   });
 
   // Collect all results from completed players
-  const allResults = players
-    .filter(p => p.completed && playerProgress.has(p.id))
-    .map(p => {
-      const prog = playerProgress.get(p.id);
-      const avatarUrl = playerAvatars.get(p.id);
-      
-      // Log avatar status for debugging
-      console.log(`Player ${p.netid} avatar status:`, {
-        hasAvatar: !!avatarUrl,
-        avatarUrl: avatarUrl || 'null'
-      });
-      
-      return {
-        netid: p.netid,
-        wpm: prog.wpm,
-        accuracy: prog.accuracy,
-        completion_time: prog.completion_time,
-        avatar_url: avatarUrl // Include avatar URL
-      };
-    })
-    .sort((a, b) => a.completion_time - b.completion_time); // Sort by time initially
+  const allResults = getRankedCompletedPlayers(players, race).map(result => {
+    const { finishTimestampMs, ...clientResult } = result;
+
+    // Log avatar status for debugging
+    console.log(`Player ${result.netid} avatar status:`, {
+      hasAvatar: !!result.avatar_url,
+      avatarUrl: result.avatar_url || 'null'
+    });
+
+    return clientResult;
+  });
 
   // Broadcast updated results list
   io.to(code).emit('race:resultsUpdate', { code, results: allResults });
@@ -2483,11 +2552,7 @@ const endRace = async (io, code) => {
     // Update session win tally for private lobbies
     if (race.type === 'private') {
       const players = racePlayers.get(code) || [];
-      // Find the winner: completed player with fastest completion time
-      const completedPlayers = players
-        .filter(p => p.completed && playerProgress.has(p.id))
-        .map(p => ({ netid: p.netid, completion_time: playerProgress.get(p.id).completion_time }))
-        .sort((a, b) => a.completion_time - b.completion_time);
+      const completedPlayers = getRankedCompletedPlayers(players, race);
       if (completedPlayers.length > 0) {
         const winnerNetid = completedPlayers[0].netid;
         const wins = sessionWins.get(code) || {};
@@ -2605,6 +2670,9 @@ module.exports = {
     acquirePlayAgainLock,
     releasePlayAgainLock,
     clearLobbyTransientState,
-    resetSocketRaceState
+    resetSocketRaceState,
+    buildCompletedPlayerPlacement,
+    compareCompletedPlayerPlacements,
+    getRankedCompletedPlayers
   }
 };

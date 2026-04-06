@@ -4,7 +4,10 @@ const {
     acquirePlayAgainLock,
     releasePlayAgainLock,
     clearLobbyTransientState,
-    resetSocketRaceState
+    resetSocketRaceState,
+    buildCompletedPlayerPlacement,
+    compareCompletedPlayerPlacements,
+    getRankedCompletedPlayers
   }
 } = require('../controllers/socket-handlers');
 
@@ -87,5 +90,68 @@ describe('socket-handlers play again helpers', () => {
     expect(stores.playerProgress.has('socket-1')).toBe(false);
     expect(stores.lastProgressUpdate.has('socket-1')).toBe(false);
     expect(stores.suspiciousPlayers.has('socket-1')).toBe(false);
+  });
+
+  it('falls back to finish timestamps when completion_time is missing', () => {
+    const placement = buildCompletedPlayerPlacement(
+      { id: 'socket-1', netid: 'alice' },
+      { startTime: 1000, snippet: { is_timed_test: false } },
+      {
+        playerProgress: new Map([
+          ['socket-1', { timestamp: 4600, wpm: 88, accuracy: 97 }]
+        ]),
+        playerAvatars: new Map([
+          ['socket-1', 'avatar.png']
+        ])
+      }
+    );
+
+    expect(placement.completion_time).toBe(3.6);
+    expect(placement.finishTimestampMs).toBe(3600);
+    expect(placement.avatar_url).toBe('avatar.png');
+  });
+
+  it('ranks timed races by wpm before shared duration', () => {
+    const rankedPlayers = getRankedCompletedPlayers(
+      [
+        { id: 'socket-1', netid: 'alice', completed: true },
+        { id: 'socket-2', netid: 'bob', completed: true }
+      ],
+      {
+        startTime: 1000,
+        snippet: { is_timed_test: true }
+      },
+      {
+        playerProgress: new Map([
+          ['socket-1', { timestamp: 16000, completion_time: 15, wpm: 90, accuracy: 96 }],
+          ['socket-2', { timestamp: 16000, completion_time: 15, wpm: 110, accuracy: 94 }]
+        ]),
+        playerAvatars: new Map()
+      }
+    );
+
+    expect(rankedPlayers.map(player => player.netid)).toEqual(['bob', 'alice']);
+  });
+
+  it('breaks timed ties by accuracy before finish order', () => {
+    const comparison = compareCompletedPlayerPlacements(
+      {
+        netid: 'alice',
+        wpm: 100,
+        accuracy: 98,
+        completion_time: 15,
+        finishTimestampMs: 15000
+      },
+      {
+        netid: 'bob',
+        wpm: 100,
+        accuracy: 95,
+        completion_time: 15,
+        finishTimestampMs: 14000
+      },
+      true
+    );
+
+    expect(comparison).toBeLessThan(0);
   });
 });

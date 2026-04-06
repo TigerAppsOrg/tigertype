@@ -288,7 +288,7 @@ export const RaceProvider = ({ children }) => {
         snippet: data.snippet ? { ...data.snippet, text: sanitizeSnippetText(data.snippet.text) } : null,
         settings: data.settings || prev.settings, // Store settings from server
         players: data.players || [],
-        sessionWins: data.sessionWins || prev.sessionWins || {}
+        sessionWins: data.sessionWins || {}
       }));
     };
 
@@ -422,7 +422,7 @@ export const RaceProvider = ({ children }) => {
           ...prev,
           inProgress: false,
           completed: true,
-          sessionWins: data.sessionWins || prev.sessionWins || {}
+          sessionWins: data.sessionWins || {}
         };
       });
     };
