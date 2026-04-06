@@ -91,11 +91,25 @@ function Lobby() {
   // --- TestConfigurator State ---
   // Use settings directly from raceState now that context handles it
   const currentSettings = raceState.settings || { testMode: 'snippet', testDuration: 15 };
-  // Local state for filters not yet in raceState.settings
-  const [snippetDifficulty, setSnippetDifficulty] = useState('');
-  const [snippetCategory, setSnippetCategory] = useState('');
-  const [snippetSubject, setSnippetSubject] = useState('');
+  const currentSnippetFilters = currentSettings.snippetFilters || {
+    difficulty: 'all',
+    type: 'all',
+    department: 'all'
+  };
+  const [snippetDifficulty, setSnippetDifficulty] = useState(currentSnippetFilters.difficulty || 'all');
+  const [snippetCategory, setSnippetCategory] = useState(currentSnippetFilters.type || 'all');
+  const [snippetSubject, setSnippetSubject] = useState(currentSnippetFilters.department || 'all');
   // --- ---
+
+  useEffect(() => {
+    setSnippetDifficulty(currentSnippetFilters.difficulty || 'all');
+    setSnippetCategory(currentSnippetFilters.type || 'all');
+    setSnippetSubject(currentSnippetFilters.department || 'all');
+  }, [
+    currentSnippetFilters.department,
+    currentSnippetFilters.difficulty,
+    currentSnippetFilters.type
+  ]);
 
   // Handler for settings changes (only host can trigger)
   // Generic handler factory that maps a particular setter (identified by a string
@@ -273,7 +287,7 @@ function Lobby() {
                     loadNewSnippet={loadNewSnippet}
                     snippetError={snippetError}
                     isLobby
-                    allowTimed={false}
+                    allowTimed={currentSettings.testMode === 'timed'}
                     onShowLeaderboard={() => {}} // Disable leaderboard button in lobby
                   />
                 ) : (

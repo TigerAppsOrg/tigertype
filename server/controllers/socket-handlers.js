@@ -35,6 +35,7 @@ const MAX_PROGRESS_STEP = 35; // max characters allowed per progress update (inc
 const MIN_PROGRESS_INTERVAL = 25; // min ms between progress packets (unused, kept for reference)
 const MAX_ALLOWED_WPM = 350; // anything above is flagged
 const MIN_COMPLETION_TIME_MS = 2500; // cannot finish faster than this
+const playAgainTransitions = new Set(); // lobbyCode -> transition in progress
 
 // Store host disconnect timers for private lobbies
 const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds
@@ -47,6 +48,72 @@ const countdownTimers = new Map(); // lobbyCode -> NodeJS.Timeout
 const sanitizeSnippetText = (text) => {
   if (typeof text !== 'string') return text;
   return text.replace(/(?:\r?\n)+\s*$/u, '');
+};
+
+const normalizeLobbyCode = (payload = {}) => {
+  const normalized = typeof payload?.code === 'string'
+    ? payload.code.trim().toUpperCase()
+    : payload?.code;
+
+  if (!normalized) {
+    throw new Error('Lobby code is required.');
+  }
+
+  return normalized;
+};
+
+const acquirePlayAgainLock = (code, locks = playAgainTransitions) => {
+  if (locks.has(code)) {
+    throw new Error('A new match is already being created.');
+  }
+
+  locks.add(code);
+};
+
+const releasePlayAgainLock = (code, locks = playAgainTransitions) => {
+  if (!code) return;
+  locks.delete(code);
+};
+
+const clearLobbyTransientState = (
+  code,
+  stores = {
+    inactivityTimers,
+    hostDisconnectTimers,
+    countdownTimers
+  }
+) => {
+  const hostTimerInfo = stores.hostDisconnectTimers.get(code);
+  if (hostTimerInfo) {
+    clearTimeout(hostTimerInfo.timer);
+    stores.hostDisconnectTimers.delete(code);
+  }
+
+  const countdownTimer = stores.countdownTimers.get(code);
+  if (countdownTimer) {
+    clearTimeout(countdownTimer);
+    stores.countdownTimers.delete(code);
+  }
+
+  for (const [key, timerInfo] of stores.inactivityTimers.entries()) {
+    if (!key.startsWith(`${code}-`)) continue;
+    clearTimeout(timerInfo.warningTimer);
+    clearTimeout(timerInfo.kickTimer);
+    stores.inactivityTimers.delete(key);
+  }
+};
+
+const resetSocketRaceState = (
+  socketId,
+  stores = {
+    playerProgress,
+    lastProgressUpdate,
+    suspiciousPlayers
+  }
+) => {
+  stores.playerProgress.delete(socketId);
+  stores.lastProgressUpdate.delete(socketId);
+  stores.suspiciousPlayers.delete(socketId);
 };
 
 // Get player data for client, including avatar URL and basic stats
@@ -1317,11 +1384,19 @@ const initialize = (io) => {
 
     // Handle "Play Again" for private lobbies (host only)
     // Creates a new lobby with the same settings and migrates all connected players
-    socket.on('lobby:playAgain', async (data, callback) => {
+    socket.on('lobby:playAgain', async (data = {}, callback) => {
       const { user: hostNetid, userId: hostUserId } = socket.userInfo;
-      const { code: oldCode } = data;
+      let oldCode = null;
+      let newLobby = null;
+      let playAgainLocked = false;
+      const addedPlayerIds = [];
+      const migratedPlayers = [];
 
       try {
+        oldCode = normalizeLobbyCode(data);
+        acquirePlayAgainLock(oldCode);
+        playAgainLocked = true;
+
         console.log(`Host ${hostNetid} requesting play again for lobby ${oldCode}`);
         const oldRace = activeRaces.get(oldCode);
         const oldPlayers = racePlayers.get(oldCode);
@@ -1379,7 +1454,7 @@ const initialize = (io) => {
         }
 
         // Create a new lobby in the database
-        const newLobby = await RaceModel.create('private', snippetId, hostUserId);
+        newLobby = await RaceModel.create('private', snippetId, hostUserId);
         console.log(`Created new private lobby ${newLobby.code} (play again from ${oldCode})`);
 
         // Build new race info in memory
@@ -1404,18 +1479,28 @@ const initialize = (io) => {
         activeRaces.set(newLobby.code, newRaceInfo);
 
         // Migrate all connected players from the old lobby to the new one
-        const newPlayers = [];
-        const connectedOldPlayers = oldPlayers || [];
-
-        for (const player of connectedOldPlayers) {
+        const connectedPlayers = [];
+        for (const player of oldPlayers || []) {
           const playerSocket = io.sockets.sockets.get(player.id);
           if (!playerSocket) continue; // Skip disconnected players
+          connectedPlayers.push({
+            player,
+            playerSocket,
+            isHost: player.userId === hostUserId
+          });
+        }
 
-          // Leave old socket room, join new one
-          playerSocket.leave(oldCode);
-          playerSocket.join(newLobby.code);
+        for (const { player, isHost } of connectedPlayers) {
+          await RaceModel.addPlayerToLobby(newLobby.id, player.userId, isHost);
+          addedPlayerIds.push(player.userId);
+        }
 
-          const isHost = player.userId === hostUserId;
+        const newPlayers = [];
+        for (const { player, playerSocket, isHost } of connectedPlayers) {
+          await playerSocket.join(newLobby.code);
+          await playerSocket.leave(oldCode);
+          resetSocketRaceState(player.id);
+
           const newPlayer = {
             id: player.id,
             netid: player.netid,
@@ -1424,14 +1509,8 @@ const initialize = (io) => {
             lobbyId: newLobby.id,
             snippetId: snippetId
           };
+          migratedPlayers.push({ socket: playerSocket, playerId: player.id });
           newPlayers.push(newPlayer);
-
-          // Add player to the new lobby in DB
-          try {
-            await RaceModel.addPlayerToLobby(newLobby.id, player.userId, isHost);
-          } catch (dbErr) {
-            console.error(`Error adding player ${player.netid} to new lobby:`, dbErr);
-          }
         }
 
         racePlayers.set(newLobby.code, newPlayers);
@@ -1449,10 +1528,13 @@ const initialize = (io) => {
           players: playersClientData
         };
 
-        // Notify all players in the new room about the new lobby
-        io.to(newLobby.code).emit('lobby:playAgain', joinedData);
+        // Notify migrated players directly so the room join can't race the event
+        for (const { socket: migratedSocket } of migratedPlayers) {
+          migratedSocket.emit('lobby:playAgain', joinedData);
+        }
 
         // Clean up old lobby from memory
+        clearLobbyTransientState(oldCode);
         activeRaces.delete(oldCode);
         racePlayers.delete(oldCode);
 
@@ -1460,9 +1542,41 @@ const initialize = (io) => {
         if (callback) callback({ success: true, lobby: joinedData });
 
       } catch (err) {
+        if (newLobby?.code) {
+          activeRaces.delete(newLobby.code);
+          racePlayers.delete(newLobby.code);
+
+          for (const { socket: migratedSocket } of migratedPlayers) {
+            try {
+              await migratedSocket.join(oldCode);
+              await migratedSocket.leave(newLobby.code);
+            } catch (rollbackErr) {
+              console.error(`Error rolling back socket room move for ${oldCode}:`, rollbackErr);
+            }
+          }
+
+          for (const userId of addedPlayerIds) {
+            try {
+              await RaceModel.removePlayerFromLobby(newLobby.id, userId);
+            } catch (rollbackErr) {
+              console.error(`Error rolling back lobby player for ${newLobby.code}:`, rollbackErr);
+            }
+          }
+
+          try {
+            await RaceModel.softTerminate(newLobby.id);
+          } catch (rollbackErr) {
+            console.error(`Error terminating failed replacement lobby ${newLobby.code}:`, rollbackErr);
+          }
+        }
+
         console.error(`Error in play again for lobby ${oldCode}:`, err);
         socket.emit('error', { message: err.message || 'Failed to start new match' });
         if (callback) callback({ success: false, error: err.message || 'Failed to start new match' });
+      } finally {
+        if (playAgainLocked) {
+          releasePlayAgainLock(oldCode);
+        }
       }
     });
 
@@ -2449,5 +2563,12 @@ const clearInactivityTimers = (code, playerId) => {
 };
 
 module.exports = {
-  initialize
+  initialize,
+  __testables: {
+    normalizeLobbyCode,
+    acquirePlayAgainLock,
+    releasePlayAgainLock,
+    clearLobbyTransientState,
+    resetSocketRaceState
+  }
 };

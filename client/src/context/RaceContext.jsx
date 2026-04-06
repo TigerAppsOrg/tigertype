@@ -571,6 +571,13 @@ export const RaceProvider = ({ children }) => {
     const handleLobbyPlayAgain = (data) => {
       console.log('Play again – joining new lobby:', data.code);
       resetAnticheatState();
+      setInactivityState({
+        warning: false,
+        warningMessage: '',
+        kicked: false,
+        kickMessage: '',
+        redirectToHome: false
+      });
       setTypingState({
         input: '', position: 0, correctChars: 0, errors: 0,
         completed: false, wpm: 0, accuracy: 0, lockedPosition: 0
