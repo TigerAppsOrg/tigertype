@@ -70,19 +70,6 @@ function Race() {
       navigate('/home', { replace: true });
     }
   }, [raceState.code, navigate]);
-
-  // After play again, navigate back to the new private lobby
-  useEffect(() => {
-    if (
-      raceState.type === 'private' &&
-      raceState.code &&
-      !raceState.inProgress &&
-      !raceState.completed &&
-      raceState.countdown === null
-    ) {
-      navigate(`/lobby/${raceState.code}`, { replace: true });
-    }
-  }, [raceState.code, raceState.type, raceState.inProgress, raceState.completed, raceState.countdown, navigate]);
   
   // Handle back button
   const handleBack = () => {
