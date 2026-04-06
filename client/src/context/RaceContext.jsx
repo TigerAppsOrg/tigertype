@@ -99,7 +99,8 @@ export const RaceProvider = ({ children }) => {
       testDuration: 15,
       // Add other potential settings here
     },
-    countdown: null // Track countdown seconds
+    countdown: null, // Track countdown seconds
+    sessionWins: {} // Win tally per player across play-again sessions { netid: count }
   });
 
   // Explicit state for TestConfigurator to avoid passing setRaceState
@@ -196,6 +197,14 @@ export const RaceProvider = ({ children }) => {
     redirectToHome: false
   });
 
+  const clearInactivityWarning = useCallback(() => {
+    setInactivityState(prev => (
+      prev.warning
+        ? { ...prev, warning: false, warningMessage: '' }
+        : prev
+    ));
+  }, []);
+
   // Update session storage when inactivity state changes
   useEffect(() => {
     saveInactivityState(inactivityState);
@@ -286,11 +295,20 @@ export const RaceProvider = ({ children }) => {
         hostNetId: data.hostNetId || null, // Explicitly store hostNetId
         snippet: data.snippet ? { ...data.snippet, text: sanitizeSnippetText(data.snippet.text) } : null,
         settings: data.settings || prev.settings, // Store settings from server
-        players: data.players || []
+        players: data.players || [],
+        sessionWins: data.sessionWins || {}
       }));
     };
 
     const handlePlayersUpdate = (data) => {
+      const currentUserReady = Boolean(
+        user?.netid && data.players?.some(player => player.netid === user.netid && player.ready)
+      );
+
+      if (currentUserReady) {
+        clearInactivityWarning();
+      }
+
       setRaceState(prev => {
         // For quick-match public races, if the race is already in progress, we want to keep
         // any players previously marked as disconnected even if they are no longer in the
@@ -358,6 +376,8 @@ export const RaceProvider = ({ children }) => {
       });
       
       if (shouldResetTyping) {
+        clearInactivityWarning();
+
         // Reset typing state
         setTypingState({
           input: '',
@@ -419,7 +439,8 @@ export const RaceProvider = ({ children }) => {
         return {
           ...prev,
           inProgress: false,
-          completed: true
+          completed: true,
+          sessionWins: data.sessionWins || {}
         };
       });
     };
@@ -600,7 +621,8 @@ export const RaceProvider = ({ children }) => {
         },
         snippetFilters: data.settings?.snippetFilters || { difficulty: 'all', type: 'all', department: 'all' },
         settings: data.settings || { testMode: 'snippet', testDuration: 15 },
-        countdown: null
+        countdown: null,
+        sessionWins: data.sessionWins || {}
       });
     };
 
@@ -653,7 +675,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('snippetNotFound', handleSnippetNotFound); // Cleanup snippet not found listener
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
-  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id, resetAnticheatState]);
+  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id, resetAnticheatState, clearInactivityWarning, user?.netid]);
 
   // Methods for race actions
   const joinPracticeMode = () => {
@@ -696,6 +718,7 @@ export const RaceProvider = ({ children }) => {
 
   const setPlayerReady = () => {
     if (!socket || !connected) return;
+    clearInactivityWarning();
     // console.log('Setting player ready...');
     socket.emit('player:ready');
   };
@@ -1075,7 +1098,8 @@ export const RaceProvider = ({ children }) => {
         testMode: 'snippet',
         testDuration: 15,
       },
-      countdown: null
+      countdown: null,
+      sessionWins: {}
     });
 
     setTypingState({
@@ -1088,7 +1112,7 @@ export const RaceProvider = ({ children }) => {
       accuracy: 0,
       lockedPosition: 0
     });
-    
+
     // Clear race state from session storage
     sessionStorage.removeItem('raceState');
   };

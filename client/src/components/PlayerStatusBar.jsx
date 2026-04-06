@@ -13,7 +13,8 @@ function PlayerStatusBar({
   countdownActive = false,
   waitingForMinimumPlayers = false,
   readinessSummary = null,
-  readinessDetail = null
+  readinessDetail = null,
+  sessionWins = null
 }) {
   const [enlargedAvatar, setEnlargedAvatar] = useState(null);
   const { authenticated, user } = useAuth();
@@ -232,6 +233,11 @@ function PlayerStatusBar({
                     />
                   </div>
                   <div className="player-text">
+                    {sessionWins && sessionWins[player.netid] > 0 && (
+                      <span className="session-wins-badge">
+                        {sessionWins[player.netid]} {sessionWins[player.netid] === 1 ? 'win' : 'wins'}
+                      </span>
+                    )}
                     <span className="player-name">{player.netid}</span>
                     {/* Determine the title to display */}
                     {(() => {

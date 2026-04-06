@@ -37,6 +37,10 @@ const MAX_ALLOWED_WPM = 350; // anything above is flagged
 const MIN_COMPLETION_TIME_MS = 2500; // cannot finish faster than this
 const playAgainTransitions = new Set(); // lobbyCode -> transition in progress
 
+// Store session win tallies for private lobbies across play-again cycles
+// lobbyCode -> { netid: winCount }
+const sessionWins = new Map();
+
 // Store host disconnect timers for private lobbies
 const HOST_RECONNECT_GRACE_PERIOD = 15000; // 15 seconds
 const hostDisconnectTimers = new Map(); // lobbyCode -> { timer: NodeJS.Timeout, userId: number }
@@ -114,6 +118,126 @@ const resetSocketRaceState = (
   stores.playerProgress.delete(socketId);
   stores.lastProgressUpdate.delete(socketId);
   stores.suspiciousPlayers.delete(socketId);
+};
+
+const cloneSessionWins = (wins = null) => Object.assign(Object.create(null), wins || {});
+
+const serializeSessionWins = (wins = null) => Object.fromEntries(
+  Object.entries(wins || Object.create(null))
+);
+
+const carrySessionWinsForward = (oldCode, newCode, winsStore = sessionWins) => {
+  const nextWins = cloneSessionWins(winsStore.get(oldCode));
+  winsStore.set(newCode, nextWins);
+  return nextWins;
+};
+
+const clearLobbySessionWins = (code, winsStore = sessionWins) => {
+  if (!code) return;
+  winsStore.delete(code);
+};
+
+const buildCompletedPlayerPlacement = (
+  player,
+  race,
+  stores = {
+    playerProgress,
+    playerAvatars
+  }
+) => {
+  const progress = stores.playerProgress.get(player.id) || {};
+  const finishTimestampMs = Number.isFinite(progress.timestamp) && Number.isFinite(race?.startTime)
+    ? Math.max(0, progress.timestamp - race.startTime)
+    : null;
+
+  const completionTime = Number.isFinite(progress.completion_time)
+    ? progress.completion_time
+    : (Number.isFinite(finishTimestampMs) ? finishTimestampMs / 1000 : null);
+
+  return {
+    netid: player.netid,
+    wpm: Number.isFinite(progress.wpm) ? progress.wpm : null,
+    accuracy: Number.isFinite(progress.accuracy) ? progress.accuracy : null,
+    completion_time: Number.isFinite(completionTime) ? completionTime : null,
+    finishTimestampMs: Number.isFinite(finishTimestampMs) ? finishTimestampMs : null,
+    avatar_url: stores.playerAvatars.get(player.id) || null
+  };
+};
+
+const compareCompletedPlayerPlacements = (a, b, isTimedTest = false) => {
+  if (isTimedTest) {
+    const aWpm = Number.isFinite(a.wpm) ? a.wpm : Number.NEGATIVE_INFINITY;
+    const bWpm = Number.isFinite(b.wpm) ? b.wpm : Number.NEGATIVE_INFINITY;
+    if (aWpm !== bWpm) {
+      return bWpm - aWpm;
+    }
+
+    const aAccuracy = Number.isFinite(a.accuracy) ? a.accuracy : Number.NEGATIVE_INFINITY;
+    const bAccuracy = Number.isFinite(b.accuracy) ? b.accuracy : Number.NEGATIVE_INFINITY;
+    if (aAccuracy !== bAccuracy) {
+      return bAccuracy - aAccuracy;
+    }
+  }
+
+  const aTime = Number.isFinite(a.completion_time) ? a.completion_time : Number.POSITIVE_INFINITY;
+  const bTime = Number.isFinite(b.completion_time) ? b.completion_time : Number.POSITIVE_INFINITY;
+  if (aTime !== bTime) {
+    return aTime - bTime;
+  }
+
+  const aFinishTimestamp = Number.isFinite(a.finishTimestampMs) ? a.finishTimestampMs : Number.POSITIVE_INFINITY;
+  const bFinishTimestamp = Number.isFinite(b.finishTimestampMs) ? b.finishTimestampMs : Number.POSITIVE_INFINITY;
+  if (aFinishTimestamp !== bFinishTimestamp) {
+    return aFinishTimestamp - bFinishTimestamp;
+  }
+
+  return a.netid.localeCompare(b.netid);
+};
+
+const getRankedCompletedPlayers = (
+  players,
+  race,
+  stores = {
+    playerProgress,
+    playerAvatars
+  }
+) => {
+  const isTimedTest = Boolean(race?.snippet?.is_timed_test);
+
+  return (players || [])
+    .filter(player => player.completed && stores.playerProgress.has(player.id))
+    .map(player => buildCompletedPlayerPlacement(player, race, stores))
+    .filter(result => (
+      Number.isFinite(result.completion_time) ||
+      Number.isFinite(result.finishTimestampMs) ||
+      Number.isFinite(result.wpm)
+    ))
+    .sort((a, b) => compareCompletedPlayerPlacements(a, b, isTimedTest));
+};
+
+const updateSessionWinsForRace = (
+  race,
+  players,
+  stores = {
+    playerProgress,
+    playerAvatars
+  },
+  existingWins = null
+) => {
+  const wins = cloneSessionWins(existingWins);
+
+  if (race?.type !== 'private') {
+    return wins;
+  }
+
+  const completedPlayers = getRankedCompletedPlayers(players, race, stores);
+  if (!completedPlayers.length) {
+    return wins;
+  }
+
+  const winnerNetid = completedPlayers[0].netid;
+  wins[winnerNetid] = (wins[winnerNetid] || 0) + 1;
+  return wins;
 };
 
 // Get player data for client, including avatar URL and basic stats
@@ -237,6 +361,7 @@ const forceDisconnectExistingSessions = async (io, newSocket, userIdToDisconnect
           console.log(`Lobby ${code} empty after forced disconnect. Cleaning up.`);
           racePlayers.delete(code);
           activeRaces.delete(code);
+          clearLobbySessionWins(code);
           // Attempt to terminate private lobbies in DB
           if (race && race.type === 'private') {
              try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
@@ -333,6 +458,7 @@ const leaveCurrentRace = async (io, socket, netid) => {
       if (players.length === 0) {
         racePlayers.delete(code);
         activeRaces.delete(code);
+        clearLobbySessionWins(code);
         console.log(`Cleaned up empty race ${code}`);
       } else {
         racePlayers.set(code, players);
@@ -871,6 +997,10 @@ const initialize = (io) => {
           }
         });
 
+        // Initialize session win tally for new private lobby
+        const initialSessionWins = cloneSessionWins();
+        sessionWins.set(lobby.code, initialSessionWins);
+
         // Fetch avatar for the host
         await fetchUserAvatar(userId, socket.id);
 
@@ -883,7 +1013,8 @@ const initialize = (io) => {
           hostNetId: netid, // Include host netid
           snippet: activeRaces.get(lobby.code).snippet,
           settings: activeRaces.get(lobby.code).settings,
-          players: [hostClientDataCreate] // Use renamed variable
+          players: [hostClientDataCreate], // Use renamed variable
+          sessionWins: serializeSessionWins(initialSessionWins)
         };
         socket.emit('race:joined', joinedDataCreate); // Use renamed variable
 
@@ -1061,7 +1192,8 @@ const initialize = (io) => {
           hostNetId: raceInfo.hostNetId,
           snippet: raceInfo.snippet,
           settings: raceInfo.settings,
-          players: currentPlayersClientDataJoin // Use resolved data
+          players: currentPlayersClientDataJoin, // Use resolved data
+          sessionWins: serializeSessionWins(sessionWins.get(lobby.code))
         };
         socket.emit('race:joined', joinedDataJoin); // Use renamed variable
 
@@ -1518,6 +1650,9 @@ const initialize = (io) => {
         // Build client data for all players
         const playersClientData = await Promise.all(newPlayers.map(p => getPlayerClientData(p)));
 
+        // Carry session wins forward to the new lobby
+        const prevWins = carrySessionWinsForward(oldCode, newLobby.code);
+
         const joinedData = {
           code: newLobby.code,
           type: 'private',
@@ -1525,7 +1660,8 @@ const initialize = (io) => {
           hostNetId: hostNetid,
           snippet: newRaceInfo.snippet,
           settings: newRaceInfo.settings,
-          players: playersClientData
+          players: playersClientData,
+          sessionWins: serializeSessionWins(prevWins)
         };
 
         // Notify migrated players directly so the room join can't race the event
@@ -1537,6 +1673,7 @@ const initialize = (io) => {
         clearLobbyTransientState(oldCode);
         activeRaces.delete(oldCode);
         racePlayers.delete(oldCode);
+        clearLobbySessionWins(oldCode);
 
         console.log(`Play again: migrated ${newPlayers.length} players from ${oldCode} to ${newLobby.code}`);
         if (callback) callback({ success: true, lobby: joinedData });
@@ -1545,6 +1682,7 @@ const initialize = (io) => {
         if (newLobby?.code) {
           activeRaces.delete(newLobby.code);
           racePlayers.delete(newLobby.code);
+          clearLobbySessionWins(newLobby.code);
 
           for (const { socket: migratedSocket } of migratedPlayers) {
             try {
@@ -2022,6 +2160,7 @@ const initialize = (io) => {
                   activeRaces.delete(code);
                 }
                 racePlayers.delete(code); // Ensure players map is cleared
+                clearLobbySessionWins(code);
                 return; // Exit timer callback
               }
 
@@ -2105,6 +2244,7 @@ const initialize = (io) => {
               console.log(`No players left in race ${code}, cleaning up`);
               racePlayers.delete(code);
               activeRaces.delete(code);
+              clearLobbySessionWins(code);
               if (race && race.type === 'private') {
                  try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
               }
@@ -2396,27 +2536,17 @@ const handlePlayerFinish = async (io, code, playerId, resultData) => {
   });
 
   // Collect all results from completed players
-  const allResults = players
-    .filter(p => p.completed && playerProgress.has(p.id))
-    .map(p => {
-      const prog = playerProgress.get(p.id);
-      const avatarUrl = playerAvatars.get(p.id);
-      
-      // Log avatar status for debugging
-      console.log(`Player ${p.netid} avatar status:`, {
-        hasAvatar: !!avatarUrl,
-        avatarUrl: avatarUrl || 'null'
-      });
-      
-      return {
-        netid: p.netid,
-        wpm: prog.wpm,
-        accuracy: prog.accuracy,
-        completion_time: prog.completion_time,
-        avatar_url: avatarUrl // Include avatar URL
-      };
-    })
-    .sort((a, b) => a.completion_time - b.completion_time); // Sort by time initially
+  const allResults = getRankedCompletedPlayers(players, race).map(result => {
+    const { finishTimestampMs, ...clientResult } = result;
+
+    // Log avatar status for debugging
+    console.log(`Player ${result.netid} avatar status:`, {
+      hasAvatar: !!result.avatar_url,
+      avatarUrl: result.avatar_url || 'null'
+    });
+
+    return clientResult;
+  });
 
   // Broadcast updated results list
   io.to(code).emit('race:resultsUpdate', { code, results: allResults });
@@ -2461,8 +2591,19 @@ const endRace = async (io, code) => {
       console.error(`Error getting final results for race ${code}:`, dbErr);
     }
     
-    // Broadcast race end signal (without results payload)
-    io.to(code).emit('race:end', { code }); 
+    // Update session win tally for private lobbies
+    if (race.type === 'private') {
+      const players = racePlayers.get(code) || [];
+      const completedPlayers = getRankedCompletedPlayers(players, race);
+      if (completedPlayers.length > 0) {
+        const wins = updateSessionWinsForRace(race, players, undefined, sessionWins.get(code));
+        sessionWins.set(code, wins);
+        console.log(`Session wins for ${code}:`, serializeSessionWins(wins));
+      }
+    }
+
+    // Broadcast race end signal with session wins
+    io.to(code).emit('race:end', { code, sessionWins: serializeSessionWins(sessionWins.get(code)) });
     console.log(`Broadcasted race end signal for ${code}`);
 
   } catch (err) {
@@ -2569,6 +2710,14 @@ module.exports = {
     acquirePlayAgainLock,
     releasePlayAgainLock,
     clearLobbyTransientState,
-    resetSocketRaceState
+    resetSocketRaceState,
+    cloneSessionWins,
+    serializeSessionWins,
+    carrySessionWinsForward,
+    clearLobbySessionWins,
+    buildCompletedPlayerPlacement,
+    compareCompletedPlayerPlacements,
+    getRankedCompletedPlayers,
+    updateSessionWinsForRace
   }
 };

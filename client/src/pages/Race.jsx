@@ -212,6 +212,7 @@ function Race() {
                   players={players}
                   isRaceInProgress={raceState.inProgress}
                   currentUser={window.user}
+                  sessionWins={raceState.type === 'private' ? raceState.sessionWins : null}
                   onReadyClick={setPlayerReady}
                   countdownActive={countdownActive}
                   waitingForMinimumPlayers={shouldShowLobbyStatus && waitingForMinimumPlayers}

@@ -13,6 +13,7 @@ import ProfileModal from './ProfileModal.jsx';
 function Results({ onShowLeaderboard }) {
   const navigate = useNavigate();
   const { raceState, typingState, resetRace, joinPublicRace, playAgain } = useRace();
+  const sessionWins = raceState.sessionWins || {};
   const { isRunning, endTutorial } = useTutorial();
   const { user } = useAuth();
   // State for profile modal
@@ -251,6 +252,11 @@ function Results({ onShowLeaderboard }) {
             />
           </div>
           <div className="winner-details">
+            {raceState.type === 'private' && sessionWins[winner.netid] > 0 && (
+              <div className="session-wins-badge results-wins">
+                {sessionWins[winner.netid]} {sessionWins[winner.netid] === 1 ? 'win' : 'wins'}
+              </div>
+            )}
             <div className="winner-header">
               <div className="winner-trophy"><i className="bi bi-trophy"></i></div>
               <div className="winner-netid">{winner.netid}</div>
@@ -302,6 +308,11 @@ function Results({ onShowLeaderboard }) {
                   />
                 </div>
                 <div className="result-text">
+                  {raceState.type === 'private' && sessionWins[result.netid] > 0 && (
+                    <span className="session-wins-badge results-wins">
+                      {sessionWins[result.netid]} {sessionWins[result.netid] === 1 ? 'win' : 'wins'}
+                    </span>
+                  )}
                   <div className="result-netid">{result.netid}</div>
                   {(() => {
                     const titlesList = resultTitlesMap[result.netid] || [];
