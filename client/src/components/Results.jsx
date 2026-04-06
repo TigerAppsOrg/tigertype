@@ -12,7 +12,7 @@ import ProfileModal from './ProfileModal.jsx';
 
 function Results({ onShowLeaderboard }) {
   const navigate = useNavigate();
-  const { raceState, typingState, resetRace, joinPublicRace } = useRace();
+  const { raceState, typingState, resetRace, joinPublicRace, playAgain } = useRace();
   const { isRunning, endTutorial } = useTutorial();
   const { user } = useAuth();
   // State for profile modal
@@ -353,13 +353,20 @@ function Results({ onShowLeaderboard }) {
         
         {raceState.type === 'practice' ? renderPracticeResults() : renderRaceResults()}
         
+        {/* Play Again button for private match host */}
+        {raceState.type === 'private' && raceState.completed && user?.netid === raceState.hostNetId && (
+          <button className="back-btn" onClick={playAgain}>
+            Play Again
+          </button>
+        )}
+
         {/* Queue Next Race button for quick matches */}
         {raceState.type === 'public' && (
           <button className="back-btn" onClick={handleQueueNext}>
             Queue Another Race
           </button>
         )}
-        
+
         <button className="back-btn back-to-menu-btn" onClick={handleBack}>
           Back to Menu
         </button>
