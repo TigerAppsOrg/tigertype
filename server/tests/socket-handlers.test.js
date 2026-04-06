@@ -5,9 +5,14 @@ const {
     releasePlayAgainLock,
     clearLobbyTransientState,
     resetSocketRaceState,
+    cloneSessionWins,
+    serializeSessionWins,
+    carrySessionWinsForward,
+    clearLobbySessionWins,
     buildCompletedPlayerPlacement,
     compareCompletedPlayerPlacements,
-    getRankedCompletedPlayers
+    getRankedCompletedPlayers,
+    updateSessionWinsForRace
   }
 } = require('../controllers/socket-handlers');
 
@@ -153,5 +158,76 @@ describe('socket-handlers play again helpers', () => {
     );
 
     expect(comparison).toBeLessThan(0);
+  });
+
+  it('increments the private-race winner in a null-prototype tally', () => {
+    const wins = updateSessionWinsForRace(
+      {
+        type: 'private',
+        startTime: 1000,
+        snippet: { is_timed_test: false }
+      },
+      [
+        { id: 'socket-1', netid: 'alice', completed: true },
+        { id: 'socket-2', netid: 'bob', completed: true }
+      ],
+      {
+        playerProgress: new Map([
+          ['socket-1', { completion_time: 11.2, timestamp: 12200 }],
+          ['socket-2', { completion_time: 13.8, timestamp: 14800 }]
+        ]),
+        playerAvatars: new Map()
+      },
+      { alice: 1 }
+    );
+
+    expect(Object.getPrototypeOf(wins)).toBe(null);
+    expect(serializeSessionWins(wins)).toEqual({ alice: 2 });
+  });
+
+  it('does not increment tallies for non-private races', () => {
+    const wins = updateSessionWinsForRace(
+      {
+        type: 'practice',
+        startTime: 1000,
+        snippet: { is_timed_test: false }
+      },
+      [
+        { id: 'socket-1', netid: 'alice', completed: true }
+      ],
+      {
+        playerProgress: new Map([
+          ['socket-1', { completion_time: 11.2, timestamp: 12200 }]
+        ]),
+        playerAvatars: new Map()
+      },
+      { alice: 1 }
+    );
+
+    expect(serializeSessionWins(wins)).toEqual({ alice: 1 });
+  });
+
+  it('carries tallies forward without mutating the previous lobby', () => {
+    const winsStore = new Map([
+      ['ROOM42', cloneSessionWins({ alice: 2 })]
+    ]);
+
+    const nextWins = carrySessionWinsForward('ROOM42', 'ROOM43', winsStore);
+    nextWins.alice = 3;
+
+    expect(serializeSessionWins(winsStore.get('ROOM42'))).toEqual({ alice: 2 });
+    expect(serializeSessionWins(winsStore.get('ROOM43'))).toEqual({ alice: 3 });
+  });
+
+  it('clears only the target lobby tally during cleanup', () => {
+    const winsStore = new Map([
+      ['ROOM42', cloneSessionWins({ alice: 2 })],
+      ['ROOM99', cloneSessionWins({ bob: 1 })]
+    ]);
+
+    clearLobbySessionWins('ROOM42', winsStore);
+
+    expect(winsStore.has('ROOM42')).toBe(false);
+    expect(serializeSessionWins(winsStore.get('ROOM99'))).toEqual({ bob: 1 });
   });
 });

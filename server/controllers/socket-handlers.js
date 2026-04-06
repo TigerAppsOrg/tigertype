@@ -120,6 +120,23 @@ const resetSocketRaceState = (
   stores.suspiciousPlayers.delete(socketId);
 };
 
+const cloneSessionWins = (wins = null) => Object.assign(Object.create(null), wins || {});
+
+const serializeSessionWins = (wins = null) => Object.fromEntries(
+  Object.entries(wins || Object.create(null))
+);
+
+const carrySessionWinsForward = (oldCode, newCode, winsStore = sessionWins) => {
+  const nextWins = cloneSessionWins(winsStore.get(oldCode));
+  winsStore.set(newCode, nextWins);
+  return nextWins;
+};
+
+const clearLobbySessionWins = (code, winsStore = sessionWins) => {
+  if (!code) return;
+  winsStore.delete(code);
+};
+
 const buildCompletedPlayerPlacement = (
   player,
   race,
@@ -196,6 +213,31 @@ const getRankedCompletedPlayers = (
       Number.isFinite(result.wpm)
     ))
     .sort((a, b) => compareCompletedPlayerPlacements(a, b, isTimedTest));
+};
+
+const updateSessionWinsForRace = (
+  race,
+  players,
+  stores = {
+    playerProgress,
+    playerAvatars
+  },
+  existingWins = null
+) => {
+  const wins = cloneSessionWins(existingWins);
+
+  if (race?.type !== 'private') {
+    return wins;
+  }
+
+  const completedPlayers = getRankedCompletedPlayers(players, race, stores);
+  if (!completedPlayers.length) {
+    return wins;
+  }
+
+  const winnerNetid = completedPlayers[0].netid;
+  wins[winnerNetid] = (wins[winnerNetid] || 0) + 1;
+  return wins;
 };
 
 // Get player data for client, including avatar URL and basic stats
@@ -319,7 +361,7 @@ const forceDisconnectExistingSessions = async (io, newSocket, userIdToDisconnect
           console.log(`Lobby ${code} empty after forced disconnect. Cleaning up.`);
           racePlayers.delete(code);
           activeRaces.delete(code);
-          sessionWins.delete(code);
+          clearLobbySessionWins(code);
           // Attempt to terminate private lobbies in DB
           if (race && race.type === 'private') {
              try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
@@ -416,7 +458,7 @@ const leaveCurrentRace = async (io, socket, netid) => {
       if (players.length === 0) {
         racePlayers.delete(code);
         activeRaces.delete(code);
-        sessionWins.delete(code);
+        clearLobbySessionWins(code);
         console.log(`Cleaned up empty race ${code}`);
       } else {
         racePlayers.set(code, players);
@@ -956,7 +998,8 @@ const initialize = (io) => {
         });
 
         // Initialize session win tally for new private lobby
-        sessionWins.set(lobby.code, {});
+        const initialSessionWins = cloneSessionWins();
+        sessionWins.set(lobby.code, initialSessionWins);
 
         // Fetch avatar for the host
         await fetchUserAvatar(userId, socket.id);
@@ -971,7 +1014,7 @@ const initialize = (io) => {
           snippet: activeRaces.get(lobby.code).snippet,
           settings: activeRaces.get(lobby.code).settings,
           players: [hostClientDataCreate], // Use renamed variable
-          sessionWins: {}
+          sessionWins: serializeSessionWins(initialSessionWins)
         };
         socket.emit('race:joined', joinedDataCreate); // Use renamed variable
 
@@ -1150,7 +1193,7 @@ const initialize = (io) => {
           snippet: raceInfo.snippet,
           settings: raceInfo.settings,
           players: currentPlayersClientDataJoin, // Use resolved data
-          sessionWins: sessionWins.get(lobby.code) || {}
+          sessionWins: serializeSessionWins(sessionWins.get(lobby.code))
         };
         socket.emit('race:joined', joinedDataJoin); // Use renamed variable
 
@@ -1608,8 +1651,7 @@ const initialize = (io) => {
         const playersClientData = await Promise.all(newPlayers.map(p => getPlayerClientData(p)));
 
         // Carry session wins forward to the new lobby
-        const prevWins = sessionWins.get(oldCode) || {};
-        sessionWins.set(newLobby.code, { ...prevWins });
+        const prevWins = carrySessionWinsForward(oldCode, newLobby.code);
 
         const joinedData = {
           code: newLobby.code,
@@ -1619,7 +1661,7 @@ const initialize = (io) => {
           snippet: newRaceInfo.snippet,
           settings: newRaceInfo.settings,
           players: playersClientData,
-          sessionWins: { ...prevWins }
+          sessionWins: serializeSessionWins(prevWins)
         };
 
         // Notify migrated players directly so the room join can't race the event
@@ -1631,7 +1673,7 @@ const initialize = (io) => {
         clearLobbyTransientState(oldCode);
         activeRaces.delete(oldCode);
         racePlayers.delete(oldCode);
-        sessionWins.delete(oldCode);
+        clearLobbySessionWins(oldCode);
 
         console.log(`Play again: migrated ${newPlayers.length} players from ${oldCode} to ${newLobby.code}`);
         if (callback) callback({ success: true, lobby: joinedData });
@@ -1640,7 +1682,7 @@ const initialize = (io) => {
         if (newLobby?.code) {
           activeRaces.delete(newLobby.code);
           racePlayers.delete(newLobby.code);
-          sessionWins.delete(newLobby.code);
+          clearLobbySessionWins(newLobby.code);
 
           for (const { socket: migratedSocket } of migratedPlayers) {
             try {
@@ -2118,7 +2160,7 @@ const initialize = (io) => {
                   activeRaces.delete(code);
                 }
                 racePlayers.delete(code); // Ensure players map is cleared
-                sessionWins.delete(code);
+                clearLobbySessionWins(code);
                 return; // Exit timer callback
               }
 
@@ -2202,7 +2244,7 @@ const initialize = (io) => {
               console.log(`No players left in race ${code}, cleaning up`);
               racePlayers.delete(code);
               activeRaces.delete(code);
-              sessionWins.delete(code);
+              clearLobbySessionWins(code);
               if (race && race.type === 'private') {
                  try { await RaceModel.softTerminate(race.id); } catch(e) { /* ignore */ }
               }
@@ -2554,16 +2596,14 @@ const endRace = async (io, code) => {
       const players = racePlayers.get(code) || [];
       const completedPlayers = getRankedCompletedPlayers(players, race);
       if (completedPlayers.length > 0) {
-        const winnerNetid = completedPlayers[0].netid;
-        const wins = sessionWins.get(code) || {};
-        wins[winnerNetid] = (wins[winnerNetid] || 0) + 1;
+        const wins = updateSessionWinsForRace(race, players, undefined, sessionWins.get(code));
         sessionWins.set(code, wins);
-        console.log(`Session wins for ${code}:`, wins);
+        console.log(`Session wins for ${code}:`, serializeSessionWins(wins));
       }
     }
 
     // Broadcast race end signal with session wins
-    io.to(code).emit('race:end', { code, sessionWins: sessionWins.get(code) || {} });
+    io.to(code).emit('race:end', { code, sessionWins: serializeSessionWins(sessionWins.get(code)) });
     console.log(`Broadcasted race end signal for ${code}`);
 
   } catch (err) {
@@ -2671,8 +2711,13 @@ module.exports = {
     releasePlayAgainLock,
     clearLobbyTransientState,
     resetSocketRaceState,
+    cloneSessionWins,
+    serializeSessionWins,
+    carrySessionWinsForward,
+    clearLobbySessionWins,
     buildCompletedPlayerPlacement,
     compareCompletedPlayerPlacements,
-    getRankedCompletedPlayers
+    getRankedCompletedPlayers,
+    updateSessionWinsForRace
   }
 };

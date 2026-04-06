@@ -197,6 +197,14 @@ export const RaceProvider = ({ children }) => {
     redirectToHome: false
   });
 
+  const clearInactivityWarning = useCallback(() => {
+    setInactivityState(prev => (
+      prev.warning
+        ? { ...prev, warning: false, warningMessage: '' }
+        : prev
+    ));
+  }, []);
+
   // Update session storage when inactivity state changes
   useEffect(() => {
     saveInactivityState(inactivityState);
@@ -298,11 +306,7 @@ export const RaceProvider = ({ children }) => {
       );
 
       if (currentUserReady) {
-        setInactivityState(prev => (
-          prev.warning
-            ? { ...prev, warning: false, warningMessage: '' }
-            : prev
-        ));
+        clearInactivityWarning();
       }
 
       setRaceState(prev => {
@@ -372,11 +376,7 @@ export const RaceProvider = ({ children }) => {
       });
       
       if (shouldResetTyping) {
-        setInactivityState(prev => (
-          prev.warning
-            ? { ...prev, warning: false, warningMessage: '' }
-            : prev
-        ));
+        clearInactivityWarning();
 
         // Reset typing state
         setTypingState({
@@ -675,7 +675,7 @@ export const RaceProvider = ({ children }) => {
       socket.off('snippetNotFound', handleSnippetNotFound); // Cleanup snippet not found listener
     };
     // Add raceState.snippet?.id to dependency array to reset typing state on snippet change
-  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id, resetAnticheatState, user?.netid]);
+  }, [socket, connected, raceState.type, raceState.manuallyStarted, raceState.snippet?.id, resetAnticheatState, clearInactivityWarning, user?.netid]);
 
   // Methods for race actions
   const joinPracticeMode = () => {
@@ -718,11 +718,7 @@ export const RaceProvider = ({ children }) => {
 
   const setPlayerReady = () => {
     if (!socket || !connected) return;
-    setInactivityState(prev => (
-      prev.warning
-        ? { ...prev, warning: false, warningMessage: '' }
-        : prev
-    ));
+    clearInactivityWarning();
     // console.log('Setting player ready...');
     socket.emit('player:ready');
   };
