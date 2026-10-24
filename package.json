@@ -4,6 +4,7 @@
   "description": "Princeton-themed typing platform for speed typing practice and competitions",
   "main": "server.js",
   "scripts": {
+    "monitoring:dau": "node monitoring/publish-dau.js",
     "start": "node server.js",
     "server": "nodemon server.js --ignore client/",
     "client": "cd client && npm run dev",
