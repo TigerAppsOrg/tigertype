@@ -678,6 +678,24 @@ const MIGRATIONS = [
       `);
     }
   },
+  {
+    version: 21,
+    description: 'Preserve login history for daily active users',
+    up: async (client) => {
+      await client.query(`
+        CREATE TABLE login_events (
+          id BIGSERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          logged_in_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX idx_login_events_logged_in_at ON login_events(logged_in_at);
+        CREATE INDEX idx_login_events_user_id ON login_events(user_id);
+      `);
+    },
+    down: async (client) => {
+      await client.query('DROP TABLE IF EXISTS login_events;');
+    }
+  },
 ];
 
 // Create migrations table if it doesn't exist
