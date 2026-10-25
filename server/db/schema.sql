@@ -136,6 +136,8 @@ END $$;
 
 -- Indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_race_results_user_id ON race_results(user_id);
+CREATE INDEX IF NOT EXISTS idx_race_results_created_at ON race_results(created_at);
+CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login);
 CREATE INDEX IF NOT EXISTS idx_race_results_lobby_id ON race_results(lobby_id);
 CREATE INDEX IF NOT EXISTS idx_lobby_players_lobby_id ON lobby_players(lobby_id);
 CREATE INDEX IF NOT EXISTS idx_lobby_players_user_id ON lobby_players(user_id);
@@ -285,3 +287,4 @@ CREATE TABLE IF NOT EXISTS partial_sessions (
 
 -- Index for partial_sessions performance
 CREATE INDEX IF NOT EXISTS idx_partial_sessions_user_id ON partial_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_partial_sessions_created_at ON partial_sessions(created_at);

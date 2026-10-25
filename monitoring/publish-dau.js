@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const sql = fs.readFileSync(path.join(__dirname, 'queries/daily-active-users.sql'), 'utf8');
 
-async function publishDailyActiveUsers({ pool, cloudwatch, dryRun = false }) {
+async function publishDailyActiveUsers({ pool, cloudwatch }) {
   const { rows: [row] } = await pool.query(sql);
   const value = Number(row.value);
   const timestamp = new Date(row.timestamp);
@@ -19,25 +19,24 @@ async function publishDailyActiveUsers({ pool, cloudwatch, dryRun = false }) {
       Timestamp: timestamp
     }]
   };
-  if (!dryRun) await cloudwatch.putMetricData(data).promise();
-  console.log(`${dryRun ? 'Dry run' : 'Published'}: DailyActiveUsers=${value} for ${row.day}`);
+  await cloudwatch.putMetricData(data).promise();
+  console.log(`Published: DailyActiveUsers=${value} for ${row.day}`);
   return data;
 }
 
 async function main() {
   require('dotenv').config();
+  const AWS = require('aws-sdk');
   const { pool } = require('../server/config/database');
-  const dryRun = process.argv.includes('--dry-run');
   try {
-    const cloudwatch = dryRun ? null : new (require('aws-sdk').CloudWatch)({
+    const cloudwatch = new AWS.CloudWatch({
       region: process.env.CLOUDWATCH_REGION || 'us-east-1',
       httpOptions: { connectTimeout: 5000, timeout: 30000 },
       maxRetries: 2
     });
     await publishDailyActiveUsers({
       pool,
-      cloudwatch,
-      dryRun
+      cloudwatch
     });
   } finally {
     await pool.end();

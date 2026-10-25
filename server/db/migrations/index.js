@@ -660,6 +660,24 @@ const MIGRATIONS = [
       console.log('Revert migration 19 complete.');
     }
   },
+  {
+    version: 20,
+    description: 'Index activity timestamps for daily active users queries',
+    up: async (client) => {
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_race_results_created_at ON race_results(created_at);
+        CREATE INDEX IF NOT EXISTS idx_partial_sessions_created_at ON partial_sessions(created_at);
+        CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login);
+      `);
+    },
+    down: async (client) => {
+      await client.query(`
+        DROP INDEX IF EXISTS idx_race_results_created_at;
+        DROP INDEX IF EXISTS idx_partial_sessions_created_at;
+        DROP INDEX IF EXISTS idx_users_last_login;
+      `);
+    }
+  },
 ];
 
 // Create migrations table if it doesn't exist
