@@ -5,7 +5,6 @@
   "main": "server.js",
   "scripts": {
     "monitoring:dau": "node monitoring/publish-dau.js",
-    "monitoring:cleanup": "node monitoring/cleanup-login-events.js",
     "start": "node server.js",
     "server": "nodemon server.js --ignore client/",
     "client": "cd client && npm run dev",

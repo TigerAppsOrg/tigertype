@@ -28,15 +28,6 @@ CREATE TABLE IF NOT EXISTS users (
   last_seen_changelog_at TIMESTAMPTZ
 );
 
--- Login history is appended alongside account creation and last_login updates.
-CREATE TABLE IF NOT EXISTS login_events (
-  id BIGSERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  logged_in_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_login_events_logged_in_at ON login_events(logged_in_at);
-CREATE INDEX IF NOT EXISTS idx_login_events_user_id ON login_events(user_id);
-
 -- Snippets table for storing text that users will type
 CREATE TABLE IF NOT EXISTS snippets (
   id SERIAL PRIMARY KEY,
