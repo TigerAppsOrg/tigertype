@@ -261,7 +261,7 @@ const startServer = async () => {
       }
     } catch (err) {
       console.error('Database initialization failed:', err);
-      console.log('Continuing server startup despite database initialization failure');
+      throw err; // Authentication requires the migrated schema; abort partial startup.
     }
 
     const port = process.env.PORT || 3000;

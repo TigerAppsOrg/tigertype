@@ -663,12 +663,28 @@ const MIGRATIONS = [
   {
     version: 20,
     description: 'Index activity timestamps for daily active users queries',
+    transaction: false, // Concurrent index builds cannot run inside a transaction.
     up: async (client) => {
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_race_results_created_at ON race_results(created_at);
-        CREATE INDEX IF NOT EXISTS idx_partial_sessions_created_at ON partial_sessions(created_at);
-        CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login);
-      `);
+      const { rows: [settings] } = await client.query('SHOW statement_timeout');
+      try {
+        await client.query('SET statement_timeout = 0');
+        for (const [name, table, column] of [
+          ['idx_race_results_created_at', 'race_results', 'created_at'],
+          ['idx_partial_sessions_created_at', 'partial_sessions', 'created_at'],
+          ['idx_users_last_login', 'users', 'last_login']
+        ]) {
+          const { rows } = await client.query(
+            'SELECT indisvalid FROM pg_index WHERE indexrelid = to_regclass($1)', [name]
+          );
+          // Interrupted concurrent builds may leave an invalid index; rebuild it.
+          if (rows[0]?.indisvalid === false) {
+            await client.query(`DROP INDEX CONCURRENTLY IF EXISTS ${name}`);
+          }
+          await client.query(`CREATE INDEX CONCURRENTLY IF NOT EXISTS ${name} ON ${table}(${column})`);
+        }
+      } finally {
+        await client.query("SELECT set_config('statement_timeout', $1, false)", [settings.statement_timeout]);
+      }
     },
     down: async (client) => {
       await client.query(`
@@ -690,6 +706,12 @@ const MIGRATIONS = [
         );
         CREATE INDEX idx_login_events_logged_in_at ON login_events(logged_in_at);
         CREATE INDEX idx_login_events_user_id ON login_events(user_id);
+      `);
+      // Preserve the latest known login at rollout; overwritten history is unavailable.
+      await client.query(`
+        INSERT INTO login_events (user_id, logged_in_at)
+        SELECT id, last_login AT TIME ZONE 'America/New_York'
+        FROM users WHERE last_login IS NOT NULL;
       `);
     },
     down: async (client) => {
@@ -718,9 +740,16 @@ const getCurrentVersion = async (client) => {
 // Run all pending migrations
 const runMigrations = async () => {
   const client = await pool.connect();
+  let inTransaction = false;
+  let locked = false;
+  let failure;
 
   try {
+    // Serialize deploy/startup runners, including nontransactional migrations.
+    await client.query('SELECT pg_advisory_lock(1953064805, 1)');
+    locked = true;
     await client.query('BEGIN');
+    inTransaction = true;
 
     // Create migrations table if it doesn't exist
     await createMigrationsTable(client);
@@ -734,12 +763,17 @@ const runMigrations = async () => {
     if (pendingMigrations.length === 0) {
       console.log('Database is up to date');
       await client.query('COMMIT');
+      inTransaction = false;
       return;
     }
 
     // Run each pending migration
     for (const migration of pendingMigrations) {
       console.log(`Running migration ${migration.version}: ${migration.description}`);
+      if (migration.transaction === false) {
+        await client.query('COMMIT');
+        inTransaction = false;
+      }
       await migration.up(client);
 
       // Record migration
@@ -747,16 +781,30 @@ const runMigrations = async () => {
         'INSERT INTO migrations (version, description) VALUES ($1, $2)',
         [migration.version, migration.description]
       );
+      if (migration.transaction === false) {
+        await client.query('BEGIN');
+        inTransaction = true;
+      }
     }
 
     await client.query('COMMIT');
+    inTransaction = false;
     console.log('All migrations completed successfully');
   } catch (err) {
-    await client.query('ROLLBACK');
+    failure = err;
+    if (inTransaction) await client.query('ROLLBACK');
     console.error('Migration failed:', err);
     throw err;
   } finally {
-    client.release();
+    try {
+      if (locked) await client.query('SELECT pg_advisory_unlock(1953064805, 1)');
+    } catch (err) {
+      failure = err;
+      throw err;
+    } finally {
+      // Failed sessions must not return altered settings or held locks to the pool.
+      client.release(failure);
+    }
   }
 };
 
