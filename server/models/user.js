@@ -85,7 +85,13 @@ const User = {
     try {
       // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'INSERT INTO users (netid) VALUES ($1) RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at',
+        `WITH account AS (
+          INSERT INTO users (netid) VALUES ($1)
+          RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at
+        ), login AS (
+          INSERT INTO login_events (user_id) SELECT id FROM account
+        )
+        SELECT * FROM account`,
         [netid]
       );
       return result.rows[0];
@@ -100,7 +106,13 @@ const User = {
     try {
       // Return all relevant fields including the new tutorial flag
       const result = await db.query(
-        'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at',
+        `WITH account AS (
+          UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1
+          RETURNING id, netid, last_login, created_at, bio, avatar_url, races_completed, avg_wpm, avg_accuracy, fastest_wpm, has_completed_tutorial, selected_title_id, last_seen_changelog_id, last_seen_changelog_at
+        ), login AS (
+          INSERT INTO login_events (user_id) SELECT id FROM account
+        )
+        SELECT * FROM account`,
         [userId]
       );
       return result.rows[0];
